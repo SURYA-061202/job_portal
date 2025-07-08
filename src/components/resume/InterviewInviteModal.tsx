@@ -54,7 +54,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
         const candidateRef = doc(db, 'candidates', candidate.id);
         const todayStr = new Date().toISOString().split('T')[0];
         await updateDoc(candidateRef, {
-          status: 'round1',
+          status: 'shortlisted',
           interviewDetails: {
             role,
             dates,

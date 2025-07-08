@@ -3,14 +3,15 @@
 import { FileText, Users, CheckCircle, BarChart, LogOut } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'resumes' | 'interviews' | 'selected' | 'stats';
-  onTabChange: (tab: 'resumes' | 'interviews' | 'selected' | 'stats') => void;
+  activeTab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats';
+  onTabChange: (tab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats') => void;
   onLogout: () => void;
 }
 
 export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
   const tabs = [
     { id: 'resumes', label: 'Resumes', icon: FileText },
+    { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: Users },
     { id: 'selected', label: 'Candidates', icon: CheckCircle },
     { id: 'stats', label: 'Stats', icon: BarChart },
@@ -33,7 +34,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id as 'resumes' | 'interviews' | 'selected' | 'stats')}
+                onClick={() => onTabChange(tab.id as 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats')}
                 className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1 transition-colors ${
                   isActive
                     ? 'bg-primary-100 text-primary-700'

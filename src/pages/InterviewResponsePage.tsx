@@ -66,6 +66,13 @@ export default function InterviewResponsePage() {
         response: interest === 'interested' ? 'accept' : 'decline',
         selectedDate: interest==='interested'?`${selectedDate} ${selectedTime}`:null,
         respondedAt: Timestamp.now(),
+        dateOfJoining: '',
+        currentSalary: '',
+        expectedSalary: '',
+        expectedSalaryPeriod: '',
+        yearsExperience: '',
+        experienceIn: '',
+        readyToRelocate: '',
       });
       toast.success('Response recorded. Thank you!');
       setSubmitted(true);

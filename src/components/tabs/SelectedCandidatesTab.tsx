@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Candidate } from "@/types";
@@ -13,7 +13,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
     const success = (candidate as any).interviewDetails?.successmail;
     return success === true;
   });
-  const body = encodeURIComponent(
+  /*const body = encodeURIComponent(
     `Dear ${candidate.name},\n\n` +
     `Congratulations! You have been selected.\n\n` +
     `Please submit the following documents to this email:\n` +
@@ -22,8 +22,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
     `3. Experience certificate (if applicable)\n` +
     `4. Bank Account details\n\n` +
     `Regards,\nHR Team`
-  );
-  const mailto = `mailto:${candidate.email}?subject=Congratulations&body=${body}`;
+  ); */
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,3 @@
-
-
 import type { Candidate } from '@/types';
 import { useMemo } from 'react';
 
@@ -97,6 +95,7 @@ export default function CandidateList({ candidates, onSelectCandidate, loading, 
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
+              <th scope="col" className="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">S.No</th>
               <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Email</th>
@@ -104,8 +103,9 @@ export default function CandidateList({ candidates, onSelectCandidate, loading, 
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCandidates.map((candidate) => (
+            {filteredCandidates.map((candidate, idx) => (
               <tr key={candidate.id} className="cursor-pointer hover:bg-primary-50" onClick={() => onSelectCandidate(candidate)}>
+                <td className="px-4 py-4 whitespace-nowrap text-center text-gray-500">{idx + 1}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-gray-900">{candidate.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">{candidate.role}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">{candidate.email}</td>

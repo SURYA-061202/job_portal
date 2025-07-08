@@ -45,7 +45,7 @@ export default function InterviewsTab() {
   const filtered = filter === 'all'
     ? candidates.filter((c) => {
         const st = (c as any).status || '';
-        return st && st !== 'pending' && !st.endsWith('rejected');
+        return st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected');
       })
     : candidates.filter((c) => (c as any).status === filter);
 

@@ -7,8 +7,9 @@ import ResumesTab from '@/components/tabs/ResumesTab';
 import InterviewsTab from '@/components/tabs/InterviewsTab';
 import CandidatesTab from '@/components/tabs/SelectedCandidatesTab';
 import StatsTab from '@/components/tabs/StatsTab';
+import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
 
-export type TabType = 'resumes' | 'interviews' | 'selected' | 'stats';
+export type TabType = 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('resumes');
@@ -47,6 +48,8 @@ export default function Dashboard() {
     switch (activeTab) {
       case 'resumes':
         return <ResumesTab />;
+      case 'shortlisted':
+        return <ShortlistedTab />;
       case 'interviews':
         return <InterviewsTab />;
       case 'selected':

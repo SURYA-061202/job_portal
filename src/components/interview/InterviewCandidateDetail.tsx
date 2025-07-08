@@ -20,6 +20,9 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const [currentSalary, setCurrentSalary] = useState<number>(interview.currentSalary ?? 30000);
   const [expectedSalary, setExpectedSalary] = useState<number>(interview.expectedSalary ?? 30000);
   const [joiningDate, setJoiningDate] = useState<string>(interview.joiningDate ?? new Date().toISOString().split('T')[0]);
+  const [yearsExperience, setYearsExperience] = useState<string>(interview.yearsExperience ?? '');
+  const [experienceIn, setExperienceIn] = useState<string>(interview.experienceIn ?? '');
+  const [readyRelocate, setReadyRelocate] = useState<string>(interview.readyToRelocate ?? '');
   const [feedback, setFeedback] = useState<string>(interview.feedback ?? 'Good');
   const [editCurSal, setEditCurSal] = useState(false);
   const [editExpSal, setEditExpSal] = useState(false);
@@ -35,6 +38,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
           const data = snap.data() as any;
           setSelectedDate(data.selectedDate ?? null);
           setResponse(data.response ?? null);
+          if (data.currentSalary) setCurrentSalary(data.currentSalary);
+          if (data.expectedSalary) setExpectedSalary(data.expectedSalary);
+          if (data.joiningDate) setJoiningDate(data.joiningDate);
+          if (data.yearsExperience) setYearsExperience(data.yearsExperience);
+          if (data.experienceIn) setExperienceIn(data.experienceIn);
+          if (data.readyToRelocate) setReadyRelocate(data.readyToRelocate);
         }
       } catch (err) {
         console.error("Failed to fetch interview doc", err);
@@ -218,6 +227,18 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                     <span className="cursor-pointer" onClick={()=>setEditJoinDate(true)}>{joiningDate}</span>
                   )}
                 </td>
+              </tr>
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Years of Experience</th>
+                <td className="px-4 py-3 text-gray-800">{yearsExperience || '-'}</td>
+              </tr>
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Experience In</th>
+                <td className="px-4 py-3 text-gray-800">{experienceIn || '-'}</td>
+              </tr>
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Ready to Relocate</th>
+                <td className="px-4 py-3 text-gray-800">{readyRelocate || '-'}</td>
               </tr>
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Feedback</th>
