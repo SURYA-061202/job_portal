@@ -185,6 +185,10 @@ export default function ResumesTab() {
         candidate={selectedCandidate} 
         onBack={handleBackToList} 
         onInviteSent={handleInviteSent}
+        onRemoveCandidate={() => {
+          fetchCandidates();
+          setSelectedCandidate(null);
+        }}
       />
     );
   }

@@ -4,15 +4,44 @@ import type { Candidate } from '@/types';
 import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Send } from 'lucide-react';
 import { useState } from 'react';
 import InterviewInviteModal from './InterviewInviteModal';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
   onInviteSent?: () => void;
+  onRemoveCandidate?: () => void;
 }
 
-export default function CandidateDetail({ candidate, onBack, onInviteSent }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate, onBack, onInviteSent, onRemoveCandidate }: CandidateDetailProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  const handleRemove = async () => {
+    if (!window.confirm('Are you sure you want to remove this candidate?')) return;
+    setRemoving(true);
+    try {
+      // Defensive check for candidate.id
+      if (!candidate.id) throw new Error('Candidate ID is missing.');
+      // Delete from Firestore
+      await deleteDoc(doc(db, 'candidates', candidate.id));
+      // Delete from Supabase Storage
+      if (candidate.resumeUrl) {
+        // Extract file name from public URL (fixed regex)
+        const match = candidate.resumeUrl.match(/resumes\/([^/?#]+)/);
+        const fileName = match ? match[1] : null;
+        if (fileName) {
+          await supabase.storage.from('resumes').remove([fileName]);
+        }
+      }
+      onRemoveCandidate?.();
+    } catch (err) {
+      alert('Failed to remove candidate.');
+      setRemoving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -222,6 +251,16 @@ export default function CandidateDetail({ candidate, onBack, onInviteSent }: Can
           }}
         />
       )}
+      {/* Remove Candidate Button */}
+      <div className="flex justify-end">
+        <button
+          className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          onClick={handleRemove}
+          disabled={removing}
+        >
+          {removing ? 'Removing...' : 'Remove Candidate'}
+        </button>
+      </div>
     </div>
   );
 } 
