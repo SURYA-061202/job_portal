@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@config "../tailwind.config.cjs";
+
+/* Remove Vite template boilerplate styles that conflict with app layout */
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: rgb(var(--foreground-rgb, 0 0 0));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb, 255 255 255))
+    )
+    rgb(var(--background-start-rgb, 255 255 255));
+}
+
+/* --- Custom colour variables originally from globals.css --- */
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
