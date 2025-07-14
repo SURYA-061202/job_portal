@@ -1,6 +1,15 @@
 import type { Candidate } from '@/types';
 import { useMemo } from 'react';
 
+// Helper to convert to Title Case
+function toTitleCase(str?: string) {
+  if (!str) return '';
+  return str
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 interface CandidateListProps {
   candidates: Candidate[];
   onSelectCandidate: (candidate: Candidate) => void;
@@ -95,21 +104,21 @@ export default function CandidateList({ candidates, onSelectCandidate, loading, 
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-              <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th scope="col" className="px-6 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+              <th scope="col" className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+              <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredCandidates.map((candidate, idx) => (
               <tr key={candidate.id} className="cursor-pointer hover:bg-primary-50" onClick={() => onSelectCandidate(candidate)}>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-gray-500">{idx + 1}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-gray-900">{candidate.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">{candidate.role}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">{candidate.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">{candidate.phone}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-left text-gray-500">{idx + 1}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-left text-gray-900">{toTitleCase(candidate.name)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{toTitleCase(candidate.role)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{candidate.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{candidate.phone}</td>
               </tr>
             ))}
           </tbody>

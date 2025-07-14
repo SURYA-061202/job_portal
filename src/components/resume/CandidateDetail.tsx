@@ -92,12 +92,23 @@ export default function CandidateDetail({ candidate, onBack, onInviteSent, onRem
                   </div>
                 )}
                 {(() => {
-                  const expNum = parseFloat(candidate.experience as any);
-                  const years = isNaN(expNum) ? 0 : expNum;
+                  const expStr = candidate.experience ?? '';
+                  if (/month/i.test(expStr)) {
+                    return (
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4 text-primary-600" />
+                        <span>{expStr}</span>
+                      </div>
+                    );
+                  }
+                  const yrs = (() => {
+                    const numMatch = expStr.match(/\d+(?:\.\d+)?/);
+                    return numMatch ? parseFloat(numMatch[0]) : 0;
+                  })();
                   return (
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4 text-primary-600" />
-                      <span>{`${years} years experience`}</span>
+                      <span>{`${yrs} years experience`}</span>
                     </div>
                   );
                 })()}

@@ -25,7 +25,8 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
+    /* Keep foreground text black to ensure readability on white components even in dark mode */
+    --foreground-rgb: 0, 0, 0;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
