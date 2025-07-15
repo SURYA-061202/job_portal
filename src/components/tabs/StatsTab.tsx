@@ -27,7 +27,7 @@ function wordsToNumber(w: string): number | null {
 
 interface ParsedQuery {
   type: 'experience';
-  comparator: 'gt' | 'lt' | 'eq';
+  comparator: 'gt' | 'lt' | 'gte' | 'lte' | 'eq';
   value: number;
 }
 
@@ -39,8 +39,11 @@ function parseSearch(query: string): ParsedQuery | null {
 
   // Detect comparator phrases
   let comparator: ParsedQuery['comparator'] = 'eq';
-  if (/(more than|greater than|over|above|>)/.test(query)) comparator = 'gt';
+  if (/(at least|minimum|not less than|>=|≥)/.test(query)) comparator = 'gte';
+  else if (/(at most|maximum|no more than|not greater than|<=|≤)/.test(query)) comparator = 'lte';
+  else if (/(more than|greater than|over|above|>)/.test(query)) comparator = 'gt';
   else if (/(less than|below|under|<)/.test(query)) comparator = 'lt';
+  else if (/(equal to|equals|exactly|==)/.test(query)) comparator = 'eq';
 
   // Extract numeric value (digit)
   const digitMatch = query.match(/(\d+)/);
@@ -148,9 +151,18 @@ export default function StatsTab() {
     if (parsed.type === 'experience') {
       return eligible.filter((c) => {
         const yrs = getExperienceYears(c.experience);
-        if (parsed.comparator === 'gt') return yrs > parsed.value;
-        if (parsed.comparator === 'lt') return yrs < parsed.value;
-        return yrs === parsed.value;
+        switch (parsed.comparator) {
+          case 'gt':
+            return yrs > parsed.value;
+          case 'lt':
+            return yrs < parsed.value;
+          case 'gte':
+            return yrs >= parsed.value;
+          case 'lte':
+            return yrs <= parsed.value;
+          default:
+            return yrs === parsed.value;
+        }
       });
     }
     return eligible;

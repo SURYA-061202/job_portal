@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query as fsQuery, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate } from '@/types';
@@ -31,11 +31,23 @@ export default function ResumesTab() {
 
   const fetchCandidates = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'candidates'));
+      const q = fsQuery(collection(db, 'candidates'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
       const candidatesData: Candidate[] = [];
       querySnapshot.forEach((doc) => {
         candidatesData.push({ id: doc.id, ...doc.data() } as Candidate);
       });
+      // Fallback: ensure sorted correctly if some docs missing timestamp or not ordered
+      candidatesData.sort((a, b) => {
+        const toDate = (val: any): Date => {
+          if (!val) return new Date(0);
+          if (typeof val.toDate === 'function') return val.toDate();
+          if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+          return new Date(val);
+        };
+        return toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime();
+      });
+
       setCandidates(candidatesData);
     } catch (error) {
       console.error('Error fetching candidates:', error);
