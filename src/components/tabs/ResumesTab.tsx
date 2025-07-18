@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, query as fsQuery, orderBy } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query as fsQuery, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import CandidateList from '@/components/resume/CandidateList';
 import CandidateDetail from '@/components/resume/CandidateDetail';
+import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import toast from 'react-hot-toast';
 import openai from '@/lib/openai';
 // PDF.js – load the worker dynamically so Vite can bundle it
@@ -22,8 +23,14 @@ export default function ResumesTab() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [manualCandidate, setManualCandidate] = useState<Candidate | null>(null);
   const [activeView, setActiveView] = useState<'upload' | 'candidates' | 'history'>('upload');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Helpers to detect placeholder values coming from failed AI extraction
+  const isPlaceholderName = (name: string) => /^(john|jane)\s+doe$/i.test(name.trim());
+  const isPlaceholderEmail = (email: string) => /example\.com$/i.test(email.trim());
+  const isPlaceholderPhone = (phone: string) => /^(123[-\s]?456[-\s]?7890|000[-\s]?000[-\s]?0000)$/i.test(phone.trim());
 
   useEffect(() => {
     fetchCandidates();
@@ -92,36 +99,59 @@ export default function ResumesTab() {
 
       console.log('Public URL generated:', publicUrl);
 
-      // Parse resume data using server-side API
-      const parsedData = await parseResumeWithAI(publicUrl);
+      // Attempt to parse resume data using AI
+      let parsedData: any = {};
+      let parseFailed = false;
+      try {
+        parsedData = await parseResumeWithAI(publicUrl);
+      } catch (err) {
+        console.warn('Resume parsing failed, will require manual entry');
+        parseFailed = true;
+      }
 
-      // Create candidate document with extracted data
+      // Replace placeholder values with empty strings so that modal will appear
+      const sanitized = {
+        name: !parsedData.name || isPlaceholderName(parsedData.name) ? '' : parsedData.name,
+        email: !parsedData.email || isPlaceholderEmail(parsedData.email) ? '' : parsedData.email,
+        phone: !parsedData.phone || isPlaceholderPhone(parsedData.phone) ? '' : parsedData.phone,
+      };
+
+      // Determine if manual input is required (core info missing after sanitisation)
+      const missingCoreInfo = !sanitized.name || !sanitized.email || !sanitized.phone;
+
+      // Build candidate object with graceful fallbacks (empty strings)
       const candidateData = {
-        name: parsedData.name,
-        email: parsedData.email,
-        phone: parsedData.phone,
-        role: parsedData.role,
-        experience: parsedData.experience,
-        skills: parsedData.skills || [],
-        education: parsedData.education || [],
-        projects: parsedData.projects || [],
+        name: sanitized.name,
+        email: sanitized.email,
+        phone: sanitized.phone,
+        role: parsedData.role || '',
+        experience: parsedData.experience || '',
+        skills: (missingCoreInfo ? [] : (parsedData.skills || [])),
+        education: (missingCoreInfo ? [] : (parsedData.education || [])),
+        projects: (missingCoreInfo ? [] : (parsedData.projects || [])),
         resumeUrl: publicUrl,
         extractedData: {
-          summary: parsedData.summary,
-          workExperience: parsedData.workExperience || [],
-          education: parsedData.education || [],
-          skills: parsedData.skills || [],
-          certifications: parsedData.certifications || [],
-          projects: parsedData.projects || []
+          summary: missingCoreInfo ? '' : (parsedData.summary || ''),
+          workExperience: missingCoreInfo ? [] : (parsedData.workExperience || []),
+          education: missingCoreInfo ? [] : (parsedData.education || []),
+          skills: missingCoreInfo ? [] : (parsedData.skills || []),
+          certifications: missingCoreInfo ? [] : (parsedData.certifications || []),
+          projects: missingCoreInfo ? [] : (parsedData.projects || [])
         },
         status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      } as any;
+      // Save candidate to Firestore
+      const docRef = await addDoc(collection(db, 'candidates'), candidateData);
 
-      await addDoc(collection(db, 'candidates'), candidateData);
-      
-      toast.success(`Resume uploaded successfully! Extracted data for ${parsedData.name}`);
+      if (parseFailed || missingCoreInfo) {
+        toast.error('Details could not be extracted. Please enter them manually.');
+        setManualCandidate({ id: docRef.id, ...candidateData } as Candidate);
+      } else {
+        toast.success(`Resume uploaded successfully! Extracted data for ${candidateData.name}`);
+      }
+
       fetchCandidates();
     } catch (error: any) {
       console.error('Error uploading resume:', error);
@@ -206,6 +236,7 @@ export default function ResumesTab() {
   }
 
   return (
+    <>
     <div className="space-y-6 flex-1 flex flex-col">
       {/* Sub navigation (hidden in history view) */}
       {activeView !== 'history' && (
@@ -282,5 +313,35 @@ export default function ResumesTab() {
         </>
       )}
     </div>
+    {manualCandidate && (
+      <ManualDetailsModal
+        candidate={manualCandidate!}
+        onCancel={async () => {
+          // If the candidate was not saved, remove record and file
+          try {
+            // Delete Firestore doc
+            await deleteDoc(doc(db, 'candidates', manualCandidate.id));
+            // Delete file from Supabase storage
+            if (manualCandidate.resumeUrl) {
+              const match = manualCandidate.resumeUrl.match(/resumes\/([^/?#]+)/);
+              const fileName = match ? match[1] : null;
+              if (fileName) {
+                await supabase.storage.from('resumes').remove([fileName]);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to clean up candidate on cancel', err);
+          } finally {
+            fetchCandidates();
+            setManualCandidate(null);
+          }
+        }}
+        onSaved={() => {
+          fetchCandidates();
+          setManualCandidate(null);
+        }}
+      />
+    )}
+    </>
   );
 } 

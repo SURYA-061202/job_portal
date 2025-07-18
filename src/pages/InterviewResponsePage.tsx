@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, setDoc, addDoc, Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function InterviewResponsePage() {
@@ -10,6 +10,7 @@ export default function InterviewResponsePage() {
 
   const [loading, setLoading] = useState(true);
   const [dates, setDates] = useState<string[]>([]);
+  const [candidateInfo, setCandidateInfo] = useState<{name:string;email:string}|null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [interest, setInterest] = useState<'interested' | 'not_interested' | ''>('');
@@ -30,6 +31,7 @@ export default function InterviewResponsePage() {
         }
         const data: any = snapshot.data();
         setDates(data?.interviewDetails?.dates || []);
+        setCandidateInfo({name:data?.name||'', email:data?.email||''});
 
         // check already submitted
         const respSnap = await getDoc(doc(collection(db,'interviews'),candidateId));
@@ -74,6 +76,22 @@ export default function InterviewResponsePage() {
         experienceIn: '',
         readyToRelocate: '',
       });
+      // Add notification entry
+      try {
+        const message = interest === 'interested'
+          ? `Accepted interview on ${selectedDate} ${selectedTime}`
+          : `Declined interview invitation`;
+        await addDoc(collection(db, 'candidates', candidateId, 'notifications'), {
+          message,
+          name: candidateInfo?.name || '',
+          email: candidateInfo?.email || '',
+          createdAt: Timestamp.now(),
+          viewed: false,
+        });
+      } catch (err) {
+        console.error('Failed to add notification', err);
+      }
+
       toast.success('Response recorded. Thank you!');
       setSubmitted(true);
     } catch (err) {

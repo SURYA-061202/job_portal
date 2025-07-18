@@ -79,6 +79,8 @@ serve(async (req)=>{
           <li>Experience Certificate (if applicable)</li>
           <li>Bank Account Details</li>
         </ul>
+        <p style="margin-top:16px;color:#d97706;font-weight:bold;">Fill the Onborading form:</p>
+        <p><a href="https://forms.gle/bv9Lc6SXWn6MHW6WA" style="color:#1d4ed8;">https://forms.gle/bv9Lc6SXWn6MHW6WA</a></p>
         <p>Our team will review the documents and get back to you with further steps.</p>
         <p>We look forward to having you on board.</p>
         <p>Best regards,<br/>HR Team<br/>Indian Infra</p>

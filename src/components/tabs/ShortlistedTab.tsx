@@ -219,6 +219,10 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
                   <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Ready to Relocate</th>
                   <td className="px-4 py-3 text-gray-800">{details.readyToRelocate || '-'}</td>
                 </tr>
+                <tr>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Laptop</th>
+                  <td className="px-4 py-3 text-gray-800">{details.laptop || '-'}</td>
+                </tr>
               </tbody>
             </table>
           </div>

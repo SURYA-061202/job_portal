@@ -1,10 +1,11 @@
 'use client';
 
 import { FileText, Users, CheckCircle, BarChart, LogOut } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 interface SidebarProps {
-  activeTab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats';
-  onTabChange: (tab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats') => void;
+  activeTab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications';
+  onTabChange: (tab: 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications') => void;
   onLogout: () => void;
 }
 
@@ -18,7 +19,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 bg-white shadow-lg flex flex-col h-full">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-800">
           Recruitment <span className="text-primary-600">Portal</span>
@@ -49,12 +50,20 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
         </div>
       </nav>
       
-      <div className="absolute bottom-0 w-64 p-4">
+      <div className="mt-auto border-t border-gray-200 py-3 space-y-1">
+        <button
+          onClick={() => onTabChange('notifications' as any)}
+          className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab==='notifications'? 'bg-primary-100 text-primary-700':'text-gray-600 hover:bg-primary-50 hover:text-primary-700'}`}
+        >
+          <NotificationBell className="mr-3" />
+          Notification
+        </button>
+
         <button
           onClick={onLogout}
           className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
         >
-          <LogOut className="mr-3 h-5 w-5 text-red-600" />
+          <LogOut className="mr-3 ml-2 text-red-600" />
           Logout
         </button>
       </div>

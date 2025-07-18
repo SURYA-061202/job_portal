@@ -73,6 +73,7 @@ serve(async (req)=>{
         </p>
         <p>If the button doesn't work, copy and paste the following URL into your browser:</p>
         <p><a href="${actionUrl}">${actionUrl}</a></p>
+        <p style="color:#d97706;font-weight:bold;">Laptop is Mandatory</p>
         <p>Regards,<br/>Talent Acquisition Team<br/>Indian Infra</p>
       </div>`;
     await client.send({

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function VerifyDetailsPage() {
@@ -18,6 +18,7 @@ export default function VerifyDetailsPage() {
     yearsExperience: '',
     experienceIn: '',
     readyToRelocate: 'no',
+    laptop: 'no',
   });
 
   useEffect(() => {
@@ -54,6 +55,29 @@ export default function VerifyDetailsPage() {
         ...form,
         submittedAt: new Date(),
       });
+      // Add notification entry
+      let candName = '';
+      let candEmail = '';
+      try {
+        const candSnap = await getDoc(doc(db,'candidates',candidateId));
+        if(candSnap.exists()){
+          const c:any = candSnap.data();
+          candName = c?.name||'';
+          candEmail = c?.email||'';
+        }
+      } catch(e) {console.error(e);}
+      try {
+        await addDoc(collection(db, 'candidates', candidateId, 'notifications'), {
+          message: 'Submitted verify details form',
+          name: candName,
+          email: candEmail,
+          createdAt: Timestamp.now(),
+          viewed: false,
+        });
+      } catch (err) {
+        console.error('Failed to add notification', err);
+      }
+
       toast.success('Details submitted successfully');
       setSubmitted(true);
     } catch (err) {
@@ -110,6 +134,13 @@ export default function VerifyDetailsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Ready to Relocate</label>
             <select name="readyToRelocate" value={form.readyToRelocate} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Do you have a Laptop?</label>
+            <select name="laptop" value={form.laptop} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm">
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>
