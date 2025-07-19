@@ -183,10 +183,12 @@ export default function ResumesTab() {
       // 2) Ask OpenAI to transform the text into structured JSON
       const systemPrompt =
         "You are an assistant that extracts structured candidate data from resume text. " +
-        "Return a valid JSON object with this exact shape: {\"name\":string,\"email\":string,\"phone\":string," +
+        "Return a valid JSON object with EXACTLY these keys: {\"name\":string,\"email\":string,\"phone\":string," +
         "\"role\":string,\"experience\":string,\"summary\":string,\"workExperience\":array," +
         "\"education\":array,\"skills\":array,\"certifications\":array,\"projects\":array}. " +
-        "Do NOT wrap the JSON in markdown.";
+        "The \"role\" field should contain the candidate's current OR desired job title (e.g., 'Software Engineer', 'Project Manager'). " +
+        "If a field cannot be confidently determined, leave it as an empty string or empty array; NEVER fabricate placeholders such as 'John Doe', 'example@example.com', or '1234567890'. " +
+        "Respond with ONLY the JSON – no markdown fences or additional commentary.";
 
       const chat = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo-0125',
@@ -198,7 +200,61 @@ export default function ResumesTab() {
       });
 
       const reply = chat.choices[0].message?.content?.trim() || '{}';
-      const data = JSON.parse(reply);
+
+      // Some models occasionally wrap the JSON in markdown fences or add leading text. Strip those out safely.
+      let jsonStr = reply;
+
+      // Remove ```json ... ``` or ``` ... ``` wrappers if present
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```[a-zA-Z]*\s*/m, '') // remove opening fence and optional language
+                         .replace(/```$/m, '');            // remove closing fence
+      }
+
+      // If the assistant added explanatory text before/after JSON, attempt to extract the JSON substring
+      const firstBrace = jsonStr.indexOf('{');
+      const lastBrace = jsonStr.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+      }
+
+      let data: any = {};
+      try {
+        data = JSON.parse(jsonStr);
+      } catch (parseErr) {
+        console.error('Failed to parse JSON from OpenAI response:', jsonStr, parseErr);
+        throw new Error('OpenAI returned unparsable JSON');
+      }
+
+      // Fallback: if role is empty, try a targeted prompt to extract role only
+      if (!data.role || (typeof data.role === 'string' && data.role.trim() === '')) {
+        try {
+          const rolePrompt =
+            "Identify the candidate's current or desired job title from the following resume text. " +
+            "Respond with ONLY the role string – no other text.";
+
+          const roleChat = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo-0125',
+            temperature: 0,
+            messages: [
+              { role: 'system', content: rolePrompt },
+              { role: 'user', content: rawText.substring(0, 12000) },
+            ],
+          });
+
+          const roleReply = (roleChat.choices[0].message?.content || '').trim();
+          // Basic sanitisation: remove markdown fences/quotes
+          let roleStr = roleReply;
+          if (roleStr.startsWith('```')) {
+            roleStr = roleStr.replace(/^```[a-zA-Z]*\s*/m, '').replace(/```$/m, '');
+          }
+          // Strip surrounding quotes if any
+          roleStr = roleStr.replace(/^"|"$/g, '').trim();
+
+          data.role = roleStr;
+        } catch (roleErr) {
+          console.warn('Fallback role extraction failed', roleErr);
+        }
+      }
 
       return data;
     } catch (error: any) {
