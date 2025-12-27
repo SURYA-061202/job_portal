@@ -1,5 +1,20 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Users, Calendar, Clock, DollarSign, GraduationCap, ChevronRight } from 'lucide-react';
+import { MapPin, Briefcase, Users, Calendar, Clock, Banknote, Target } from 'lucide-react';
+// import { formatDistanceToNow } from 'date-fns'; // Removed dependency
+
+// Simple helper for time ago
+function timeAgo(date: any) {
+    if (!date) return 'Recently';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - d.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return d.toLocaleDateString();
+}
 
 interface RecruitmentCardProps {
     recruitment: RecruitmentRequest;
@@ -8,75 +23,108 @@ interface RecruitmentCardProps {
 }
 
 export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount }: RecruitmentCardProps) {
-    const formatDate = (date: any) => {
-        if (!date) return 'N/A';
-        const d = date.toDate ? date.toDate() : new Date(date);
-        return d.toLocaleDateString();
+    const urgencyColors = {
+        'Immediate': 'bg-red-50 text-red-700 border-red-100',
+        'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
+        'Flexible': 'bg-green-50 text-green-700 border-green-100'
     };
 
+    const urgencyColor = urgencyColors[recruitment.urgencyLevel] || 'bg-gray-50 text-gray-700 border-gray-100';
 
+    // Safely handle skills string
+    const skills = recruitment.skills ? recruitment.skills.split(',').slice(0, 3) : [];
 
     return (
         <div
             onClick={() => onViewDetails?.(recruitment)}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer"
+            className="group relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
-            <div className="p-5">
+            {/* Top Accent Line */}
+            <div className={`h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
+
+            <div className="p-6 flex-1 flex flex-col">
+                {/* Header */}
                 <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
+                    <div className="flex-1 pr-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${urgencyColor}`}>
+                                {recruitment.urgencyLevel} Priority
+                            </span>
+                            {recruitment.positionLevel && (
+                                <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-100">
+                                    {recruitment.positionLevel}
+                                </span>
+                            )}
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
                             {recruitment.jobTitle}
                         </h3>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-gradient text-white shadow-sm shrink-0 ml-2">
-                        {applicantCount ?? recruitment.applicantCount ?? 0} Applicants
-                    </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-                        <span className="truncate">{recruitment.location}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                        <Briefcase className="w-4 h-4 mr-2 text-orange-500" />
-                        <span className="truncate">{recruitment.candidateType}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                        <span className="truncate">{recruitment.yearsExperience} Exp</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                        <Users className="w-4 h-4 mr-2 text-indigo-500" />
-                        <span className="truncate">{recruitment.candidatesCount} Required</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                        <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
-                        <span className="truncate">{recruitment.budgetPay}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                        <GraduationCap className="w-4 h-4 mr-2 text-purple-500" />
-                        <span className="truncate">{recruitment.qualification}</span>
+                        <p className="text-sm text-gray-500 font-medium mt-1 flex items-center">
+                            <Briefcase className="w-3.5 h-3.5 mr-1" />
+                            {recruitment.department}
+                        </p>
                     </div>
                 </div>
 
-                <div className="pt-4 flex justify-between items-center text-xs font-medium">
-                    <div className="flex items-center text-gray-400">
-                        <Calendar className="w-3.5 h-3.5 mr-1" />
-                        Posted: {formatDate(recruitment.createdAt)}
+                {/* Key Metrics Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Experience</span>
+                        <div className="flex items-center text-sm font-bold text-gray-700">
+                            <Clock className="w-3.5 h-3.5 mr-1.5 text-orange-500" />
+                            {recruitment.yearsExperience}
+                        </div>
                     </div>
-                    <button
-                        onClick={() => onViewDetails?.(recruitment)}
-                        className="text-primary-600 hover:text-primary-700 font-bold flex items-center transition-colors"
-                    >
-                        View Details
-                        <ChevronRight className="w-3 h-3 ml-0.5" />
-                    </button>
-                    {/* <span className="text-gray-400">By: {recruitment.requestedBy}</span> */}
+                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Budget</span>
+                        <div className="flex items-center text-sm font-bold text-gray-700">
+                            <Banknote className="w-3.5 h-3.5 mr-1.5 text-green-500" />
+                            {recruitment.budgetPay}
+                        </div>
+                    </div>
+                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
+                        <div className="flex items-center text-sm font-bold text-gray-700">
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                            {recruitment.location}
+                        </div>
+                    </div>
+                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Hiring</span>
+                        <div className="flex items-center text-sm font-bold text-gray-700">
+                            <Target className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
+                            {recruitment.candidatesCount} Positions
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skills Chips */}
+                <div className="mb-6 flex-1">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Key Skills</span>
+                    <div className="flex flex-wrap gap-1.5">
+                        {skills.map((skill, i) => (
+                            <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded shadow-sm">
+                                {skill.trim()}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center text-xs font-medium text-gray-400">
+                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                        {timeAgo(recruitment.createdAt)}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <span className="flex items-center text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
+                            <Users className="w-3 h-3 mr-1" />
+                            {applicantCount ?? 0} Applicants
+                        </span>
+                    </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

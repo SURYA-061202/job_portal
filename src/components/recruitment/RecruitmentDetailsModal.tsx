@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, MapPin, Briefcase, Clock, DollarSign, GraduationCap, Users, CheckCircle2, AlertCircle, Loader2, Send, FileText, Trash2 } from 'lucide-react';
+import { X, MapPin, Briefcase, Clock, Banknote, GraduationCap, Users, CheckCircle2, AlertCircle, Loader2, Send, FileText, Trash2, Bot, Edit } from 'lucide-react';
 import type { RecruitmentRequest } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { db, auth } from '@/lib/firebase';
@@ -12,9 +12,10 @@ interface RecruitmentDetailsModalProps {
     onApplied?: () => void;
     onViewCandidates?: (postId: string) => void;
     onDelete?: (postId: string) => void;
+    onEdit?: (recruitment: RecruitmentRequest) => void;
 }
 
-export default function RecruitmentDetailsModal({ recruitment, onClose, onApplied, onViewCandidates, onDelete }: RecruitmentDetailsModalProps) {
+export default function RecruitmentDetailsModal({ recruitment, onClose, onApplied, onViewCandidates, onDelete, onEdit }: RecruitmentDetailsModalProps) {
     const [loading, setLoading] = useState(false);
     const [checkingProfile, setCheckingProfile] = useState(true);
     const [hasApplied, setHasApplied] = useState(false);
@@ -143,6 +144,15 @@ export default function RecruitmentDetailsModal({ recruitment, onClose, onApplie
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
+                        {onEdit && (
+                            <button
+                                onClick={() => onEdit(recruitment)}
+                                className="p-2 hover:bg-blue-50 rounded-full text-gray-400 hover:text-blue-600 transition-all"
+                                title="Edit this post"
+                            >
+                                <Edit className="w-5 h-5" />
+                            </button>
+                        )}
                         <button
                             onClick={handleDelete}
                             disabled={loading}
@@ -185,7 +195,7 @@ export default function RecruitmentDetailsModal({ recruitment, onClose, onApplie
                             <span className="truncate">{recruitment.candidatesCount} Openings</span>
                         </div>
                         <div className="flex-1 min-w-[120px] flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100">
-                            <DollarSign className="w-3.5 h-3.5" />
+                            <Banknote className="w-3.5 h-3.5" />
                             <span className="truncate">{recruitment.budgetPay}</span>
                         </div>
                     </div>
@@ -244,15 +254,41 @@ export default function RecruitmentDetailsModal({ recruitment, onClose, onApplie
                         )}
 
                         {onViewCandidates ? (
-                            <button
-                                onClick={() => recruitment.id && onViewCandidates(recruitment.id)}
-                                disabled={hasNoApplicants}
-                                title={hasNoApplicants ? "No applicants for this post" : ""}
-                                className="inline-flex items-center justify-center px-6 py-2 bg-orange-gradient text-white font-bold text-xs rounded-lg hover:opacity-95 transition-all shadow-md shadow-orange-500/20 active:scale-95 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                            >
-                                View Candidates
-                                <Users className="w-3.5 h-3.5 ml-1.5" />
-                            </button>
+                            <>
+                                <button
+                                    onClick={async () => {
+                                        if (!recruitment.id) return;
+                                        const confirmRank = window.confirm("This will use AI to process all CVs against the JD. Continue?");
+                                        if (!confirmRank) return;
+                                        setLoading(true);
+                                        try {
+                                            // Import dynamically to avoid loading openai on landing pages if not needed
+                                            const { rankCandidatesForJob } = await import('@/lib/rankingService');
+                                            const res = await rankCandidatesForJob(recruitment.id);
+                                            toast.success(`Ranked ${res.count} candidates!`);
+                                            onViewCandidates(recruitment.id);
+                                        } catch (e: any) {
+                                            toast.error(e.message || "Ranking failed");
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                    disabled={hasNoApplicants || loading}
+                                    className="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs rounded-lg hover:opacity-95 transition-all shadow-md shadow-purple-500/20 active:scale-95 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed mr-2"
+                                >
+                                    {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Rank with AI"}
+                                    <Bot className="w-3.5 h-3.5 ml-1.5" />
+                                </button>
+                                <button
+                                    onClick={() => recruitment.id && onViewCandidates(recruitment.id)}
+                                    disabled={hasNoApplicants}
+                                    title={hasNoApplicants ? "No applicants for this post" : ""}
+                                    className="inline-flex items-center justify-center px-6 py-2 bg-orange-gradient text-white font-bold text-xs rounded-lg hover:opacity-95 transition-all shadow-md shadow-orange-500/20 active:scale-95 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                >
+                                    View Candidates
+                                    <Users className="w-3.5 h-3.5 ml-1.5" />
+                                </button>
+                            </>
                         ) : checkingProfile ? (
                             <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

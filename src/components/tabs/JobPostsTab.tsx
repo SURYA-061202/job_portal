@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 
 export default function JobPostsTab({ onViewCandidates }: { onViewCandidates?: (postId: string) => void }) {
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
+    const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
     const [isRecruitmentModalOpen, setIsRecruitmentModalOpen] = useState(false);
     const [loadingPosts, setLoadingPosts] = useState(false);
@@ -107,8 +108,10 @@ export default function JobPostsTab({ onViewCandidates }: { onViewCandidates?: (
                 isOpen={isRecruitmentModalOpen}
                 onClose={() => {
                     setIsRecruitmentModalOpen(false);
+                    setEditingPost(null);
                     fetchRecruitmentRequests();
                 }}
+                initialData={editingPost}
             />
             {selectedPost && (
                 <RecruitmentDetailsModal
@@ -121,6 +124,11 @@ export default function JobPostsTab({ onViewCandidates }: { onViewCandidates?: (
                     onDelete={() => {
                         fetchRecruitmentRequests();
                         setSelectedPost(null);
+                    }}
+                    onEdit={(post) => {
+                        setEditingPost(post);
+                        setSelectedPost(null); // Close details modal
+                        setIsRecruitmentModalOpen(true); // Open form modal
                     }}
                 />
             )}

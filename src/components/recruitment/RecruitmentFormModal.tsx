@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import type { RecruitmentRequest } from '@/types';
 
 interface RecruitmentFormModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialData?: RecruitmentRequest | null;
 }
 
-export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFormModalProps) {
+export default function RecruitmentFormModal({ isOpen, onClose, initialData }: RecruitmentFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
@@ -32,6 +34,27 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
         requestedBy: 'Dinesh' as 'Dinesh' | 'Naresh'
     });
 
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                jobTitle: initialData.jobTitle,
+                urgencyLevel: initialData.urgencyLevel,
+                department: initialData.department,
+                candidateType: initialData.candidateType,
+                positionLevel: initialData.positionLevel,
+                yearsExperience: initialData.yearsExperience,
+                location: initialData.location,
+                candidatesCount: initialData.candidatesCount,
+                qualification: initialData.qualification,
+                skills: initialData.skills,
+                description: initialData.description || '',
+                budgetPay: initialData.budgetPay,
+                salaryBreakup: initialData.salaryBreakup,
+                requestedBy: initialData.requestedBy,
+            });
+        }
+    }, [initialData, isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +62,7 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
         setLoading(true);
 
         try {
-            let jdUrl = '';
+            let jdUrl = initialData?.jdUrl || '';
             if (file) {
                 console.log('Uploading JD to Supabase storage (jd bucket)...');
                 const fileExt = file.name.split('.').pop();
@@ -71,9 +94,7 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
                 console.log('JD uploaded successfully, public URL:', jdUrl);
             }
 
-            // Save to Firestore 'recruits'
-            console.log('Saving recruitment request to Firestore (recruits collection)...');
-            await addDoc(collection(db, 'recruits'), {
+            const payload = {
                 jobTitle: formData.jobTitle,
                 urgencyLevel: formData.urgencyLevel,
                 department: formData.department,
@@ -89,11 +110,24 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
                 salaryBreakup: formData.salaryBreakup,
                 requestedBy: formData.requestedBy,
                 jdUrl: jdUrl,
-                createdAt: serverTimestamp()
-            });
+                updatedAt: serverTimestamp()
+            };
 
-            console.log('Recruitment request added successfully to Firestore');
-            toast.success('Recruitment request raised successfully!');
+            if (initialData?.id) {
+                // Update
+                console.log('Updating recruitment request...');
+                await updateDoc(doc(db, 'recruits', initialData.id), payload);
+                toast.success('Recruitment request updated successfully!');
+            } else {
+                // Create
+                console.log('Saving recruitment request to Firestore...');
+                await addDoc(collection(db, 'recruits'), {
+                    ...payload,
+                    createdAt: serverTimestamp()
+                });
+                toast.success('Recruitment request raised successfully!');
+            }
+
             onClose();
         } catch (error: any) {
             console.error('Error raising recruitment request:', error);
@@ -113,7 +147,7 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center z-10">
-                    <h2 className="text-xl font-bold text-gray-900 font-outfit">Add Recruitment Request</h2>
+                    <h2 className="text-xl font-bold text-gray-900 font-outfit">{initialData?.id ? 'Edit Recruitment Request' : 'Add Recruitment Request'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5 text-gray-500" />
                     </button>
@@ -271,14 +305,14 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Other Description (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Detailed Job Description</label>
                         <textarea
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                            placeholder="Any additional details..."
+                            rows={12}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                            placeholder="Paste the full job description here (Roles, Responsibilities, Requirements)..."
                         />
                     </div>
 
@@ -364,7 +398,7 @@ export default function RecruitmentFormModal({ isOpen, onClose }: RecruitmentFor
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
                         >
                             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Submit Request
+                            {initialData?.id ? 'Update Request' : 'Submit Request'}
                         </button>
                     </div>
                 </form>

@@ -1,18 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, getDocs, getDoc, query as fsQuery, orderBy, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
-import CandidateDetail from '@/components/resume/CandidateDetail';
-import { ArrowLeft } from 'lucide-react';
 
-export default function CandidatesTab({ postId, onClearFilter }: { postId?: string | null; onClearFilter?: () => void }) {
+import CandidateDetail from '@/components/resume/CandidateDetail';
+import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
+import { clusterCandidates, saveClusters, fetchClusters } from '@/lib/clusteringService';
+import { ArrowLeft, Sparkles, X, Clock, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postId?: string | null; onClearFilter?: () => void }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+    const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
+
+    // Clustering State
+    const [clusters, setClusters] = useState<{ id: number; label: string; candidateIds: string[] }[]>([]);
+    const [clusterLastUpdated, setClusterLastUpdated] = useState<Date | null>(null);
+    const [activeClusterId, setActiveClusterId] = useState<number | null>(null);
+    const [isClustering, setIsClustering] = useState(false);
+
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<'list' | 'history'>('list');
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +39,22 @@ export default function CandidatesTab({ postId, onClearFilter }: { postId?: stri
 
     useEffect(() => {
         fetchCandidates();
+        fetchClusters().then((res) => {
+            if (res.clusters && res.clusters.length > 0) {
+                setClusters(res.clusters);
+                if (res.lastUpdated) {
+                    try {
+                        const date = new Date(res.lastUpdated);
+                        if (!isNaN(date.getTime())) {
+                            setClusterLastUpdated(date);
+                        }
+                    } catch (e) {
+                        console.error("Invalid date:", e);
+                    }
+                }
+                toast.success("Loaded saved clusters");
+            }
+        });
     }, []);
 
     // Auto-filter when postId prop changes
@@ -119,7 +148,7 @@ export default function CandidatesTab({ postId, onClearFilter }: { postId?: stri
             }
 
             // 2. Fetch user details from Firestore for these applicants
-            const userIds = apps.map(a => (a as any).user_id).filter(uid => !!uid);
+            const userIds = apps.map((a: any) => a.user_id).filter((uid: any) => !!uid);
             console.log(`[DEBUG] Found ${userIds.length} user IDs:`, userIds);
 
             const fetchedApplicants: Candidate[] = [];
@@ -145,9 +174,10 @@ export default function CandidatesTab({ postId, onClearFilter }: { postId?: stri
                                 certifications: [],
                                 projects: []
                             },
+                            education: [],
                             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date()
-                        } as any);
+                        } as Candidate);
                     }
                 } catch (docErr) {
                     console.error(`[DEBUG] Error fetching user doc for UID ${uid}:`, docErr);
@@ -168,6 +198,29 @@ export default function CandidatesTab({ postId, onClearFilter }: { postId?: stri
         }
     };
 
+    const handleRunClustering = async () => {
+        const targetList = isFilteringApplicants ? filteredCandidates : candidates;
+        if (targetList.length < 3) {
+            toast.error("Need at least 3 candidates to perform clustering.");
+            return;
+        }
+
+        try {
+            setIsClustering(true);
+            toast.loading("Analyzing profiles and generating clusters...", { id: "clustering" });
+            const result = await clusterCandidates(targetList);
+            setClusters(result);
+            setClusterLastUpdated(new Date());
+            saveClusters(result); // Persist
+            toast.success("Clusters generated & saved!", { id: "clustering" });
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to generate clusters", { id: "clustering" });
+        } finally {
+            setIsClustering(false);
+        }
+    };
+
     const handleCandidateSelect = (candidate: Candidate) => {
         setSelectedCandidate(candidate);
     };
@@ -182,62 +235,216 @@ export default function CandidatesTab({ postId, onClearFilter }: { postId?: stri
         setSelectedCandidate(null);
     };
 
-    if (selectedCandidate) {
-        return (
-            <CandidateDetail
-                candidate={selectedCandidate}
-                onBack={handleBackToList}
-                onInviteSent={handleInviteSent}
-                onRemoveCandidate={() => {
-                    fetchCandidates();
-                    setSelectedCandidate(null);
-                }}
-            />
-        );
-    }
+    // Filter logic update to include clusters
+    const displayCandidates = useMemo(() => {
+        let list = isFilteringApplicants ? filteredCandidates : candidates.filter(c => c.status === 'pending' || !c.status);
+        if (activeClusterId !== null) {
+            const cluster = clusters.find(c => c.id === activeClusterId);
+            if (cluster) {
+                list = list.filter(c => cluster.candidateIds.includes(c.id));
+            }
+        }
+        return list;
+    }, [isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
 
     return (
         <div className="space-y-6 flex-1 flex flex-col">
-            {activeView === 'list' && (
-                <CandidateList
-                    candidates={isFilteringApplicants ? filteredCandidates : candidates.filter(c => (c as any).status === 'pending' || !(c as any).status)}
-                    onSelectCandidate={handleCandidateSelect}
-                    loading={loading}
-                    searchTerm={searchTerm}
-                    onSearchTermChange={setSearchTerm}
-                    onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
-                    emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
+            {selectedCandidate ? (
+                <CandidateDetail
+                    candidate={selectedCandidate}
+                    onBack={handleBackToList}
+                    onInviteSent={handleInviteSent}
+                    onEdit={(candidate) => setEditingCandidate(candidate)}
+                    onRemoveCandidate={() => {
+                        fetchCandidates();
+                        setSelectedCandidate(null);
+                    }}
                 />
-            )}
-
-            {activeView === 'list' && (
-                <div className="flex justify-end mt-4">
-                    <button
-                        onClick={() => setActiveView('history')}
-                        className="px-4 py-2 text-sm font-medium rounded-md text-primary-600 border border-primary-600 hover:bg-primary-50"
-                    >
-                        Resume History
-                    </button>
-                </div>
-            )}
-
-            {activeView === 'history' && (
+            ) : (
                 <>
-                    <div className="flex items-center gap-2 mb-4 cursor-pointer text-primary-600 hover:text-primary-800" onClick={() => setActiveView('list')}>
-                        <ArrowLeft className="h-5 w-5" />
-                        <span>Back</span>
-                    </div>
-                    <CandidateList
-                        candidates={candidates}
-                        onSelectCandidate={handleCandidateSelect}
-                        loading={loading}
-                        searchTerm={searchTerm}
-                        onSearchTermChange={setSearchTerm}
-                        emptyMessage="No resumes uploaded yet."
-                        onRefresh={fetchCandidates}
-                    />
+                    {activeView === 'list' && (
+                        <>
+                            {/* Unified Header & Controls */}
+                            <div className="mb-6 space-y-4">
+                                {/* Top Bar: Title & Search */}
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                            {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 flex-1 justify-end">
+                                        {/* Search */}
+                                        <div className="relative w-full md:w-64 group">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Search className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Search candidates..."
+                                                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+
+                                        {/* AI Action Button (If no clusters) */}
+                                        {clusters.length === 0 && (
+                                            <button
+                                                onClick={handleRunClustering}
+                                                disabled={isClustering}
+                                                className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
+                                            >
+                                                {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                {isClustering ? 'Analyzing' : 'AI Group'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* AI Clustering Panel */}
+                                {clusters.length > 0 ? (
+                                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 animate-in fade-in slide-in-from-top-2">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                    AI Analysis Active
+                                                </div>
+                                                {clusterLastUpdated && !isNaN(clusterLastUpdated.getTime()) && (
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                                        <Clock className="w-3 h-3" />
+                                                        Updated {clusterLastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => { setClusters([]); setActiveClusterId(null); }}
+                                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors text-xs flex items-center gap-1"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                                Clear Analysis
+                                            </button>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {clusters.map((c) => (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => setActiveClusterId(activeClusterId === c.id ? null : c.id)}
+                                                    className={`group relative inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200 ${activeClusterId === c.id
+                                                            ? 'bg-gray-900 text-white border-gray-900 shadow-md ring-1 ring-gray-900/10'
+                                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:text-gray-900'
+                                                        }`}
+                                                >
+                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeClusterId === c.id ? 'bg-indigo-400' : 'bg-gray-300 group-hover:bg-indigo-400'
+                                                        }`} />
+                                                    {c.label}
+                                                    <span className={`ml-2 text-xs py-0.5 px-1.5 rounded-md transition-colors ${activeClusterId === c.id
+                                                            ? 'bg-white/20 text-white'
+                                                            : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                                                        }`}>
+                                                        {c.candidateIds.length}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="md:hidden">
+                                        <button
+                                            onClick={handleRunClustering}
+                                            disabled={isClustering}
+                                            className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
+                                        >
+                                            {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                            Run AI Grouping Analysis
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <CandidateList
+                                candidates={displayCandidates}
+                                onSelectCandidate={handleCandidateSelect}
+                                loading={loading}
+                                searchTerm={searchTerm}
+                                onSearchTermChange={setSearchTerm}
+                                onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
+                                emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
+                                onEdit={(candidate) => setEditingCandidate(candidate)}
+                                hideHeader={true}
+                            />
+                        </>
+                    )}
+
+                    {activeView === 'history' && (
+                        <>
+                            <div className="flex items-center gap-2 mb-4 cursor-pointer text-primary-600 hover:text-primary-800" onClick={() => setActiveView('list')}>
+                                <ArrowLeft className="h-5 w-5" />
+                                <span>Back</span>
+                            </div>
+                            <CandidateList
+                                candidates={candidates}
+                                onSelectCandidate={handleCandidateSelect}
+                                loading={loading}
+                                searchTerm={searchTerm}
+                                onSearchTermChange={setSearchTerm}
+                                emptyMessage="No resumes uploaded yet."
+                                onRefresh={fetchCandidates}
+                                onEdit={(candidate) => setEditingCandidate(candidate)}
+                            />
+                        </>
+                    )}
                 </>
             )}
+
+            {editingCandidate && (
+                <ManualDetailsModal
+                    candidate={editingCandidate}
+                    onCancel={() => setEditingCandidate(null)}
+                    onSaved={() => {
+                        setEditingCandidate(null);
+                        // If user is currently looking at this candidate's details, update the detail view too
+                        if (selectedCandidate && selectedCandidate.id === editingCandidate.id) {
+                            // We can update the selected candidate with the new data from the form implicitly by re-fetching.
+                            // OR better: we can manually merge the changes if we knew them.
+                            // Simplest: re-fetch and re-select.
+                            // But for now, fetchCandidates() refreshes the list.
+                            // The detail view uses `selectedCandidate` state. 
+                            // We need to update that state.
+                            // Let's do a trick: we know the ID, fetch again and set it.
+                            fetchCandidates().then(() => {
+                                // this might not be enough because fetchCandidates updates `candidates` array.
+                                // We need to find the new data and update `selectedCandidate`.
+                                // Let's just do a specific doc fetch to be fast and accurate.
+                                getDoc(doc(db, 'candidates', editingCandidate.id)).then(snapshot => {
+                                    if (snapshot.exists()) {
+                                        setSelectedCandidate({ id: snapshot.id, ...snapshot.data() } as Candidate);
+                                    }
+                                });
+                            });
+                        } else {
+                            // Just refresh list
+                            if (isFilteringApplicants && filterPostId) {
+                                fetchApplicantsForPost(filterPostId);
+                            } else {
+                                fetchCandidates(false);
+                            }
+                        }
+                    }}
+                />
+            )}
         </div>
+    );
+}
+
+export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void }) {
+    return (
+        <ErrorBoundary>
+            <CandidatesTabContent {...props} />
+        </ErrorBoundary>
     );
 }

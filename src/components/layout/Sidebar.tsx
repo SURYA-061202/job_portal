@@ -1,21 +1,23 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload } from 'lucide-react';
+import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 interface SidebarProps {
-  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members';
-  onTabChange: (tab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members') => void;
+  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics';
+  onTabChange: (tab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics') => void;
   onLogout: () => void;
 }
 
 export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
   const jobPostsTabs = [
     { id: 'job-posts', label: 'Posts', icon: Briefcase },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const screeningTabs = [
     { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload },
+    { id: 'pipeline', label: 'Pipeline (Kanban)', icon: Trello },
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: Users },
@@ -24,7 +26,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg flex flex-col h-full">
+    <div className="w-64 bg-white shadow-lg flex flex-col h-full border-r border-gray-200">
       {/* Header with Logo and Branding */}
       <div className="p-6 bg-gradient-to-br from-primary-50 to-orange-50 border-b border-primary-100">
         <div className="flex items-center gap-3 mb-2">

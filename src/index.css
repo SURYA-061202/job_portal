@@ -44,4 +44,9 @@ body {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
+  /* Alias for semantic naming */
+  .bg-navy-gradient {
+    background: linear-gradient(to bottom right, #0f172a, #1e293b, #334155);
+  }
 }

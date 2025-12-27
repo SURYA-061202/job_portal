@@ -52,6 +52,15 @@ export interface Candidate {
     dateIndex: number | null;
     response: string;
   }>;
+
+  /** AI Ranking scores for specific job posts */
+  rankings?: Record<string, CandidateRanking>;
+}
+
+export interface CandidateRanking {
+  score: number;
+  reasoning: string;
+  updatedAt: any;
 }
 
 export interface ParsedResumeData {

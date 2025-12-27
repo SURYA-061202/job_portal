@@ -13,8 +13,11 @@ import StatsTab from '@/components/tabs/StatsTab';
 import NotificationsTab from '@/components/tabs/NotificationsTab';
 import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
 import AddMembersTab from '@/components/tabs/AddMembersTab';
+import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
@@ -90,6 +93,10 @@ export default function Dashboard() {
         return <NotificationsTab />;
       case 'add-members':
         return <AddMembersTab />;
+      case 'pipeline':
+        return <RecruitmentPipelineTab />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       default:
         return <JobPostsTab onViewCandidates={handleViewCandidates} />;
     }

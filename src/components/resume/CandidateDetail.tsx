@@ -1,7 +1,7 @@
 'use client';
 
 import type { Candidate } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Send } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Send, Edit2 } from 'lucide-react';
 import { useState } from 'react';
 import InterviewInviteModal from './InterviewInviteModal';
 import { deleteDoc, doc } from 'firebase/firestore';
@@ -11,11 +11,12 @@ import { supabase } from '@/lib/supabase';
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
+  onEdit?: (candidate: Candidate) => void;
   onInviteSent?: () => void;
   onRemoveCandidate?: () => void;
 }
 
-export default function CandidateDetail({ candidate, onBack, onInviteSent, onRemoveCandidate }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSent, onRemoveCandidate }: CandidateDetailProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -114,14 +115,25 @@ export default function CandidateDetail({ candidate, onBack, onInviteSent, onRem
                 })()}
               </div>
             </div>
-            <a
-              href={candidate.resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors text-sm font-medium"
-            >
-              View Resume
-            </a>
+            <div className="flex items-center gap-3">
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(candidate)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Profile
+                </button>
+              )}
+              <a
+                href={candidate.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors text-sm font-medium"
+              >
+                View Resume
+              </a>
+            </div>
           </div>
         </div>
 
@@ -274,4 +286,4 @@ export default function CandidateDetail({ candidate, onBack, onInviteSent, onRem
       </div>
     </div>
   );
-} 
+}

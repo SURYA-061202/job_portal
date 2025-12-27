@@ -1,4 +1,4 @@
-import emailjs from '@emailjs/browser';
+// import emailjs from '@emailjs/browser';
 
 // Initialize with your Public Key
 // NOTE: For a real app, you should protect these or use a backend proxy.
@@ -16,7 +16,7 @@ export const sendMemberInvitation = async (toEmail: string, name: string, passwo
         // BUT the user asked to "Use node mailer or proper approach".
         // Use EmailJS is the "proper approach" for frontend-only.
 
-        console.log(`[EmailJS] Sending email to ${toEmail} with password ${password}`);
+        console.log(`[EmailJS] Sending email to ${toEmail} for ${name} with password ${password}`);
 
         // This is how it WOULD work:
         /*
