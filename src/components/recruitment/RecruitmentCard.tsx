@@ -52,11 +52,11 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                         <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
-                        <span className="truncate font-semibold text-gray-900">{recruitment.budgetPay}</span>
+                        <span className="truncate">{recruitment.budgetPay}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                         <GraduationCap className="w-4 h-4 mr-2 text-purple-500" />
-                        <span className="truncate font-medium">{recruitment.qualification}</span>
+                        <span className="truncate">{recruitment.qualification}</span>
                     </div>
                 </div>
 

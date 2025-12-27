@@ -15,7 +15,7 @@ interface Props {
   className?: string;
 }
 
-export default function NotificationBell({ className = '' }: Props) {
+export default function NotificationBell({ className = '', simpleMode = false }: Props & { simpleMode?: boolean }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -30,13 +30,14 @@ export default function NotificationBell({ className = '' }: Props) {
         list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
       });
       // sort by createdAt desc client-side
-      list.sort((a,b)=> (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setNotifications(list);
     });
     return () => unsub();
   }, []);
 
-  const handleToggle = async () => {
+  const handleToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent parent click
     setOpen((prev) => !prev);
     // If opening, mark unread as viewed
     if (!open) {
@@ -51,6 +52,19 @@ export default function NotificationBell({ className = '' }: Props) {
       }
     }
   };
+
+  if (simpleMode) {
+    return (
+      <div className={`relative flex items-center justify-center ${className}`}>
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 flex items-center justify-center" style={{ minWidth: '16px', height: '16px' }}>
+            {unreadCount}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

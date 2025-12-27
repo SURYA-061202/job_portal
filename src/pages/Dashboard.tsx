@@ -4,17 +4,21 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import Sidebar from '@/components/layout/Sidebar';
-import ResumesTab from '@/components/tabs/ResumesTab';
+import JobPostsTab from '@/components/tabs/JobPostsTab';
+import UploadResumesTab from '@/components/tabs/UploadResumesTab';
+import CandidatesTab from '@/components/tabs/CandidatesTab';
 import InterviewsTab from '@/components/tabs/InterviewsTab';
-import CandidatesTab from '@/components/tabs/SelectedCandidatesTab';
+import SelectedCandidatesTab from '@/components/tabs/SelectedCandidatesTab';
 import StatsTab from '@/components/tabs/StatsTab';
 import NotificationsTab from '@/components/tabs/NotificationsTab';
 import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
+import AddMembersTab from '@/components/tabs/AddMembersTab';
 
-export type TabType = 'resumes' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<TabType>('resumes');
+  const [activeTab, setActiveTab] = useState<TabType>('job-posts');
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -53,6 +57,11 @@ export default function Dashboard() {
     }
   };
 
+  const handleViewCandidates = (postId: string) => {
+    setSelectedPostId(postId);
+    setActiveTab('candidates');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -63,20 +72,26 @@ export default function Dashboard() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'resumes':
-        return <ResumesTab />;
+      case 'job-posts':
+        return <JobPostsTab onViewCandidates={handleViewCandidates} />;
+      case 'upload-resumes':
+        return <UploadResumesTab />;
+      case 'candidates':
+        return <CandidatesTab postId={selectedPostId} onClearFilter={() => setSelectedPostId(null)} />;
       case 'shortlisted':
         return <ShortlistedTab />;
       case 'interviews':
         return <InterviewsTab />;
       case 'selected':
-        return <CandidatesTab />;
+        return <SelectedCandidatesTab />;
       case 'stats':
         return <StatsTab />;
       case 'notifications':
         return <NotificationsTab />;
+      case 'add-members':
+        return <AddMembersTab />;
       default:
-        return <ResumesTab />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} />;
     }
   };
 

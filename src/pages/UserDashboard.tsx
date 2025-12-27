@@ -170,11 +170,18 @@ export default function UserDashboard() {
     const searchLower = searchTerm.toLowerCase();
 
     // Filter posts
-    const filteredPosts = posts.filter(post =>
-        post.jobTitle.toLowerCase().includes(searchLower) ||
-        post.department.toLowerCase().includes(searchLower) ||
-        post.skills.toLowerCase().includes(searchLower)
-    );
+    // Filter posts: Match search AND exclude applied posts
+    const filteredPosts = posts.filter(post => {
+        const matchesSearch =
+            post.jobTitle.toLowerCase().includes(searchLower) ||
+            post.department.toLowerCase().includes(searchLower) ||
+            post.skills.toLowerCase().includes(searchLower);
+
+        // Exclude if this post ID exists in the user's applications
+        const isApplied = applications.some(app => app.post_id === post.id);
+
+        return matchesSearch && !isApplied;
+    });
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
