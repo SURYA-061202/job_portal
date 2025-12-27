@@ -107,7 +107,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
       toast.success("Candidate rejected");
       onStatusUpdated?.();
       onBack();
-    } catch (err:any) {
+    } catch (err: any) {
       console.error(err);
       toast.error("Failed to reject");
     }
@@ -187,12 +187,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 <td className="px-4 py-3">
                   {editCurSal ? (
                     <input type="number" value={currentSalary}
-                      onChange={e=>setCurrentSalary(parseInt(e.target.value)||0)}
-                      onBlur={()=>setEditCurSal(false)}
+                      onChange={e => setCurrentSalary(parseInt(e.target.value) || 0)}
+                      onBlur={() => setEditCurSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   ) : (
-                    <span className="cursor-pointer" onClick={()=>setEditCurSal(true)}>
+                    <span className="cursor-pointer" onClick={() => setEditCurSal(true)}>
                       ₹ {currentSalary.toLocaleString()}
                     </span>
                   )}
@@ -203,12 +203,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 <td className="px-4 py-3">
                   {editExpSal ? (
                     <input type="number" value={expectedSalary}
-                      onChange={e=>setExpectedSalary(parseInt(e.target.value)||0)}
-                      onBlur={()=>setEditExpSal(false)}
+                      onChange={e => setExpectedSalary(parseInt(e.target.value) || 0)}
+                      onBlur={() => setEditExpSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   ) : (
-                    <span className="cursor-pointer" onClick={()=>setEditExpSal(true)}>
+                    <span className="cursor-pointer" onClick={() => setEditExpSal(true)}>
                       ₹ {expectedSalary.toLocaleString()}
                     </span>
                   )}
@@ -219,12 +219,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 <td className="px-4 py-3">
                   {editJoinDate ? (
                     <input type="date" value={joiningDate}
-                      onChange={e=>setJoiningDate(e.target.value)}
-                      onBlur={()=>setEditJoinDate(false)}
+                      onChange={e => setJoiningDate(e.target.value)}
+                      onBlur={() => setEditJoinDate(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   ) : (
-                    <span className="cursor-pointer" onClick={()=>setEditJoinDate(true)}>{joiningDate}</span>
+                    <span className="cursor-pointer" onClick={() => setEditJoinDate(true)}>{joiningDate}</span>
                   )}
                 </td>
               </tr>
@@ -245,12 +245,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 <td className="px-4 py-3">
                   {editFeedback ? (
                     <input type="text" value={feedback}
-                      onChange={e=>setFeedback(e.target.value)}
-                      onBlur={()=>setEditFeedback(false)}
+                      onChange={e => setFeedback(e.target.value)}
+                      onBlur={() => setEditFeedback(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+                      className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   ) : (
-                    <span className="cursor-pointer" onClick={()=>setEditFeedback(true)}>{feedback}</span>
+                    <span className="cursor-pointer" onClick={() => setEditFeedback(true)}>{feedback}</span>
                   )}
                 </td>
               </tr>
@@ -265,7 +265,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
               onClick={moveToNextRound}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 shadow"
             >
-              {nextRound === 'selected' ? 'Select' : `Move to ${nextRound.replace(/^./, c=>c.toUpperCase())}`}
+              {nextRound === 'selected' ? 'Select' : `Move to ${nextRound.replace(/^./, c => c.toUpperCase())}`}
               <ChevronRight className="h-4 w-4" />
             </button>
           )}

@@ -1,5 +1,10 @@
 import type { Candidate } from '@/types';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Trash2, Loader2 } from 'lucide-react';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
+import toast from 'react-hot-toast';
 
 // Helper to convert to Title Case
 function toTitleCase(str?: string) {
@@ -17,9 +22,49 @@ interface CandidateListProps {
   searchTerm?: string;
   onSearchTermChange?: (term: string) => void;
   emptyMessage?: string;
+  isRemoveMode?: boolean;
+  onRefresh?: () => void;
 }
 
-export default function CandidateList({ candidates, onSelectCandidate, loading, searchTerm = '', onSearchTermChange, emptyMessage }: CandidateListProps) {
+export default function CandidateList({
+  candidates,
+  onSelectCandidate,
+  loading,
+  searchTerm = '',
+  onSearchTermChange,
+  emptyMessage,
+  isRemoveMode = false,
+  onRefresh
+}: CandidateListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleRemove = async (e: React.MouseEvent, candidate: Candidate) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to remove ${candidate.name}?`)) return;
+
+    setDeletingId(candidate.id);
+    try {
+      // 1. Delete from Firestore
+      await deleteDoc(doc(db, 'candidates', candidate.id));
+
+      // 2. Delete resume from Supabase if exists
+      if (candidate.resumeUrl) {
+        const url = candidate.resumeUrl;
+        const fileName = url.split('/').pop()?.split('?')[0];
+        if (fileName) {
+          await supabase.storage.from('resumes').remove([fileName]);
+        }
+      }
+
+      toast.success('Candidate removed successfully');
+      onRefresh?.();
+    } catch (error: any) {
+      console.error('Error removing candidate:', error);
+      toast.error('Failed to remove candidate');
+    } finally {
+      setDeletingId(null);
+    }
+  };
   // Helper to decide if a candidate matches the current search term
   const candidateMatchesSearch = (candidate: Candidate, term: string) => {
     if (!term) return true;
@@ -109,6 +154,7 @@ export default function CandidateList({ candidates, onSelectCandidate, loading, 
               <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+              {isRemoveMode && <th scope="col" className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Action</th>}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -119,6 +165,22 @@ export default function CandidateList({ candidates, onSelectCandidate, loading, 
                 <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{toTitleCase(candidate.role)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{candidate.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-left text-gray-500">{candidate.phone}</td>
+                {isRemoveMode && (
+                  <td className="px-6 py-4 whitespace-nowrap text-left">
+                    <button
+                      onClick={(e) => handleRemove(e, candidate)}
+                      disabled={deletingId === candidate.id}
+                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                      title="Remove Profile"
+                    >
+                      {deletingId === candidate.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-5 h-5" />
+                      )}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

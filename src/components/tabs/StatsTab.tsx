@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import type { Candidate } from '@/types';
+import { COLORS } from '@/constants/colors';
 
 // Helpers ------------------------------------------------------------
 
@@ -93,8 +94,8 @@ function toTitleCase(str?: string) {
 }
 
 // Chart colours
-const MATCH_COLOR = '#0ea5e9';
-const REMAIN_COLOR = '#d1d5db';
+const MATCH_COLOR = COLORS.primary[500];
+const REMAIN_COLOR = COLORS.secondary.gray[300];
 
 // Donut chart (with total in centre) -----------------------------------
 

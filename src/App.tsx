@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import InterviewResponsePage from './pages/InterviewResponsePage';
 import VerifyDetailsPage from './pages/VerifyDetailsPage';
+import UserDashboard from './pages/UserDashboard';
+import UserProfile from './components/user/UserProfile';
 
 function App() {
   return (
@@ -12,6 +14,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/jobs" element={<UserDashboard />} />
+        <Route path="/my-applications" element={<UserDashboard />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route path="/interview" element={<InterviewResponsePage />} />
         <Route path="/verify-details" element={<VerifyDetailsPage />} />
       </Routes>

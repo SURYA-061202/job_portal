@@ -213,7 +213,7 @@ export default function CandidateDetail({ candidate, onBack, onInviteSent, onRem
                   Projects
                 </h3>
                 <div className="space-y-4">
-                  {( (candidate as any).projects ?? (candidate as any).extractedData?.projects ).map((proj: any, index: number) => (
+                  {((candidate as any).projects ?? (candidate as any).extractedData?.projects).map((proj: any, index: number) => (
                     <div key={index} className="border-l-4 border-primary-200 pl-4">
                       {(proj.name || proj.title) && (
                         <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>

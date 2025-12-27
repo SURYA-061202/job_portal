@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import Sidebar from '@/components/layout/Sidebar';
 import ResumesTab from '@/components/tabs/ResumesTab';
 import InterviewsTab from '@/components/tabs/InterviewsTab';
@@ -18,10 +19,25 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (usr) => {
+    const unsubscribe = onAuthStateChanged(auth, async (usr) => {
       if (!usr) {
         navigate('/');
+        return;
       }
+
+      // Check role
+      try {
+        const userDoc = await getDoc(doc(db, 'users', usr.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role !== 'manager' && userData.role !== 'recruiter') {
+            navigate('/jobs', { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking role in Dashboard:', error);
+      }
+
       setLoading(false);
     });
 

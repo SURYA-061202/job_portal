@@ -171,7 +171,7 @@ export default function CandidatesTab() {
   if (selected) {
     const status = (selected as any).status || '';
     if (status === 'selected') {
-    return <SelectedCandidateDetail candidate={selected} onBack={() => setSelected(null)} />;
+      return <SelectedCandidateDetail candidate={selected} onBack={() => setSelected(null)} />;
     }
     if (status.endsWith('rejected')) {
       return <RejectedCandidateDetail candidate={selected} onBack={() => setSelected(null)} />;

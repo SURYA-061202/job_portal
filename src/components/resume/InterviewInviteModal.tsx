@@ -30,7 +30,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
   const handleDateChange = (idx: number, value: string) => {
     setDates((prev) => prev.map((d, i) => (i === idx ? value : d)));
   };
- 
+
   const handleSend = async () => {
     if (!role || dates.some((d) => !d) || !roundType || interviewers.length === 0) {
       toast.error('Please fill all fields');

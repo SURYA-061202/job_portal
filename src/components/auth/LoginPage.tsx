@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -25,12 +25,27 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Fetch user data to check role
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === 'manager' || userData.role === 'recruiter') {
+            navigate('/dashboard');
+          } else {
+            navigate('/jobs');
+          }
+        } else {
+          // If no doc exists, default to user view
+          navigate('/jobs');
+        }
         toast.success('Login successful!');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        
+
         // Store user data in Firestore
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
@@ -38,13 +53,13 @@ export default function LoginPage() {
           firstName,
           lastName,
           mobile,
-          role: 'recruiter',
+          role: 'user',
           createdAt: new Date(),
         });
-        
+
         toast.success('Registration successful!');
+        navigate('/jobs');
       }
-      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -178,10 +193,10 @@ export default function LoginPage() {
             <p className="text-center text-sm">
               {isLogin ? (
                 <>Don&apos;t have an account?{' '}
-                <button type="button" onClick={() => setIsLogin(false)} className="text-primary-600 hover:underline">Sign up</button></>
+                  <button type="button" onClick={() => setIsLogin(false)} className="text-primary-600 hover:underline">Sign up</button></>
               ) : (
                 <>Already have an account?{' '}
-                <button type="button" onClick={() => setIsLogin(true)} className="text-primary-600 hover:underline">Sign in</button></>
+                  <button type="button" onClick={() => setIsLogin(true)} className="text-primary-600 hover:underline">Sign in</button></>
               )}
             </p>
           </form>

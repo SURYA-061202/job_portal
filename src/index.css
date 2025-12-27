@@ -7,12 +7,9 @@ body {
   margin: 0;
   font-family: system-ui, sans-serif;
   color: rgb(var(--foreground-rgb, 0 0 0));
-  background: linear-gradient(
-      to bottom,
+  background: linear-gradient(to bottom,
       transparent,
-      rgb(var(--background-end-rgb, 255 255 255))
-    )
-    rgb(var(--background-start-rgb, 255 255 255));
+      rgb(var(--background-end-rgb, 255 255 255))) rgb(var(--background-start-rgb, 255 255 255));
 }
 
 /* --- Custom colour variables originally from globals.css --- */
@@ -35,5 +32,16 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-orange-gradient {
+    background: linear-gradient(to bottom right, #de923b, #e73c11, #df5f04);
+  }
+
+  .text-orange-gradient {
+    background: linear-gradient(to right, #de923b, #e73c11, #df5f04);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }

@@ -127,5 +127,26 @@ export interface CandidateData {
   projects?: Project[];
 }
 
+export interface RecruitmentRequest {
+  id?: string;
+  jobTitle: string;
+  urgencyLevel: 'Immediate' | 'Moderate' | 'Flexible';
+  department: string;
+  candidateType: 'Permanent' | 'Contract' | 'Internship' | 'Part Time';
+  positionLevel: 'Entry' | 'Junior' | 'Mid' | 'Senior' | 'Manager';
+  yearsExperience: string;
+  location: 'Office' | 'Hybrid' | 'Remote';
+  candidatesCount: number;
+  qualification: string;
+  skills: string;
+  description?: string;
+  jdUrl?: string;
+  budgetPay: string;
+  salaryBreakup: string;
+  requestedBy: 'Dinesh' | 'Naresh';
+  createdAt: any;
+  applicantCount?: number;
+}
+
 // Ensure this file is treated as a module
-export {}; 
+export { }; 
