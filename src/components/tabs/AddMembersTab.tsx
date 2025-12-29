@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Search, Mail, Phone } from 'lucide-react';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db, firebaseConfig } from '@/lib/firebase';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface UserData {
@@ -50,25 +53,23 @@ export default function AddMembersTab() {
 
     const sendWelcomeEmail = async (email: string, name: string, password: string) => {
         try {
-            // Using the same mailto approach as InterviewInviteModal
-            const subject = encodeURIComponent('Welcome to Indian Infra Recruitment Portal');
-            const body = encodeURIComponent(
-                `Dear ${name},\n\n` +
-                `Welcome to the Indian Infra Recruitment Portal!\n\n` +
-                `You have been added as a Manager to our recruitment team.\n\n` +
-                `Your login credentials:\n` +
-                `Email: ${email}\n` +
-                `Temporary Password: ${password}\n\n` +
-                `Please login and change your password immediately.\n\n` +
-                `Best regards,\n` +
-                `Indian Infra Recruitment Team`
-            );
+            const { data, error } = await supabase.functions.invoke('manager_invite', {
+                body: {
+                    email,
+                    name,
+                    password,
+                    baseUrl: window.location.origin,
+                },
+            });
 
-            window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+            if (error || !data?.success) {
+                console.error('Email send error:', error || data?.error);
+                return false;
+            }
             return true;
         } catch (error) {
-            console.error('Error preparing email:', error);
-            throw error;
+            console.error('Error sending email:', error);
+            return false;
         }
     };
 
@@ -80,7 +81,15 @@ export default function AddMembersTab() {
             // Generate a temporary password
             const tempPassword = Math.random().toString(36).slice(-8);
 
-            await addDoc(collection(db, 'users'), {
+            // Create user in Firebase Auth using a secondary app instance
+            // This prevents logging out the current admin user
+            const secondaryApp = initializeApp(firebaseConfig, `Secondary-${Date.now()}`);
+            const secondaryAuth = getAuth(secondaryApp);
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, formData.email, tempPassword);
+            const user = userCredential.user;
+
+            // Store user data in Firestore with matching UID
+            await setDoc(doc(db, 'users', user.uid), {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
@@ -90,10 +99,17 @@ export default function AddMembersTab() {
                 createdAt: new Date().toISOString()
             });
 
-            // Send welcome email
-            await sendWelcomeEmail(formData.email, formData.firstName, tempPassword);
+            // Sign out the temp user from secondary app to clean up
+            await signOut(secondaryAuth);
 
-            toast.success('Member added! Email client opened for invitation.');
+            // Send welcome email
+            const emailSent = await sendWelcomeEmail(formData.email, formData.firstName, tempPassword);
+
+            if (emailSent) {
+                toast.success('Member added and welcome email sent!');
+            } else {
+                toast.success('Member added, but failed to send welcome email automatically.');
+            }
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', mobile: '', department: '', password: '' });
             fetchMembers();
@@ -132,7 +148,7 @@ export default function AddMembersTab() {
                     className="bg-orange-gradient text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-orange-500/20 hover:opacity-90 transition-all flex items-center gap-2"
                 >
                     <UserPlus className="w-5 h-5" />
-                    Add Member
+                    Add Members
                 </button>
             </div>
 
