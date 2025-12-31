@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, MessageSquare, Trophy } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
@@ -23,8 +23,8 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
     { id: 'pipeline', label: 'Pipeline (Kanban)', icon: Trello },
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
-    { id: 'interviews', label: 'Interviews', icon: Users },
-    { id: 'selected', label: 'Selected Candidates', icon: CheckCircle },
+    { id: 'interviews', label: 'Interviews', icon: MessageSquare },
+    { id: 'selected', label: 'Selected Candidates', icon: Trophy },
     { id: 'stats', label: 'Stats', icon: BarChart },
   ];
 
@@ -52,22 +52,6 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
       </div>
 
       <nav className="flex-1 overflow-y-auto custom-scrollbar">
-        <style jsx global>{`
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: linear-gradient(to bottom, #d97706, #ea580c);
-            border-radius: 3px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(to bottom, #b45309, #c2410c);
-          }
-        `}</style>
-
         {/* Job Posts Section */}
         <div className="px-3 pt-6 mb-6">
           <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">

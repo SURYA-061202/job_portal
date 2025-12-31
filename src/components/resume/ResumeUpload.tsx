@@ -35,18 +35,17 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6 w-full h-full flex flex-col">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Resume</h3>
-      
+
+
       <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
         <div className="flex-1 flex flex-col">
-          
+
           <div
             {...getRootProps()}
-            className={`flex-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${
-              isDragActive
+            className={`flex-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${isDragActive
                 ? 'border-primary-500 bg-primary-50'
                 : 'border-gray-300 hover:border-primary-400'
-            }`}
+              }`}
           >
             <input {...getInputProps()} />
             {loading ? (

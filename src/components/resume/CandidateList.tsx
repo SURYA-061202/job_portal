@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
 import { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, Briefcase, User, Edit2 } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
@@ -109,6 +109,7 @@ export default function CandidateList({
     if (candidate.name) tokens.push(candidate.name);
     if (candidate.role) tokens.push(candidate.role);
     if (candidate.experience) tokens.push(candidate.experience);
+    if (candidate.email) tokens.push(candidate.email);
 
     // Treat "place" as company/institution names in work experience & education
     (candidate.extractedData?.workExperience || []).forEach((we: any) => {
@@ -197,7 +198,7 @@ export default function CandidateList({
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Info</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Experience</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -217,7 +218,7 @@ export default function CandidateList({
                     className="group hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer"
                     onClick={() => onSelectCandidate(candidate)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-bold shadow-sm">
@@ -229,7 +230,6 @@ export default function CandidateList({
                             {toTitleCase(candidate.name)}
                           </div>
                           <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Briefcase className="w-3 h-3" />
                             {toTitleCase(candidate.role) || 'No Role'}
                           </div>
                         </div>
@@ -266,31 +266,20 @@ export default function CandidateList({
                         <span className="text-gray-400 text-xs">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {onEdit && (
-                          <button
-                            onClick={(e) => handleEdit(e, candidate)}
-                            className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-                            title="Edit Details"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {(isRemoveMode || onEdit) && ( // Allow delete if edit is offered or remove mode is on
-                          <button
-                            onClick={(e) => handleRemove(e, candidate)}
-                            disabled={deletingId === candidate.id}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Remove Candidate"
-                          >
-                            {deletingId === candidate.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-red-600" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="flex items-center justify-center gap-2 transition-opacity">
+                        <button
+                          onClick={(e) => handleRemove(e, candidate)}
+                          disabled={deletingId === candidate.id}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Remove Candidate"
+                        >
+                          {deletingId === candidate.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>

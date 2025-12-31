@@ -8,6 +8,7 @@ import VerifyDetailsPage from './pages/VerifyDetailsPage';
 import UserDashboard from './pages/UserDashboard';
 import UserProfile from './components/user/UserProfile';
 
+
 function App() {
   return (
     <BrowserRouter>

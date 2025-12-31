@@ -49,4 +49,26 @@ body {
   .bg-navy-gradient {
     background: linear-gradient(to bottom right, #0f172a, #1e293b, #334155);
   }
+
+  .hover-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 }

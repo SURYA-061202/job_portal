@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabase';
 import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
 import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
+import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import { Search, Loader2, History } from 'lucide-react';
 import toast from 'react-hot-toast';
-import RecruitmentDetailsModal from '@/components/recruitment/RecruitmentDetailsModal';
 
 export default function UserDashboard() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
@@ -17,8 +17,8 @@ export default function UserDashboard() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'jobs' | 'applications'>('jobs');
-    const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
+    const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -29,6 +29,8 @@ export default function UserDashboard() {
             setActiveTab('applications');
         } else {
             setActiveTab('jobs');
+            // If we are just visiting /jobs, ensure we are not locked in a view?
+            // Actually, if we support deep linking, we'd check ID here. But for now, no.
         }
     }, [location.pathname]);
 
@@ -183,6 +185,20 @@ export default function UserDashboard() {
         return matchesSearch && !isApplied;
     });
 
+    if (selectedJob) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+                <UserHeader />
+                <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 h-full">
+                    <RecruitmentDetailView
+                        recruitment={selectedJob}
+                        onBack={() => setSelectedJob(null)}
+                    />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
@@ -277,22 +293,6 @@ export default function UserDashboard() {
                             ))}
                         </div>
                     )
-                )}
-
-                {selectedJob && (
-                    <RecruitmentDetailsModal
-                        recruitment={selectedJob}
-                        onClose={() => setSelectedJob(null)}
-                        onApplied={() => {
-                            setSelectedJob(null);
-                            setActiveTab('applications');
-                            fetchApplications();
-                        }}
-                        onDelete={() => {
-                            fetchPosts();
-                            setSelectedJob(null);
-                        }}
-                    />
                 )}
             </main>
 

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Mail, Phone, User, Eye, EyeOff, Briefcase, TrendingUp, Users, Award } from 'lucide-react';
+import { Mail, Phone, User, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -65,6 +65,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error('No account found with this email');
+      } else {
+        toast.error(error.message || 'Failed to send reset email');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-primary-50">
       {/* Background Pattern */}
@@ -75,94 +97,49 @@ export default function LoginPage() {
       </div>
 
       {/* Left Panel - Hero Image with Overlay */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/95 to-primary-800/95 z-10"></div>
-        <img
-          src="/images/hero-bg.png"
-          alt="Professionals collaborating"
-          className="absolute inset-0 w-full h-full object-cover"
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <style>
+          {`
+            @keyframes subtle-zoom {
+              0% { transform: scale(1); }
+              100% { transform: scale(1.1); }
+            }
+          `}
+        </style>
+        {/* Reduced overlay opacity for clearer image */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 to-black/60 z-10"></div>
+        <div
+          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url("/images/custom-panel-interview.png")', // Custom generated panel interview background
+            animation: 'subtle-zoom 20s infinite alternate ease-in-out'
+          }}
         />
 
         {/* Content Overlay */}
-        <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full">
+        <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full h-full text-center">
           {/* Logo/Brand */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">
-              Indian Infra <span className="text-orange-300">Jobs</span>
-            </h1>
-            <p className="text-primary-100 text-sm">Your Gateway to Infrastructure Careers</p>
-          </div>
-
-          {/* Main Content */}
-          <div className="space-y-8">
-            {isLogin ? (
-              <>
-                <div className="space-y-4">
-                  <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                    Welcome Back to Your Career Journey
-                  </h2>
-                  <p className="text-lg text-primary-100 max-w-md">
-                    Continue building your future in Indian Infra sector. Your next opportunity awaits.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                    Start Your Career Journey Today
-                  </h2>
-                  <p className="text-lg text-primary-100 max-w-md">
-                    Join thousands of professionals building India's infrastructure future.
-                  </p>
-                </div>
-              </>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-6 max-w-md">
-              <div className="backdrop-blur-sm bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-orange-400/20 rounded-lg">
-                    <Briefcase className="w-5 h-5 text-orange-300" />
-                  </div>
-                  <p className="text-2xl font-bold">1000+</p>
-                </div>
-                <p className="text-sm text-primary-100">Active Jobs</p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-orange-400/20 rounded-lg">
-                    <Users className="w-5 h-5 text-orange-300" />
-                  </div>
-                  <p className="text-2xl font-bold">5000+</p>
-                </div>
-                <p className="text-sm text-primary-100">Professionals</p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-orange-400/20 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-orange-300" />
-                  </div>
-                  <p className="text-2xl font-bold">95%</p>
-                </div>
-                <p className="text-sm text-primary-100">Success Rate</p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-orange-400/20 rounded-lg">
-                    <Award className="w-5 h-5 text-orange-300" />
-                  </div>
-                  <p className="text-2xl font-bold">500+</p>
-                </div>
-                <p className="text-sm text-primary-100">Companies</p>
-              </div>
+          <div className="flex flex-col items-center space-y-4 pt-20">
+            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
+              <img
+                src="/images/indianinfra.png"
+                alt="Indian Infra Logo"
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-4xl font-extrabold tracking-tight">
+                Indian Infra <span className="text-orange-500">Jobs</span>
+              </h1>
+              <p className="text-primary-100 text-lg font-medium tracking-wide">Your Gateway to Infrastructure Careers</p>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="text-primary-100 text-sm">
-            © 2025 Indian Infra Jobs. All rights reserved.
+          {/* Main Content */}
+          <div className="flex flex-col items-center justify-center px-4 pb-50">
+            <h2 className="text-3xl md:text-4xl font-bold leading-snug text-white drop-shadow-lg max-w-2xl">
+              Continue building your future in Indian Infra
+            </h2>
           </div>
         </div>
       </div>
@@ -189,7 +166,7 @@ export default function LoginPage() {
                 )}
               </h2>
               <p className="text-gray-500">
-                {isLogin ? 'Sign in to continue your journey' : 'Create your account to get started'}
+                {isLogin ? 'Sign in to continue' : 'Create your account to get started'}
               </p>
             </div>
 
@@ -272,7 +249,11 @@ export default function LoginPage() {
 
               {isLogin && (
                 <div className="flex justify-end">
-                  <button type="button" className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
+                  >
                     Forgot Password?
                   </button>
                 </div>
@@ -304,7 +285,7 @@ export default function LoginPage() {
                       onClick={() => setIsLogin(false)}
                       className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
                     >
-                      Sign up for free
+                      Sign up
                     </button>
                   </>
                 ) : (

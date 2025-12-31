@@ -20,9 +20,10 @@ interface RecruitmentCardProps {
     recruitment: RecruitmentRequest;
     onViewDetails?: (recruitment: RecruitmentRequest) => void;
     applicantCount?: number;
+    hideExtraDetails?: boolean;
 }
 
-export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount }: RecruitmentCardProps) {
+export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount, hideExtraDetails }: RecruitmentCardProps) {
     const urgencyColors = {
         'Immediate': 'bg-red-50 text-red-700 border-red-100',
         'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
@@ -59,6 +60,10 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                         <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
                             {recruitment.jobTitle}
                         </h3>
+                        {/* Hide Department if hideExtraDetails is true? User said hiding Location and Budget specifically, but Department is usually fine.
+                            Wait, user said "dont show the Location and Budget".
+                            I'll keep Department as it's part of the header usually.
+                         */}
                         <p className="text-sm text-gray-500 font-medium mt-1 flex items-center">
                             <Briefcase className="w-3.5 h-3.5 mr-1" />
                             {recruitment.department}
@@ -67,7 +72,7 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                 </div>
 
                 {/* Key Metrics Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className={`grid ${hideExtraDetails ? 'grid-cols-2' : 'grid-cols-2'} gap-3 mb-6`}>
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Experience</span>
                         <div className="flex items-center text-sm font-bold text-gray-700">
@@ -75,20 +80,27 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                             {recruitment.yearsExperience}
                         </div>
                     </div>
-                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Budget</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <Banknote className="w-3.5 h-3.5 mr-1.5 text-green-500" />
-                            {recruitment.budgetPay}
+
+                    {!hideExtraDetails && (
+                        <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Budget</span>
+                            <div className="flex items-center text-sm font-bold text-gray-700">
+                                <Banknote className="w-3.5 h-3.5 mr-1.5 text-green-500" />
+                                {recruitment.budgetPay}
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
-                            {recruitment.location}
+                    )}
+
+                    {!hideExtraDetails && (
+                        <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
+                            <div className="flex items-center text-sm font-bold text-gray-700">
+                                <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                                {recruitment.location}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Hiring</span>
                         <div className="flex items-center text-sm font-bold text-gray-700">
