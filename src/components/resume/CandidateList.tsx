@@ -1,5 +1,5 @@
 import type { Candidate } from '@/types';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trash2, Loader2, Search, Mail, Phone, User } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -43,7 +43,6 @@ interface CandidateListProps {
   searchTerm?: string;
   onSearchTermChange?: (term: string) => void;
   emptyMessage?: string;
-  isRemoveMode?: boolean;
   onRefresh?: () => void;
   onEdit?: (candidate: Candidate) => void;
 }
@@ -55,9 +54,7 @@ export default function CandidateList({
   searchTerm = '',
   onSearchTermChange,
   emptyMessage,
-  isRemoveMode = false,
   onRefresh,
-  onEdit,
   hideHeader = false
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -90,12 +87,7 @@ export default function CandidateList({
     }
   };
 
-  const handleEdit = (e: React.MouseEvent, candidate: Candidate) => {
-    e.stopPropagation();
-    if (onEdit) {
-      onEdit(candidate);
-    }
-  };
+
 
   // Helper to decide if a candidate matches the current search term
   const candidateMatchesSearch = (candidate: Candidate, term: string) => {
