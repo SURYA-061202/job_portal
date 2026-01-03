@@ -141,8 +141,49 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={handleLogout} />
-      <main className="flex-1 overflow-auto flex flex-col">
-        <div className="p-6 flex-1 flex flex-col">{renderTabContent()}</div>
+      <main className="flex-1 overflow-auto thin-scrollbar flex flex-col relative">
+        {/* Gradient Background with Dotted Patterns */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Soft gradient overlay - top to bottom */}
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'linear-gradient(135deg, rgba(249, 250, 251, 0.5) 0%, rgba(229, 231, 235, 0.3) 50%, rgba(249, 250, 251, 0.5) 100%)',
+            }}
+          />
+
+          {/* Dotted halftone pattern - top right */}
+          <div
+            className="absolute top-0 right-0 w-80 h-80 opacity-50"
+            style={{
+              backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
+              backgroundSize: '10px 10px',
+              maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
+            }}
+          />
+
+          {/* Dotted halftone pattern - bottom left */}
+          <div
+            className="absolute bottom-0 left-0 w-80 h-80 opacity-50"
+            style={{
+              backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
+              backgroundSize: '10px 10px',
+              maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
+            }}
+          />
+
+          {/* Subtle wave accent */}
+          <div
+            className="absolute top-1/4 left-0 w-full h-64 opacity-20"
+            style={{
+              background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(229, 231, 235, 0.6) 0%, transparent 70%)',
+            }}
+          />
+        </div>
+
+        <div className="p-6 flex-1 flex flex-col relative z-10">{renderTabContent()}</div>
       </main>
     </div>
   );

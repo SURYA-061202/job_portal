@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Users, Calendar, Clock, Banknote, Target } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Clock } from 'lucide-react';
 // import { formatDistanceToNow } from 'date-fns'; // Removed dependency
 
 // Simple helper for time ago
@@ -23,7 +23,7 @@ interface RecruitmentCardProps {
     hideExtraDetails?: boolean;
 }
 
-export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount, hideExtraDetails }: RecruitmentCardProps) {
+export default function RecruitmentCard({ recruitment, onViewDetails }: RecruitmentCardProps) {
     const urgencyColors = {
         'Immediate': 'bg-red-50 text-red-700 border-red-100',
         'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
@@ -72,7 +72,7 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                 </div>
 
                 {/* Key Metrics Grid */}
-                <div className={`grid ${hideExtraDetails ? 'grid-cols-2' : 'grid-cols-2'} gap-3 mb-6`}>
+                <div className="grid grid-cols-2 gap-3 mb-6">
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Experience</span>
                         <div className="flex items-center text-sm font-bold text-gray-700">
@@ -81,31 +81,11 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                         </div>
                     </div>
 
-                    {!hideExtraDetails && (
-                        <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Budget</span>
-                            <div className="flex items-center text-sm font-bold text-gray-700">
-                                <Banknote className="w-3.5 h-3.5 mr-1.5 text-green-500" />
-                                {recruitment.budgetPay}
-                            </div>
-                        </div>
-                    )}
-
-                    {!hideExtraDetails && (
-                        <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
-                            <div className="flex items-center text-sm font-bold text-gray-700">
-                                <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
-                                {recruitment.location}
-                            </div>
-                        </div>
-                    )}
-
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Hiring</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
                         <div className="flex items-center text-sm font-bold text-gray-700">
-                            <Target className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                            {recruitment.candidatesCount} Positions
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                            {recruitment.location}
                         </div>
                     </div>
                 </div>
@@ -127,13 +107,6 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                     <div className="flex items-center text-xs font-medium text-gray-400">
                         <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {timeAgo(recruitment.createdAt)}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="flex items-center text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
-                            <Users className="w-3 h-3 mr-1" />
-                            {applicantCount ?? 0} Applicants
-                        </span>
                     </div>
                 </div>
             </div>

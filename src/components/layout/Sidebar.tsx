@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, MessageSquare, Trophy } from 'lucide-react';
+import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, MessageSquare, Award } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
@@ -24,7 +24,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: MessageSquare },
-    { id: 'selected', label: 'Selected Candidates', icon: Trophy },
+    { id: 'selected', label: 'Selected Candidates', icon: Award },
     { id: 'stats', label: 'Stats', icon: BarChart },
   ];
 
@@ -37,21 +37,21 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   return (
     <div className="w-64 bg-white shadow-lg flex flex-col h-full border-r border-gray-200">
       {/* Header with Logo and Branding */}
-      <div className="p-6 bg-gradient-to-br from-primary-50 to-orange-50 border-b border-primary-100 flex-shrink-0">
+      <div className="p-6 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
         <div className="flex items-center gap-3 mb-2">
           <img
             src="/images/indianinfra.png"
             alt="Indian Infra Logo"
             className="w-10 h-10 object-contain"
           />
-          <h1 className="text-xl font-bold text-gray-800 leading-tight">
+          <h1 className="text-xl font-bold text-white leading-tight">
             Indian Infra <br />
-            <span className="text-primary-600">Jobs</span>
+            <span className="text-white">Jobs</span>
           </h1>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-br from-primary-50 to-orange-50">
         {/* Job Posts Section */}
         <div className="px-3 pt-6 mb-6">
           <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
@@ -66,19 +66,21 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
-                  ? 'bg-gradient-to-r from-primary-100 to-orange-50 text-primary-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+                  ? 'bg-white shadow-md border border-orange-200'
+                  : 'text-gray-700 hover:bg-white/50'
                   }`}
               >
-                <Icon className="mr-3 h-5 w-5" />
-                {tab.label}
+                <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
+                <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
         </div>
 
         <div className="px-3 mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
+          <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 pt-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
             Screenings
           </h2>
           {screeningTabs.map((tab) => {
@@ -90,12 +92,14 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
-                  ? 'bg-gradient-to-r from-primary-100 to-orange-50 text-primary-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+                  ? 'bg-white shadow-md border border-orange-200'
+                  : 'text-gray-700 hover:bg-white/50'
                   }`}
               >
-                <Icon className="mr-3 h-5 w-5" />
-                {tab.label}
+                <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
+                <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
@@ -103,7 +107,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
       </nav>
 
       {/* Account Section - Fixed at Bottom */}
-      <div className="px-3 py-4 border-t border-gray-200 bg-gray-50/50">
+      <div className="px-3 py-4 border-t border-orange-200 bg-gradient-to-br from-primary-50 to-orange-50 flex-shrink-0">
         <button
           onClick={() => setIsAccountOpen(!isAccountOpen)}
           className="w-full flex items-center justify-between group px-3 mb-2"
@@ -121,12 +125,14 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
           <button
             onClick={() => onTabChange('profile')}
             className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${activeTab === 'profile'
-              ? 'bg-gradient-to-r from-primary-100 to-orange-50 text-primary-700 shadow-sm'
-              : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+              ? 'bg-white shadow-md border border-orange-200'
+              : 'text-gray-700 hover:bg-white/50'
               }`}
           >
-            <User className="mr-3 h-5 w-5" />
-            Profile
+            <User className={`mr-3 h-5 w-5 ${activeTab === 'profile' ? 'text-orange-600' : ''}`} />
+            <span className={activeTab === 'profile' ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+              Profile
+            </span>
           </button>
 
           {/* Collapsible Content */}
@@ -140,14 +146,16 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                   key={tab.id}
                   onClick={() => onTabChange(tab.id as any)}
                   className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
-                    ? 'bg-gradient-to-r from-primary-100 to-orange-50 text-primary-700 shadow-sm'
-                    : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+                    ? 'bg-white shadow-md border border-orange-200'
+                    : 'text-gray-700 hover:bg-white/50'
                     }`}
                 >
                   <div className="w-5 h-5 mr-3 flex items-center justify-center">
-                    {'isCustomIcon' in tab ? <Icon simpleMode={true} /> : <Icon className="w-full h-full" />}
+                    {'isCustomIcon' in tab ? <Icon simpleMode={true} className={isActive ? 'text-orange-600' : ''} /> : <Icon className={`w-full h-full ${isActive ? 'text-orange-600' : ''}`} />}
                   </div>
-                  {tab.label}
+                  <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                    {tab.label}
+                  </span>
                 </button>
               );
             })}

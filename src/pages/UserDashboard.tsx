@@ -189,7 +189,7 @@ export default function UserDashboard() {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
                 <UserHeader />
-                <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 h-full">
+                <div className="flex-1 w-full px-6 lg:px-12 py-8 h-full">
                     <RecruitmentDetailView
                         recruitment={selectedJob}
                         onBack={() => setSelectedJob(null)}
@@ -203,11 +203,51 @@ export default function UserDashboard() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
 
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 w-full px-6 lg:px-12 py-8 relative overflow-hidden">
+                {/* Gradient Background with Dotted Patterns */}
+                <div className="absolute inset-0 pointer-events-none">
+                    {/* Soft gradient overlay - top to bottom */}
+                    <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(249, 250, 251, 0.5) 0%, rgba(229, 231, 235, 0.3) 50%, rgba(249, 250, 251, 0.5) 100%)',
+                        }}
+                    />
+
+                    {/* Dotted halftone pattern - top right */}
+                    <div
+                        className="absolute top-0 right-0 w-80 h-80 opacity-50"
+                        style={{
+                            backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
+                            backgroundSize: '10px 10px',
+                            maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
+                            WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
+                        }}
+                    />
+
+                    {/* Dotted halftone pattern - bottom left */}
+                    <div
+                        className="absolute bottom-0 left-0 w-80 h-80 opacity-50"
+                        style={{
+                            backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
+                            backgroundSize: '10px 10px',
+                            maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
+                            WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
+                        }}
+                    />
+
+                    {/* Subtle wave accent */}
+                    <div
+                        className="absolute top-1/4 left-0 w-full h-64 opacity-20"
+                        style={{
+                            background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(229, 231, 235, 0.6) 0%, transparent 70%)',
+                        }}
+                    />
+                </div>
 
                 {/* Search Bar - Centered Version */}
-                <div className="flex justify-center mb-10">
-                    <div className="relative w-full max-w-xl">
+                <div className="flex justify-center mb-10 relative z-10">
+                    <div className="relative w-full max-w-2xl">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
@@ -294,14 +334,33 @@ export default function UserDashboard() {
                         </div>
                     )
                 )}
-            </main>
 
-            {/* Simple Footer */}
-            <footer className="bg-white border-t border-gray-200 py-8">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <p className="text-gray-500 text-sm">© 2025 Job Portal. All rights reserved.</p>
+                {/* Scrolling Text Banner - Inside Main Section */}
+                <div className="flex justify-center py-2 mt-30 relative z-10">
+                    <div className="bg-gray-200 rounded-lg py-2 px-8 overflow-hidden max-w-4xl">
+                        <div className="animate-scroll whitespace-nowrap">
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                ✨ Complete your profile: Add Skills • Projects • Certificates • Experience
+                            </span>
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                💼 Boost your chances: Update Resume • Portfolio • Achievements
+                            </span>
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                🚀 Get noticed faster: Add Skills • Projects • Professional Summary
+                            </span>
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                ⭐ Stand out: Complete Skills • Projects • Certifications
+                            </span>
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                ✨ Complete your profile: Add Skills • Projects • Certificates • Experience
+                            </span>
+                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                                💼 Boost your chances: Update Resume • Portfolio • Achievements
+                            </span>
+                        </div>
+                    </div>
                 </div>
-            </footer>
+            </main>
         </div>
     );
 }

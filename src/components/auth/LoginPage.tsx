@@ -145,8 +145,55 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-10">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
+        {/* Clean Light Background */}
+        <div className="absolute inset-0 bg-white"></div>
+
+        {/* Geometric Shapes with Dotted Patterns - Orange Theme */}
+
+        {/* Large Rotated Square - Top Left */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rotate-45 opacity-40">
+          <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200/60 rounded-3xl"></div>
+          <div className="absolute inset-0 opacity-50" style={{
+            backgroundImage: `radial-gradient(circle, #fb923c 1.5px, transparent 1.5px)`,
+            backgroundSize: '12px 12px'
+          }}></div>
+        </div>
+
+        {/* Medium Rotated Square - Top Right */}
+        <div className="absolute top-12 right-16 w-64 h-64 rotate-45 opacity-35">
+          <div className="w-full h-full bg-gradient-to-br from-orange-200/70 to-orange-100/50 rounded-2xl"></div>
+          <div className="absolute inset-0 opacity-60" style={{
+            backgroundImage: `radial-gradient(circle, #fb923c 1.5px, transparent 1.5px)`,
+            backgroundSize: '12px 12px'
+          }}></div>
+        </div>
+
+        {/* Large Dotted Pattern Square - Bottom Right */}
+        <div className="absolute bottom-8 right-8 w-72 h-72 rotate-12 opacity-30">
+          <div className="absolute inset-0 opacity-70" style={{
+            backgroundImage: `radial-gradient(circle, #fb923c 2px, transparent 2px)`,
+            backgroundSize: '14px 14px'
+          }}></div>
+        </div>
+
+        {/* Small Accent Square - Middle */}
+        <div className="absolute top-1/3 right-1/3 w-48 h-48 rotate-[30deg] opacity-25">
+          <div className="w-full h-full bg-gradient-to-br from-orange-100/80 to-orange-200/40 rounded-xl"></div>
+        </div>
+
+        {/* Subtle Dotted Overlay - Top Right Corner */}
+        <div className="absolute top-0 right-0 w-96 h-96 opacity-20">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle, #fb923c 1px, transparent 1px)`,
+            backgroundSize: '16px 16px'
+          }}></div>
+        </div>
+
+        {/* Very Subtle Gradient for Depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/20 via-transparent to-orange-50/10"></div>
+
+        <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900">

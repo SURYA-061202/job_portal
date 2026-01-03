@@ -88,8 +88,9 @@ export default function AnalyticsDashboard() {
             counts[loc] = (counts[loc] || 0) + 1;
         });
 
-        // Sort and take top 5
+        // Sort, filter out Unknown/Other, and take top 7
         return Object.entries(counts)
+            .filter(([name]) => name !== 'Unknown' && name !== 'Other')
             .sort((a, b) => b[1] - a[1])
             .slice(0, 7)
             .map(([name, value]) => ({ name, value }));
@@ -127,8 +128,16 @@ export default function AnalyticsDashboard() {
     }
 
     return (
-        <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-            <h2 className="text-2xl font-bold text-gray-800">Candidate Analytics</h2>
+        <div className="space-y-6 flex-1 flex flex-col">
+            {/* Header Section */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-bold text-gray-900">Candidate Analytics</h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+                        {totalCandidates}
+                    </span>
+                </div>
+            </div>
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -224,22 +233,19 @@ export default function AnalyticsDashboard() {
                 </div>
             </div>
 
-            {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 3. Location Distribution */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-2">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-6">Candidates by Location (Top 7)</h3>
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={locationData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: '#f3f4f6' }} />
-                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+            {/* Candidates by Location - Full Width */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-6">Candidates by Location (Top 7)</h3>
+                <div className="h-80 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={locationData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                            <XAxis type="number" hide />
+                            <YAxis dataKey="name" type="category" width={120} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: '#f3f4f6' }} />
+                            <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={30} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
         </div>
