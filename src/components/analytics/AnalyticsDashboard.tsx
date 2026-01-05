@@ -88,12 +88,15 @@ export default function AnalyticsDashboard() {
             counts[loc] = (counts[loc] || 0) + 1;
         });
 
-        // Sort, filter out Unknown/Other, and take top 7
+        // Convert Unknown to "Un Specified" and sort
         return Object.entries(counts)
-            .filter(([name]) => name !== 'Unknown' && name !== 'Other')
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 7)
-            .map(([name, value]) => ({ name, value }));
+            .map(([name, value]) => ({
+                name: name === 'Unknown' ? 'Un Specified' : name,
+                value
+            }))
+            .filter(item => item.name !== 'Other')
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 7);
     }, [candidates]);
 
     // 5. AI Match Score Distribution

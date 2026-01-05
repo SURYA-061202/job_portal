@@ -99,7 +99,7 @@ export default function NotificationsPage() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
 
-            <main className="flex-1 w-full px-6 lg:px-12 py-8">
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8">
                 {/* Page Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
@@ -127,7 +127,7 @@ export default function NotificationsPage() {
                             <div
                                 key={notification.id}
                                 onClick={() => !notification.read && markAsRead(notification.id)}
-                                className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-primary-500' : ''
+                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-primary-500' : ''
                                     }`}
                             >
                                 <div className="flex items-start gap-4">

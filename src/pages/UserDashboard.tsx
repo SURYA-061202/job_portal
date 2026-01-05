@@ -203,7 +203,7 @@ export default function UserDashboard() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
 
-            <main className="flex-1 w-full px-6 lg:px-12 py-8 relative overflow-hidden">
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 relative overflow-hidden">
                 {/* Gradient Background with Dotted Patterns */}
                 <div className="absolute inset-0 pointer-events-none">
                     {/* Soft gradient overlay - top to bottom */}
@@ -246,15 +246,15 @@ export default function UserDashboard() {
                 </div>
 
                 {/* Search Bar - Centered Version */}
-                <div className="flex justify-center mb-10 relative z-10">
+                <div className="flex justify-center mb-6 sm:mb-10 relative z-10 px-2 sm:px-0">
                     <div className="relative w-full max-w-2xl">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search by job title, department, or skills..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none text-gray-700 shadow-sm"
+                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none text-sm sm:text-base text-gray-700 shadow-sm"
                         />
                     </div>
                 </div>
@@ -276,7 +276,7 @@ export default function UserDashboard() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {filteredPosts.map((post) => (
                                 <RecruitmentCard
                                     key={post.id}
@@ -304,7 +304,7 @@ export default function UserDashboard() {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {applications.map((app) => (
                                 <RecruitmentCard
                                     key={app.id}
@@ -336,25 +336,25 @@ export default function UserDashboard() {
                 )}
 
                 {/* Scrolling Text Banner - Inside Main Section */}
-                <div className="flex justify-center py-2 mt-30 relative z-10">
-                    <div className="bg-gray-200 rounded-lg py-2 px-8 overflow-hidden max-w-4xl">
+                <div className="flex justify-center py-2 mt-20 sm:mt-30 relative z-10">
+                    <div className="bg-gray-200 rounded-lg py-1.5 sm:py-2 px-4 sm:px-8 overflow-hidden max-w-4xl">
                         <div className="animate-scroll whitespace-nowrap">
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 ✨ Complete your profile: Add Skills • Projects • Certificates • Experience
                             </span>
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 💼 Boost your chances: Update Resume • Portfolio • Achievements
                             </span>
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 🚀 Get noticed faster: Add Skills • Projects • Professional Summary
                             </span>
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 ⭐ Stand out: Complete Skills • Projects • Certifications
                             </span>
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 ✨ Complete your profile: Add Skills • Projects • Certificates • Experience
                             </span>
-                            <span className="inline-block text-gray-800 text-sm font-medium px-8">
+                            <span className="inline-block text-gray-800 text-xs sm:text-sm font-medium px-4 sm:px-8">
                                 💼 Boost your chances: Update Resume • Portfolio • Achievements
                             </span>
                         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, MessageSquare, Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
@@ -38,37 +38,54 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   return (
     <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white shadow-lg flex flex-col h-full max-h-screen border-r border-gray-200 transition-all duration-300 ease-in-out relative overflow-hidden`}>
       {/* Header with Logo and Branding */}
-      <div className="p-6 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0 relative">
+      <div className="p-6 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
         {!isCollapsed && (
-          <div className="flex items-center gap-3 mb-2 -ml-1">
-            <img
-              src="/images/indianinfra.png"
-              alt="Indian Infra Logo"
-              className="w-10 h-10 object-contain"
-            />
-            <h1 className="text-xl font-bold text-white leading-tight whitespace-nowrap">
-              Indian Infra Jobs
-            </h1>
-          </div>
+          <>
+            <div className="flex items-center gap-3 mb-3 -ml-1">
+              <img
+                src="/images/indianinfra.png"
+                alt="Indian Infra Logo"
+                className="w-10 h-10 object-contain"
+              />
+              <h1 className="text-xl font-bold text-white leading-tight whitespace-nowrap">
+                Indian Infra Jobs
+              </h1>
+            </div>
+
+            {/* Toggle Button - Separate Row */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-white transition-all duration-300 hover:scale-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] active:scale-95 animate-pulse"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronsLeft className="w-5 h-5" />
+              </button>
+            </div>
+          </>
         )}
         {isCollapsed && (
-          <div className="flex items-center justify-center mb-2">
-            <img
-              src="/images/indianinfra.png"
-              alt="Indian Infra Logo"
-              className="w-10 h-10 object-contain"
-            />
-          </div>
-        )}
+          <>
+            <div className="flex items-center justify-center mb-3">
+              <img
+                src="/images/indianinfra.png"
+                alt="Indian Infra Logo"
+                className="w-10 h-10 object-contain"
+              />
+            </div>
 
-        {/* Toggle Button */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white text-orange-600 rounded-full p-1.5 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border-2 border-orange-200 z-10"
-          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+            {/* Toggle Button - Separate Row */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-white transition-all duration-300 hover:scale-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] active:scale-95 animate-pulse"
+                aria-label="Expand sidebar"
+              >
+                <ChevronsRight className="w-5 h-5" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-gradient-to-br from-primary-50 to-orange-50 pb-4">

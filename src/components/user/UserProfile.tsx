@@ -154,27 +154,27 @@ export default function UserProfile() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
 
-            <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
+            <main className="flex-1 max-w-4xl mx-auto w-full px-3 sm:px-4 py-6 sm:py-8">
 
 
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
                     {/* Top Orange Gradient Line */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-orange-gradient z-20"></div>
 
-                    <div className="bg-white px-8 py-12 relative overflow-hidden border-b border-gray-200">
-                        <div className="flex items-center gap-6 relative z-10">
-                            <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center border-4 border-white shadow-xl">
-                                <User className="w-12 h-12 text-orange-500" />
+                    <div className="bg-white px-6 sm:px-8 py-8 sm:py-12 relative overflow-hidden border-b border-gray-200">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative z-10">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-orange-50 flex items-center justify-center border-4 border-white shadow-xl">
+                                <User className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500" />
                             </div>
-                            <div>
-                                <h1 className="text-3xl font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
-                                <p className="text-gray-500 font-medium">{formData.email}</p>
+                            <div className="text-center sm:text-left">
+                                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium">{formData.email}</p>
                             </div>
                         </div>
                     </div>
 
-                    <form onSubmit={handleUpdate} className="p-8 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form onSubmit={handleUpdate} className="p-6 sm:p-8 space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
                                 <div className="relative">
@@ -263,13 +263,13 @@ export default function UserProfile() {
 
                 {/* More Details Modal - Refined & Sleek */}
                 {showMoreModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
                             {/* Modal Header */}
-                            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
                                 <div>
-                                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Professional Details</h2>
-                                    <p className="text-sm text-gray-500">Enhance your profile for better job matching</p>
+                                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Professional Details</h2>
+                                    <p className="text-xs sm:text-sm text-gray-500">Enhance your profile for better job matching</p>
                                 </div>
                                 <button
                                     onClick={() => setShowMoreModal(false)}
@@ -279,14 +279,14 @@ export default function UserProfile() {
                                 </button>
                             </div>
 
-                            <div className="p-8 overflow-y-auto custom-scrollbar space-y-8 bg-gray-50/30">
+                            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar space-y-6 sm:space-y-8 bg-gray-50/30">
                                 {/* Career Info Section */}
                                 <section className="space-y-4">
                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                         <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
                                         Career Overview
                                     </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold text-gray-700 ml-1">Experience (Years)</label>
                                             <div className="relative">
@@ -451,7 +451,7 @@ export default function UserProfile() {
                                 </section>
                             </div>
 
-                            <div className="px-8 py-6 bg-white border-t border-gray-100 flex justify-end shrink-0">
+                            <div className="px-4 sm:px-8 py-4 sm:py-6 bg-white border-t border-gray-100 flex justify-end shrink-0">
                                 <button
                                     onClick={async () => {
                                         await handleUpdate({ preventDefault: () => { } } as any);

@@ -134,11 +134,14 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         {/* Title and Count */}
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-bold text-gray-900">Job Posts</h2>
-                            <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
-                                {recruitmentRequests.length}
-                            </span>
+                        <div>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h2 className="text-xl font-bold text-gray-900">Job Posts</h2>
+                                <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+                                    {recruitmentRequests.length}
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-500">Manage and track all recruitment requests and job postings</p>
                         </div>
 
                         {/* Search and Button Controls */}

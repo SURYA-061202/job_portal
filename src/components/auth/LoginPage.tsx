@@ -107,12 +107,13 @@ export default function LoginPage() {
           `}
         </style>
         {/* Reduced overlay opacity for clearer image */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 to-black/60 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 to-black/60 z-5"></div>
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 w-full h-full bg-no-repeat"
           style={{
-            backgroundImage: 'url("/images/custom-panel-interview.png")', // Custom generated panel interview background
-            animation: 'subtle-zoom 20s infinite alternate ease-in-out'
+            backgroundImage: 'url("/images/job1.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
           }}
         />
 
@@ -120,7 +121,7 @@ export default function LoginPage() {
         <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full h-full text-center">
           {/* Logo/Brand */}
           <div className="flex flex-col items-center space-y-4 pt-20">
-            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
+            <div className="p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
               <img
                 src="/images/indianinfra.png"
                 alt="Indian Infra Logo"
@@ -145,53 +146,20 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-        {/* Clean Light Background */}
-        <div className="absolute inset-0 bg-white"></div>
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden bg-gray-50/50">
+        {/* Rich Glow & Pattern Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
-        {/* Geometric Shapes with Dotted Patterns - Orange Theme */}
 
-        {/* Large Rotated Square - Top Left */}
-        <div className="absolute -top-20 -left-20 w-80 h-80 rotate-45 opacity-40">
-          <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200/60 rounded-3xl"></div>
-          <div className="absolute inset-0 opacity-50" style={{
-            backgroundImage: `radial-gradient(circle, #fb923c 1.5px, transparent 1.5px)`,
-            backgroundSize: '12px 12px'
-          }}></div>
+          {/* Top Right Vibrant Glow (Orange/Pink) */}
+          <div className="absolute -top-[30%] -right-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-br from-orange-400/30 to-pink-500/30 blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
+          
+          {/* Bottom Left Vibrant Glow (Blue/Primary) */}
+          <div className="absolute -bottom-[30%] -left-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-tr from-blue-400/30 to-primary-500/30 blur-3xl opacity-70"></div>
+          
+          {/* Middle Floating Accent */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-gradient-to-r from-orange-100/40 to-primary-100/40 blur-3xl opacity-50"></div>
         </div>
-
-        {/* Medium Rotated Square - Top Right */}
-        <div className="absolute top-12 right-16 w-64 h-64 rotate-45 opacity-35">
-          <div className="w-full h-full bg-gradient-to-br from-orange-200/70 to-orange-100/50 rounded-2xl"></div>
-          <div className="absolute inset-0 opacity-60" style={{
-            backgroundImage: `radial-gradient(circle, #fb923c 1.5px, transparent 1.5px)`,
-            backgroundSize: '12px 12px'
-          }}></div>
-        </div>
-
-        {/* Large Dotted Pattern Square - Bottom Right */}
-        <div className="absolute bottom-8 right-8 w-72 h-72 rotate-12 opacity-30">
-          <div className="absolute inset-0 opacity-70" style={{
-            backgroundImage: `radial-gradient(circle, #fb923c 2px, transparent 2px)`,
-            backgroundSize: '14px 14px'
-          }}></div>
-        </div>
-
-        {/* Small Accent Square - Middle */}
-        <div className="absolute top-1/3 right-1/3 w-48 h-48 rotate-[30deg] opacity-25">
-          <div className="w-full h-full bg-gradient-to-br from-orange-100/80 to-orange-200/40 rounded-xl"></div>
-        </div>
-
-        {/* Subtle Dotted Overlay - Top Right Corner */}
-        <div className="absolute top-0 right-0 w-96 h-96 opacity-20">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle, #fb923c 1px, transparent 1px)`,
-            backgroundSize: '16px 16px'
-          }}></div>
-        </div>
-
-        {/* Very Subtle Gradient for Depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/20 via-transparent to-orange-50/10"></div>
 
         <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo */}
@@ -203,16 +171,16 @@ export default function LoginPage() {
           </div>
 
           {/* Form Card */}
-          <div className="backdrop-blur-xl bg-white/80 rounded-3xl shadow-2xl border border-gray-100 p-8 sm:p-10">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="backdrop-blur-xl bg-white/95 rounded-3xl shadow-lg border border-gray-100 p-8 sm:p-10">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1.5 tracking-tight">
                 {isLogin ? (
                   <>Welcome <span className="bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">Back</span></>
                 ) : (
                   <>Join <span className="bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">Us</span></>
                 )}
               </h2>
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-sm font-medium">
                 {isLogin ? 'Sign in to continue' : 'Create your account to get started'}
               </p>
             </div>
@@ -224,25 +192,41 @@ export default function LoginPage() {
                   <div className="relative group">
                     <input
                       type="text"
-                      placeholder="First Name"
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 bg-white/50"
+                      id="firstName"
+                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      placeholder=" "
                       required
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                     />
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                    <label
+                      htmlFor="firstName"
+                      className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                               peer-focus:text-primary-600"
+                    >
+                      First Name
+                    </label>
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
                   </div>
                   {/* Last Name */}
                   <div className="relative group">
                     <input
                       type="text"
-                      placeholder="Last Name"
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 bg-white/50"
+                      id="lastName"
+                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      placeholder=" "
                       required
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                    <label
+                      htmlFor="lastName"
+                      className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                               peer-focus:text-primary-600"
+                    >
+                      Last Name
+                    </label>
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
                   </div>
                 </div>
               )}
@@ -252,13 +236,21 @@ export default function LoginPage() {
                 <div className="relative group">
                   <input
                     type="tel"
-                    placeholder="Mobile Number"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 bg-white/50"
+                    id="mobile"
+                    className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                    placeholder=" "
                     required
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                   />
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                  <label
+                    htmlFor="mobile"
+                    className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                             peer-focus:text-primary-600"
+                  >
+                    Mobile Number
+                  </label>
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
                 </div>
               )}
 
@@ -266,31 +258,47 @@ export default function LoginPage() {
               <div className="relative group">
                 <input
                   type="email"
-                  placeholder="Email Address"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 bg-white/50"
+                  id="email"
+                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  placeholder=" "
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                <label
+                  htmlFor="email"
+                  className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                           peer-focus:text-primary-600"
+                >
+                  Email Address
+                </label>
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
               </div>
 
               {/* Password */}
               <div className="relative group">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 bg-white/50"
+                  id="password"
+                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  placeholder=" "
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <label
+                  htmlFor="password"
+                  className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                           peer-focus:text-primary-600"
+                >
+                  Password
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-500 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
 
@@ -299,7 +307,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
+                    className="text-gray-500 hover:text-primary-600 text-sm font-medium transition-colors duration-200"
                   >
                     Forgot Password?
                   </button>
@@ -310,11 +318,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-primary-600 to-orange-500 text-white rounded-xl py-3.5 font-semibold text-lg shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full bg-gradient-to-r from-primary-600 to-orange-500 text-white rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     Processing...
                   </div>
                 ) : (
@@ -323,7 +331,7 @@ export default function LoginPage() {
               </button>
 
               {/* Toggle Auth Mode */}
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm text-gray-500 font-medium">
                 {isLogin ? (
                   <>
                     Don't have an account?{' '}
