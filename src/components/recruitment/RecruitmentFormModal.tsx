@@ -144,16 +144,16 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center z-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/30 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0 rounded-t-md">
                     <h2 className="text-xl font-bold text-gray-900 font-outfit">{initialData?.id ? 'Edit Recruitment Request' : 'Add Recruitment Request'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5 text-gray-500" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form id="recruitment-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Job Title */}
                         <div>
@@ -310,7 +310,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            rows={12}
+                            rows={6}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
                             placeholder="Paste the full job description here (Roles, Responsibilities, Requirements)..."
                         />
@@ -383,25 +383,27 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             </select>
                         </div>
                     </div>
-
-                    <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200 flex justify-end space-x-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                        >
-                            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            {initialData?.id ? 'Update Request' : 'Submit Request'}
-                        </button>
-                    </div>
                 </form>
+
+                {/* Button Container - Static at Bottom */}
+                <div className="bg-white px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 flex-shrink-0 rounded-b-md">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        form="recruitment-form"
+                        disabled={loading}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                    >
+                        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {initialData?.id ? 'Update Request' : 'Submit Request'}
+                    </button>
+                </div>
             </div>
         </div>
     );

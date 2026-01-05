@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { createInterviewInviteNotification } from '@/lib/notificationHelper';
 
 interface Props {
   candidate: Candidate;
@@ -70,6 +71,13 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
         });
       } catch (err) {
         console.error('Failed to update candidate after sending invite', err);
+      }
+
+      // Create notification for the candidate
+      try {
+        await createInterviewInviteNotification(candidate.email, role, dates, roundType);
+      } catch (err) {
+        console.error('Failed to create notification', err);
       }
 
       toast.success('Email sent successfully');

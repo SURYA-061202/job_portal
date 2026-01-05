@@ -6,6 +6,7 @@ import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
 export default function ShortlistedTab() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -56,7 +57,6 @@ export default function ShortlistedTab() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Shortlisted Candidates</h2>
       <CandidateList
         candidates={filtered}
         onSelectCandidate={setSelected}
@@ -64,6 +64,7 @@ export default function ShortlistedTab() {
         searchTerm={search}
         onSearchTermChange={setSearch}
         emptyMessage="No shortlisted candidates found."
+        title="Shortlisted Candidates"
       />
     </div>
   );
@@ -121,6 +122,13 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
         await updateDoc(interviewRef, { verifyMailSentAt: new Date() });
       } else {
         await setDoc(interviewRef, { verifyMailSentAt: new Date() });
+      }
+
+      // Create notification for the candidate
+      try {
+        await createVerifyDetailsNotification(candidate.email);
+      } catch (err) {
+        console.error('Failed to create notification', err);
       }
 
       toast.success("Verification email sent and status moved to round1");

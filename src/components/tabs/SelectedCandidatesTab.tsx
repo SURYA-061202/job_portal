@@ -6,6 +6,7 @@ import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { createCongratulationsNotification } from "@/lib/notificationHelper";
 
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
   const [sending, setSending] = useState(false);
@@ -69,6 +70,13 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
                       // also update in candidate's interviewDetails
                       await updateDoc(doc(db, 'candidates', candidate.id), { 'interviewDetails.successmail': true });
+
+                      // Create notification for the candidate
+                      try {
+                        await createCongratulationsNotification(candidate.email, candidate.role);
+                      } catch (err) {
+                        console.error('Failed to create notification', err);
+                      }
 
                       toast.success('Email sent successfully');
                       setSent(true);
@@ -180,17 +188,6 @@ export default function CandidatesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">Candidates</h2>
-        <select
-          value={view}
-          onChange={(e) => setView(e.target.value as any)}
-          className="border px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-48"
-        >
-          <option value="selected">Selected Candidates</option>
-          <option value="rejected">Rejected Candidates</option>
-        </select>
-      </div>
       <CandidateList
         candidates={filtered}
         onSelectCandidate={setSelected}
@@ -198,6 +195,13 @@ export default function CandidatesTab() {
         searchTerm={search}
         onSearchTermChange={setSearch}
         emptyMessage="No candidates found."
+        title="Candidates"
+        filterValue={view}
+        filterOptions={[
+          { value: 'selected', label: 'Selected Candidates' },
+          { value: 'rejected', label: 'Rejected Candidates' }
+        ]}
+        onFilterChange={(value) => setView(value as 'selected' | 'rejected')}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
-import { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, Briefcase, User, Edit2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Trash2, Loader2, Search, Mail, Phone, User } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
@@ -22,7 +22,7 @@ function formatExperience(exp?: string) {
 
   // If it already contains "year", return as is (truncated if too long)
   if (cleanExp.toLowerCase().includes('year')) {
-    return cleanExp.length > 30 ? `${cleanExp.substring(0, 30)}...` : cleanExp;
+    return cleanExp.length > 20 ? `${cleanExp.substring(0, 17)}...` : cleanExp;
   }
 
   // If it looks like a pure number (e.g. "2.5", "3"), append " Years"
@@ -31,7 +31,7 @@ function formatExperience(exp?: string) {
   }
 
   // Otherwise return as is, truncated
-  return cleanExp.length > 30 ? `${cleanExp.substring(0, 30)}...` : cleanExp;
+  return cleanExp.length > 20 ? `${cleanExp.substring(0, 17)}...` : cleanExp;
 }
 
 
@@ -43,9 +43,12 @@ interface CandidateListProps {
   searchTerm?: string;
   onSearchTermChange?: (term: string) => void;
   emptyMessage?: string;
-  isRemoveMode?: boolean;
   onRefresh?: () => void;
   onEdit?: (candidate: Candidate) => void;
+  title?: string;
+  filterValue?: string;
+  filterOptions?: { value: string; label: string }[];
+  onFilterChange?: (value: string) => void;
 }
 
 export default function CandidateList({
@@ -55,10 +58,12 @@ export default function CandidateList({
   searchTerm = '',
   onSearchTermChange,
   emptyMessage,
-  isRemoveMode = false,
   onRefresh,
-  onEdit,
-  hideHeader = false
+  hideHeader = false,
+  title,
+  filterValue,
+  filterOptions,
+  onFilterChange
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -90,12 +95,7 @@ export default function CandidateList({
     }
   };
 
-  const handleEdit = (e: React.MouseEvent, candidate: Candidate) => {
-    e.stopPropagation();
-    if (onEdit) {
-      onEdit(candidate);
-    }
-  };
+
 
   // Helper to decide if a candidate matches the current search term
   const candidateMatchesSearch = (candidate: Candidate, term: string) => {
@@ -109,6 +109,7 @@ export default function CandidateList({
     if (candidate.name) tokens.push(candidate.name);
     if (candidate.role) tokens.push(candidate.role);
     if (candidate.experience) tokens.push(candidate.experience);
+    if (candidate.email) tokens.push(candidate.email);
 
     // Treat "place" as company/institution names in work experience & education
     (candidate.extractedData?.workExperience || []).forEach((we: any) => {
@@ -163,41 +164,57 @@ export default function CandidateList({
 
   return (
     <div className="space-y-4">
-      {/* Header with Search */}
+      {/* Header with Search and Optional Filter */}
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            Candidates
+            {title || 'Candidates'}
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-100">
               {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
             </span>
           </h3>
 
-          <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            {filterOptions && onFilterChange && (
+              <select
+                value={filterValue}
+                onChange={(e) => onFilterChange(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-gray-50 w-40"
+              >
+                {filterOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <div className="relative w-full sm:w-72">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search candidates..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                value={searchTerm}
+                onChange={(e) => onSearchTermChange?.(e.target.value)}
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search candidates..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
-              value={searchTerm}
-              onChange={(e) => onSearchTermChange?.(e.target.value)}
-            />
           </div>
         </div>
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gray-50/50">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name / Role</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Info</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Experience</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Name / Role</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Contact Info</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Experience</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">AI Score</th>
+                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -217,7 +234,7 @@ export default function CandidateList({
                     className="group hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer"
                     onClick={() => onSelectCandidate(candidate)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-bold shadow-sm">
@@ -228,8 +245,7 @@ export default function CandidateList({
                           <div className="text-sm font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                             {toTitleCase(candidate.name)}
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Briefcase className="w-3 h-3" />
+                          <div className="text-xs text-gray-500 mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={toTitleCase(candidate.role) || 'No Role'}>
                             {toTitleCase(candidate.role) || 'No Role'}
                           </div>
                         </div>
@@ -266,31 +282,20 @@ export default function CandidateList({
                         <span className="text-gray-400 text-xs">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {onEdit && (
-                          <button
-                            onClick={(e) => handleEdit(e, candidate)}
-                            className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-                            title="Edit Details"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {(isRemoveMode || onEdit) && ( // Allow delete if edit is offered or remove mode is on
-                          <button
-                            onClick={(e) => handleRemove(e, candidate)}
-                            disabled={deletingId === candidate.id}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Remove Candidate"
-                          >
-                            {deletingId === candidate.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-red-600" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="flex items-center justify-center gap-2 transition-opacity">
+                        <button
+                          onClick={(e) => handleRemove(e, candidate)}
+                          disabled={deletingId === candidate.id}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Remove Candidate"
+                        >
+                          {deletingId === candidate.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>

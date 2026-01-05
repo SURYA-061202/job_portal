@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Search, Mail, Phone } from 'lucide-react';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db, firebaseConfig } from '@/lib/firebase';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { createManagerInviteNotification } from '@/lib/notificationHelper';
 
 interface UserData {
     id: string;
@@ -50,25 +54,23 @@ export default function AddMembersTab() {
 
     const sendWelcomeEmail = async (email: string, name: string, password: string) => {
         try {
-            // Using the same mailto approach as InterviewInviteModal
-            const subject = encodeURIComponent('Welcome to Indian Infra Recruitment Portal');
-            const body = encodeURIComponent(
-                `Dear ${name},\n\n` +
-                `Welcome to the Indian Infra Recruitment Portal!\n\n` +
-                `You have been added as a Manager to our recruitment team.\n\n` +
-                `Your login credentials:\n` +
-                `Email: ${email}\n` +
-                `Temporary Password: ${password}\n\n` +
-                `Please login and change your password immediately.\n\n` +
-                `Best regards,\n` +
-                `Indian Infra Recruitment Team`
-            );
+            const { data, error } = await supabase.functions.invoke('manager_invite', {
+                body: {
+                    email,
+                    name,
+                    password,
+                    baseUrl: window.location.origin,
+                },
+            });
 
-            window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+            if (error || !data?.success) {
+                console.error('Email send error:', error || data?.error);
+                return false;
+            }
             return true;
         } catch (error) {
-            console.error('Error preparing email:', error);
-            throw error;
+            console.error('Error sending email:', error);
+            return false;
         }
     };
 
@@ -80,7 +82,15 @@ export default function AddMembersTab() {
             // Generate a temporary password
             const tempPassword = Math.random().toString(36).slice(-8);
 
-            await addDoc(collection(db, 'users'), {
+            // Create user in Firebase Auth using a secondary app instance
+            // This prevents logging out the current admin user
+            const secondaryApp = initializeApp(firebaseConfig, `Secondary-${Date.now()}`);
+            const secondaryAuth = getAuth(secondaryApp);
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, formData.email, tempPassword);
+            const user = userCredential.user;
+
+            // Store user data in Firestore with matching UID
+            await setDoc(doc(db, 'users', user.uid), {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
@@ -90,10 +100,24 @@ export default function AddMembersTab() {
                 createdAt: new Date().toISOString()
             });
 
-            // Send welcome email
-            await sendWelcomeEmail(formData.email, formData.firstName, tempPassword);
+            // Sign out the temp user from secondary app to clean up
+            await signOut(secondaryAuth);
 
-            toast.success('Member added! Email client opened for invitation.');
+            // Send welcome email
+            const emailSent = await sendWelcomeEmail(formData.email, formData.firstName, tempPassword);
+
+            if (emailSent) {
+                // Create notification for the new manager
+                try {
+                    await createManagerInviteNotification(formData.email, formData.firstName);
+                } catch (err) {
+                    console.error('Failed to create notification', err);
+                }
+
+                toast.success('Member added and welcome email sent!');
+            } else {
+                toast.success('Member added, but failed to send welcome email automatically.');
+            }
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', mobile: '', department: '', password: '' });
             fetchMembers();
@@ -121,53 +145,68 @@ export default function AddMembersTab() {
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Team Members</h2>
-                    <p className="text-gray-600">Manage your recruitment team</p>
+        <div className="space-y-6 flex-1 flex flex-col">
+            {/* Header Section - Similar to Job Posts */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-bold text-gray-900">Team Members</h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+                        {members.length}
+                    </span>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-orange-gradient text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-orange-500/20 hover:opacity-90 transition-all flex items-center gap-2"
-                >
-                    <UserPlus className="w-5 h-5" />
-                    Add Member
-                </button>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    {/* Search Input */}
+                    <div className="relative flex-1 md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search members..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500 transition-all placeholder:text-gray-400"
+                        />
+                    </div>
+
+                    {/* Add Members Button */}
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-orange-gradient text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Add Members
+                    </button>
+                </div>
             </div>
 
-            <div className="mb-6 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                    type="text"
-                    placeholder="Search members..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                />
-            </div>
-
+            {/* Member Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredMembers.map(member => (
-                    <div key={member.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all group flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center text-primary-600 font-bold text-2xl mb-3 mx-auto">
-                            {member.firstName?.[0]}{member.lastName?.[0]}
+                    <div key={member.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-200 group">
+                        {/* Avatar and Badge */}
+                        <div className="flex flex-col items-center mb-4">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-orange-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-2xl mb-3 group-hover:scale-105 transition-transform duration-200">
+                                {member.firstName?.[0]}{member.lastName?.[0]}
+                            </div>
+                            <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1 rounded-full border border-green-200">
+                                MANAGER
+                            </span>
                         </div>
 
-                        <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mb-4">
-                            MANAGER
-                        </span>
+                        {/* Name and Department */}
+                        <div className="text-center mb-4">
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">{member.firstName} {member.lastName}</h3>
+                            <p className="text-sm text-gray-500">{member.department || 'No Department'}</p>
+                        </div>
 
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{member.firstName} {member.lastName}</h3>
-                        <p className="text-sm text-gray-500 mb-6">{member.department || 'No Department'}</p>
-
-                        <div className="w-full space-y-3">
-                            <div className="flex items-center justify-center text-sm text-gray-600 bg-gray-50 py-2 rounded-lg">
-                                <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                                <span className="truncate max-w-[180px]">{member.email}</span>
+                        {/* Contact Info */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg group-hover:bg-primary-50 transition-colors">
+                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0 mr-2" />
+                                <span className="truncate" title={member.email}>{member.email}</span>
                             </div>
-                            <div className="flex items-center justify-center text-sm text-gray-600 bg-gray-50 py-2 rounded-lg">
-                                <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                            <div className="flex items-center justify-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg group-hover:bg-primary-50 transition-colors">
+                                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0 mr-2" />
                                 <span>{member.mobile || 'N/A'}</span>
                             </div>
                         </div>

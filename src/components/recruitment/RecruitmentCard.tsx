@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Users, Calendar, Clock, Banknote, Target } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Clock } from 'lucide-react';
 // import { formatDistanceToNow } from 'date-fns'; // Removed dependency
 
 // Simple helper for time ago
@@ -20,6 +20,7 @@ interface RecruitmentCardProps {
     recruitment: RecruitmentRequest;
     onViewDetails?: (recruitment: RecruitmentRequest) => void;
     applicantCount?: number;
+    hideExtraDetails?: boolean;
 }
 
 export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount }: RecruitmentCardProps) {
@@ -46,7 +47,7 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 pr-2">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${urgencyColor}`}>
                                 {recruitment.urgencyLevel} Priority
                             </span>
@@ -59,6 +60,10 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                         <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
                             {recruitment.jobTitle}
                         </h3>
+                        {/* Hide Department if hideExtraDetails is true? User said hiding Location and Budget specifically, but Department is usually fine.
+                            Wait, user said "dont show the Location and Budget".
+                            I'll keep Department as it's part of the header usually.
+                         */}
                         <p className="text-sm text-gray-500 font-medium mt-1 flex items-center">
                             <Briefcase className="w-3.5 h-3.5 mr-1" />
                             {recruitment.department}
@@ -75,25 +80,12 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                             {recruitment.yearsExperience}
                         </div>
                     </div>
-                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Budget</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <Banknote className="w-3.5 h-3.5 mr-1.5 text-green-500" />
-                            {recruitment.budgetPay}
-                        </div>
-                    </div>
+
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
                         <div className="flex items-center text-sm font-bold text-gray-700">
                             <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                             {recruitment.location}
-                        </div>
-                    </div>
-                    <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Hiring</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <Target className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                            {recruitment.candidatesCount} Positions
                         </div>
                     </div>
                 </div>
@@ -116,13 +108,11 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                         <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {timeAgo(recruitment.createdAt)}
                     </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="flex items-center text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
-                            <Users className="w-3 h-3 mr-1" />
-                            {applicantCount ?? 0} Applicants
-                        </span>
-                    </div>
+                    {applicantCount !== undefined && (
+                        <div className="flex items-center text-xs font-bold text-orange-600">
+                            {applicantCount} Applicant{applicantCount !== 1 ? 's' : ''}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

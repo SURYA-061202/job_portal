@@ -69,23 +69,6 @@ export default function InterviewsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">Interview Candidates</h2>
-
-        {/* Filter chips */}
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as FilterStatus)}
-          className="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-40"
-        >
-          {FILTER_STATUSES.map((s) => (
-            <option key={s} value={s} className="capitalize">
-              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <CandidateList
         candidates={filtered}
         onSelectCandidate={setSelectedCandidate}
@@ -93,6 +76,13 @@ export default function InterviewsTab() {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         emptyMessage="No interview candidates found."
+        title="Interview Candidates"
+        filterValue={filter}
+        filterOptions={FILTER_STATUSES.map(s => ({
+          value: s,
+          label: s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)
+        }))}
+        onFilterChange={(value) => setFilter(value as FilterStatus)}
       />
     </div>
   );

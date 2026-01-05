@@ -76,7 +76,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 relative">
+      <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg p-6 relative">
         <button
           onClick={handleCancel}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -144,7 +144,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               <div className="flex flex-wrap gap-2 mb-2">
                 {skills.map((skill) => (
                   <span key={skill} className="inline-flex items-center bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full cursor-pointer hover:bg-primary-200"
-                        onClick={() => toggleSkill(skill)}>
+                    onClick={() => toggleSkill(skill)}>
                     {skill} <X className="ml-1 h-3 w-3" />
                   </span>
                 ))}
@@ -154,15 +154,15 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
             <div className="flex flex-wrap gap-2 mb-2">
               {suggestions.map((s) => (
                 <button type="button" key={s} onClick={() => toggleSkill(s)}
-                        className={`text-xs px-2 py-1 rounded border ${skills.includes(s) ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>{s}</button>
+                  className={`text-xs px-2 py-1 rounded border ${skills.includes(s) ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>{s}</button>
               ))}
             </div>
             {/* Manual input */}
             <div className="flex gap-2">
               <input type="text" value={skillInput} onChange={(e) => setSkillInput(e.target.value)}
-                     placeholder="Add custom skill" className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                placeholder="Add custom skill" className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               <button type="button" onClick={addSkillFromInput}
-                      className="px-3 py-2 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700">Add</button>
+                className="px-3 py-2 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700">Add</button>
             </div>
           </div>
         </div>

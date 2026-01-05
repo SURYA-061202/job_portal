@@ -14,7 +14,7 @@ import { ArrowLeft, Sparkles, X, Clock, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postId?: string | null; onClearFilter?: () => void }) {
+function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -62,6 +62,11 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postI
         if (postId) {
             setFilterPostId(postId);
             fetchApplicantsForPost(postId);
+        } else {
+            setFilterPostId(null);
+            setIsFilteringApplicants(false);
+            isFilteringRef.current = false;
+            fetchCandidates(true);
         }
     }, [postId]);
 
@@ -269,9 +274,18 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postI
                                 {/* Top Bar: Title & Search */}
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-3">
+                                        {(isFilteringApplicants || onBack) && (
+                                            <button
+                                                onClick={onBack}
+                                                className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                                                title="Back"
+                                            >
+                                                <ArrowLeft className="w-5 h-5" />
+                                            </button>
+                                        )}
                                         <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
                                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                            {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+                                            {isFilteringApplicants ? filteredCandidates.length : (searchTerm ? filteredCandidates.length : candidates.length)}
                                         </span>
                                     </div>
 
@@ -335,16 +349,16 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postI
                                                     key={c.id}
                                                     onClick={() => setActiveClusterId(activeClusterId === c.id ? null : c.id)}
                                                     className={`group relative inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200 ${activeClusterId === c.id
-                                                            ? 'bg-gray-900 text-white border-gray-900 shadow-md ring-1 ring-gray-900/10'
-                                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:text-gray-900'
+                                                        ? 'bg-gray-900 text-white border-gray-900 shadow-md ring-1 ring-gray-900/10'
+                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:text-gray-900'
                                                         }`}
                                                 >
                                                     <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeClusterId === c.id ? 'bg-indigo-400' : 'bg-gray-300 group-hover:bg-indigo-400'
                                                         }`} />
                                                     {c.label}
                                                     <span className={`ml-2 text-xs py-0.5 px-1.5 rounded-md transition-colors ${activeClusterId === c.id
-                                                            ? 'bg-white/20 text-white'
-                                                            : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                                                        ? 'bg-white/20 text-white'
+                                                        : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
                                                         }`}>
                                                         {c.candidateIds.length}
                                                     </span>
@@ -441,7 +455,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter }: { postI
     );
 }
 
-export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void }) {
+export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void }) {
     return (
         <ErrorBoundary>
             <CandidatesTabContent {...props} />

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import type { Candidate } from '@/types';
-import { COLORS } from '@/constants/colors';
+import { Search } from 'lucide-react';
 
 // Helpers ------------------------------------------------------------
 
@@ -93,30 +93,6 @@ function toTitleCase(str?: string) {
     .join(' ');
 }
 
-// Chart colours
-const MATCH_COLOR = COLORS.primary[500];
-const REMAIN_COLOR = COLORS.secondary.gray[300];
-
-// Donut chart (with total in centre) -----------------------------------
-
-function DonutChart({ percent }: { percent: number }) {
-  const bg = `conic-gradient(${MATCH_COLOR} 0% ${percent}%, ${REMAIN_COLOR} ${percent}% 100%)`;
-  return (
-    <div
-      className="relative w-40 h-40 flex items-center justify-center border border-gray-300 rounded-full"
-      style={{ background: bg }}
-    >
-      {/* inner hole */}
-      <div
-        className="absolute flex items-center justify-center bg-white text-lg font-bold text-gray-900 rounded-full"
-        style={{ width: '5.5rem', height: '5.5rem' }}
-      >
-        {percent}%
-      </div>
-    </div>
-  );
-}
-
 // Main component -------------------------------------------------------
 
 export default function StatsTab() {
@@ -170,76 +146,71 @@ export default function StatsTab() {
   }, [candidates, parsed]);
 
   const total = candidates.filter((c) => !isMonthsExperience(c.experience)).length;
-  const matchCount = filtered.length;
-  const percent = total ? Math.round((matchCount / total) * 100) : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Title row with total at right */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Stats</h2>
-        {!loading && (
-          <span className="text-sm font-semibold text-gray-700">Total Candidates: {total}</span>
-        )}
-      </div>
+    <div className="space-y-6 flex-1 flex flex-col">
+      {/* Header Section - Similar to Job Posts */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-gray-900">Stats</h2>
+          {!loading && (
+            <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+              {total}
+            </span>
+          )}
+        </div>
 
-      {/* Search input */}
-      <input
-        type="text"
-        placeholder="e.g. Candidates with experience more than three"
-        className="w-full md:w-96 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+        {/* Search Input */}
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="e.g. experience more than three"
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500 transition-all placeholder:text-gray-400"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
       {loading ? (
         <p>Loading…</p>
-      ) : !parsed ? (
-        <p className="border rounded-lg p-10 text-center text-gray-600">No Candidates</p>
       ) : (
-        <div className="border rounded-lg p-6 flex flex-col items-center gap-6">
-          {/* Donut chart & legend */}
-          <div className="flex flex-col items-center gap-4">
-            <DonutChart percent={percent} />
-
-            <div className="flex gap-4">
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
-                <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: MATCH_COLOR }}></span>
-                Matched ({matchCount})
-              </span>
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
-                <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: REMAIN_COLOR }}></span>
-                Remaining ({total - matchCount})
-              </span>
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="overflow-x-auto w-full mt-6">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 170px)' }}>
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Experience (yrs)</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">S.No</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Name</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Role</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Experience</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filtered.map((c) => (
-                  <tr key={c.id} className="hover:bg-primary-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-900">{toTitleCase(c.name)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{toTitleCase(c.role)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{getExperienceYears(c.experience)}</td>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {filtered.map((c, index) => (
+                  <tr key={c.id} className="group hover:bg-gray-50/80 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{index + 1}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">{toTitleCase(c.name)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{toTitleCase(c.role)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                        {getExperienceYears(c.experience)} Years
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {matchCount === 0 && (
-              <p className="p-6 text-center text-gray-600">No matching candidates.</p>
-            )}
           </div>
         </div>
       )}
     </div>
   );
-} 
+}
