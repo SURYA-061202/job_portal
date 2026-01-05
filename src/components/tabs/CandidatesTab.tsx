@@ -272,7 +272,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                             {/* Unified Header & Controls */}
                             <div className="mb-6 space-y-4">
                                 {/* Top Bar: Title & Search */}
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <div className="flex flex-col gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-3">
                                         {(isFilteringApplicants || onBack) && (
                                             <button
@@ -289,9 +289,9 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-3 flex-1 justify-end">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                                         {/* Search */}
-                                        <div className="relative w-full md:w-64 group">
+                                        <div className="relative flex-1 group">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <Search className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
                                             </div>
@@ -309,10 +309,11 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                             <button
                                                 onClick={handleRunClustering}
                                                 disabled={isClustering}
-                                                className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
+                                                className="flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70 whitespace-nowrap"
                                             >
                                                 {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                {isClustering ? 'Analyzing' : 'AI Group'}
+                                                <span className="hidden sm:inline">{isClustering ? 'Analyzing' : 'AI Group'}</span>
+                                                <span className="sm:hidden">{isClustering ? 'Analyzing' : 'AI Group'}</span>
                                             </button>
                                         )}
                                     </div>
@@ -366,18 +367,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                             ))}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="md:hidden">
-                                        <button
-                                            onClick={handleRunClustering}
-                                            disabled={isClustering}
-                                            className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
-                                        >
-                                            {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                            Run AI Grouping Analysis
-                                        </button>
-                                    </div>
-                                )}
+                                ) : null}
                             </div>
 
                             <CandidateList

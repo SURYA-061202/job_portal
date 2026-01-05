@@ -16,6 +16,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
     const [isRecruitmentModalOpen, setIsRecruitmentModalOpen] = useState(false);
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchRecruitmentRequests = async () => {
         try {
@@ -119,59 +120,75 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
         );
     }
 
+    // Filter recruitment requests based on search term
+    const filteredRecruitmentRequests = recruitmentRequests.filter(post =>
+        post.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.officeLocation?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <>
             <div className="space-y-6 flex-1 flex flex-col">
                 {/* Header Section */}
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        {/* Title and Count */}
                         <div className="flex items-center gap-3">
                             <h2 className="text-xl font-bold text-gray-900">Job Posts</h2>
                             <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
                                 {recruitmentRequests.length}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-500">Manage and track all recruitment requests</p>
-                    </div>
 
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <div className="relative flex-1 md:w-64">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search posts..."
-                                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500 transition-all placeholder:text-gray-400"
-                            />
+                        {/* Search and Button Controls */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
+                            <div className="relative flex-1 sm:w-64 md:w-72">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-4 w-4 text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search posts..."
+                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                onClick={() => setIsRecruitmentModalOpen(true)}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-gradient text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span className="hidden sm:inline">Add Recruitment</span>
+                                <span className="sm:hidden">Add Post</span>
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setIsRecruitmentModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-orange-gradient text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Recruitment
-                        </button>
                     </div>
                 </div>
-
                 {/* Posts Grid */}
                 <div className="flex-1">
                     {loadingPosts ? (
                         <div className="flex justify-center items-center h-64">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
                         </div>
-                    ) : recruitmentRequests.length === 0 ? (
+                    ) : filteredRecruitmentRequests.length === 0 ? (
                         <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
                             <p className="text-gray-500">No recruitment requests found.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {recruitmentRequests.map((post) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                            {filteredRecruitmentRequests.map((post) => (
                                 <RecruitmentCard
                                     key={post.id}
                                     recruitment={post}
                                     applicantCount={(post as any).applicantCount}
-                                    onViewDetails={(p) => setSelectedPost(p)}
-                                    hideExtraDetails={true}
+                                    onClick={() => setSelectedPost(post)}
+                                    onEdit={() => {
+                                        setEditingPost(post);
+                                        setIsRecruitmentModalOpen(true);
+                                    }}
+                                    onDelete={fetchRecruitmentRequests}
                                 />
                             ))}
                         </div>
