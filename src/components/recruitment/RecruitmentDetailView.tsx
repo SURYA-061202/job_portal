@@ -251,12 +251,15 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 <div className="w-full px-8 py-8 space-y-8">
 
                     {/* Key Info Row */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-100 text-blue-900" labelColor="text-blue-500" />
                         <InfoItem label="Qualification" value={recruitment.qualification} color="bg-purple-50/50 border-purple-100 text-purple-900" labelColor="text-purple-500" />
                         <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
                         <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-100 text-pink-900" labelColor="text-pink-500" />
                         <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-100 text-emerald-900" labelColor="text-emerald-500" />
+                        {(recruitment as any).applicantCount !== undefined && (
+                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
+                        )}
                     </div>
 
                     {/* Description Section */}

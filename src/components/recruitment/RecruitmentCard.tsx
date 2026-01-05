@@ -23,7 +23,7 @@ interface RecruitmentCardProps {
     hideExtraDetails?: boolean;
 }
 
-export default function RecruitmentCard({ recruitment, onViewDetails }: RecruitmentCardProps) {
+export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount }: RecruitmentCardProps) {
     const urgencyColors = {
         'Immediate': 'bg-red-50 text-red-700 border-red-100',
         'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
@@ -47,7 +47,7 @@ export default function RecruitmentCard({ recruitment, onViewDetails }: Recruitm
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 pr-2">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${urgencyColor}`}>
                                 {recruitment.urgencyLevel} Priority
                             </span>
@@ -108,6 +108,11 @@ export default function RecruitmentCard({ recruitment, onViewDetails }: Recruitm
                         <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {timeAgo(recruitment.createdAt)}
                     </div>
+                    {applicantCount !== undefined && (
+                        <div className="flex items-center text-xs font-bold text-orange-600">
+                            {applicantCount} Applicant{applicantCount !== 1 ? 's' : ''}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

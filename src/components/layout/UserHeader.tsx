@@ -22,7 +22,7 @@ export default function UserHeader() {
     };
 
     return (
-        <header className="bg-orange-50 border-b border-orange-100 sticky top-0 z-50 shadow-sm">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
             <div className="w-full px-6 lg:px-12">
                 <div className="flex justify-between h-16 items-center">
                     {/* Left Side - Logo and Navigation */}
@@ -33,7 +33,7 @@ export default function UserHeader() {
                                 alt="Indian Infra Logo"
                                 className="w-8 h-8 object-contain"
                             />
-                            <span className="text-xl font-bold font-outfit bg-gradient-to-r from-orange-500 via-orange-600 to-primary-600 bg-clip-text text-transparent">
+                            <span className="text-xl font-bold font-outfit bg-gradient-to-r from-orange-500 via-orange-600 to-primary-600 bg-clip-text text-transparent whitespace-nowrap">
                                 Indian Infra Jobs
                             </span>
                         </Link>
@@ -80,17 +80,17 @@ export default function UserHeader() {
                         <div className="flex items-center gap-3">
                             <Link
                                 to="/profile"
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gradient-to-r hover:from-orange-500 hover:to-primary-600 hover:text-white transition-all group"
                             >
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-primary-600 flex items-center justify-center">
                                     <User className="w-4 h-4 text-white" />
                                 </div>
-                                <span className="text-sm font-medium text-gray-700 hidden sm:block">Profile</span>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-white hidden sm:block transition-colors">Profile</span>
                             </Link>
 
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-orange-500 hover:to-primary-600 hover:text-white rounded-lg transition-all"
                             >
                                 <LogOut className="w-4 h-4" />
                                 <span className="hidden sm:block">Logout</span>

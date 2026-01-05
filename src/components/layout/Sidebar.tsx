@@ -44,9 +44,8 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
             alt="Indian Infra Logo"
             className="w-10 h-10 object-contain"
           />
-          <h1 className="text-xl font-bold text-white leading-tight">
-            Indian Infra <br />
-            <span className="text-white">Jobs</span>
+          <h1 className="text-xl font-bold text-white leading-tight whitespace-nowrap">
+            Indian Infra Jobs
           </h1>
         </div>
       </div>
@@ -107,17 +106,17 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
       </nav>
 
       {/* Account Section - Fixed at Bottom */}
-      <div className="px-3 py-4 border-t border-orange-200 bg-gradient-to-br from-primary-50 to-orange-50 flex-shrink-0">
+      <div className="px-3 py-4 border-t border-orange-200 bg-gradient-to-br from-orange-400 to-orange-600 flex-shrink-0">
         <button
           onClick={() => setIsAccountOpen(!isAccountOpen)}
           className="w-full flex items-center justify-between group px-3 mb-2"
         >
-          <h2 className="text-xs font-bold uppercase tracking-wider transition-colors bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
+          <h2 className="text-xs font-bold uppercase tracking-wider transition-colors text-white">
             Account
           </h2>
           {/* Arrow Logic: Up when collapsed (to expand up), Down when expanded (to collapse) */}
           {/* BUT User said: "The expand arrow should be up before expand". So if !isAccountOpen (collapsed), show Up. */}
-          {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
         </button>
 
         <div className="space-y-1">
@@ -125,12 +124,12 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
           <button
             onClick={() => onTabChange('profile')}
             className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${activeTab === 'profile'
-              ? 'bg-white shadow-md border border-orange-200'
-              : 'text-gray-700 hover:bg-white/50'
+              ? 'bg-white text-orange-600 shadow-md'
+              : 'text-white hover:bg-white/20'
               }`}
           >
-            <User className={`mr-3 h-5 w-5 ${activeTab === 'profile' ? 'text-orange-600' : ''}`} />
-            <span className={activeTab === 'profile' ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+            <User className="mr-3 h-5 w-5" />
+            <span className="font-semibold">
               Profile
             </span>
           </button>
@@ -146,14 +145,14 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                   key={tab.id}
                   onClick={() => onTabChange(tab.id as any)}
                   className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
-                    ? 'bg-white shadow-md border border-orange-200'
-                    : 'text-gray-700 hover:bg-white/50'
+                    ? 'bg-white text-orange-600 shadow-md'
+                    : 'text-white hover:bg-white/20'
                     }`}
                 >
                   <div className="w-5 h-5 mr-3 flex items-center justify-center">
-                    {'isCustomIcon' in tab ? <Icon simpleMode={true} className={isActive ? 'text-orange-600' : ''} /> : <Icon className={`w-full h-full ${isActive ? 'text-orange-600' : ''}`} />}
+                    {'isCustomIcon' in tab ? <Icon simpleMode={true} /> : <Icon className="w-full h-full" />}
                   </div>
-                  <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                  <span className={isActive ? 'font-semibold' : ''}>
                     {tab.label}
                   </span>
                 </button>
@@ -162,9 +161,9 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
 
             <button
               onClick={onLogout}
-              className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 group mb-1"
+              className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-white hover:bg-white/20 rounded-lg transition-all duration-200 group mb-1"
             >
-              <LogOut className="mr-3 h-5 w-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+              <LogOut className="mr-3 h-5 w-5" />
               Logout
             </button>
           </div>

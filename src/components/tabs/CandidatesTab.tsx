@@ -285,7 +285,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                         )}
                                         <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
                                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                            {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+                                            {isFilteringApplicants ? filteredCandidates.length : (searchTerm ? filteredCandidates.length : candidates.length)}
                                         </span>
                                     </div>
 
