@@ -124,7 +124,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
     const filteredRecruitmentRequests = recruitmentRequests.filter(post =>
         post.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.officeLocation?.toLowerCase().includes(searchTerm.toLowerCase())
+        post.location?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
