@@ -11,6 +11,10 @@ module.exports = {
       colors: {
         primary: colors.orange,
       },
+      fontFamily: {
+        outfit: ['Outfit', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+      },
     },
   },
   plugins: [],
