@@ -120,20 +120,24 @@ export default function LoginPage() {
         {/* Content Overlay */}
         <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full h-full text-center">
           {/* Logo/Brand */}
-          <div className="flex flex-col items-center space-y-4 pt-20">
-            <div className="p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
+          <div className="flex flex-col items-center space-y-5 pt-20 group">
+            <div className="relative p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl transition-all duration-700 group-hover:scale-110 group-hover:rotate-[5deg]">
               <img
                 src="/images/indianinfra.png"
                 alt="Indian Infra Logo"
                 className="h-16 w-auto object-contain"
               />
+              <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             </div>
-            <div className="space-y-2">
-              <h1 className="text-4xl font-extrabold tracking-tight">
-                Indian Infra <span className="text-orange-500">Jobs</span>
-              </h1>
-              <p className="text-primary-100 text-lg font-medium tracking-wide">Your Gateway to Infrastructure Careers</p>
+            <div className="flex items-center gap-3 font-outfit text-5xl font-black tracking-tighter transition-transform duration-500 group-hover:scale-105">
+              <span className="text-white">Indian Infra</span>
+              <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-amber-400 bg-clip-text text-transparent animate-gradient-x">
+                Jobs
+              </span>
             </div>
+            <p className="text-primary-100/80 text-lg font-medium tracking-wide mt-6 border-t border-white/10 pt-4">
+              Your Gateway to Infrastructure Careers
+            </p>
           </div>
 
           {/* Main Content */}
@@ -163,11 +167,14 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Indian Infra <span className="text-primary-600">Jobs</span>
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Your Gateway to Infrastructure Careers</p>
+          <div className="lg:hidden text-center mb-10 flex flex-col items-center">
+            <div className="flex items-center gap-2 font-outfit text-3xl font-black tracking-tighter">
+              <span className="text-gray-800">Indian Infra</span>
+              <span className="bg-gradient-to-r from-orange-600 via-rose-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x">
+                Jobs
+              </span>
+            </div>
+            <p className="text-gray-500 text-xs mt-3 font-medium">Your Gateway to Infrastructure Careers</p>
           </div>
 
           {/* Form Card */}
