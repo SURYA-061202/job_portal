@@ -90,28 +90,28 @@ export default function ProfileTab() {
     }
 
     return (
-        <div className="w-full h-full flex items-center justify-center p-6">
-            <div className="w-full max-w-[60rem] bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+        <div className="w-full h-full flex items-center justify-center p-4 sm:p-6">
+            <div className="w-full max-w-[60rem] bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200 p-4 sm:p-6">
 
                 {/* Header Section */}
-                <div className="flex items-center gap-5 mb-6 border-b border-gray-100 pb-5">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 mb-6 border-b border-gray-100 pb-5">
                     <div className="relative">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-100">
-                            <User className="w-8 h-8 text-white" />
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-100">
+                            <User className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                         </div>
-                        <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></div>
+                        <div className="absolute bottom-0 right-0 sm:bottom-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 border-2 sm:border-4 border-white rounded-full"></div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Personal Information</h1>
+                    <div className="text-center sm:text-left">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Personal Information</h1>
                         <p className="text-gray-500 text-sm mt-1">Update your personal details</p>
                     </div>
                 </div>
 
                 {/* Form Section */}
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4">Profile Details</h2>
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Profile Details</h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4">
                         {/* First Name */}
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1.5">First Name</label>
@@ -121,10 +121,10 @@ export default function ProfileTab() {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium text-sm sm:text-base">
                                     {userData.firstName}
                                 </div>
                             )}
@@ -139,10 +139,10 @@ export default function ProfileTab() {
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium text-sm sm:text-base">
                                     {userData.lastName}
                                 </div>
                             )}
@@ -153,7 +153,7 @@ export default function ProfileTab() {
                             <label className="block text-sm font-bold text-gray-700 mb-1.5">
                                 Email <span className="text-gray-400 font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-500 font-medium ${isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50/50'}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-gray-500 font-medium text-sm sm:text-base ${isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50/50'}`}>
                                 {userData.email}
                             </div>
                         </div>
@@ -168,10 +168,10 @@ export default function ProfileTab() {
                                     value={formData.mobile || ''}
                                     onChange={handleInputChange}
                                     placeholder="+91..."
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium text-sm sm:text-base">
                                     {userData.mobile || '+919087654321'}
                                 </div>
                             )}
@@ -186,10 +186,10 @@ export default function ProfileTab() {
                                     name="department"
                                     value={formData.department || ''}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium text-sm sm:text-base">
                                     {userData.department || 'None'}
                                 </div>
                             )}
@@ -204,10 +204,10 @@ export default function ProfileTab() {
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all capitalize"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all capitalize text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium capitalize">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-700 font-medium capitalize text-sm sm:text-base">
                                     {userData.role}
                                 </div>
                             )}
@@ -215,12 +215,12 @@ export default function ProfileTab() {
                     </div>
 
                     {/* Footer / Buttons */}
-                    <div className="mt-8 flex justify-end gap-3">
+                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3">
                         {isEditing ? (
                             <>
                                 <button
                                     onClick={handleCancel}
-                                    className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all duration-200 text-sm"
+                                    className="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all duration-200 text-sm"
                                     disabled={saving}
                                 >
                                     Cancel
@@ -228,7 +228,7 @@ export default function ProfileTab() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm flex items-center gap-2"
+                                    className="w-full sm:w-auto px-8 py-2.5 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm flex items-center justify-center gap-2"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Save Changes
@@ -237,7 +237,7 @@ export default function ProfileTab() {
                         ) : (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm"
+                                className="w-full sm:w-auto px-8 py-2.5 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm"
                             >
                                 Edit Profile
                             </button>

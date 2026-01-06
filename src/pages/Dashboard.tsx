@@ -15,6 +15,7 @@ import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
 import AddMembersTab from '@/components/tabs/AddMembersTab';
 import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
+import { Menu, X } from 'lucide-react';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
@@ -24,6 +25,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,6 +82,7 @@ export default function Dashboard() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    setIsMobileSidebarOpen(false); // Close mobile sidebar when tab is selected
     // When manually switching tabs, clear selectedPostId so we don't carry over context unwontedly.
     // Specifically for Candidates tab, we want to show ALL candidates if accessed via sidebar.
     // For Job Posts, we want to show the list, not a specific detail view.
@@ -139,9 +142,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={handleLogout} />
-      <main className="flex-1 overflow-auto thin-scrollbar flex flex-col relative">
+    <div className="flex h-screen bg-gray-100 relative">
+      {/* Mobile Hamburger Menu Button */}
+      <button
+        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-white p-2.5 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        aria-label="Toggle menu"
+      >
+        {isMobileSidebarOpen ? (
+          <X className="w-6 h-6 text-gray-700" />
+        ) : (
+          <Menu className="w-6 h-6 text-gray-700" />
+        )}
+      </button>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Hidden on mobile by default, overlay when open */}
+      <div className={`
+        ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+        fixed md:relative
+        z-40
+        transition-transform duration-300 ease-in-out
+      `}>
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onLogout={handleLogout}
+        />
+      </div>
+
+      <main className="flex-1 overflow-auto thin-scrollbar flex flex-col relative w-full md:w-auto pl-0 md:pl-0">
         {/* Gradient Background with Dotted Patterns */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Soft gradient overlay - top to bottom */}
@@ -183,7 +221,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="p-6 flex-1 flex flex-col relative z-10">{renderTabContent()}</div>
+        <div className="p-4 md:p-6 flex-1 flex flex-col relative z-10 pt-16 md:pt-6">{renderTabContent()}</div>
       </main>
     </div>
   );

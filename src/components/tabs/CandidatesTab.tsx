@@ -271,50 +271,60 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                         <>
                             {/* Unified Header & Controls */}
                             <div className="mb-6 space-y-4">
-                                {/* Top Bar: Title & Search */}
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        {(isFilteringApplicants || onBack) && (
-                                            <button
-                                                onClick={onBack}
-                                                className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-                                                title="Back"
-                                            >
-                                                <ArrowLeft className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                        <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                            {isFilteringApplicants ? filteredCandidates.length : (searchTerm ? filteredCandidates.length : candidates.length)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 flex-1 justify-end">
-                                        {/* Search */}
-                                        <div className="relative w-full md:w-64 group">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Search className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                                {/* Top Bar: Title, Description & Controls */}
+                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                        {/* Title, Count and Description */}
+                                        <div className="flex items-start gap-3">
+                                            {(isFilteringApplicants || onBack) && (
+                                                <button
+                                                    onClick={onBack}
+                                                    className="p-1.5 mt-0.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors flex-shrink-0"
+                                                    title="Back"
+                                                >
+                                                    <ArrowLeft className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
+                                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                                                        {isFilteringApplicants ? filteredCandidates.length : (searchTerm ? filteredCandidates.length : candidates.length)}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
                                             </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Search candidates..."
-                                                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                            />
                                         </div>
 
-                                        {/* AI Action Button (If no clusters) */}
-                                        {clusters.length === 0 && (
-                                            <button
-                                                onClick={handleRunClustering}
-                                                disabled={isClustering}
-                                                className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
-                                            >
-                                                {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                {isClustering ? 'Analyzing' : 'AI Group'}
-                                            </button>
-                                        )}
+                                        {/* Search and AI Group Controls */}
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
+                                            {/* Search */}
+                                            <div className="relative flex-1 sm:w-64 md:w-72">
+                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <Search className="h-4 w-4 text-gray-400" />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search candidates..."
+                                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* AI Action Button (If no clusters) */}
+                                            {clusters.length === 0 && (
+                                                <button
+                                                    onClick={handleRunClustering}
+                                                    disabled={isClustering}
+                                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-70"
+                                                >
+                                                    {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                    <span className="hidden sm:inline">{isClustering ? 'Analyzing' : 'AI Group'}</span>
+                                                    <span className="sm:hidden">{isClustering ? 'Analyzing...' : 'AI Group'}</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -366,18 +376,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                             ))}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="md:hidden">
-                                        <button
-                                            onClick={handleRunClustering}
-                                            disabled={isClustering}
-                                            className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all gap-2 disabled:opacity-70"
-                                        >
-                                            {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                            Run AI Grouping Analysis
-                                        </button>
-                                    </div>
-                                )}
+                                ) : null}
                             </div>
 
                             <CandidateList

@@ -59,13 +59,13 @@ export default function VerifyDetailsPage() {
       let candName = '';
       let candEmail = '';
       try {
-        const candSnap = await getDoc(doc(db,'candidates',candidateId));
-        if(candSnap.exists()){
-          const c:any = candSnap.data();
-          candName = c?.name||'';
-          candEmail = c?.email||'';
+        const candSnap = await getDoc(doc(db, 'candidates', candidateId));
+        if (candSnap.exists()) {
+          const c: any = candSnap.data();
+          candName = c?.name || '';
+          candEmail = c?.email || '';
         }
-      } catch(e) {console.error(e);}
+      } catch (e) { console.error(e); }
       try {
         await addDoc(collection(db, 'candidates', candidateId, 'notifications'), {
           message: 'Submitted verify details form',
@@ -100,8 +100,8 @@ export default function VerifyDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white w-full max-w-xl rounded-lg shadow p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4">
+      <div className="bg-white w-full max-w-[95vw] sm:max-w-xl rounded-lg shadow p-6 sm:p-8 space-y-6">
         <h1 className="text-2xl font-bold text-gray-900 text-center mb-4">Verify Your Details</h1>
 
         <div className="space-y-4">

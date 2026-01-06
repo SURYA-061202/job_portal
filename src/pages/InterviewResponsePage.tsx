@@ -115,8 +115,8 @@ export default function InterviewResponsePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white w-full max-w-xl rounded-lg shadow p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4">
+      <div className="bg-white w-full max-w-[95vw] sm:max-w-xl rounded-lg shadow p-6 sm:p-8 space-y-6">
         <h1 className="text-2xl font-bold text-gray-900 text-center mb-4">Interview Availability</h1>
 
         {/* Interest toggle */}

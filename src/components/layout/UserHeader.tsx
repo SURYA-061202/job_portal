@@ -5,6 +5,7 @@ import { LogOut, User, FileText, Menu, X, Rocket, BellRing } from 'lucide-react'
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
+
 export default function UserHeader() {
     const navigate = useNavigate();
     const location = useLocation();

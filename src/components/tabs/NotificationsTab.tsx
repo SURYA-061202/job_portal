@@ -23,7 +23,7 @@ export default function NotificationsTab() {
         const data: any = docSnap.data();
         list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
       });
-      list.sort((a,b)=> (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setNotifications(list);
       // Mark all as viewed
       list.forEach((n) => {
@@ -35,15 +35,15 @@ export default function NotificationsTab() {
 
   return (
     <div className="bg-white rounded-lg shadow divide-y divide-gray-200">
-      <div className="px-6 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Notifications ({notifications.length})</h2>
+      <div className="px-4 sm:px-6 py-4">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">Notifications ({notifications.length})</h2>
       </div>
       {notifications.length === 0 ? (
-        <p className="p-6 text-gray-600">No notifications.</p>
+        <p className="p-4 sm:p-6 text-gray-600 text-sm sm:text-base">No notifications.</p>
       ) : (
         <ul>
           {notifications.map((n) => (
-            <li key={n.id} className="px-6 py-4 hover:bg-gray-50">
+            <li key={n.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50">
               <p className="text-sm font-medium text-primary-700">{n.name} {n.email && <span className='text-gray-500'>({n.email})</span>}</p>
               <p className="text-sm text-gray-800 mt-0.5">{n.message}</p>
               <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt?.seconds * 1000).toLocaleString()}</p>

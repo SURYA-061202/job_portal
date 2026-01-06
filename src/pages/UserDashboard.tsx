@@ -258,7 +258,7 @@ export default function UserDashboard() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <UserHeader />
 
-            <main className="flex-1 w-full px-6 lg:px-12 py-8 relative overflow-hidden">
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 relative overflow-hidden">
                 {/* Gradient Background with Dotted Patterns */}
                 <div className="absolute inset-0 pointer-events-none">
                     {/* Soft gradient overlay - top to bottom */}

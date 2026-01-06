@@ -88,12 +88,15 @@ export default function AnalyticsDashboard() {
             counts[loc] = (counts[loc] || 0) + 1;
         });
 
-        // Sort, filter out Unknown/Other, and take top 7
+        // Convert Unknown to "Un Specified" and sort
         return Object.entries(counts)
-            .filter(([name]) => name !== 'Unknown' && name !== 'Other')
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 7)
-            .map(([name, value]) => ({ name, value }));
+            .map(([name, value]) => ({
+                name: name === 'Unknown' ? 'Un Specified' : name,
+                value
+            }))
+            .filter(item => item.name !== 'Other')
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 7);
     }, [candidates]);
 
     // 5. AI Match Score Distribution
@@ -140,10 +143,10 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
                     <div className="p-3 rounded-lg bg-blue-50 text-blue-600 mr-4">
-                        <Users className="w-8 h-8" />
+                        <Users className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">Total Candidates</p>
@@ -151,9 +154,9 @@ export default function AnalyticsDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
                     <div className="p-3 rounded-lg bg-green-50 text-green-600 mr-4">
-                        <Award className="w-8 h-8" />
+                        <Award className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">High AI Match</p>
@@ -161,9 +164,9 @@ export default function AnalyticsDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
                     <div className="p-3 rounded-lg bg-purple-50 text-purple-600 mr-4">
-                        <Briefcase className="w-8 h-8" />
+                        <Briefcase className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">Avg Experience</p>
@@ -171,9 +174,9 @@ export default function AnalyticsDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
                     <div className="p-3 rounded-lg bg-orange-50 text-orange-600 mr-4">
-                        <MapPin className="w-8 h-8" />
+                        <MapPin className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">Top Location</p>
@@ -185,17 +188,17 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
                 {/* 1. Experience Distribution */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-6">Experience Distribution</h3>
-                    <div className="h-64 w-full">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 sm:mb-6">Experience Distribution</h3>
+                    <div className="h-56 sm:h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={experienceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <BarChart data={experienceData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     cursor={{ fill: '#f3f4f6' }}
@@ -207,17 +210,17 @@ export default function AnalyticsDashboard() {
                 </div>
 
                 {/* 2. Match Quality */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-6">AI Match Quality</h3>
-                    <div className="h-64 w-full flex items-center justify-center">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 sm:mb-6">AI Match Quality</h3>
+                    <div className="h-56 sm:h-64 w-full flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={matchScoreData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
+                                    innerRadius={50}
+                                    outerRadius={70}
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
@@ -226,7 +229,7 @@ export default function AnalyticsDashboard() {
                                     ))}
                                 </Pie>
                                 <Tooltip />
-                                <Legend />
+                                <Legend wrapperStyle={{ fontSize: '12px' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -234,14 +237,14 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Candidates by Location - Full Width */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-6">Candidates by Location (Top 7)</h3>
-                <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={locationData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 sm:mb-6">Candidates by Location (Top 7)</h3>
+                <div className="h-64 sm:h-80 w-full overflow-x-auto">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={300}>
+                        <BarChart data={locationData} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                             <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" width={120} axisLine={false} tickLine={false} />
+                            <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                             <Tooltip cursor={{ fill: '#f3f4f6' }} />
                             <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={30} />
                         </BarChart>

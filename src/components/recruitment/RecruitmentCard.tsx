@@ -18,12 +18,15 @@ function timeAgo(date: any) {
 
 interface RecruitmentCardProps {
     recruitment: RecruitmentRequest;
+    onClick?: (recruitment: RecruitmentRequest) => void;
     onViewDetails?: (recruitment: RecruitmentRequest) => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
     applicantCount?: number;
     hideExtraDetails?: boolean;
 }
 
-export default function RecruitmentCard({ recruitment, onViewDetails, applicantCount }: RecruitmentCardProps) {
+export default function RecruitmentCard({ recruitment, onClick, onViewDetails, applicantCount }: RecruitmentCardProps) {
     const urgencyColors = {
         'Immediate': 'bg-red-50 text-red-700 border-red-100',
         'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
@@ -35,17 +38,22 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
     // Safely handle skills string
     const skills = recruitment.skills ? recruitment.skills.split(',').slice(0, 3) : [];
 
+    const handleClick = () => {
+        onClick?.(recruitment);
+        onViewDetails?.(recruitment);
+    };
+
     return (
         <div
-            onClick={() => onViewDetails?.(recruitment)}
+            onClick={handleClick}
             className="group relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             {/* Top Accent Line */}
             <div className={`h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
 
-            <div className="p-6 flex-1 flex flex-col">
+            <div className="p-4 sm:p-6 flex-1 flex flex-col">
                 {/* Header */}
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-3 sm:mb-4">
                     <div className="flex-1 pr-2">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${urgencyColor}`}>
@@ -57,41 +65,41 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                                 </span>
                             )}
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
                             {recruitment.jobTitle}
                         </h3>
                         {/* Hide Department if hideExtraDetails is true? User said hiding Location and Budget specifically, but Department is usually fine.
                             Wait, user said "dont show the Location and Budget".
                             I'll keep Department as it's part of the header usually.
                          */}
-                        <p className="text-sm text-gray-500 font-medium mt-1 flex items-center">
-                            <Briefcase className="w-3.5 h-3.5 mr-1" />
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1 flex items-center">
+                            <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                             {recruitment.department}
                         </p>
                     </div>
                 </div>
 
                 {/* Key Metrics Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Experience</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <Clock className="w-3.5 h-3.5 mr-1.5 text-orange-500" />
+                        <div className="flex items-center text-xs sm:text-sm font-bold text-gray-700">
+                            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-orange-500" />
                             {recruitment.yearsExperience}
                         </div>
                     </div>
 
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</span>
-                        <div className="flex items-center text-sm font-bold text-gray-700">
-                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                        <div className="flex items-center text-xs sm:text-sm font-bold text-gray-700">
+                            <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-blue-500" />
                             {recruitment.location}
                         </div>
                     </div>
                 </div>
 
                 {/* Skills Chips */}
-                <div className="mb-6 flex-1">
+                <div className="mb-4 sm:mb-6 flex-1">
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Key Skills</span>
                     <div className="flex flex-wrap gap-1.5">
                         {skills.map((skill, i) => (
@@ -103,9 +111,9 @@ export default function RecruitmentCard({ recruitment, onViewDetails, applicantC
                 </div>
 
                 {/* Footer */}
-                <div className="pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">
+                <div className="pt-3 sm:pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center text-xs font-medium text-gray-400">
-                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
                         {timeAgo(recruitment.createdAt)}
                     </div>
                     {applicantCount !== undefined && (
