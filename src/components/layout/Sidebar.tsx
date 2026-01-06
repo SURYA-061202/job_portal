@@ -38,15 +38,19 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
     <div className="w-64 bg-white shadow-lg flex flex-col h-full border-r border-gray-200">
       {/* Header with Logo and Branding */}
       <div className="p-6 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
-        <div className="flex items-center gap-3 mb-2">
-          <img
-            src="/images/indianinfra.png"
-            alt="Indian Infra Logo"
-            className="w-10 h-10 object-contain"
-          />
-          <h1 className="text-xl font-bold text-white leading-tight whitespace-nowrap">
-            Indian Infra Jobs
-          </h1>
+        <div className="flex items-center gap-3 mb-2 group">
+          <div className="relative">
+            <img
+              src="/images/indianinfra.png"
+              alt="Indian Infra Logo"
+              className="w-10 h-10 object-contain transition-transform duration-500 group-hover:rotate-[10deg]"
+            />
+            <div className="absolute -inset-1.5 bg-white/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          </div>
+          <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
+            <span className="opacity-90">Indian Infra</span>
+            <span className="text-white">Jobs</span>
+          </div>
         </div>
       </div>
 
