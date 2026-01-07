@@ -48,11 +48,26 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
             />
             <div className="absolute -inset-1.5 bg-white/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
-          <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
-            <span className="opacity-90">Indian Infra</span>
-            <span className="text-white">Jobs</span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
+              <span className="opacity-90">Indian Infra</span>
+              <span className="text-white">Jobs</span>
+            </div>
+          )}
         </div>
+
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full mt-3 flex items-center justify-center group transition-all duration-300"
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronsRight className="w-6 h-6 text-white transition-all duration-300 group-hover:scale-110 group-hover:translate-x-1" />
+          ) : (
+            <ChevronsLeft className="w-6 h-6 text-white transition-all duration-300 group-hover:scale-110 group-hover:-translate-x-1" />
+          )}
+        </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-gradient-to-br from-primary-50 to-orange-50 pb-4">

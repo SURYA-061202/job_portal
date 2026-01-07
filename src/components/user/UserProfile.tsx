@@ -24,7 +24,7 @@ export default function UserProfile() {
         department: '',
         expectedSalary: ''
     });
-    const [showMoreModal, setShowMoreModal] = useState(false);
+    const [showMoreFields, setShowMoreFields] = useState(false);
     const [uploading, setUploading] = useState(false);
     const navigate = useNavigate();
 
@@ -231,16 +231,159 @@ export default function UserProfile() {
                             </div>
                         </div>
 
+                        {/* Expandable Additional Fields */}
+                        {showMoreFields && (
+                            <div className="space-y-6 pt-6 border-t border-gray-100 animate-in slide-in-from-top duration-300">
+                                {/* Career Info Section */}
+                                <section className="space-y-4">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
+                                        Career Overview
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Experience (Years)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    placeholder="e.g. 5"
+                                                    value={formData.yearsOfExperience}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, yearsOfExperience: e.target.value }))}
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
+                                                />
+                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Current Department</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Engineering"
+                                                    value={formData.department}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
+                                                />
+                                                <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Expected Salary</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. $80,000"
+                                                    value={formData.expectedSalary}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: e.target.value }))}
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
+                                                />
+                                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Expertise Section */}
+                                <section className="space-y-4">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                                        Expertise & Background
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Skills (Comma separated)</label>
+                                            <textarea
+                                                placeholder="e.g. React, Node.js, Python, UI Design..."
+                                                value={formData.skills}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Key Projects</label>
+                                            <textarea
+                                                placeholder="Highlight your best work..."
+                                                value={formData.projects}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, projects: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Certifications</label>
+                                            <textarea
+                                                placeholder="Degrees, licenses, online courses..."
+                                                value={formData.certifications}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Resume Upload Section */}
+                                <section className="space-y-4">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
+                                        Resume Upload
+                                    </h3>
+                                    <div
+                                        {...getRootProps()}
+                                        className={`cursor-pointer transition-all duration-300 ${isDragActive
+                                                ? 'bg-orange-50 border-2 border-dashed border-orange-400'
+                                                : 'bg-gray-50 border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
+                                            } rounded-xl p-6 flex flex-col items-center justify-center gap-3`}
+                                    >
+                                        <input {...getInputProps()} />
+                                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
+                                            {uploading ? (
+                                                <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
+                                            ) : (
+                                                <FileUp className="w-6 h-6 text-orange-500" />
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {isDragActive ? 'Drop your resume here' : 'Drop your resume or click to browse'}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-1">Supports PDF, DOCX up to 5MB</p>
+                                        </div>
+                                        {formData.resumeUrl && (
+                                            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                <span className="text-xs font-bold">Resume Uploaded</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {formData.resumeUrl && (
+                                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
+                                            <div className="flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-orange-500" />
+                                                <span className="text-sm font-medium text-gray-700">Current Resume</span>
+                                            </div>
+                                            <a
+                                                href={formData.resumeUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs font-bold text-primary-600 hover:text-primary-700"
+                                            >
+                                                View
+                                            </a>
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+                        )}
+
                         <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
                             <button
                                 type="button"
-                                onClick={() => setShowMoreModal(true)}
+                                onClick={() => setShowMoreFields(!showMoreFields)}
                                 className="inline-flex items-center text-primary-600 font-bold hover:text-primary-700 transition-colors group"
                             >
                                 <div className="p-1.5 rounded-lg bg-primary-50 group-hover:bg-primary-100 mr-2 transition-colors">
-                                    <Plus className="w-4 h-4" />
+                                    {showMoreFields ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                 </div>
-                                Add more profile details
+                                {showMoreFields ? 'Show less details' : 'Add more profile details'}
                             </button>
 
                             <button
@@ -261,211 +404,7 @@ export default function UserProfile() {
                     </form>
                 </div>
 
-                {/* More Details Modal - Refined & Sleek */}
-                {showMoreModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-                            {/* Modal Header */}
-                            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
-                                <div>
-                                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Professional Details</h2>
-                                    <p className="text-xs sm:text-sm text-gray-500">Enhance your profile for better job matching</p>
-                                </div>
-                                <button
-                                    onClick={() => setShowMoreModal(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-gray-600"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
 
-                            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar space-y-6 sm:space-y-8 bg-gray-50/30">
-                                {/* Career Info Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
-                                        Career Overview
-                                    </h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Experience (Years)</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    placeholder="e.g. 5"
-                                                    value={formData.yearsOfExperience}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, yearsOfExperience: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none text-sm shadow-sm"
-                                                />
-                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Current Department</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. Engineering"
-                                                    value={formData.department}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none text-sm shadow-sm"
-                                                />
-                                                <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Expected Salary</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. $80,000"
-                                                    value={formData.expectedSalary}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none text-sm shadow-sm"
-                                                />
-                                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Expertise Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
-                                        Expertise & Background
-                                    </h3>
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Skills (Comma separated)</label>
-                                            <div className="relative group">
-                                                <textarea
-                                                    placeholder="e.g. React, Node.js, Python, UI Design..."
-                                                    value={formData.skills}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))}
-                                                    className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none min-h-[100px] text-sm shadow-sm resize-none"
-                                                />
-                                                <Award className="absolute right-4 bottom-4 w-5 h-5 text-gray-200 group-focus-within:text-primary-200 transition-colors" />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Key Projects</label>
-                                            <div className="relative group">
-                                                <textarea
-                                                    placeholder="Highlight your best work..."
-                                                    value={formData.projects}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, projects: e.target.value }))}
-                                                    className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none min-h-[100px] text-sm shadow-sm resize-none"
-                                                />
-                                                <Globe className="absolute right-4 bottom-4 w-5 h-5 text-gray-200 group-focus-within:text-primary-200 transition-colors" />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-700 ml-1">Certifications</label>
-                                            <div className="relative group">
-                                                <textarea
-                                                    placeholder="Degrees, licenses, online courses..."
-                                                    value={formData.certifications}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
-                                                    className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none min-h-[100px] text-sm shadow-sm resize-none"
-                                                />
-                                                <Book className="absolute right-4 bottom-4 w-5 h-5 text-gray-200 group-focus-within:text-primary-200 transition-colors" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Resume Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
-                                        Documents
-                                    </h3>
-                                    <div className="p-1 space-y-3">
-                                        <div
-                                            {...getRootProps()}
-                                            className={`relative group cursor-pointer transition-all duration-300 ${isDragActive
-                                                ? 'bg-orange-50 border-2 border-dashed border-orange-400'
-                                                : 'bg-white border-2 border-dashed border-gray-100 hover:border-orange-200 hover:bg-orange-50/30'
-                                                } rounded-3xl p-10 flex flex-col items-center justify-center gap-4`}
-                                        >
-                                            <input {...getInputProps()} />
-
-                                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${isDragActive ? 'bg-orange-gradient text-white scale-110' : 'bg-orange-50 text-orange-500 group-hover:bg-orange-gradient group-hover:text-white group-hover:rotate-12'
-                                                }`}>
-                                                {uploading ? (
-                                                    <Loader2 className="w-8 h-8 animate-spin" />
-                                                ) : isDragActive ? (
-                                                    <UploadCloud className="w-8 h-8 animate-bounce" />
-                                                ) : (
-                                                    <FileUp className="w-8 h-8" />
-                                                )}
-                                            </div>
-
-                                            <div className="text-center">
-                                                <p className="text-sm font-bold text-gray-900 mb-1">
-                                                    {isDragActive ? 'Drop your resume here' : 'Drop your resume or click to browse'}
-                                                </p>
-                                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-                                                    Supports PDF, DOCX up to 5MB
-                                                </p>
-                                            </div>
-
-                                            {formData.resumeUrl && !uploading && (
-                                                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 animate-in fade-in zoom-in">
-                                                    <CheckCircle2 className="w-3 h-3" />
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider">File Ready</span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {formData.resumeUrl && (
-                                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                                                        <FileText className="w-5 h-5 text-orange-500" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-gray-900">Current Resume</p>
-                                                        <p className="text-[10px] text-gray-500 font-medium max-w-[200px] truncate">{formData.resumeUrl}</p>
-                                                    </div>
-                                                </div>
-                                                <a
-                                                    href={formData.resumeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-4 py-2 bg-white text-gray-900 text-[10px] font-bold rounded-xl border border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all shadow-sm"
-                                                >
-                                                    View Document
-                                                </a>
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-orange-50/50 rounded-xl border border-orange-100/50 text-[10px] text-orange-600 font-medium">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                                            Uploaded resumes are stored securely and visible only to relevant recruiters.
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <div className="px-4 sm:px-8 py-4 sm:py-6 bg-white border-t border-gray-100 flex justify-end shrink-0">
-                                <button
-                                    onClick={async () => {
-                                        await handleUpdate({ preventDefault: () => { } } as any);
-                                        setShowMoreModal(false);
-                                    }}
-                                    disabled={saving}
-                                    className="px-8 py-3 bg-orange-gradient text-white font-black rounded-2xl hover:opacity-95 transition-all shadow-xl shadow-orange-500/20 active:scale-95 disabled:opacity-50"
-                                >
-                                    {saving ? 'Saving...' : 'Save & Close'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </main>
         </div>
     );

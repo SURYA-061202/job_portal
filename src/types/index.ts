@@ -144,7 +144,8 @@ export interface RecruitmentRequest {
   candidateType: 'Permanent' | 'Contract' | 'Internship' | 'Part Time';
   positionLevel: 'Entry' | 'Junior' | 'Mid' | 'Senior' | 'Manager';
   yearsExperience: string;
-  location: 'Office' | 'Hybrid' | 'Remote';
+  modeOfWork: 'Office' | 'Hybrid' | 'Remote';
+  location: string;
   candidatesCount: number;
   qualification: string;
   skills: string;

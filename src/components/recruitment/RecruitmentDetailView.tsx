@@ -160,11 +160,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             {/* Header / Hero */}
             <div className="bg-white border-b border-gray-100 sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {/* Back & Title */}
-                    <div className="flex items-center gap-3 sm:gap-5">
+                    {/* Back & Title Row with Actions */}
+                    <div className="flex items-start gap-3 sm:gap-5">
                         <button
                             onClick={onBack}
-                            className="p-1.5 sm:p-2 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50"
+                            className="p-1.5 sm:p-2 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50 flex-shrink-0 mt-1"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
@@ -187,66 +187,70 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 <span className="w-1 h-1 rounded-full bg-gray-300 hidden sm:block" />
                                 <span className="flex items-center gap-1.5 text-gray-600">
                                     <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                    <span className="truncate">{recruitment.location}</span>
+                                    <span className="truncate">{recruitment.location || 'Location not specified'}</span>
                                 </span>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                        {isManager ? (
-                            <>
-                                <button
-                                    onClick={() => onEdit?.(recruitment)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                    title="Edit Post"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={actionLoading}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                    title="Delete Post"
-                                >
-                                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                </button>
-                                <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
-                                <button
-                                    onClick={() => onViewCandidates?.(recruitment.id!)}
-                                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                >
-                                    <Users className="w-4 h-4" />
-                                    <span className="hidden sm:inline">View Candidates</span>
-                                    <span className="sm:hidden">Candidates</span>
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                {checkingProfile ? (
-                                    <button disabled className="px-3 sm:px-5 py-2 bg-gray-100 text-gray-400 text-xs sm:text-sm font-bold rounded-lg flex items-center gap-2">
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                        <span className="hidden sm:inline">Checking...</span>
-                                    </button>
-                                ) : !hasApplied ? (
+                        {/* Action Buttons - Inline with Title */}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            {isManager ? (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => onEdit?.(recruitment)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                            title="Edit Post"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={actionLoading}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                                            title="Delete Post"
+                                        >
+                                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                    <div className="h-6 w-px bg-gray-200 hidden sm:block" />
                                     <button
-                                        onClick={handleApply}
-                                        disabled={actionLoading}
-                                        className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                                        onClick={() => onViewCandidates?.(recruitment.id!)}
+                                        disabled={!((recruitment as any).applicantCount > 0)}
+                                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                                        title={!((recruitment as any).applicantCount > 0) ? "No applicants yet" : "View Candidates"}
                                     >
-                                        {actionLoading ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <>
-                                                Apply Now
-                                                <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                            </>
-                                        )}
+                                        <Users className="w-4 h-4" />
+                                        <span className="hidden sm:inline">View Candidates</span>
+                                        <span className="sm:hidden">Candidates</span>
                                     </button>
-                                ) : null}
-                            </>
-                        )}
+                                </>
+                            ) : (
+                                <>
+                                    {checkingProfile ? (
+                                        <button disabled className="px-3 sm:px-5 py-2 bg-gray-100 text-gray-400 text-xs sm:text-sm font-bold rounded-lg flex items-center gap-2">
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span className="hidden sm:inline">Checking...</span>
+                                        </button>
+                                    ) : !hasApplied ? (
+                                        <button
+                                            onClick={handleApply}
+                                            disabled={actionLoading}
+                                            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                                        >
+                                            {actionLoading ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    Apply Now
+                                                    <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                </>
+                                            )}
+                                        </button>
+                                    ) : null}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -261,6 +265,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         <InfoItem label="Qualification" value={recruitment.qualification} color="bg-purple-50/50 border-purple-100 text-purple-900" labelColor="text-purple-500" />
                         <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
                         <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-100 text-pink-900" labelColor="text-pink-500" />
+                        <InfoItem label="Mode of Work" value={recruitment.modeOfWork || 'Office'} color="bg-indigo-50/50 border-indigo-100 text-indigo-900" labelColor="text-indigo-500" />
                         <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-100 text-emerald-900" labelColor="text-emerald-500" />
                         {(recruitment as any).applicantCount !== undefined && (
                             <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
@@ -341,9 +346,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
 function InfoItem({ label, value, color, labelColor }: { label: string, value: string, color?: string, labelColor?: string }) {
     return (
-        <div className={`flex flex-col p-5 rounded-2xl border shadow-sm transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
-            <span className={`text-xs font-bold uppercase tracking-wider mb-2 ${labelColor || 'text-gray-400'}`}>{label}</span>
-            <span className="font-bold truncate text-lg text-gray-900">{value}</span>
+        <div className={`flex flex-col p-3 rounded-2xl border shadow-sm transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${labelColor || 'text-gray-400'}`}>{label}</span>
+            <span className="font-bold break-words text-sm text-gray-900">{value}</span>
         </div>
     );
 }

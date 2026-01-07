@@ -24,7 +24,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         candidateType: 'Permanent' as 'Permanent' | 'Contract' | 'Internship' | 'Part Time',
         positionLevel: 'Mid' as 'Entry' | 'Junior' | 'Mid' | 'Senior' | 'Manager',
         yearsExperience: '',
-        location: 'Office' as 'Office' | 'Hybrid' | 'Remote',
+        modeOfWork: 'Office' as 'Office' | 'Hybrid' | 'Remote',
+        location: '',
         candidatesCount: 1,
         qualification: '',
         skills: '',
@@ -43,6 +44,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 candidateType: initialData.candidateType,
                 positionLevel: initialData.positionLevel,
                 yearsExperience: initialData.yearsExperience,
+                modeOfWork: initialData.modeOfWork,
                 location: initialData.location,
                 candidatesCount: initialData.candidatesCount,
                 qualification: initialData.qualification,
@@ -52,6 +54,26 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 salaryBreakup: initialData.salaryBreakup,
                 requestedBy: initialData.requestedBy,
             });
+        } else if (isOpen) {
+            // Reset to default values when opening modal without initialData
+            setFormData({
+                jobTitle: '',
+                urgencyLevel: 'Moderate',
+                department: '',
+                candidateType: 'Permanent',
+                positionLevel: 'Mid',
+                yearsExperience: '',
+                modeOfWork: 'Office',
+                location: '',
+                candidatesCount: 1,
+                qualification: '',
+                skills: '',
+                description: '',
+                budgetPay: '',
+                salaryBreakup: '',
+                requestedBy: 'Dinesh'
+            });
+            setFile(null); // Also reset the file
         }
     }, [initialData, isOpen]);
 
@@ -101,6 +123,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 candidateType: formData.candidateType,
                 positionLevel: formData.positionLevel,
                 yearsExperience: formData.yearsExperience,
+                modeOfWork: formData.modeOfWork,
                 location: formData.location,
                 candidatesCount: formData.candidatesCount,
                 qualification: formData.qualification,
@@ -245,12 +268,12 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             />
                         </div>
 
-                        {/* Job Location */}
+                        {/* Mode of Work */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Job Location *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mode of Work *</label>
                             <select
-                                name="location"
-                                value={formData.location}
+                                name="modeOfWork"
+                                value={formData.modeOfWork}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             >
@@ -258,6 +281,20 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 <option value="Hybrid">Hybrid</option>
                                 <option value="Remote">Remote</option>
                             </select>
+                        </div>
+
+                        {/* Location */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+                            <input
+                                required
+                                type="text"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                placeholder="e.g. Bangalore, Karnataka"
+                            />
                         </div>
 
                         {/* No of candidates */}

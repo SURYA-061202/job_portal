@@ -65,7 +65,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                                 </span>
                             )}
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors line-clamp-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight transition-colors line-clamp-2">
                             {recruitment.jobTitle}
                         </h3>
                         {/* Hide Department if hideExtraDetails is true? User said hiding Location and Budget specifically, but Department is usually fine.
