@@ -2,9 +2,10 @@ interface FilterSidebarProps {
     selectedFilters: Record<string, string[]>;
     onToggleFilter: (section: string, option: string) => void;
     onCompleteProfile?: () => void;
+    onClearFilters?: () => void;
 }
 
-export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompleteProfile }: FilterSidebarProps) {
+export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompleteProfile, onClearFilters }: FilterSidebarProps) {
     const filterSections = [
         {
             title: "Job Type",
@@ -38,10 +39,23 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
         }
     ];
 
+    const hasActiveFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
+
     return (
         <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-                <h3 className="text-base md:text-lg font-bold text-gray-900 mb-6">Filters</h3>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-base md:text-lg font-bold text-gray-900">Filters</h3>
+                    {hasActiveFilters && onClearFilters && (
+                        <button
+                            onClick={onClearFilters}
+                            className="px-3 py-1.5 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                            title="Clear all filters"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
 
                 {filterSections.map((section, idx) => (
                     <div key={idx} className={`${idx !== filterSections.length - 1 ? 'mb-8' : ''}`}>

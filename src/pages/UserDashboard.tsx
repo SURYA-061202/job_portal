@@ -197,6 +197,15 @@ export default function UserDashboard() {
         navigate('/profile');
     };
 
+    const clearAllFilters = () => {
+        setSelectedFilters({
+            jobType: [],
+            experience: [],
+            salary: [],
+            department: []
+        });
+    };
+
     // Filter posts: Match search AND sidebar filters AND exclude applied posts
     const filteredPosts = posts.filter(post => {
         // 1. Search Logic
@@ -380,6 +389,7 @@ export default function UserDashboard() {
                             selectedFilters={selectedFilters}
                             onToggleFilter={toggleFilter}
                             onCompleteProfile={handleCompleteProfile}
+                            onClearFilters={clearAllFilters}
                         />
                     </aside>
 
@@ -409,25 +419,41 @@ export default function UserDashboard() {
                                             : 'Department'}
                                         <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                     </button>
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 max-h-60 overflow-y-auto z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                                         {uniqueDepartments.length > 0 ? (
-                                            uniqueDepartments.map((dept) => (
-                                                <label
-                                                    key={dept}
-                                                    className={`flex items-center px-4 py-2 cursor-pointer transition-colors ${selectedFilters.department.includes(dept)
-                                                        ? 'text-orange-600 bg-orange-50'
-                                                        : 'text-gray-600 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedFilters.department.includes(dept)}
-                                                        onChange={() => toggleFilter('department', dept)}
-                                                        className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                                    />
-                                                    <span className="ml-2 text-xs font-bold">{dept}</span>
-                                                </label>
-                                            ))
+                                            <>
+                                                {selectedFilters.department.length > 0 && (
+                                                    <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 flex items-center justify-between z-10">
+                                                        <span className="text-xs font-bold text-gray-700">Departments</span>
+                                                        <button
+                                                            onClick={() => setSelectedFilters(prev => ({ ...prev, department: [] }))}
+                                                            className="px-2 py-1 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+                                                            title="Clear departments"
+                                                        >
+                                                            Clear
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <div className="py-1">
+                                                    {uniqueDepartments.map((dept) => (
+                                                        <label
+                                                            key={dept}
+                                                            className={`flex items-center px-4 py-2 cursor-pointer transition-colors ${selectedFilters.department.includes(dept)
+                                                                ? 'text-orange-600 bg-orange-50'
+                                                                : 'text-gray-600 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedFilters.department.includes(dept)}
+                                                                onChange={() => toggleFilter('department', dept)}
+                                                                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                                                            />
+                                                            <span className="ml-2 text-xs font-bold">{dept}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </>
                                         ) : (
                                             <div className="px-4 py-2 text-xs text-gray-500">No departments</div>
                                         )}
@@ -459,7 +485,7 @@ export default function UserDashboard() {
                         </div>
 
                         {/* Scrollable Job Cards Container - Hidden Scrollbar */}
-                        <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(100vh - 210px)' }}>
+                        <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20">
                                     <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
@@ -563,6 +589,7 @@ export default function UserDashboard() {
                                     selectedFilters={selectedFilters}
                                     onToggleFilter={toggleFilter}
                                     onCompleteProfile={handleCompleteProfile}
+                                    onClearFilters={clearAllFilters}
                                 />
                             </div>
                         </div>

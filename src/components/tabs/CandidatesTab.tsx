@@ -14,7 +14,7 @@ import { ArrowLeft, Sparkles, X, Clock, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void }) {
+function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -31,6 +31,12 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
     const [searchTerm, setSearchTerm] = useState('');
     const [filterPostId, setFilterPostId] = useState<string | null>(null);
     const [isFilteringApplicants, setIsFilteringApplicants] = useState(false);
+
+    // Registered Candidates State
+    const [viewMode, setViewMode] = useState<'job-candidates' | 'registered-users'>('job-candidates');
+    const [registeredUsers, setRegisteredUsers] = useState<Candidate[]>([]);
+    const [userApplications, setUserApplications] = useState<any[]>([]);
+
     const isFilteringRef = useRef(false);
 
     useEffect(() => {
@@ -135,10 +141,29 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
         try {
             console.log(`[DEBUG] Fetching applicants for post ID: ${postId}`);
 
-            // 1. Fetch applications from Supabase
+            const allCandidates: Candidate[] = [];
+
+            // 1. Fetch manually uploaded candidates from Firestore candidates collection
+            const candidatesQuery = fsQuery(
+                collection(db, 'candidates'),
+                orderBy('createdAt', 'desc')
+            );
+            const candidatesSnapshot = await getDocs(candidatesQuery);
+
+            candidatesSnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Check if this candidate is associated with the specific post
+                if (data.postId === postId || data.recruitmentId === postId) {
+                    allCandidates.push({ id: doc.id, ...data } as Candidate);
+                }
+            });
+
+            console.log(`[DEBUG] Found ${allCandidates.length} manually uploaded candidates for this post`);
+
+            // 2. Fetch applications from Supabase (include all statuses)
             const { data: apps, error: appsError } = await supabase
                 .from('job_applications')
-                .select('user_id')
+                .select('user_id, status')
                 .eq('post_id', postId);
 
             if (appsError) {
@@ -147,59 +172,149 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
             }
 
             if (!apps || apps.length === 0) {
-                console.log('[DEBUG] No applicants found for this post.');
-                setFilteredCandidates([]);
-                return;
-            }
+                console.log('[DEBUG] No applicants found for this post in Supabase.');
+                // Don't return here - we might still have manual candidates
+                if (allCandidates.length === 0) {
+                    setFilteredCandidates([]);
+                    return;
+                }
+            } else {
 
-            // 2. Fetch user details from Firestore for these applicants
-            const userIds = apps.map((a: any) => a.user_id).filter((uid: any) => !!uid);
-            console.log(`[DEBUG] Found ${userIds.length} user IDs:`, userIds);
+                // 3. Fetch user details from Firestore for these applicants
+                const userIds = apps.map((a: any) => a.user_id).filter((uid: any) => !!uid);
+                console.log(`[DEBUG] Found ${userIds.length} user IDs:`, userIds);
 
-            const fetchedApplicants: Candidate[] = [];
-            for (const uid of userIds) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', uid));
-                    if (userDoc.exists()) {
-                        const data = userDoc.data();
-                        fetchedApplicants.push({
-                            id: uid,
-                            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed Candidate',
-                            email: data.email || '',
-                            phone: data.mobile || '',
-                            role: data.department || 'Applicant',
-                            experience: data.yearsOfExperience || '',
-                            skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
-                            resumeUrl: data.resumeUrl || '',
-                            extractedData: {
-                                summary: '',
-                                workExperience: [],
-                                education: [],
+                for (const uid of userIds) {
+                    try {
+                        const userDoc = await getDoc(doc(db, 'users', uid));
+                        if (userDoc.exists()) {
+                            const data = userDoc.data();
+                            // Find the application status for this user
+                            const app = apps.find((a: any) => a.user_id === uid);
+                            const appStatus = app?.status || 'applied';
+
+                            allCandidates.push({
+                                id: uid,
+                                name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed Candidate',
+                                email: data.email || '',
+                                phone: data.mobile || '',
+                                role: data.department || 'Applicant',
+                                experience: data.yearsOfExperience || '',
                                 skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
-                                certifications: [],
-                                projects: []
-                            },
-                            education: [],
-                            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-                            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date()
-                        } as Candidate);
+                                resumeUrl: data.resumeUrl || '',
+                                extractedData: {
+                                    summary: '',
+                                    workExperience: [],
+                                    education: [],
+                                    skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                                    certifications: [],
+                                    projects: []
+                                },
+                                education: [],
+                                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                                updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+                                postId: postId, // Add postId for Supabase updates
+                                status: appStatus as any // Add status from Supabase
+                            } as Candidate);
+                        }
+                    } catch (docErr) {
+                        console.error(`[DEBUG] Error fetching user doc for UID ${uid}:`, docErr);
                     }
-                } catch (docErr) {
-                    console.error(`[DEBUG] Error fetching user doc for UID ${uid}:`, docErr);
                 }
             }
 
-            console.log(`[DEBUG] Final fetched applicants count: ${fetchedApplicants.length}`);
+            console.log(`[DEBUG] Total candidates (manual + applicants): ${allCandidates.length}`);
 
             // Final check: if user switched away during load, don't update
             if (isFilteringRef.current) {
-                setFilteredCandidates(fetchedApplicants);
+                setFilteredCandidates(allCandidates);
             }
         } catch (error: any) {
             console.error('[DEBUG] Global error in fetchApplicantsForPost:', error);
             setFilteredCandidates([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Fetch all registered users from Firestore
+    const fetchRegisteredUsers = async () => {
+        setLoading(true);
+        try {
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const users: Candidate[] = [];
+
+            usersSnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Only include users with role 'user'
+                if (data.role !== 'user') {
+                    return;
+                }
+                users.push({
+                    id: doc.id,
+                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed User',
+                    email: data.email || '',
+                    phone: data.mobile || '',
+                    role: data.department || 'User',
+                    experience: data.yearsOfExperience || '',
+                    skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                    resumeUrl: data.resumeUrl || '',
+                    extractedData: {
+                        summary: '',
+                        workExperience: [],
+                        education: [],
+                        skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                        certifications: [],
+                        projects: data.keyProjects || data.projects || []
+                    },
+                    education: [],
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+                    status: 'pending' as any
+                } as Candidate);
+            });
+
+            setRegisteredUsers(users);
+        } catch (error) {
+            console.error('Error fetching registered users:', error);
+            toast.error('Failed to load registered users');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch job applications for a specific user
+    const fetchUserApplications = async (userId: string) => {
+        try {
+            const { data: applications, error } = await supabase
+                .from('job_applications')
+                .select('post_id, status, created_at')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+
+            if (applications && applications.length > 0) {
+                // Fetch job post details for each application
+                const applicationsWithDetails = await Promise.all(
+                    applications.map(async (app) => {
+                        const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
+                        if (postDoc.exists()) {
+                            return {
+                                ...app,
+                                postDetails: { id: postDoc.id, ...postDoc.data() }
+                            };
+                        }
+                        return { ...app, postDetails: null };
+                    })
+                );
+
+                setUserApplications(applicationsWithDetails);
+            } else {
+                setUserApplications([]);
+            }
+        } catch (error) {
+            console.error('Error fetching user applications:', error);
+            setUserApplications([]);
         }
     };
 
@@ -227,6 +342,20 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
     };
 
     const handleCandidateSelect = (candidate: Candidate) => {
+        // If in registered users view, fetch their application history
+        if (viewMode === 'registered-users') {
+            fetchUserApplications(candidate.id);
+            setSelectedCandidate(candidate);
+            return;
+        }
+
+        // If candidate is shortlisted, navigate to Shortlisted tab instead
+        if (candidate.status === 'shortlisted' || (candidate as any).status === 'shortlisted') {
+            if (onNavigateToShortlisted) {
+                onNavigateToShortlisted(candidate.id);
+            }
+            return;
+        }
         setSelectedCandidate(candidate);
     };
 
@@ -235,14 +364,31 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
     };
 
     const handleInviteSent = () => {
-        // reload list and exit detail view
-        fetchCandidates();
+        // Reload list based on current filtering state and exit detail view
+        if (isFilteringApplicants && filterPostId) {
+            fetchApplicantsForPost(filterPostId);
+        } else {
+            fetchCandidates(true);
+        }
         setSelectedCandidate(null);
+
+        // Navigate to Shortlisted tab after sending invite
+        if (onNavigateToShortlisted) {
+            onNavigateToShortlisted('');
+        }
     };
 
-    // Filter logic update to include clusters
+    // Filter logic update to include clusters and view mode
     const displayCandidates = useMemo(() => {
-        let list = isFilteringApplicants ? filteredCandidates : candidates.filter(c => c.status === 'pending' || !c.status);
+        // Show registered users when in registered-users view mode
+        if (viewMode === 'registered-users') {
+            return registeredUsers;
+        }
+
+        // Otherwise show job candidates
+        let list = isFilteringApplicants
+            ? filteredCandidates
+            : candidates.filter(c => c.status === 'pending' || !c.status || c.status === 'shortlisted');
         if (activeClusterId !== null) {
             const cluster = clusters.find(c => c.id === activeClusterId);
             if (cluster) {
@@ -250,7 +396,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
             }
         }
         return list;
-    }, [isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
+    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
 
     return (
         <div className="space-y-6 flex-1 flex flex-col">
@@ -264,6 +410,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                         fetchCandidates();
                         setSelectedCandidate(null);
                     }}
+                    userApplications={viewMode === 'registered-users' ? userApplications : undefined}
                 />
             ) : (
                 <>
@@ -272,7 +419,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                             {/* Unified Header & Controls */}
                             <div className="mb-6 space-y-4">
                                 {/* Top Bar: Title, Description & Controls */}
-                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm">
                                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         {/* Title, Count and Description */}
                                         <div className="flex items-start gap-3">
@@ -311,6 +458,25 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                 />
                                             </div>
+
+                                            {/* Registered Candidates Button */}
+                                            <button
+                                                onClick={() => {
+                                                    if (viewMode === 'job-candidates') {
+                                                        setViewMode('registered-users');
+                                                        fetchRegisteredUsers();
+                                                    } else {
+                                                        setViewMode('job-candidates');
+                                                        setUserApplications([]);
+                                                    }
+                                                }}
+                                                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'registered-users'
+                                                    ? 'bg-orange-600 text-white shadow-md'
+                                                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
+                                            </button>
 
                                             {/* AI Action Button (If no clusters) */}
                                             {clusters.length === 0 && (
@@ -454,7 +620,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack }:
     );
 }
 
-export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void }) {
+export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void }) {
     return (
         <ErrorBoundary>
             <CandidatesTabContent {...props} />

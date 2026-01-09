@@ -14,9 +14,10 @@ interface CandidateDetailProps {
   onEdit?: (candidate: Candidate) => void;
   onInviteSent?: () => void;
   onRemoveCandidate?: () => void;
+  userApplications?: any[];
 }
 
-export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSent, onRemoveCandidate }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSent, onRemoveCandidate, userApplications }: CandidateDetailProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -140,6 +141,44 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
         {/* Content */}
         <div className="px-6 py-6">
           <div className="space-y-6">
+            {/* Application History */}
+            {userApplications && userApplications.length > 0 && (
+              <div className="bg-white border rounded-lg shadow p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-orange-600" />
+                  Applied Jobs
+                </h3>
+                <div className="space-y-3">
+                  {userApplications.map((app, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      {app.postDetails ? (
+                        <div>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{app.postDetails.jobTitle || 'Job Post'}</h4>
+                              <p className="text-sm text-gray-600 mt-1">{app.postDetails.department || 'Department not specified'}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Applied: {new Date(app.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.status === 'shortlisted' ? 'bg-orange-100 text-orange-700' :
+                              app.status === 'selected' ? 'bg-green-100 text-green-700' :
+                                app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                              }`}>
+                              {app.status || 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">Post details not available</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
@@ -218,24 +257,27 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
             )}
 
             {/* Projects */}
-            {((((candidate as any).projects?.length ?? 0) > 0) || (((candidate as any).extractedData?.projects?.length ?? 0) > 0)) && (
-              <div className="bg-white border rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Briefcase className="h-5 w-5 mr-2 text-primary-600" />
-                  Projects
-                </h3>
-                <div className="space-y-4">
-                  {((candidate as any).projects ?? (candidate as any).extractedData?.projects).map((proj: any, index: number) => (
-                    <div key={index} className="border-l-4 border-primary-200 pl-4">
-                      {(proj.name || proj.title) && (
-                        <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
-                      )}
-                      {proj.description && <p className="text-gray-500 text-sm">{proj.description}</p>}
-                    </div>
-                  ))}
+            {(() => {
+              const projects = (candidate as any).keyProjects ?? (candidate as any).projects ?? (candidate as any).extractedData?.projects;
+              return Array.isArray(projects) && projects.length > 0 && (
+                <div className="bg-white border rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <Briefcase className="h-5 w-5 mr-2 text-primary-600" />
+                    Projects
+                  </h3>
+                  <div className="space-y-4">
+                    {projects.map((proj: any, index: number) => (
+                      <div key={index} className="border-l-4 border-primary-200 pl-4">
+                        {(proj.name || proj.title) && (
+                          <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
+                        )}
+                        {proj.description && <p className="text-gray-500 text-sm">{proj.description}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Certifications */}
             {candidate.extractedData?.certifications && candidate.extractedData.certifications.length > 0 && (

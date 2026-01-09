@@ -50,27 +50,77 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
 
       if (error || !data?.success) throw new Error(error?.message || data?.error || 'Failed to send');
 
-      // Update candidate status and interview details in Firestore
+      // Determine if this is a manually uploaded candidate or a job applicant
+      // Job applicants have postId (set when fetching from job_applications)
+      // Manual candidates are in the 'candidates' collection without postId
+      const isJobApplicant = !!(candidate as any).postId;
+
+      if (!isJobApplicant) {
+        try {
+          const candidateRef = doc(db, 'candidates', candidate.id);
+          const todayStr = new Date().toISOString().split('T')[0];
+          await updateDoc(candidateRef, {
+            status: 'shortlisted',
+            interviewDetails: {
+              role,
+              dates,
+              roundType,
+              interviewers,
+              currentSalary: 30000,
+              expectedSalary: 30000,
+              joiningDate: todayStr,
+              feedback: 'Good',
+              sentAt: new Date().toISOString(),
+            },
+            updatedAt: new Date(),
+          });
+        } catch (err) {
+          console.error('Failed to update candidate after sending invite', err);
+        }
+      } else {
+        // Update job application status in Supabase for job applicants
+        try {
+          console.log('[InterviewInvite] Updating application:', { user_id: candidate.id, post_id: (candidate as any).postId });
+
+          let query = supabase
+            .from('job_applications')
+            .update({ status: 'shortlisted' })
+            .eq('user_id', candidate.id);
+
+          if ((candidate as any).postId) {
+            query = query.eq('post_id', (candidate as any).postId);
+          }
+
+          const { error: updateError, data: updateData } = await query.select();
+
+          if (updateError) {
+            console.error('[InterviewInvite] Failed to update:', updateError);
+          } else {
+            console.log('[InterviewInvite] Successfully updated:', updateData);
+          }
+        } catch (err) {
+          console.error('Failed to update job application after sending invite', err);
+        }
+      }
+
+      // Store interview details in interviews collection for both types
       try {
-        const candidateRef = doc(db, 'candidates', candidate.id);
+        const { setDoc } = await import('firebase/firestore');
+        const interviewRef = doc(db, 'interviews', candidate.id);
         const todayStr = new Date().toISOString().split('T')[0];
-        await updateDoc(candidateRef, {
-          status: 'shortlisted',
-          interviewDetails: {
-            role,
-            dates,
-            roundType,
-            interviewers,
-            currentSalary: 30000,
-            expectedSalary: 30000,
-            joiningDate: todayStr,
-            feedback: 'Good',
-            sentAt: new Date().toISOString(),
-          },
-          updatedAt: new Date(),
-        });
+        await setDoc(interviewRef, {
+          role,
+          dates,
+          roundType,
+          interviewers,
+          currentSalary: 30000,
+          expectedSalary: 30000,
+          joiningDate: todayStr,
+          feedback: 'Good',
+          sentAt: new Date().toISOString(),
+        }, { merge: true });
       } catch (err) {
-        console.error('Failed to update candidate after sending invite', err);
+        console.error('Failed to store interview details', err);
       }
 
       // Create notification for the candidate

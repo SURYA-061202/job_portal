@@ -224,7 +224,7 @@ export default function UploadResumesTab() {
     return (
         <div className="space-y-6 flex-1 flex flex-col h-full">
             {/* Header Section */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900">Upload Resumes</h2>
                     <p className="text-sm text-gray-500 mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>

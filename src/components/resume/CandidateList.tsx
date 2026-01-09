@@ -166,7 +166,7 @@ export default function CandidateList({
     <div className="space-y-4">
       {/* Header with Search and Optional Filter */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl shadow-sm border border-orange-100">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             {title || 'Candidates'}
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-100">

@@ -133,7 +133,7 @@ export default function RecruitmentPipelineTab() {
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
             {/* Header Section */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
+            <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Recruitment Pipeline</h2>

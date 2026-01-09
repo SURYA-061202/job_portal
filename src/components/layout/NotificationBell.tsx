@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collectionGroup, onSnapshot, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, where, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface Notification {
   id: string;
@@ -18,23 +19,45 @@ interface Props {
 export default function NotificationBell({ className = '', simpleMode = false }: Props & { simpleMode?: boolean }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   const unreadCount = notifications.filter(n => !n.viewed).length;
 
+  // Get current user's email
   useEffect(() => {
-    const q = collectionGroup(db, 'notifications');
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (user?.email) {
+        setCurrentUserEmail(user.email);
+      } else {
+        setCurrentUserEmail(null);
+      }
+    });
+    return () => unsubAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserEmail) {
+      setNotifications([]);
+      return;
+    }
+
+    // Query notifications where userId matches current user's email
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', currentUserEmail),
+      orderBy('createdAt', 'desc')
+    );
+
     const unsub = onSnapshot(q, (snap) => {
       const list: Notification[] = [];
       snap.forEach(docSnap => {
         const data: any = docSnap.data();
         list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
       });
-      // sort by createdAt desc client-side
-      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setNotifications(list);
     });
     return () => unsub();
-  }, []);
+  }, [currentUserEmail]);
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent click

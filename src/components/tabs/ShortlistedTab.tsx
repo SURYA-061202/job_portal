@@ -8,7 +8,7 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
-export default function ShortlistedTab() {
+export default function ShortlistedTab({ candidateId, onBack }: { candidateId?: string | null; onBack?: () => void } = {}) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
@@ -17,10 +17,71 @@ export default function ShortlistedTab() {
   useEffect(() => {
     const load = async () => {
       try {
+        const allCandidates: Candidate[] = [];
+
+        // 1. Fetch manually uploaded candidates from Firestore
         const qs = await getDocs(collection(db, "candidates"));
-        const list: Candidate[] = [];
-        qs.forEach((d) => list.push({ id: d.id, ...d.data() } as Candidate));
-        setCandidates(list);
+        qs.forEach((d) => {
+          const data = d.data();
+          if (data.status === 'shortlisted') {
+            allCandidates.push({ id: d.id, ...data } as Candidate);
+          }
+        });
+
+        // 2. Fetch shortlisted job applicants from Supabase
+        const { data: applications, error: appsError } = await supabase
+          .from('job_applications')
+          .select('user_id, post_id')
+          .eq('status', 'shortlisted');
+
+        if (appsError) {
+          console.error('Error fetching shortlisted applications:', appsError);
+        } else if (applications && applications.length > 0) {
+          // Fetch user details for each shortlisted applicant
+          for (const app of applications) {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', app.user_id));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                allCandidates.push({
+                  id: app.user_id,
+                  name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
+                  email: userData.email || '',
+                  phone: userData.mobile || '',
+                  role: userData.department || 'Applicant',
+                  experience: userData.yearsOfExperience || '',
+                  skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                  resumeUrl: userData.resumeUrl || '',
+                  extractedData: {
+                    summary: '',
+                    workExperience: [],
+                    education: [],
+                    skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                    certifications: [],
+                    projects: []
+                  },
+                  education: [],
+                  createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
+                  updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
+                  status: 'shortlisted' as any,
+                  postId: app.post_id
+                } as Candidate);
+              }
+            } catch (err) {
+              console.error(`Error fetching user ${app.user_id}:`, err);
+            }
+          }
+        }
+
+        setCandidates(allCandidates);
+
+        // Auto-select candidate if candidateId is provided
+        if (candidateId) {
+          const candidate = allCandidates.find(c => c.id === candidateId);
+          if (candidate) {
+            setSelected(candidate);
+          }
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load candidates");
@@ -31,7 +92,7 @@ export default function ShortlistedTab() {
     load();
   }, []);
 
-  const filtered = candidates.filter((c) => (c as any).status === "shortlisted");
+
 
   const handleStatusUpdated = () => {
     // reload candidates list after status change
@@ -49,7 +110,13 @@ export default function ShortlistedTab() {
     return (
       <ShortlistedCandidateDetail
         candidate={selected}
-        onBack={() => setSelected(null)}
+        onBack={() => {
+          setSelected(null);
+          // If there's a parent onBack and we came from another tab, call it
+          if (onBack && candidateId) {
+            onBack();
+          }
+        }}
         onStatusUpdated={handleStatusUpdated}
       />
     );
@@ -58,7 +125,7 @@ export default function ShortlistedTab() {
   return (
     <div className="space-y-6">
       <CandidateList
-        candidates={filtered}
+        candidates={candidates}
         onSelectCandidate={setSelected}
         loading={loading}
         searchTerm={search}
