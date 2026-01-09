@@ -1,7 +1,7 @@
 'use client';
 
 import type { Candidate } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Send, Edit2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban } from 'lucide-react';
 import { useState } from 'react';
 import InterviewInviteModal from './InterviewInviteModal';
 import { deleteDoc, doc } from 'firebase/firestore';
@@ -65,10 +65,13 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 flex-wrap">
                 <span>{candidate.name}</span>
                 {candidate.email && (
-                  <Send
-                    className="h-5 w-5 ml-3 text-primary-600 cursor-pointer"
+                  <button
                     onClick={() => setShowInviteModal(true)}
-                  />
+                    className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all"
+                    title="Send Interview Invite"
+                  >
+                    <MailPlus className="h-4 w-4" />
+                  </button>
                 )}
               </h1>
               {candidate.role && (
@@ -82,14 +85,14 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                   </div>
                 )}
                 {candidate.email && (
-                  <div className="flex items-center space-x-1">
-                    <Mail className="h-4 w-4 text-primary-600" />
+                  <div className="flex items-center space-x-1.5">
+                    <Mail className="h-4 w-4 text-blue-600" />
                     <span>{candidate.email}</span>
                   </div>
                 )}
                 {candidate.phone && (
-                  <div className="flex items-center space-x-1">
-                    <Phone className="h-4 w-4 text-primary-600" />
+                  <div className="flex items-center space-x-1.5">
+                    <Phone className="h-4 w-4 text-green-600" />
                     <span>{candidate.phone}</span>
                   </div>
                 )}
@@ -97,8 +100,8 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                   const expStr = candidate.experience ?? '';
                   if (/month/i.test(expStr)) {
                     return (
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4 text-primary-600" />
+                      <div className="flex items-center space-x-1.5">
+                        <Briefcase className="h-4 w-4 text-orange-600" />
                         <span>{expStr}</span>
                       </div>
                     );
@@ -108,8 +111,8 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                     return numMatch ? parseFloat(numMatch[0]) : 0;
                   })();
                   return (
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4 text-primary-600" />
+                    <div className="flex items-center space-x-1.5">
+                      <Briefcase className="h-4 w-4 text-orange-600" />
                       <span>{`${yrs} years experience`}</span>
                     </div>
                   );
@@ -145,7 +148,7 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
             {userApplications && userApplications.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-orange-600" />
+                  <Briefcase className="w-5 h-5 text-blue-600" />
                   Applied Jobs
                 </h3>
                 <div className="space-y-3">
@@ -183,7 +186,7 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
             {candidate.skills && candidate.skills.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-primary-600" />
+                  <Award className="h-5 w-5 mr-2 text-orange-600" />
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -203,7 +206,7 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
             {candidate.education && candidate.education.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2 text-primary-600" />
+                  <GraduationCap className="h-5 w-5 mr-2 text-indigo-600" />
                   Education
                   {(() => {
                     // Find first CGPA value if present
@@ -220,7 +223,7 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                 </h3>
                 <div className="space-y-4">
                   {candidate.education.map((edu, index) => (
-                    <div key={index} className="border-l-4 border-primary-200 pl-4">
+                    <div key={index} className="border-l-4 border-indigo-200 pl-4">
                       {(edu.degree || edu.field) && (
                         <p className="text-gray-800 font-medium">
                           {edu.degree}
@@ -239,12 +242,12 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
             {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Briefcase className="h-5 w-5 mr-2 text-primary-600" />
+                  <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
                   Work Experience
                 </h3>
                 <div className="space-y-4">
                   {candidate.extractedData.workExperience.map((exp, index) => (
-                    <div key={index} className="border-l-4 border-primary-200 pl-4">
+                    <div key={index} className="border-l-4 border-blue-200 pl-4">
                       {(exp.position || exp.company) && (
                         <p className="text-gray-700 font-medium">{`${exp.position || ''}${exp.position && exp.company ? ' @ ' : ''}${exp.company || ''}`}</p>
                       )}
@@ -258,50 +261,109 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
 
             {/* Projects */}
             {(() => {
-              const projects = (candidate as any).keyProjects ?? (candidate as any).projects ?? (candidate as any).extractedData?.projects;
-              return Array.isArray(projects) && projects.length > 0 && (
-                <div className="bg-white border rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <Briefcase className="h-5 w-5 mr-2 text-primary-600" />
-                    Projects
-                  </h3>
-                  <div className="space-y-4">
-                    {projects.map((proj: any, index: number) => (
-                      <div key={index} className="border-l-4 border-primary-200 pl-4">
-                        {(proj.name || proj.title) && (
-                          <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
-                        )}
-                        {proj.description && <p className="text-gray-500 text-sm">{proj.description}</p>}
+              const projectsRaw = (candidate as any).keyProjects ?? (candidate as any).projects ?? (candidate as any).extractedData?.projects;
+
+              // Handle string format (from user profile textarea)
+              if (typeof projectsRaw === 'string' && projectsRaw.trim().length > 0) {
+                const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
+                if (projectLines.length > 0) {
+                  return (
+                    <div className="bg-white border rounded-lg shadow p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                        <FolderKanban className="h-5 w-5 mr-2 text-purple-600" />
+                        Key Projects
+                      </h3>
+                      <div className="space-y-3">
+                        {projectLines.map((line: string, index: number) => (
+                          <div key={index} className="border-l-4 border-purple-200 pl-4">
+                            <p className="text-gray-700">{line.trim()}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  );
+                }
+              }
+
+              // Handle array format (from resume parsing)
+              if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
+                return (
+                  <div className="bg-white border rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                      <FolderKanban className="h-5 w-5 mr-2 text-purple-600" />
+                      Projects
+                    </h3>
+                    <div className="space-y-4">
+                      {projectsRaw.map((proj: any, index: number) => (
+                        <div key={index} className="border-l-4 border-purple-200 pl-4">
+                          {(proj.name || proj.title) && (
+                            <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
+                          )}
+                          {proj.description && <p className="text-gray-500 text-sm">{proj.description}</p>}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              }
+
+              return null;
             })()}
 
             {/* Certifications */}
-            {candidate.extractedData?.certifications && candidate.extractedData.certifications.length > 0 && (
-              <div className="bg-white border rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-primary-600" />
-                  Certifications
-                </h3>
-                <div className="space-y-2">
-                  {candidate.extractedData.certifications.map((cert: any, index: number) => {
-                    const text = typeof cert === 'string' ? cert : (cert.certificate ?? cert.name ?? JSON.stringify(cert));
-                    if (!text) return null;
-                    return (
-                      <div key={index} className="text-gray-700">
-                        {text}
-                        {cert.provider && (
-                          <span className="text-gray-500 text-xs ml-2">({cert.provider})</span>
-                        )}
+            {(() => {
+              const certificationsRaw = (candidate as any).certifications ?? (candidate as any).extractedData?.certifications;
+
+              // Handle string format (from user profile textarea)
+              if (typeof certificationsRaw === 'string' && certificationsRaw.trim().length > 0) {
+                const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
+                if (certLines.length > 0) {
+                  return (
+                    <div className="bg-white border rounded-lg shadow p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                        <Award className="h-5 w-5 mr-2 text-emerald-600" />
+                        Certifications
+                      </h3>
+                      <div className="space-y-2">
+                        {certLines.map((line: string, index: number) => (
+                          <div key={index} className="text-gray-700">
+                            {line.trim()}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                    </div>
+                  );
+                }
+              }
+
+              // Handle array format (from resume parsing)
+              if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
+                return (
+                  <div className="bg-white border rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                      <Award className="h-5 w-5 mr-2 text-emerald-600" />
+                      Certifications
+                    </h3>
+                    <div className="space-y-2">
+                      {certificationsRaw.map((cert: any, index: number) => {
+                        const text = typeof cert === 'string' ? cert : (cert.certificate ?? cert.name ?? JSON.stringify(cert));
+                        if (!text) return null;
+                        return (
+                          <div key={index} className="text-gray-700">
+                            {text}
+                            {cert.provider && (
+                              <span className="text-gray-500 text-xs ml-2">({cert.provider})</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
           </div>
         </div>
       </div>

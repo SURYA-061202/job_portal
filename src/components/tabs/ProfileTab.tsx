@@ -94,7 +94,7 @@ export default function ProfileTab() {
             <div className="w-full max-w-[60rem] bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200 p-4 sm:p-6">
 
                 {/* Header Section */}
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 mb-6 border-b border-gray-100 pb-5">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 border-b border-gray-100 pb-5">
                     <div className="relative">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-100">
                             <User className="w-7 h-7 sm:w-8 sm:h-8 text-white" />

@@ -176,7 +176,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight tracking-tight mb-1">{recruitment.jobTitle}</h1>
                                     <button
                                         onClick={() => setShowShareModal(true)}
-                                        className="p-1.5 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50 flex-shrink-0"
+                                        className="p-2 rounded-full transition-all bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
                                         title="Share job"
                                     >
                                         <Share2 className="w-4 h-4" />
@@ -274,7 +274,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
                     {/* Key Info Row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
                         <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-100 text-blue-900" labelColor="text-blue-500" />
                         <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
                         <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-100 text-pink-900" labelColor="text-pink-500" />
@@ -287,8 +287,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     {/* Requirements Section */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full border border-orange-100/50 shadow-sm">
-                                <Briefcase className="w-4 h-4 text-orange-600" />
+                            <div className="p-2 bg-gradient-to-br from-purple-100 to-purple-50 rounded-full border border-purple-100/50 shadow-sm">
+                                <Briefcase className="w-4 h-4 text-purple-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900">Requirements</h3>
                         </div>
@@ -303,8 +303,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     {/* Description Section */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full border border-orange-100/50 shadow-sm">
-                                <FileText className="w-4 h-4 text-orange-600" />
+                            <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full border border-blue-100/50 shadow-sm">
+                                <FileText className="w-4 h-4 text-blue-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900">Job Description</h3>
                         </div>
@@ -317,9 +317,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                         .filter(line => line.trim().length > 0)
                                         .map((line, i) => (
                                             <div key={i} className="flex gap-3 items-start text-gray-600">
-                                                <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold mt-0.5 border border-gray-200">
-                                                    {i + 1}
-                                                </span>
+                                                <div className="flex-shrink-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full mt-1" />
                                                 <p className="leading-relaxed">{line.trim().replace(/^[-*•]\s*/, '')}</p>
                                             </div>
                                         ))
@@ -346,8 +344,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     {/* Skills Section */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full border border-orange-100/50 shadow-sm">
-                                <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                            <div className="p-2 bg-gradient-to-br from-green-100 to-green-50 rounded-full border border-green-100/50 shadow-sm">
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900">Required Skills</h3>
                         </div>

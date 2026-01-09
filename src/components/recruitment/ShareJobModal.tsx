@@ -11,11 +11,11 @@ interface ShareJobModalProps {
 export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModalProps) {
     const [copied, setCopied] = useState(false);
     const shareUrl = `${window.location.origin}/job/${jobId}`;
-    const shareText = `Check out this job opportunity: ${jobTitle}`;
 
     const handleCopyLink = async () => {
         try {
-            await navigator.clipboard.writeText(shareUrl);
+            const textToCopy = `${jobTitle}\n${shareUrl}`;
+            await navigator.clipboard.writeText(textToCopy);
             setCopied(true);
             toast.success('Link copied to clipboard!');
             setTimeout(() => setCopied(false), 2000);
@@ -23,57 +23,6 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
             toast.error('Failed to copy link');
         }
     };
-
-    const shareOptions = [
-        {
-            name: 'WhatsApp',
-            icon: '📱',
-            color: 'bg-green-500 hover:bg-green-600',
-            onClick: () => {
-                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`, '_blank');
-            }
-        },
-        {
-            name: 'Telegram',
-            icon: '✈️',
-            color: 'bg-blue-500 hover:bg-blue-600',
-            onClick: () => {
-                window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
-            }
-        },
-        {
-            name: 'Email',
-            icon: '📧',
-            color: 'bg-gray-600 hover:bg-gray-700',
-            onClick: () => {
-                window.location.href = `mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(shareUrl)}`;
-            }
-        },
-        {
-            name: 'LinkedIn',
-            icon: '💼',
-            color: 'bg-blue-700 hover:bg-blue-800',
-            onClick: () => {
-                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
-            }
-        },
-        {
-            name: 'Twitter',
-            icon: '🐦',
-            color: 'bg-sky-500 hover:bg-sky-600',
-            onClick: () => {
-                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-            }
-        },
-        {
-            name: 'Facebook',
-            icon: '👥',
-            color: 'bg-blue-600 hover:bg-blue-700',
-            onClick: () => {
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-            }
-        }
-    ];
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -90,45 +39,37 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
                 </div>
 
                 {/* Job Title */}
-                <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-100">
+                <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg border border-orange-200">
                     <p className="text-sm font-semibold text-gray-900 line-clamp-2">{jobTitle}</p>
                 </div>
 
-                {/* Share Options */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                    {shareOptions.map((option) => (
-                        <button
-                            key={option.name}
-                            onClick={option.onClick}
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl ${option.color} text-white transition-all hover:scale-105 active:scale-95`}
-                        >
-                            <span className="text-2xl mb-2">{option.icon}</span>
-                            <span className="text-xs font-medium">{option.name}</span>
-                        </button>
-                    ))}
-                </div>
-
                 {/* Copy Link Section */}
-                <div className="border-t border-gray-200 pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Or copy link</p>
+                <div className="space-y-3">
+                    <p className="text-sm font-medium text-gray-700">Copy link to share</p>
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
                             value={shareUrl}
                             readOnly
-                            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         />
                         <button
                             onClick={handleCopyLink}
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${copied
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                            className={`px-5 py-3 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${copied
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95'
                                 }`}
                         >
                             {copied ? (
-                                <Check className="w-4 h-4" />
+                                <>
+                                    <Check className="w-4 h-4" />
+                                    <span>Copied!</span>
+                                </>
                             ) : (
-                                <Copy className="w-4 h-4" />
+                                <>
+                                    <Copy className="w-4 h-4" />
+                                    <span>Copy</span>
+                                </>
                             )}
                         </button>
                     </div>

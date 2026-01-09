@@ -207,8 +207,8 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                     workExperience: [],
                                     education: [],
                                     skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
-                                    certifications: [],
-                                    projects: []
+                                    certifications: data.certifications || [],
+                                    projects: data.keyProjects || data.projects || []
                                 },
                                 education: [],
                                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
@@ -264,7 +264,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                         workExperience: [],
                         education: [],
                         skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
-                        certifications: [],
+                        certifications: data.certifications || [],
                         projects: data.keyProjects || data.projects || []
                     },
                     education: [],

@@ -103,12 +103,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
                   : 'text-gray-700 hover:bg-white/50'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                 <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
                 {!isCollapsed && (
                   <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
@@ -135,12 +136,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
                   : 'text-gray-700 hover:bg-white/50'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                 <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
                 {!isCollapsed && (
                   <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
@@ -203,12 +205,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
-                      className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                      className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                         ? 'bg-white text-orange-600 shadow-md'
                         : 'text-white hover:bg-white/20'
                         }`}
                       title={tab.label}
                     >
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                       <Icon className="h-5 w-5" />
                     </button>
                   );
@@ -239,11 +242,12 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
-                      className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                      className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                         ? 'bg-white text-orange-600 shadow-md'
                         : 'text-white hover:bg-white/20'
                         }`}
                     >
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                       <Icon className="mr-3 h-5 w-5" />
                       <span className={isActive ? 'font-semibold' : ''}>
                         {tab.label}

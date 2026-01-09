@@ -162,7 +162,7 @@ export default function UserProfile() {
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-orange-gradient z-20"></div>
 
                     <div className="bg-white px-6 sm:px-8 py-8 sm:py-12 relative overflow-hidden border-b border-gray-200">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative z-10">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-orange-50 flex items-center justify-center border-4 border-white shadow-xl">
                                 <User className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500" />
                             </div>
@@ -329,8 +329,8 @@ export default function UserProfile() {
                                     <div
                                         {...getRootProps()}
                                         className={`cursor-pointer transition-all duration-300 ${isDragActive
-                                                ? 'bg-orange-50 border-2 border-dashed border-orange-400'
-                                                : 'bg-gray-50 border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
+                                            ? 'bg-orange-50 border-2 border-dashed border-orange-400'
+                                            : 'bg-gray-50 border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
                                             } rounded-xl p-6 flex flex-col items-center justify-center gap-3`}
                                     >
                                         <input {...getInputProps()} />
