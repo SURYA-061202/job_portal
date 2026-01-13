@@ -10,9 +10,11 @@ import CandidateList from '@/components/resume/CandidateList';
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import { clusterCandidates, saveClusters, fetchClusters } from '@/lib/clusteringService';
+import { analyzeCandidateScores } from '@/lib/aiService';
 import { ArrowLeft, Sparkles, X, Clock, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import type { RecruitmentRequest } from '@/types';
 
 function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -36,6 +38,9 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     const [viewMode, setViewMode] = useState<'job-candidates' | 'registered-users'>('job-candidates');
     const [registeredUsers, setRegisteredUsers] = useState<Candidate[]>([]);
     const [userApplications, setUserApplications] = useState<any[]>([]);
+
+    // Job Post Details for Scoring
+    const [recruitmentPost, setRecruitmentPost] = useState<RecruitmentRequest | null>(null);
 
     const isFilteringRef = useRef(false);
 
@@ -68,6 +73,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         if (postId) {
             setFilterPostId(postId);
             fetchApplicantsForPost(postId);
+            fetchPostDetails(postId);
         } else {
             setFilterPostId(null);
             setIsFilteringApplicants(false);
@@ -123,6 +129,17 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             console.error('Error fetching candidates:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPostDetails = async (id: string) => {
+        try {
+            const docSnap = await getDoc(doc(db, 'recruits', id));
+            if (docSnap.exists()) {
+                setRecruitmentPost({ id: docSnap.id, ...docSnap.data() } as RecruitmentRequest);
+            }
+        } catch (error) {
+            console.error("Error fetching post details:", error);
         }
     };
 
@@ -214,7 +231,8 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                                 updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
                                 postId: postId, // Add postId for Supabase updates
-                                status: appStatus as any // Add status from Supabase
+                                status: appStatus as any, // Add status from Supabase
+                                rankings: data.rankings // Include AI rankings
                             } as Candidate);
                         }
                     } catch (docErr) {
@@ -270,7 +288,8 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                     education: [],
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-                    status: 'pending' as any
+                    status: 'pending' as any,
+                    rankings: data.rankings // Include AI rankings
                 } as Candidate);
             });
 
@@ -318,24 +337,138 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         }
     };
 
-    const handleRunClustering = async () => {
-        const targetList = isFilteringApplicants ? filteredCandidates : candidates;
-        if (targetList.length < 3) {
-            toast.error("Need at least 3 candidates to perform clustering.");
+    const handleAIAnalysis = async () => {
+        let targetList = isFilteringApplicants ? filteredCandidates : candidates;
+
+        // Use registered users if in that view mode
+        if (viewMode === 'registered-users') {
+            targetList = registeredUsers;
+        }
+
+        if (targetList.length === 0) {
+            toast.error("No candidates to analyze.");
             return;
         }
 
         try {
             setIsClustering(true);
-            toast.loading("Analyzing profiles and generating clusters...", { id: "clustering" });
-            const result = await clusterCandidates(targetList);
-            setClusters(result);
-            setClusterLastUpdated(new Date());
-            saveClusters(result); // Persist
-            toast.success("Clusters generated & saved!", { id: "clustering" });
+
+            // 1. Resume Scoring
+            if (viewMode === 'registered-users') {
+                // --- MULTI-JOB SCORING FOR REGISTERED USERS ---
+                toast.loading("Fetching applications for registered users...", { id: "ai-scoring" });
+
+                const userIds = targetList.map(u => u.id);
+                console.log('[AI Analysis] Fetching apps for User IDs:', userIds);
+
+                // Fetch all applications for these users
+                const { data: allApps, error } = await supabase
+                    .from('job_applications')
+                    .select('user_id, post_id')
+                    .in('user_id', userIds);
+
+                if (error) {
+                    console.error('[AI Analysis] Supabase Error:', error);
+                    throw error;
+                }
+
+                console.log('[AI Analysis] Apps found:', allApps);
+
+                if (!allApps || allApps.length === 0) {
+                    toast.error("No job applications found for these users.", { id: "ai-scoring" });
+                    setIsClustering(false);
+                    return;
+                }
+
+                // Group users by post_id
+                const jobsMap: Record<string, string[]> = {}; // postId -> [userIds]
+                allApps.forEach(app => {
+                    if (!jobsMap[app.post_id]) jobsMap[app.post_id] = [];
+                    jobsMap[app.post_id].push(app.user_id);
+                });
+
+                const postIds = Object.keys(jobsMap);
+                console.log(`[AI Analysis] Found ${postIds.length} unique jobs applied to by these users.`);
+
+                let processedCount = 0;
+
+                // Iterate over each job
+                for (const postId of postIds) {
+                    // Fetch job details
+                    const jobDoc = await getDoc(doc(db, 'recruits', postId));
+                    if (!jobDoc.exists()) continue;
+
+                    const jobData = jobDoc.data();
+                    const jobDescription = jobData?.description;
+                    const jobTitle = jobData?.jobTitle;
+
+                    if (!jobDescription) continue;
+
+                    // Get candidates for this job
+                    const candidateIdsForJob = jobsMap[postId];
+                    const candidatesForJob = targetList.filter(c => candidateIdsForJob.includes(c.id));
+
+                    if (candidatesForJob.length > 0) {
+                        toast.loading(`Scoring ${candidatesForJob.length} candidates for "${jobTitle}"...`, { id: "ai-scoring" });
+
+                        // Run Analysis
+                        await analyzeCandidateScores(
+                            candidatesForJob,
+                            jobDescription,
+                            postId,
+                            jobTitle || 'Unknown Job'
+                        );
+                        processedCount++;
+                    }
+                }
+
+                if (processedCount > 0) {
+                    toast.success(`Scored candidates across ${processedCount} jobs!`, { id: "ai-scoring" });
+                    // Refresh data to show new scores
+                    fetchRegisteredUsers();
+                } else {
+                    toast("No eligible candidates/jobs found to score.", { id: "ai-scoring" });
+                }
+
+            } else {
+                // --- SINGLE JOB SCORING (Existing Logic) ---
+                if (recruitmentPost && recruitmentPost.description && recruitmentPost.id) {
+                    toast.loading("AI Scoring candidates...", { id: "ai-scoring" });
+                    const scoredCandidates = await analyzeCandidateScores(
+                        targetList,
+                        recruitmentPost.description,
+                        recruitmentPost.id,
+                        recruitmentPost.jobTitle
+                    );
+
+                    // Update local state with new scores
+                    if (isFilteringApplicants) {
+                        setFilteredCandidates(scoredCandidates);
+                    } else {
+                        setCandidates(scoredCandidates);
+                    }
+                    toast.success("Resumes scored!", { id: "ai-scoring" });
+                }
+            }
+
+            // 2. Clustering (if enough candidates)
+            if (targetList.length >= 3) {
+                toast.loading("Generating clusters...", { id: "clustering" });
+                const result = await clusterCandidates(targetList);
+                setClusters(result);
+                setClusterLastUpdated(new Date());
+                saveClusters(result); // Persist
+                toast.success("Clusters generated!", { id: "clustering" });
+            } else if (recruitmentPost) {
+                // If we didn't cluster but did score, that's fine.
+            } else {
+                toast.error("Need at least 3 candidates to perform clustering.");
+            }
+
         } catch (error) {
             console.error(error);
-            toast.error("Failed to generate clusters", { id: "clustering" });
+            toast.error("Analysis failed", { id: "clustering" });
+            toast.error("Analysis failed", { id: "ai-scoring" });
         } finally {
             setIsClustering(false);
         }
@@ -481,7 +614,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                             {/* AI Action Button (If no clusters) */}
                                             {clusters.length === 0 && (
                                                 <button
-                                                    onClick={handleRunClustering}
+                                                    onClick={handleAIAnalysis}
                                                     disabled={isClustering}
                                                     className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-70"
                                                 >
@@ -555,6 +688,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                 emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
                                 onEdit={(candidate) => setEditingCandidate(candidate)}
                                 hideHeader={true}
+                                jobId={filterPostId}
                             />
                         </>
                     )}

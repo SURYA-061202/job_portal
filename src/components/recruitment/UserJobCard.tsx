@@ -7,17 +7,7 @@ interface UserJobCardProps {
 }
 
 export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardProps) {
-    // Helper to get company initials for the logo
-    const getInitials = (company: string) => {
-        return company.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    };
-
     const companyName = recruitment.jobTitle || "Indian Infra";
-    const initials = getInitials(companyName);
-
-    // Randomize some colors for logos if not available
-    const colors = ['bg-blue-600', 'bg-red-500', 'bg-orange-500', 'bg-emerald-600', 'bg-indigo-600'];
-    const colorClass = colors[companyName.length % colors.length];
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 hover:border-orange-200 transition-all duration-300 relative group">
@@ -25,11 +15,6 @@ export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardP
             <button className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-gray-400 hover:text-orange-500 transition-colors">
                 <Bookmark className="w-4 h-4 md:w-5 md:h-5" />
             </button>
-
-            {/* Logo Section */}
-            <div className={`w-8 h-8 md:w-12 md:h-12 rounded-xl ${colorClass} flex items-center justify-center text-white font-bold text-base md:text-xl shrink-0 shadow-sm shadow-black/5`}>
-                {initials}
-            </div>
 
             {/* Content Section */}
             <div className="flex-1">

@@ -9,9 +9,22 @@ const apiKey =
   (typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : '') ||
   '';
 
+console.log('[DEBUG] OpenAI Config Check:');
+console.log('- VITE_OPENAI_API_KEY present:', !!import.meta.env?.VITE_OPENAI_API_KEY);
+console.log('- Process Env present:', typeof process !== 'undefined' && !!process.env?.OPENAI_API_KEY);
+console.log('- Final API Key length:', apiKey.length);
+
+if (!apiKey) {
+  console.error(
+    'CRITICAL: Missing OpenAI API Key. Please set VITE_OPENAI_API_KEY in your .env file in the project root.'
+  );
+}
+
 const openai = new OpenAI({
   apiKey,
   dangerouslyAllowBrowser: true,
 });
+
+export const isOpenAIConfigured = () => !!apiKey;
 
 export default openai; 

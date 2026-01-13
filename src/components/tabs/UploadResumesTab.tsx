@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { addDoc, collection, deleteDoc, doc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
-import type { Candidate } from '@/types';
+import type { Candidate, RecruitmentRequest } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import toast from 'react-hot-toast';
-import openai from '@/lib/openai';
+import openai, { isOpenAIConfigured } from '@/lib/openai';
+import { analyzeCandidateScores } from '@/lib/aiService';
+
 // PDF.js – load the worker dynamically so Vite can bundle it
 // @ts-ignore
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
@@ -19,6 +21,24 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 export default function UploadResumesTab() {
     const [loading, setLoading] = useState(false);
     const [manualCandidate, setManualCandidate] = useState<Candidate | null>(null);
+    const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
+    const [selectedJobId, setSelectedJobId] = useState<string>('');
+    const [uploadKey, setUploadKey] = useState(0); // Key to force re-render
+
+    // Fetch active job posts
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const q = query(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
+                setJobPosts(jobs);
+            } catch (error) {
+                console.error('Error fetching jobs:', error);
+            }
+        };
+        fetchJobs();
+    }, []);
 
     // Helpers to detect placeholder values coming from failed AI extraction
     const isPlaceholderName = (name: string) => /^(john|jane)\s+doe$/i.test(name.trim());
@@ -110,6 +130,32 @@ export default function UploadResumesTab() {
                 setManualCandidate({ id: docRef.id, ...candidateData } as Candidate);
             } else {
                 toast.success(`Resume uploaded successfully! Extracted data for ${candidateData.name}`);
+
+                // If a job is selected, trigger AI scoring immediately
+                if (selectedJobId) {
+                    const selectedJob = jobPosts.find(j => j.id === selectedJobId);
+                    if (selectedJob && selectedJob.description) {
+                        toast.loading(`Scoring against "${selectedJob.jobTitle}"...`, { id: 'upload-scoring' });
+                        try {
+                            // Construct a full Candidate object with ID
+                            const newCandidateWithId = { id: docRef.id, ...candidateData } as Candidate;
+
+                            await analyzeCandidateScores(
+                                [newCandidateWithId],
+                                selectedJob.description,
+                                selectedJob.id!,
+                                selectedJob.jobTitle
+                            );
+                            toast.success(`Scored against ${selectedJob.jobTitle}!`, { id: 'upload-scoring' });
+                        } catch (scoreErr) {
+                            console.error('Error scoring new candidate:', scoreErr);
+                            toast.error('Failed to generate AI score', { id: 'upload-scoring' });
+                        }
+                    }
+                }
+
+                // Reset upload component to clear the file input
+                setUploadKey(prev => prev + 1);
             }
         } catch (error: any) {
             console.error('Error uploading resume:', error);
@@ -126,6 +172,11 @@ export default function UploadResumesTab() {
 
     const parseResumeWithAI = async (publicUrl: string) => {
         try {
+            if (!isOpenAIConfigured()) {
+                console.warn("OpenAI key missing, skipping AI parsing");
+                throw new Error("OpenAI API Key is missing"); // Throwing to trigger fallback
+            }
+
             console.log('Parsing resume locally via OpenAI:', publicUrl);
 
             // 1) Extract raw text from the PDF using pdfjs
@@ -221,19 +272,41 @@ export default function UploadResumesTab() {
         }
     };
 
+    const handleManualDetailsSaved = async () => {
+        setManualCandidate(null);
+        toast.success('Resume uploaded successfully!');
+        setUploadKey(prev => prev + 1);
+    };
+
     return (
         <div className="space-y-6 flex-1 flex flex-col h-full">
             {/* Header Section */}
-            <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm">
+            <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900">Upload Resumes</h2>
                     <p className="text-sm text-gray-500 mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
+                </div>
+
+                {/* Job Selector */}
+                <div className="flex items-center gap-2">
+                    <select
+                        value={selectedJobId}
+                        onChange={(e) => setSelectedJobId(e.target.value)}
+                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white border shadow-sm"
+                    >
+                        <option value="">Select Post</option>
+                        {jobPosts.map((job) => (
+                            <option key={job.id} value={job.id}>
+                                {job.jobTitle}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
             <div className="h-full flex items-center justify-center">
                 <div className="max-w-2xl w-full">
-                    <ResumeUpload onUpload={handleResumeUpload} loading={loading} />
+                    <ResumeUpload key={uploadKey} onUpload={handleResumeUpload} loading={loading} />
                 </div>
             </div>
 
@@ -259,10 +332,7 @@ export default function UploadResumesTab() {
                             setManualCandidate(null);
                         }
                     }}
-                    onSaved={() => {
-                        setManualCandidate(null);
-                        toast.success('Resume uploaded successfully!');
-                    }}
+                    onSaved={handleManualDetailsSaved}
                 />
             )}
         </div>

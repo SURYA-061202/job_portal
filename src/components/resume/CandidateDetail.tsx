@@ -1,12 +1,15 @@
 'use client';
 
-import type { Candidate } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban } from 'lucide-react';
+import type { Candidate, RecruitmentRequest } from '@/types';
+import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import InterviewInviteModal from './InterviewInviteModal';
+import AIScoringModal from './AIScoringModal';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
+import { analyzeCandidateScores } from '@/lib/aiService';
+import toast from 'react-hot-toast';
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -14,24 +17,58 @@ interface CandidateDetailProps {
   onEdit?: (candidate: Candidate) => void;
   onInviteSent?: () => void;
   onRemoveCandidate?: () => void;
+  onUpdateCandidate?: (updatedCandidate: Candidate) => void;
   userApplications?: any[];
 }
 
-export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSent, onRemoveCandidate, userApplications }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate: initialCandidate, onBack, onEdit, onInviteSent, onRemoveCandidate, onUpdateCandidate, userApplications }: CandidateDetailProps) {
+  const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showScoreModal, setShowScoreModal] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [scoring, setScoring] = useState(false);
+
+  // If initialCandidate changes, update local state
+  if (initialCandidate.id !== candidate.id) {
+    setCandidate(initialCandidate);
+  }
+
+  const handleScoreJob = async (job: RecruitmentRequest) => {
+    if (!job.id || !job.description) return;
+    setScoring(true);
+    toast.loading(`Evaluating match for ${job.jobTitle}...`, { id: 'score-job' });
+    try {
+      const [updatedCandidate] = await analyzeCandidateScores(
+        [candidate],
+        job.description,
+        job.id,
+        job.jobTitle
+      );
+
+      setCandidate(updatedCandidate);
+      if (onUpdateCandidate) onUpdateCandidate(updatedCandidate);
+
+      toast.success(`Score updated: ${updatedCandidate.rankings?.[job.id].score}%`, { id: 'score-job' });
+      setShowScoreModal(false);
+    } catch (error) {
+      console.error('Scoring failed:', error);
+      toast.error('Failed to analyze candidate', { id: 'score-job' });
+    } finally {
+      setScoring(false);
+    }
+  };
 
   const handleRemove = async () => {
     if (!window.confirm('Are you sure you want to remove this candidate?')) return;
     setRemoving(true);
     try {
-      // Defensive check for candidate.id
+      // Defensive check
       if (!candidate.id) throw new Error('Candidate ID is missing.');
       // Delete from Firestore
       await deleteDoc(doc(db, 'candidates', candidate.id));
       // Delete from Supabase Storage
       if (candidate.resumeUrl) {
-        // Extract file name from public URL (fixed regex)
+        // Extract file name from public URL 
         const match = candidate.resumeUrl.match(/resumes\/([^/?#]+)/);
         const fileName = match ? match[1] : null;
         if (fileName) {
@@ -119,7 +156,20 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                 })()}
               </div>
             </div>
+
+            {/* Action Buttons */}
             <div className="flex items-center gap-3">
+              {/* AI Score Badge (Existing) */}
+              {candidate.rankings && Object.keys(candidate.rankings).length > 0 && (
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-100 text-purple-700 shadow-sm animate-in fade-in zoom-in spin-in-1 mr-2">
+                  <Sparkles className="h-4 w-4 fill-purple-300" />
+                  <span className="font-bold text-sm">
+                    {/* Show highest score or first one found */}
+                    {Object.values(candidate.rankings).reduce((max, r) => Math.max(max, r.score), 0)}%
+                  </span>
+                </div>
+              )}
+
               {onEdit && (
                 <button
                   onClick={() => onEdit(candidate)}
@@ -129,6 +179,18 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                   Edit Profile
                 </button>
               )}
+
+              {/* Manual AI Score Trigger (New) */}
+              {(!candidate.rankings || Object.keys(candidate.rankings).length === 0) && (
+                <button
+                  onClick={() => setShowScoreModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-pink-50 border border-pink-200 text-pink-700 rounded-md hover:bg-pink-100 transition-colors text-sm font-medium"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  AI Score
+                </button>
+              )}
+
               <a
                 href={candidate.resumeUrl}
                 target="_blank"
@@ -158,7 +220,18 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
                         <div>
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-semibold text-gray-900">{app.postDetails.jobTitle || 'Job Post'}</h4>
+                              <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                {app.postDetails.jobTitle || 'Job Post'}
+                                {/* AI Score for this specific job */}
+                                {candidate.rankings && candidate.rankings[app.post_id] && (
+                                  <span className={`text-xs px-2 py-0.5 rounded border ${candidate.rankings[app.post_id].score >= 70 ? 'bg-green-50 text-green-700 border-green-200' :
+                                    candidate.rankings[app.post_id].score >= 40 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                      'bg-red-50 text-red-700 border-red-200'
+                                    }`}>
+                                    {candidate.rankings[app.post_id].score}% Match
+                                  </span>
+                                )}
+                              </h4>
                               <p className="text-sm text-gray-600 mt-1">{app.postDetails.department || 'Department not specified'}</p>
                               <p className="text-xs text-gray-500 mt-1">
                                 Applied: {new Date(app.created_at).toLocaleDateString()}
@@ -372,12 +445,18 @@ export default function CandidateDetail({ candidate, onBack, onEdit, onInviteSen
         <InterviewInviteModal
           candidate={candidate}
           onClose={() => setShowInviteModal(false)}
-          onSent={() => {
-            setShowInviteModal(false);
-            onInviteSent?.();
-          }}
+          onSent={onInviteSent}
         />
       )}
+
+      {showScoreModal && (
+        <AIScoringModal
+          onClose={() => setShowScoreModal(false)}
+          onSelectJob={handleScoreJob}
+          isLoading={scoring}
+        />
+      )}
+
       {/* Remove Candidate Button */}
       <div className="flex justify-end">
         <button

@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, User } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
@@ -34,8 +34,6 @@ function formatExperience(exp?: string) {
   return cleanExp.length > 20 ? `${cleanExp.substring(0, 17)}...` : cleanExp;
 }
 
-
-
 interface CandidateListProps {
   candidates: Candidate[];
   onSelectCandidate: (candidate: Candidate) => void;
@@ -49,6 +47,7 @@ interface CandidateListProps {
   filterValue?: string;
   filterOptions?: { value: string; label: string }[];
   onFilterChange?: (value: string) => void;
+  jobId?: string | null;  // For specific ranking display
 }
 
 export default function CandidateList({
@@ -63,9 +62,13 @@ export default function CandidateList({
   title,
   filterValue,
   filterOptions,
-  onFilterChange
+  onFilterChange,
+  jobId
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // State for sorting
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
 
   const handleRemove = async (e: React.MouseEvent, candidate: Candidate) => {
     e.stopPropagation();
@@ -95,7 +98,22 @@ export default function CandidateList({
     }
   };
 
+  // Helper to get score for sorting/display
+  const getCandidateScore = (candidate: Candidate, jobId?: string | null): number | null => {
+    if (!candidate.rankings) return null;
 
+    if (jobId && candidate.rankings[jobId]) {
+      return candidate.rankings[jobId].score;
+    }
+
+    // If no specific job, get max score
+    const rankings = Object.values(candidate.rankings);
+    if (rankings.length > 0) {
+      return rankings.reduce((max, current) => (current.score > max ? current.score : max), 0);
+    }
+
+    return null;
+  };
 
   // Helper to decide if a candidate matches the current search term
   const candidateMatchesSearch = (candidate: Candidate, term: string) => {
@@ -126,11 +144,38 @@ export default function CandidateList({
     return tokens.some((t) => t?.toLowerCase().includes(q));
   };
 
-  // Memoised filtered list to avoid unnecessary recalculations
-  const filteredCandidates = useMemo(
-    () => candidates.filter((c) => candidateMatchesSearch(c, searchTerm)),
-    [candidates, searchTerm]
-  );
+  // Memoised filtered and sorted list
+  const filteredCandidates = useMemo(() => {
+    // 1. Filter
+    let result = candidates.filter((c) => candidateMatchesSearch(c, searchTerm));
+
+    // 2. Sort
+    if (sortOrder !== 'none') {
+      result = [...result].sort((a, b) => {
+        const scoreA = getCandidateScore(a, jobId);
+        const scoreB = getCandidateScore(b, jobId);
+
+        // Always put non-scored candidates at the bottom
+        if (scoreA === null && scoreB === null) return 0;
+        if (scoreA === null) return 1;
+        if (scoreB === null) return -1;
+
+        // Compare scores
+        return sortOrder === 'desc' ? scoreB - scoreA : scoreA - scoreB;
+      });
+    }
+
+    return result;
+  }, [candidates, searchTerm, sortOrder, jobId]);
+
+  // Handler for toggle sort
+  const toggleSort = () => {
+    setSortOrder(prev => {
+      if (prev === 'none') return 'desc'; // First click: Highest score first
+      if (prev === 'desc') return 'asc';  // Second click: Lowest score first
+      return 'none';                      // Third click: Reset
+    });
+  };
 
   if (loading) {
     return (
@@ -213,20 +258,25 @@ export default function CandidateList({
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Name / Role</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Contact Info</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Experience</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">AI Score</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <span>AI Score</span>
+                    <button
+                      onClick={toggleSort}
+                      className="flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none ring-offset-1 focus:ring-2 focus:ring-primary-500/50"
+                      title="Sort by AI Score"
+                    >
+                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-primary-600 stroke-[3px]' : 'text-gray-400'}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-primary-600 stroke-[3px]' : 'text-gray-400'}`} />
+                    </button>
+                  </div>
+                </th>
                 <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredCandidates.map((candidate) => {
-                // Find latest rank score if available
-                let aiScore = null;
-                if (candidate.rankings) {
-                  const keys = Object.keys(candidate.rankings);
-                  if (keys.length > 0) {
-                    aiScore = candidate.rankings[keys[0]].score;
-                  }
-                }
+                const aiScore = getCandidateScore(candidate, jobId);
 
                 return (
                   <tr
@@ -313,4 +363,4 @@ export default function CandidateList({
       </div>
     </div>
   );
-} 
+}
