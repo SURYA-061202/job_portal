@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { User, Mail, Phone, Save, Loader2, Plus, X, Globe, Book, Award, FileUp, Clock, Briefcase, DollarSign, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
+import { User, Mail, Phone, Save, Loader2, Plus, X, FileUp, Clock, Briefcase, DollarSign, CheckCircle2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/lib/supabase';

@@ -220,8 +220,7 @@ export default function UserDashboard() {
         const matchesJobType = selectedFilters.jobType.length === 0 ||
             selectedFilters.jobType.includes(post.candidateType || 'Permanent');
 
-        const matchesExperience = selectedFilters.experience.length === 0 ||
-            selectedFilters.experience.some(exp => post.yearsExperience.toString().includes(exp.split(' ')[0]));
+
         // This is a rough match. Better would be exact categories.
         // For now: "Entry Level" matches any low number, etc.
         // Let's refine the experience matching:
