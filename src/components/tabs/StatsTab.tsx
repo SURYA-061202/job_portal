@@ -142,7 +142,7 @@ export default function StatsTab() {
   return (
     <div className="space-y-6 flex-1 flex flex-col">
       {/* Header Section */}
-      <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">

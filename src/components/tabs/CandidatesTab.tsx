@@ -38,6 +38,26 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     const [viewMode, setViewMode] = useState<'job-candidates' | 'registered-users'>('job-candidates');
     const [registeredUsers, setRegisteredUsers] = useState<Candidate[]>([]);
     const [userApplications, setUserApplications] = useState<any[]>([]);
+    const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all');
+    const [userAppDates, setUserAppDates] = useState<Record<string, Date[]>>({});
+
+    // Extract unique dates for filter
+    const availableDates = useMemo(() => {
+        console.log('[DateFilter] Recalculating availableDates. UserAppDates keys:', Object.keys(userAppDates).length);
+        const dates = new Set<string>();
+        Object.values(userAppDates).flat().forEach(date => {
+            if (!isNaN(date.getTime())) {
+                const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                dates.add(monthYear);
+            }
+        });
+        // Sort by date descending
+        return Array.from(dates).sort((a, b) => {
+            const dateA = new Date(a);
+            const dateB = new Date(b);
+            return dateB.getTime() - dateA.getTime();
+        });
+    }, [userAppDates]);
 
     // Job Post Details for Scoring
     const [recruitmentPost, setRecruitmentPost] = useState<RecruitmentRequest | null>(null);
@@ -294,6 +314,27 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             });
 
             setRegisteredUsers(users);
+
+            // Fetch all applications to determine applied dates
+            const { data: allApps, error: appsError } = await supabase
+                .from('job_applications')
+                .select('user_id, created_at');
+
+            if (appsError) {
+                console.error('[DateFilter] Error fetching apps:', appsError);
+            } else if (allApps) {
+                console.log(`[DateFilter] Fetched ${allApps.length} applications.`);
+                const datesMap: Record<string, Date[]> = {};
+                allApps.forEach(app => {
+                    if (app.user_id && app.created_at) {
+                        if (!datesMap[app.user_id]) datesMap[app.user_id] = [];
+                        datesMap[app.user_id].push(new Date(app.created_at));
+                    }
+                });
+                console.log(`[DateFilter] Constructed datesMap for ${Object.keys(datesMap).length} users.`);
+                setUserAppDates(datesMap);
+            }
+
         } catch (error) {
             console.error('Error fetching registered users:', error);
             toast.error('Failed to load registered users');
@@ -515,7 +556,23 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     const displayCandidates = useMemo(() => {
         // Show registered users when in registered-users view mode
         if (viewMode === 'registered-users') {
-            return registeredUsers;
+            console.log(`[DateFilter] Filtering. Selected: ${selectedDateFilter}, Total Users: ${registeredUsers.length}`);
+
+            if (selectedDateFilter === 'all') return registeredUsers;
+
+            const filtered = registeredUsers.filter(u => {
+                const appDates = userAppDates[u.id];
+                if (!appDates || appDates.length === 0) return false;
+
+                // Check if ANY of the application dates match the selected filter
+                const match = appDates.some(date => {
+                    const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                    return monthYear === selectedDateFilter;
+                });
+                return match;
+            });
+            console.log(`[DateFilter] Filtered Result Count: ${filtered.length}`);
+            return filtered;
         }
 
         // Otherwise show job candidates
@@ -529,7 +586,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             }
         }
         return list;
-    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
+    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates]);
 
     return (
         <div className="space-y-6 flex-1 flex flex-col">
@@ -552,7 +609,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                             {/* Unified Header & Controls */}
                             <div className="mb-6 space-y-4">
                                 {/* Top Bar: Title, Description & Controls */}
-                                <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm">
+                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         {/* Title, Count and Description */}
                                         <div className="flex items-start gap-3">
@@ -591,6 +648,25 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                 />
                                             </div>
+
+                                            {/* Date Filter (Only for Registered Candidates) */}
+                                            {viewMode === 'registered-users' && (
+                                                <div className="relative">
+                                                    <select
+                                                        value={selectedDateFilter}
+                                                        onChange={(e) => setSelectedDateFilter(e.target.value)}
+                                                        className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm h-full"
+                                                    >
+                                                        <option value="all">All Dates</option>
+                                                        {availableDates.map(date => (
+                                                            <option key={date} value={date}>{date}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Registered Candidates Button */}
                                             <button
