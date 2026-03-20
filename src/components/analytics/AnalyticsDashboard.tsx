@@ -49,8 +49,20 @@ export default function AnalyticsDashboard() {
 
     // 2. Experience Processing
     const getExpYears = (expStr: string = '') => {
-        const match = expStr.match(/(\d+)/);
-        return match ? parseInt(match[1]) : 0;
+        if (!expStr) return 0;
+        const match = expStr.match(/(\d+\.?\d*)/);
+        if (!match) return 0;
+        
+        const num = parseFloat(match[1]);
+        const currentYear = new Date().getFullYear();
+        
+        if (num > 1950 && num <= currentYear) {
+            return currentYear - num;
+        }
+        if (num < 50) {
+            return num;
+        }
+        return 0;
     };
     const avgExperience = useMemo(() => {
         if (!totalCandidates) return 0;

@@ -105,7 +105,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
-                  : 'text-gray-700 hover:bg-white/50'
+                  : 'text-gray-700 hover:bg-orange-50/50 hover:text-orange-600 hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
@@ -138,7 +138,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
-                  : 'text-gray-700 hover:bg-white/50'
+                  : 'text-gray-700 hover:bg-orange-50/50 hover:text-orange-600 hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >

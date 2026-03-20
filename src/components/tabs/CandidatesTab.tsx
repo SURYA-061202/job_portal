@@ -68,39 +68,42 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         isFilteringRef.current = isFilteringApplicants;
     }, [isFilteringApplicants]);
 
-    useEffect(() => {
-        fetchCandidates();
-        fetchClusters().then((res) => {
-            if (res.clusters && res.clusters.length > 0) {
-                setClusters(res.clusters);
-                if (res.lastUpdated) {
-                    try {
-                        const date = new Date(res.lastUpdated);
-                        if (!isNaN(date.getTime())) {
-                            setClusterLastUpdated(date);
-                        }
-                    } catch (e) {
-                        console.error("Invalid date:", e);
-                    }
-                }
-                toast.success("Loaded saved clusters");
-            }
-        });
-    }, []);
 
-    // Auto-filter when postId prop changes
+    // Unified AI Analysis State Management
     useEffect(() => {
+        // 1. Always clear clusters and active selection when context changes
+        setClusters([]);
+        setActiveClusterId(null);
+        setClusterLastUpdated(null);
+
+        // 2. Handle Job-Specific Context (Applied Candidates)
         if (postId) {
             setFilterPostId(postId);
             fetchApplicantsForPost(postId);
             fetchPostDetails(postId);
-        } else {
+        }
+        // 3. Handle Registered Users Context
+        else if (viewMode === 'registered-users') {
+            setFilterPostId(null);
+            setIsFilteringApplicants(false);
+            isFilteringRef.current = false;
+            fetchRegisteredUsers();
+        }
+        // 4. Handle Global Uploaded Candidates Context
+        else {
             setFilterPostId(null);
             setIsFilteringApplicants(false);
             isFilteringRef.current = false;
             fetchCandidates(true);
+
+            // Reload global clusters only for this view
+            fetchClusters().then((res) => {
+                if (res.clusters && res.clusters.length > 0) {
+                    setClusters(res.clusters);
+                }
+            });
         }
-    }, [postId]);
+    }, [postId, viewMode]);
 
     const fetchCandidates = async (force = false) => {
         // If we are currently filtering for a specific post and this was called automatically, 
@@ -498,7 +501,12 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                 const result = await clusterCandidates(targetList);
                 setClusters(result);
                 setClusterLastUpdated(new Date());
-                saveClusters(result); // Persist
+
+                // Only persist to global storage if we are in the global view
+                if (!postId && viewMode === 'job-candidates') {
+                    saveClusters(result);
+                }
+
                 toast.success("Clusters generated!", { id: "clustering" });
             } else if (recruitmentPost) {
                 // If we didn't cluster but did score, that's fine.
@@ -554,37 +562,42 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
 
     // Filter logic update to include clusters and view mode
     const displayCandidates = useMemo(() => {
-        // Show registered users when in registered-users view mode
+        let list: Candidate[] = [];
+
+        // 1. Determine base list based on view mode
         if (viewMode === 'registered-users') {
             console.log(`[DateFilter] Filtering. Selected: ${selectedDateFilter}, Total Users: ${registeredUsers.length}`);
 
-            if (selectedDateFilter === 'all') return registeredUsers;
+            if (selectedDateFilter === 'all') {
+                list = registeredUsers;
+            } else {
+                list = registeredUsers.filter(u => {
+                    const appDates = userAppDates[u.id];
+                    if (!appDates || appDates.length === 0) return false;
 
-            const filtered = registeredUsers.filter(u => {
-                const appDates = userAppDates[u.id];
-                if (!appDates || appDates.length === 0) return false;
-
-                // Check if ANY of the application dates match the selected filter
-                const match = appDates.some(date => {
-                    const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-                    return monthYear === selectedDateFilter;
+                    // Check if ANY of the application dates match the selected filter
+                    return appDates.some(date => {
+                        const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                        return monthYear === selectedDateFilter;
+                    });
                 });
-                return match;
-            });
-            console.log(`[DateFilter] Filtered Result Count: ${filtered.length}`);
-            return filtered;
+            }
+            console.log(`[DateFilter] Filtered Result Count: ${list.length}`);
+        } else {
+            // Otherwise show job candidates
+            list = isFilteringApplicants
+                ? filteredCandidates
+                : candidates.filter(c => c.status === 'pending' || !c.status || c.status === 'shortlisted');
         }
 
-        // Otherwise show job candidates
-        let list = isFilteringApplicants
-            ? filteredCandidates
-            : candidates.filter(c => c.status === 'pending' || !c.status || c.status === 'shortlisted');
+        // 2. Apply AI Cluster filter to WHATEVER list is active
         if (activeClusterId !== null) {
             const cluster = clusters.find(c => c.id === activeClusterId);
             if (cluster) {
                 list = list.filter(c => cluster.candidateIds.includes(c.id));
             }
         }
+
         return list;
     }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates]);
 
@@ -626,7 +639,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                 <div className="flex items-center gap-3 mb-1">
                                                     <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
                                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
-                                                        {isFilteringApplicants ? filteredCandidates.length : (searchTerm ? filteredCandidates.length : candidates.length)}
+                                                        {displayCandidates.length}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
@@ -668,24 +681,25 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                 </div>
                                             )}
 
-                                            {/* Registered Candidates Button */}
-                                            <button
-                                                onClick={() => {
-                                                    if (viewMode === 'job-candidates') {
-                                                        setViewMode('registered-users');
-                                                        fetchRegisteredUsers();
-                                                    } else {
-                                                        setViewMode('job-candidates');
-                                                        setUserApplications([]);
-                                                    }
-                                                }}
-                                                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'registered-users'
-                                                    ? 'bg-orange-600 text-white shadow-md'
-                                                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                                                    }`}
-                                            >
-                                                {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
-                                            </button>
+                                            {/* Registered Candidates Button - Hide when viewing a specific post */}
+                                            {!postId && (
+                                                <button
+                                                    onClick={() => {
+                                                        if (viewMode === 'job-candidates') {
+                                                            setViewMode('registered-users');
+                                                        } else {
+                                                            setViewMode('job-candidates');
+                                                            setUserApplications([]);
+                                                        }
+                                                    }}
+                                                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'registered-users'
+                                                        ? 'bg-orange-600 text-white shadow-md'
+                                                        : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
+                                                </button>
+                                            )}
 
                                             {/* AI Action Button (If no clusters) */}
                                             {clusters.length === 0 && (

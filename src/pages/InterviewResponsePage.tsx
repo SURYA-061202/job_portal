@@ -24,20 +24,28 @@ export default function InterviewResponsePage() {
         return;
       }
       try {
-        const snapshot = await getDoc(doc(db, 'candidates', candidateId));
+        let snapshot = await getDoc(doc(db, 'candidates', candidateId));
         if (!snapshot.exists()) {
-          toast.error('Invalid candidate ID');
-          return;
+          snapshot = await getDoc(doc(db, 'users', candidateId));
         }
-        const data: any = snapshot.data();
-        setDates(data?.interviewDetails?.dates || []);
-        setCandidateInfo({ name: data?.name || '', email: data?.email || '' });
 
-        // check already submitted
-        const respSnap = await getDoc(doc(collection(db, 'interviews'), candidateId));
+        if (snapshot.exists()) {
+          const data: any = snapshot.data();
+          setCandidateInfo({ name: data?.name || '', email: data?.email || '' });
+        } else {
+          toast.error('Invalid candidate ID');
+        }
+
+        // Always fetch interview details from 'interviews' collection
+        const respSnap = await getDoc(doc(db, 'interviews', candidateId));
         if (respSnap.exists()) {
-          setExistingResponse(respSnap.data());
-          setSubmitted(true);
+          const intData = respSnap.data();
+          setDates(intData?.dates || []);
+          
+          if (intData?.response) {
+            setExistingResponse(intData);
+            setSubmitted(true);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -58,7 +66,7 @@ export default function InterviewResponsePage() {
     try {
       const ref = doc(collection(db, 'interviews'), candidateId);
       const snap = await getDoc(ref);
-      if (snap.exists()) {
+      if (snap.exists() && snap.data()?.response) {
         toast.error('Already submitted');
         setExistingResponse(snap.data());
         return;

@@ -101,7 +101,7 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
             {/* Pro Tip Card */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white overflow-hidden relative">
                 <div className="relative z-10">
-                    <h3 className="font-bold text-lg mb-2">Pro Tip!</h3>
+                    <h3 className="font-bold text-lg mb-2">Reminder!</h3>
                     <p className="text-gray-400 text-sm leading-relaxed mb-4">
                         Keep your profile updated to get 3x more visibility from recruiters.
                     </p>

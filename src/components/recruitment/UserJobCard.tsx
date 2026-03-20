@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Clock, IndianRupee, Bookmark } from 'lucide-react';
+import { MapPin, Briefcase, Clock, IndianRupee } from 'lucide-react';
 
 interface UserJobCardProps {
     recruitment: RecruitmentRequest;
@@ -11,10 +11,7 @@ export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardP
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 hover:border-orange-200 transition-all duration-300 relative group">
-            {/* Bookmark Icon */}
-            <button className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-gray-400 hover:text-orange-500 transition-colors">
-                <Bookmark className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
+            {/* Bookmark Icon Remved */}
 
             {/* Content Section */}
             <div className="flex-1">

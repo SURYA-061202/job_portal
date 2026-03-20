@@ -40,9 +40,8 @@ export default function UserDashboard() {
             setActiveTab('applications');
         } else {
             setActiveTab('jobs');
-            // If we are just visiting /jobs, ensure we are not locked in a view?
-            // Actually, if we support deep linking, we'd check ID here. But for now, no.
         }
+        setSelectedJob(null); // Reset detail view on tab switch
     }, [location.pathname]);
 
     useEffect(() => {
@@ -398,7 +397,7 @@ export default function UserDashboard() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-2 sticky top-0 bg-gray-50 py-4 z-10">
                             <div className="flex items-center justify-between w-full sm:w-auto">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-                                    Latest Jobs <span className="text-orange-600">({filteredPosts.length})</span>
+                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-orange-600">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                                 </h2>
                                 {/* Mobile Filter Toggle */}
                                 <button

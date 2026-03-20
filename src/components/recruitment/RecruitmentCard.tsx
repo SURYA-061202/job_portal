@@ -27,14 +27,6 @@ interface RecruitmentCardProps {
 }
 
 export default function RecruitmentCard({ recruitment, onClick, onViewDetails, applicantCount }: RecruitmentCardProps) {
-    const urgencyColors = {
-        'Immediate': 'bg-red-50 text-red-700 border-red-100',
-        'Moderate': 'bg-yellow-50 text-yellow-700 border-yellow-100',
-        'Flexible': 'bg-green-50 text-green-700 border-green-100'
-    };
-
-    const urgencyColor = urgencyColors[recruitment.urgencyLevel] || 'bg-gray-50 text-gray-700 border-gray-100';
-
     // Safely handle skills string
     const skills = recruitment.skills ? recruitment.skills.split(',').slice(0, 3) : [];
 
@@ -46,7 +38,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
     return (
         <div
             onClick={handleClick}
-            className="group relative bg-white rounded-2xl shadow border border-gray-200 hover:shadow-lg hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group relative bg-white rounded-2xl border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             {/* Top Accent Line */}
             <div className={`h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
@@ -55,23 +47,17 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3 sm:mb-4">
                     <div className="flex-1 pr-2">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${urgencyColor}`}>
-                                {recruitment.urgencyLevel} Priority
-                            </span>
+                        <div className="flex justify-between items-center gap-4">
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight transition-colors line-clamp-2 flex-1">
+                                {recruitment.jobTitle}
+                            </h3>
                             {recruitment.positionLevel && (
-                                <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-100">
+                                <span className="flex-shrink-0 inline-flex items-center text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-100">
                                     {recruitment.positionLevel}
                                 </span>
                             )}
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight transition-colors line-clamp-2">
-                            {recruitment.jobTitle}
-                        </h3>
-                        {/* Hide Department if hideExtraDetails is true? User said hiding Location and Budget specifically, but Department is usually fine.
-                            Wait, user said "dont show the Location and Budget".
-                            I'll keep Department as it's part of the header usually.
-                         */}
+
                         <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1 flex items-center">
                             <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                             {recruitment.department}

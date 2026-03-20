@@ -10,10 +10,28 @@ import { createCongratulationsNotification } from "@/lib/notificationHelper";
 
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<boolean>(() => {
-    const success = (candidate as any).interviewDetails?.successmail;
-    return success === true;
-  });
+  const [sent, setSent] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchInterviewDetails = async () => {
+      try {
+        const interviewRef = doc(db, 'interviews', candidate.id);
+        const snap = await getDoc(interviewRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.successmail === true) {
+            setSent(true);
+          }
+        } else {
+          const success = (candidate as any).interviewDetails?.successmail;
+          if (success === true) setSent(true);
+        }
+      } catch (err) {
+        console.error("Failed to fetch interview details", err);
+      }
+    };
+    fetchInterviewDetails();
+  }, [candidate.id]);
   /*const body = encodeURIComponent(
     `Dear ${candidate.name},\n\n` +
     `Congratulations! You have been selected.\n\n` +
@@ -68,8 +86,12 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                         await setDoc(interviewRef, { successmail: true, createdAt: new Date() });
                       }
 
-                      // also update in candidate's interviewDetails
-                      await updateDoc(doc(db, 'candidates', candidate.id), { 'interviewDetails.successmail': true });
+                      // also update in candidate's interviewDetails if exists
+                      const candRef = doc(db, 'candidates', candidate.id);
+                      const candSnap = await getDoc(candRef);
+                      if (candSnap.exists()) {
+                        await updateDoc(candRef, { 'interviewDetails.successmail': true });
+                      }
 
                       // Create notification for the candidate
                       try {
@@ -86,7 +108,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                       setSending(false);
                     }
                   }}
-                  className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded ${sent ? 'bg-green-600 text-white' : 'bg-primary-600 text-white hover:bg-primary-700'} disabled:opacity-50`}
+                  className="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
                 >
                   {sending && (
                     <svg className="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24">
@@ -155,10 +177,65 @@ export default function CandidatesTab() {
   useEffect(() => {
     const load = async () => {
       try {
+        const allCandidates: Candidate[] = [];
+
+        // 1. Fetch from Firestore candidates
         const qs = await getDocs(collection(db, "candidates"));
-        const list: Candidate[] = [];
-        qs.forEach((d) => list.push({ id: d.id, ...d.data() } as Candidate));
-        setCandidates(list);
+        qs.forEach((d) => {
+          allCandidates.push({ id: d.id, ...d.data() } as Candidate);
+        });
+
+        // 2. Fetch from Supabase job_applications
+        // We fetch candidates with selected or rejected status
+        const { data: applications, error: appsError } = await supabase
+          .from('job_applications')
+          .select('user_id, post_id, status');
+
+        if (appsError) {
+          console.error('Error fetching Supabase applications:', appsError);
+        } else if (applications && applications.length > 0) {
+          for (const app of applications) {
+            const st = app.status || '';
+            const isTarget = st === 'selected' || st.endsWith('rejected');
+            if (!isTarget) continue;
+
+            try {
+              const userDoc = await getDoc(doc(db, 'users', app.user_id));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                
+                const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
+                const intData = intDoc.exists() ? intDoc.data() : {};
+
+                allCandidates.push({
+                  id: app.user_id,
+                  name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
+                  email: userData.email || '',
+                  phone: userData.mobile || '',
+                  role: userData.department || 'Applicant',
+                  experience: userData.yearsOfExperience || '',
+                  skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                  resumeUrl: userData.resumeUrl || '',
+                  extractedData: {
+                    summary: '', workExperience: [], education: [],
+                    skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                    certifications: [], projects: []
+                  },
+                  education: [],
+                  createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
+                  updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
+                  status: app.status as any,
+                  postId: app.post_id,
+                  interviewDetails: intData as any
+                } as Candidate);
+              }
+            } catch (err) {
+              console.error(`Error fetching user ${app.user_id}:`, err);
+            }
+          }
+        }
+
+        setCandidates(allCandidates);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load candidates");
