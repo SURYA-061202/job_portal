@@ -1,7 +1,8 @@
 import type { Candidate } from "@/types";
-import { ArrowLeft, ChevronRight, Calendar, XCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, Calendar, XCircle, Pencil } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 
@@ -73,22 +74,53 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const moveToNextRound = async () => {
     if (!nextRound) return;
     try {
-      const ref = doc(db, "candidates", candidate.id);
       const update: any = { status: nextRound, updatedAt: new Date() };
-      if (nextRound === 'round2') {
-        update['interviewDetails.roundType'] = 'Technical 2';
-      }
-      if (nextRound === 'round3') {
-        update['interviewDetails.roundType'] = 'HR';
-      }
-      if (nextRound === 'selected') {
-        update['interviewDetails.roundType'] = 'HR';
-      }
+      if (nextRound === 'round2') update['interviewDetails.roundType'] = 'Technical 2';
+      if (nextRound === 'round3') update['interviewDetails.roundType'] = 'HR';
+      if (nextRound === 'selected') update['interviewDetails.roundType'] = 'HR';
+
       update['interviewDetails.currentSalary'] = currentSalary;
       update['interviewDetails.expectedSalary'] = expectedSalary;
       update['interviewDetails.joiningDate'] = joiningDate;
       update['interviewDetails.feedback'] = feedback;
-      await updateDoc(ref, update);
+
+      const applicantPostId = (candidate as any).postId;
+
+      if (applicantPostId) {
+        // 1. Update status in Supabase
+        const { error } = await supabase
+          .from('job_applications')
+          .update({ status: nextRound })
+          .eq('user_id', candidate.id)
+          .eq('post_id', applicantPostId);
+
+        if (error) throw error;
+      } else {
+        // Manual Candidate
+        const ref = doc(db, "candidates", candidate.id);
+        await updateDoc(ref, update);
+      }
+
+      // 2. Centralized update descriptive columns inner interviews collection too (BOTH candidates)
+      const interviewRef = doc(db, "interviews", candidate.id);
+      const intSnap = await getDoc(interviewRef);
+      const updatePayload = {
+        currentSalary,
+        expectedSalary,
+        joiningDate,
+        feedback,
+        roundType: update['interviewDetails.roundType'] || interview.roundType || 'Technical',
+        status: nextRound,
+        updatedAt: new Date()
+      };
+
+      if (intSnap.exists()) {
+        await updateDoc(interviewRef, updatePayload);
+      } else {
+        const { setDoc } = await import('firebase/firestore');
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, createdAt: new Date() });
+      }
+
       toast.success(`Moved to ${nextRound}`);
       onStatusUpdated?.();
       onBack();
@@ -101,9 +133,28 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const handleReject = async () => {
     if (!confirm("Reject this candidate?")) return;
     try {
-      // Store as e.g. "round1rejected", "round2rejected", etc.
       const newStatus = `${status ?? 'round1'}rejected`;
-      await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, updatedAt: new Date() });
+      const applicantPostId = (candidate as any).postId;
+
+      if (applicantPostId) {
+        const { error } = await supabase
+          .from('job_applications')
+          .update({ status: newStatus })
+          .eq('user_id', candidate.id)
+          .eq('post_id', applicantPostId);
+
+        if (error) throw error;
+      } else {
+        await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, updatedAt: new Date() });
+      }
+
+      // Update in interviews collection too
+      const interviewRef = doc(db, "interviews", candidate.id);
+      const intSnap = await getDoc(interviewRef);
+      if (intSnap.exists()) {
+        await updateDoc(interviewRef, { status: newStatus, updatedAt: new Date() });
+      }
+
       toast.success("Candidate rejected");
       onStatusUpdated?.();
       onBack();
@@ -250,7 +301,10 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                       autoFocus
                       className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   ) : (
-                    <span className="cursor-pointer" onClick={() => setEditFeedback(true)}>{feedback}</span>
+                    <span className="cursor-pointer inline-flex items-center space-x-1 hover:text-primary-600" onClick={() => setEditFeedback(true)}>
+                      <span>{feedback}</span>
+                      <Pencil className="h-3.5 w-3.5 text-gray-400" />
+                    </span>
                   )}
                 </td>
               </tr>
@@ -263,7 +317,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
           {nextRound && (
             <button
               onClick={moveToNextRound}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 shadow"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow"
             >
               {nextRound === 'selected' ? 'Select' : `Move to ${nextRound.replace(/^./, c => c.toUpperCase())}`}
               <ChevronRight className="h-4 w-4" />

@@ -40,11 +40,12 @@ export default function UserHeader() {
     ];
 
     return (
-        <header
-            className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm py-2'
-                    : 'bg-white border-b border-gray-200 py-4'
-                }`}
+        <header 
+            className={`sticky top-0 z-50 transition-all duration-300 ${
+                scrolled 
+                ? 'bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm py-2' 
+                : 'bg-white border-b border-gray-200 py-4'
+            }`}
         >
             <div className="w-full px-6 lg:px-12">
                 <div className="flex justify-between items-center">
@@ -90,10 +91,11 @@ export default function UserHeader() {
                         <div className="flex items-center gap-3">
                             <Link
                                 to="/profile"
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all group ${isActive('/profile')
-                                        ? 'bg-gradient-to-r from-orange-500 to-primary-600 text-white shadow-md shadow-orange-500/20'
-                                        : 'hover:bg-gray-50 text-gray-700'
-                                    }`}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all group ${
+                                    isActive('/profile') 
+                                    ? 'bg-gradient-to-r from-orange-500 to-primary-600 text-white shadow-md shadow-orange-500/20' 
+                                    : 'hover:bg-gray-50 text-gray-700'
+                                }`}
                             >
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive('/profile') ? 'bg-white/20' : 'bg-gradient-to-r from-orange-500 to-primary-600'
                                     }`}>

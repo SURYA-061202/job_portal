@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Briefcase, Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2, Monitor, Share2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
+import ShareJobModal from './ShareJobModal';
 
 interface RecruitmentDetailViewProps {
     recruitment: RecruitmentRequest;
@@ -21,6 +22,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     const [hasApplied, setHasApplied] = useState(false);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     useEffect(() => {
         setRecruitment(initialData);
@@ -160,93 +162,117 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             {/* Header / Hero */}
             <div className="bg-white border-b border-gray-100 sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {/* Back & Title */}
-                    <div className="flex items-center gap-3 sm:gap-5">
-                        <button
-                            onClick={onBack}
-                            className="p-1.5 sm:p-2 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
+                    {/* Back & Title Row with Actions */}
+                    <div className="flex items-start gap-4 sm:gap-6">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight tracking-tight truncate">{recruitment.jobTitle}</h1>
-                                {!isManager && hasApplied && !checkingProfile && (
-                                    <span className="px-2 sm:px-3 py-1 bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-bold rounded-lg border border-emerald-100 flex items-center gap-1.5 shrink-0">
-                                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                        <span className="hidden sm:inline">Applied</span>
-                                        <span className="sm:hidden">✓</span>
-                                    </span>
-                                )}
+                            <div className="flex items-center gap-2 mb-3">
+                                <button
+                                    onClick={onBack}
+                                    className="p-1.5 sm:p-2 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50 flex-shrink-0"
+                                    title="Go back"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight tracking-tight">
+                                    {recruitment.jobTitle}
+                                </h1>
+                                <button
+                                    onClick={() => setShowShareModal(true)}
+                                    className="p-1.5 rounded-full transition-all bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
+                                    title="Share job"
+                                >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                </button>
                             </div>
-                            <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500 mt-1 font-medium flex-wrap">
-                                <span className="flex items-center gap-1.5 text-gray-600">
-                                    <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                    <span className="truncate">{recruitment.department}</span>
-                                </span>
-                                <span className="w-1 h-1 rounded-full bg-gray-300 hidden sm:block" />
+
+                            <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500 font-medium flex-wrap pl-10 sm:pl-11">
+
                                 <span className="flex items-center gap-1.5 text-gray-600">
                                     <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                    <span className="truncate">{recruitment.location}</span>
+                                    <span className="truncate">{recruitment.location || 'Location not specified'}</span>
                                 </span>
+                                {recruitment.modeOfWork && (
+                                    <>
+                                        <span className="flex items-center gap-1.5 text-gray-600">
+                                            <Monitor className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                                            <span className="truncate">{recruitment.modeOfWork}</span>
+                                        </span>
+                                    </>
+                                )}
+                                <span className="flex items-center gap-1.5 text-gray-600">
+                                    <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                                    <span>{recruitment.urgencyLevel} Priority</span>
+                                </span>
+
                             </div>
                         </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                        {isManager ? (
-                            <>
-                                <button
-                                    onClick={() => onEdit?.(recruitment)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                    title="Edit Post"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={actionLoading}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                    title="Delete Post"
-                                >
-                                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                </button>
-                                <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
-                                <button
-                                    onClick={() => onViewCandidates?.(recruitment.id!)}
-                                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                >
-                                    <Users className="w-4 h-4" />
-                                    <span className="hidden sm:inline">View Candidates</span>
-                                    <span className="sm:hidden">Candidates</span>
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                {checkingProfile ? (
-                                    <button disabled className="px-3 sm:px-5 py-2 bg-gray-100 text-gray-400 text-xs sm:text-sm font-bold rounded-lg flex items-center gap-2">
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                        <span className="hidden sm:inline">Checking...</span>
-                                    </button>
-                                ) : !hasApplied ? (
-                                    <button
-                                        onClick={handleApply}
-                                        disabled={actionLoading}
-                                        className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
-                                    >
-                                        {actionLoading ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <>
-                                                Apply Now
-                                                <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                            </>
-                                        )}
-                                    </button>
-                                ) : null}
-                            </>
+                        {!isManager && hasApplied && !checkingProfile && (
+                            <span className="px-2 sm:px-3 py-1 bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-bold rounded-lg border border-emerald-100 flex items-center gap-1.5 flex-shrink-0">
+                                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                Applied
+                            </span>
                         )}
+
+                        {/* Action Buttons - Inline with Title */}
+
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            {isManager ? (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => onEdit?.(recruitment)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                            title="Edit Post"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={actionLoading}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                                            title="Delete Post"
+                                        >
+                                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                    <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+                                    <button
+                                        onClick={() => onViewCandidates?.(recruitment.id!)}
+                                        disabled={!((recruitment as any).applicantCount > 0)}
+                                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                                        title={!((recruitment as any).applicantCount > 0) ? "No applicants yet" : "View Candidates"}
+                                    >
+                                        <Users className="w-4 h-4" />
+                                        <span className="hidden sm:inline">View Candidates</span>
+                                        <span className="sm:hidden">Candidates</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    {checkingProfile ? (
+                                        <button disabled className="px-3 sm:px-5 py-2 bg-gray-100 text-gray-400 text-xs sm:text-sm font-bold rounded-lg flex items-center gap-2">
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span className="hidden sm:inline">Checking...</span>
+                                        </button>
+                                    ) : !hasApplied ? (
+                                        <button
+                                            onClick={handleApply}
+                                            disabled={actionLoading}
+                                            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                                        >
+                                            {actionLoading ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    Apply Now
+                                                    <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                </>
+                                            )}
+                                        </button>
+                                    ) : null}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,27 +282,36 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
                     {/* Key Info Row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                    <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
                         <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-100 text-blue-900" labelColor="text-blue-500" />
-                        <InfoItem label="Qualification" value={recruitment.qualification} color="bg-purple-50/50 border-purple-100 text-purple-900" labelColor="text-purple-500" />
                         <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
                         <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-100 text-pink-900" labelColor="text-pink-500" />
                         <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-100 text-emerald-900" labelColor="text-emerald-500" />
-                        {(recruitment as any).applicantCount !== undefined && (
+                        {isManager && (recruitment as any).applicantCount !== undefined && (
                             <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
                         )}
                     </div>
 
-                    {/* Description Section */}
+                    {/* Requirements Section */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full border border-orange-100/50 shadow-sm">
-                                <FileText className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900">Job Description</h3>
+                        <div className="flex items-center gap-3 mb-1.5">
+                            <h3 className="text-lg font-bold text-gray-900">Requirements</h3>
                         </div>
 
-                        <div className="bg-white rounded-xl p-6 border border-gray-100/50 shadow-sm">
+                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
+                            <p className="text-gray-600 leading-relaxed">
+                                Candidates should have a <span className="font-semibold text-gray-900">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900">{recruitment.department}</span> department.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Description Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 mb-1.5">
+                            <h3 className="text-lg font-bold text-gray-900">Job Description</h3>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
                             <div className="space-y-3">
                                 {recruitment.description ? (
                                     recruitment.description
@@ -284,9 +319,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                         .filter(line => line.trim().length > 0)
                                         .map((line, i) => (
                                             <div key={i} className="flex gap-3 items-start text-gray-600">
-                                                <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold mt-0.5 border border-gray-200">
-                                                    {i + 1}
-                                                </span>
+                                                <div className="flex-shrink-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full mt-1" />
                                                 <p className="leading-relaxed">{line.trim().replace(/^[-*•]\s*/, '')}</p>
                                             </div>
                                         ))
@@ -312,14 +345,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
                     {/* Skills Section */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full border border-orange-100/50 shadow-sm">
-                                <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900">Required Skills</h3>
+                        <div className="flex items-center gap-3 mb-1.5">
+                            <h3 className="text-lg font-bold text-gray-900">Required Skills</h3>
                         </div>
 
-                        <div className="bg-white rounded-xl p-6 border border-gray-100/50 shadow-sm">
+                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
                             <div className="flex flex-wrap gap-2.5">
                                 {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
                                     <span
@@ -335,15 +365,25 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
                 </div>
             </div>
+
+            {/* Share Modal */}
+            {showShareModal && (
+                <ShareJobModal
+                    jobTitle={recruitment.jobTitle}
+                    jobId={recruitment.id || ''}
+                    onClose={() => setShowShareModal(false)}
+                />
+            )}
         </div>
     );
 }
 
 function InfoItem({ label, value, color, labelColor }: { label: string, value: string, color?: string, labelColor?: string }) {
     return (
-        <div className={`flex flex-col p-5 rounded-2xl border shadow-sm transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
-            <span className={`text-xs font-bold uppercase tracking-wider mb-2 ${labelColor || 'text-gray-400'}`}>{label}</span>
-            <span className="font-bold truncate text-lg text-gray-900">{value}</span>
+        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border shadow-sm transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 text-center ${labelColor || 'text-gray-400'}`}>{label}</span>
+            <span className="font-bold break-words text-sm text-gray-900 text-center">{value}</span>
         </div>
     );
 }
+

@@ -39,7 +39,7 @@ function corsHeaders() {
     "Content-Type": "application/json"
   };
 }
-serve(async (req)=>{
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders()
@@ -83,7 +83,7 @@ serve(async (req)=>{
       });
     }
     //const baseUrl = Deno.env.get("PUBLIC_BASE_URL") || interviewDetails.baseUrl || "https://example.com";
-    const dateItems = interviewDetails.dates.map((date)=>`<li style="margin-bottom:4px;">${date}</li>`).join("");
+    const dateItems = interviewDetails.dates.map((date) => `<li style="margin-bottom:4px;">${date}</li>`).join("");
     const actionUrl = `${baseUrl}/interview?candidateId=${candidate.id}`;
     const declineUrl = `${baseUrl}/api/interview-response?candidateId=${candidate.id}&response=decline`;
     const html = `

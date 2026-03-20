@@ -32,14 +32,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   const accountTabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'add-members', label: 'Add Members', icon: UserPlus },
-    { id: 'notifications', label: 'Notification', icon: NotificationBell, isCustomIcon: true },
   ];
 
   return (
     <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white shadow-lg flex flex-col h-full max-h-screen border-r border-gray-200 transition-all duration-300 ease-in-out relative overflow-hidden`}>
       {/* Header with Logo and Branding */}
-      <div className="p-6 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
-        <div className="flex items-center gap-3 mb-2 group">
+      <div className="px-6 py-4 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
+        <div className="flex items-center gap-3 group">
           <div className="relative">
             <img
               src="/images/indianinfra.png"
@@ -48,14 +47,47 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
             />
             <div className="absolute -inset-1.5 bg-white/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
-          <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
-            <span className="opacity-90">Indian Infra</span>
-            <span className="text-white">Jobs</span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
+              <span className="opacity-90">Indian Infra</span>
+              <span className="text-white">Jobs</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-gradient-to-br from-primary-50 to-orange-50 pb-4">
+      {/* Controls Section - White Background with Gradient Border */}
+      <div className="relative px-4 py-2 bg-white flex-shrink-0">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} gap-1`}>
+          {/* Toggle Button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center justify-center group transition-all duration-300"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronsRight className="w-5 h-5 text-gray-600 transition-all duration-300 group-hover:scale-110 group-hover:translate-x-1" />
+            ) : (
+              <ChevronsLeft className="w-5 h-5 text-gray-600 transition-all duration-300 group-hover:scale-110 group-hover:-translate-x-1" />
+            )}
+          </button>
+
+          {/* Notification Icon - Only show when expanded */}
+          {!isCollapsed && (
+            <button
+              onClick={() => onTabChange('notifications')}
+              className="relative p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Notifications"
+            >
+              <NotificationBell simpleMode={true} />
+            </button>
+          )}
+        </div>
+        {/* Gradient Border - Fades at both ends */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent"></div>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-white pb-4">
         {/* Job Posts Section */}
         <div className="px-3 pt-6 mb-6">
           {!isCollapsed && (
@@ -71,12 +103,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
-                  : 'text-gray-700 hover:bg-white/50'
+                  : 'text-gray-700 hover:bg-orange-50/50 hover:text-orange-600 hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                 <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
                 {!isCollapsed && (
                   <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
@@ -103,12 +136,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                   ? 'bg-white shadow-md border border-orange-200'
-                  : 'text-gray-700 hover:bg-white/50'
+                  : 'text-gray-700 hover:bg-orange-50/50 hover:text-orange-600 hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
                 <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-600' : ''}`} />
                 {!isCollapsed && (
                   <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
@@ -151,22 +185,19 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
         <div className="space-y-1">
           {/* When collapsed, show collapsible items. When expanded, show based on isAccountOpen state */}
           {isCollapsed ? (
-            // Collapsed sidebar - show Profile always, others when expanded
+            // Collapsed sidebar - show Logout always, others when expanded
             <>
               <button
-                onClick={() => onTabChange('profile')}
-                className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${activeTab === 'profile'
-                  ? 'bg-white text-orange-600 shadow-md'
-                  : 'text-white hover:bg-white/20'
-                  }`}
-                title="Profile"
+                onClick={onLogout}
+                className="w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-white hover:bg-white/20 group"
+                title="Logout"
               >
-                <User className="h-5 w-5" />
+                <LogOut className="h-5 w-5" />
               </button>
 
               {/* Collapsible items when sidebar is collapsed */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.filter(tab => tab.id !== 'profile').map((tab) => {
+                {accountTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -174,48 +205,36 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
-                      className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                      className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                         ? 'bg-white text-orange-600 shadow-md'
                         : 'text-white hover:bg-white/20'
                         }`}
                       title={tab.label}
                     >
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        {'isCustomIcon' in tab ? <Icon simpleMode={true} /> : <Icon className="w-full h-full" />}
-                      </div>
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
+                      <Icon className="h-5 w-5" />
                     </button>
                   );
                 })}
-
-                <button
-                  onClick={onLogout}
-                  className="w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium text-white hover:bg-white/20 rounded-lg transition-all duration-200 group mb-1"
-                  title="Logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
               </div>
             </>
           ) : (
             // Expanded sidebar - use expand/collapse functionality
             <>
-              {/* Profile Tab - Always Visible */}
+              {/* Logout Tab - Always Visible */}
               <button
-                onClick={() => onTabChange('profile')}
-                className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${activeTab === 'profile'
-                  ? 'bg-white text-orange-600 shadow-md'
-                  : 'text-white hover:bg-white/20'
-                  }`}
+                onClick={onLogout}
+                className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-white hover:bg-white/20"
               >
-                <User className="mr-3 h-5 w-5" />
+                <LogOut className="mr-3 h-5 w-5" />
                 <span className="font-semibold">
-                  Profile
+                  Logout
                 </span>
               </button>
 
               {/* Collapsible Content - Only when expanded */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.filter(tab => tab.id !== 'profile').map((tab) => {
+                {accountTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -223,28 +242,19 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
-                      className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 ${isActive
+                      className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
                         ? 'bg-white text-orange-600 shadow-md'
                         : 'text-white hover:bg-white/20'
                         }`}
                     >
-                      <div className="w-5 h-5 mr-3 flex items-center justify-center">
-                        {'isCustomIcon' in tab ? <Icon simpleMode={true} /> : <Icon className="w-full h-full" />}
-                      </div>
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
+                      <Icon className="mr-3 h-5 w-5" />
                       <span className={isActive ? 'font-semibold' : ''}>
                         {tab.label}
                       </span>
                     </button>
                   );
                 })}
-
-                <button
-                  onClick={onLogout}
-                  className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-white hover:bg-white/20 rounded-lg transition-all duration-200 group mb-1"
-                >
-                  <LogOut className="mr-3 h-5 w-5" />
-                  Logout
-                </button>
               </div>
             </>
           )}

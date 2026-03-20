@@ -24,6 +24,7 @@ export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlist
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -108,10 +109,22 @@ export default function Dashboard() {
             postId={selectedPostId}
             onClearFilter={() => setSelectedPostId(null)}
             onBack={selectedPostId ? () => setActiveTab('job-posts') : undefined}
+            onNavigateToShortlisted={(candidateId) => {
+              setSelectedCandidateId(candidateId);
+              setActiveTab('shortlisted');
+            }}
           />
         );
       case 'shortlisted':
-        return <ShortlistedTab />;
+        return (
+          <ShortlistedTab
+            candidateId={selectedCandidateId}
+            onBack={selectedCandidateId ? () => {
+              setSelectedCandidateId(null);
+              setActiveTab('candidates');
+            } : undefined}
+          />
+        );
       case 'interviews':
         return <InterviewsTab />;
       case 'selected':

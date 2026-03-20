@@ -22,7 +22,8 @@ export default function UserDashboard() {
     const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
         jobType: [],
         experience: [],
-        salary: []
+        salary: [],
+        department: []
     });
     const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -39,9 +40,8 @@ export default function UserDashboard() {
             setActiveTab('applications');
         } else {
             setActiveTab('jobs');
-            // If we are just visiting /jobs, ensure we are not locked in a view?
-            // Actually, if we support deep linking, we'd check ID here. But for now, no.
         }
+        setSelectedJob(null); // Reset detail view on tab switch
     }, [location.pathname]);
 
     useEffect(() => {
@@ -192,6 +192,19 @@ export default function UserDashboard() {
         });
     };
 
+    const handleCompleteProfile = () => {
+        navigate('/profile');
+    };
+
+    const clearAllFilters = () => {
+        setSelectedFilters({
+            jobType: [],
+            experience: [],
+            salary: [],
+            department: []
+        });
+    };
+
     // Filter posts: Match search AND sidebar filters AND exclude applied posts
     const filteredPosts = posts.filter(post => {
         // 1. Search Logic
@@ -204,10 +217,9 @@ export default function UserDashboard() {
 
         // 2. Sidebar Filter Logic
         const matchesJobType = selectedFilters.jobType.length === 0 ||
-            selectedFilters.jobType.includes(post.positionLevel || 'Full Time'); // Map positionLevel to Job Type
+            selectedFilters.jobType.includes(post.candidateType || 'Permanent');
 
-        const matchesExperience = selectedFilters.experience.length === 0 ||
-            selectedFilters.experience.some(exp => post.yearsExperience.toString().includes(exp.split(' ')[0]));
+
         // This is a rough match. Better would be exact categories.
         // For now: "Entry Level" matches any low number, etc.
         // Let's refine the experience matching:
@@ -221,17 +233,33 @@ export default function UserDashboard() {
         };
         const matchesExp = selectedFilters.experience.length === 0 || selectedFilters.experience.some(isInExpRange);
 
+        // Salary filter logic - parse budgetPay string and match ranges
         const matchesSalary = selectedFilters.salary.length === 0 ||
             selectedFilters.salary.some(sal => {
                 const budget = post.budgetPay?.toLowerCase() || '';
-                // Check if budget string contains the selected range label (e.g., "10-20 LPA")
-                return budget.includes(sal.toLowerCase()) || budget.includes(sal.split(' ')[0]);
+                // Extract numbers from budget string (e.g., "10-15 LPA" or "₹10,00,000")
+                const budgetNumbers = budget.match(/\d+/g);
+                if (!budgetNumbers || budgetNumbers.length === 0) return false;
+
+                const budgetValue = parseInt(budgetNumbers[0]);
+
+                // Match against salary ranges
+                if (sal === "0-5 LPA" && budgetValue >= 0 && budgetValue <= 5) return true;
+                if (sal === "5-10 LPA" && budgetValue > 5 && budgetValue <= 10) return true;
+                if (sal === "10-20 LPA" && budgetValue > 10 && budgetValue <= 20) return true;
+                if (sal === "20+ LPA" && budgetValue > 20) return true;
+
+                return false;
             });
+
+        // Department filter logic
+        const matchesDepartment = selectedFilters.department.length === 0 ||
+            selectedFilters.department.includes(post.department);
 
         // 3. Application Exclusion
         const isApplied = applications.some(app => app.post_id === post.id);
 
-        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && !isApplied;
+        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && !isApplied;
     }).sort((a, b) => {
         const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
         const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
@@ -239,6 +267,9 @@ export default function UserDashboard() {
             ? dateB.getTime() - dateA.getTime()
             : dateA.getTime() - dateB.getTime();
     });
+
+    // Extract unique departments from all posts for department filter
+    const uniqueDepartments = Array.from(new Set(posts.map(post => post.department).filter(Boolean))).sort();
 
     if (selectedJob) {
         return (
@@ -355,15 +386,18 @@ export default function UserDashboard() {
                         <FilterSidebar
                             selectedFilters={selectedFilters}
                             onToggleFilter={toggleFilter}
+                            onCompleteProfile={handleCompleteProfile}
+                            onClearFilters={clearAllFilters}
                         />
                     </aside>
 
                     {/* Right Content - Job List */}
-                    <div className="lg:col-span-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+                    <div className="lg:col-span-3 flex flex-col">
+                        {/* Sticky Header with Title and Sort */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-2 sticky top-0 bg-gray-50 py-4 z-10">
                             <div className="flex items-center justify-between w-full sm:w-auto">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-                                    Latest Jobs <span className="text-orange-600">({filteredPosts.length})</span>
+                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-orange-600">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                                 </h2>
                                 {/* Mobile Filter Toggle */}
                                 <button
@@ -375,7 +409,56 @@ export default function UserDashboard() {
                                 </button>
                             </div>
                             <div className="flex items-center gap-3 self-end sm:self-auto">
-                                <span className="text-[10px] md:text-sm font-medium text-gray-500">Sort by:</span>
+                                {/* Department Filter */}
+                                <div className="relative group">
+                                    <button className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white border border-gray-100 rounded-xl text-[10px] md:text-sm font-bold text-gray-700 shadow-sm hover:border-gray-200 transition-all">
+                                        {selectedFilters.department.length > 0
+                                            ? `${selectedFilters.department.length} Dept${selectedFilters.department.length > 1 ? 's' : ''}`
+                                            : 'Department'}
+                                        <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+                                    </button>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                        {uniqueDepartments.length > 0 ? (
+                                            <>
+                                                {selectedFilters.department.length > 0 && (
+                                                    <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 flex items-center justify-between z-10">
+                                                        <span className="text-xs font-bold text-gray-700">Departments</span>
+                                                        <button
+                                                            onClick={() => setSelectedFilters(prev => ({ ...prev, department: [] }))}
+                                                            className="px-2 py-1 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+                                                            title="Clear departments"
+                                                        >
+                                                            Clear
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <div className="py-1">
+                                                    {uniqueDepartments.map((dept) => (
+                                                        <label
+                                                            key={dept}
+                                                            className={`flex items-center px-4 py-2 cursor-pointer transition-colors ${selectedFilters.department.includes(dept)
+                                                                ? 'text-orange-600 bg-orange-50'
+                                                                : 'text-gray-600 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedFilters.department.includes(dept)}
+                                                                onChange={() => toggleFilter('department', dept)}
+                                                                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                                                            />
+                                                            <span className="ml-2 text-xs font-bold">{dept}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="px-4 py-2 text-xs text-gray-500">No departments</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Sort Dropdown */}
                                 <div className="relative group">
                                     <button className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white border border-gray-100 rounded-xl text-[10px] md:text-sm font-bold text-gray-700 shadow-sm hover:border-gray-200 transition-all">
                                         {sortBy === 'recent' ? 'Most Recent' : 'Oldest First'}
@@ -399,81 +482,84 @@ export default function UserDashboard() {
                             </div>
                         </div>
 
-                        {loading ? (
-                            <div className="flex flex-col items-center justify-center py-20">
-                                <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
-                                <p className="text-gray-500 font-medium">Loading content...</p>
-                            </div>
-                        ) : activeTab === 'jobs' ? (
-                            filteredPosts.length === 0 ? (
-                                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                                    <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Search className="w-8 h-8 text-gray-400" />
+                        {/* Scrollable Job Cards Container - Hidden Scrollbar */}
+                        <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                                    <p className="text-gray-500 font-medium">Loading content...</p>
+                                </div>
+                            ) : activeTab === 'jobs' ? (
+                                filteredPosts.length === 0 ? (
+                                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                                        <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Search className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">No jobs found</h3>
+                                        <p className="text-gray-500 max-w-sm mx-auto">
+                                            Try adjusting your keywords or filters.
+                                        </p>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No jobs found</h3>
-                                    <p className="text-gray-500 max-w-sm mx-auto">
-                                        Try adjusting your keywords or filters.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col gap-6">
-                                    {filteredPosts.map((post) => (
-                                        <UserJobCard
-                                            key={post.id}
-                                            recruitment={post}
-                                            onViewDetails={(j) => setSelectedJob(j)}
-                                        />
-                                    ))}
-                                </div>
-                            )
-                        ) : (
-                            applications.length === 0 ? (
-                                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                                    <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <History className="w-8 h-8 text-orange-500" />
+                                ) : (
+                                    <div className="flex flex-col gap-6">
+                                        {filteredPosts.map((post) => (
+                                            <UserJobCard
+                                                key={post.id}
+                                                recruitment={post}
+                                                onViewDetails={(j) => setSelectedJob(j)}
+                                            />
+                                        ))}
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
-                                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
-                                        You haven't applied for any jobs yet. Browse available jobs to get started!
-                                    </p>
-                                    <button
-                                        onClick={() => setActiveTab('jobs')}
-                                        className="inline-flex items-center px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all"
-                                    >
-                                        Browse Jobs
-                                    </button>
-                                </div>
+                                )
                             ) : (
-                                <div className="flex flex-col gap-6">
-                                    {applications.map((app) => (
-                                        <UserJobCard
-                                            key={app.id}
-                                            recruitment={{
-                                                id: app.recruitment_requests.id,
-                                                jobTitle: app.recruitment_requests.jobTitle,
-                                                urgencyLevel: app.recruitment_requests.urgencyLevel,
-                                                department: app.recruitment_requests.department,
-                                                candidateType: app.recruitment_requests.candidateType,
-                                                positionLevel: app.recruitment_requests.positionLevel,
-                                                yearsExperience: app.recruitment_requests.yearsExperience,
-                                                location: app.recruitment_requests.location,
-                                                candidatesCount: app.recruitment_requests.candidatesCount,
-                                                qualification: app.recruitment_requests.qualification,
-                                                skills: app.recruitment_requests.skills,
-                                                description: app.recruitment_requests.description,
-                                                jdUrl: app.recruitment_requests.jdUrl,
-                                                budgetPay: app.recruitment_requests.budgetPay,
-                                                salaryBreakup: app.recruitment_requests.salaryBreakup,
-                                                requestedBy: app.recruitment_requests.requestedBy,
-                                                createdAt: app.recruitment_requests.createdAt,
-                                                applicantCount: applicantCounts[app.recruitment_requests.id] || 0
-                                            } as any}
-                                            onViewDetails={(j) => setSelectedJob(j)}
-                                        />
-                                    ))}
-                                </div>
-                            )
-                        )}
+                                applications.length === 0 ? (
+                                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                                        <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <History className="w-8 h-8 text-orange-500" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
+                                        <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                                            You haven't applied for any jobs yet. Browse available jobs to get started!
+                                        </p>
+                                        <button
+                                            onClick={() => navigate('/jobs')}
+                                            className="inline-flex items-center px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all"
+                                        >
+                                            Browse Jobs
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-6">
+                                        {applications.map((app) => (
+                                            <UserJobCard
+                                                key={app.id}
+                                                recruitment={{
+                                                    id: app.recruitment_requests.id,
+                                                    jobTitle: app.recruitment_requests.jobTitle,
+                                                    urgencyLevel: app.recruitment_requests.urgencyLevel,
+                                                    department: app.recruitment_requests.department,
+                                                    candidateType: app.recruitment_requests.candidateType,
+                                                    positionLevel: app.recruitment_requests.positionLevel,
+                                                    yearsExperience: app.recruitment_requests.yearsExperience,
+                                                    location: app.recruitment_requests.location,
+                                                    candidatesCount: app.recruitment_requests.candidatesCount,
+                                                    qualification: app.recruitment_requests.qualification,
+                                                    skills: app.recruitment_requests.skills,
+                                                    description: app.recruitment_requests.description,
+                                                    jdUrl: app.recruitment_requests.jdUrl,
+                                                    budgetPay: app.recruitment_requests.budgetPay,
+                                                    salaryBreakup: app.recruitment_requests.salaryBreakup,
+                                                    requestedBy: app.recruitment_requests.requestedBy,
+                                                    createdAt: app.recruitment_requests.createdAt,
+                                                    applicantCount: applicantCounts[app.recruitment_requests.id] || 0
+                                                } as any}
+                                                onViewDetails={(j) => setSelectedJob(j)}
+                                            />
+                                        ))}
+                                    </div>
+                                )
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -500,44 +586,15 @@ export default function UserDashboard() {
                                 <FilterSidebar
                                     selectedFilters={selectedFilters}
                                     onToggleFilter={toggleFilter}
+                                    onCompleteProfile={handleCompleteProfile}
+                                    onClearFilters={clearAllFilters}
                                 />
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Scrolling Text Banner - Inside Main Section */}
-                <div className="flex justify-center py-2 mt-24 relative z-10">
-                    <div className="bg-white/40 backdrop-blur-sm border border-white/50 rounded-2xl py-3 px-8 overflow-hidden max-w-4xl shadow-sm">
-                        <div className="animate-scroll whitespace-nowrap flex items-center">
-                            <span className="inline-block text-gray-600 text-sm font-bold font-inter px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                Complete your profile: Add Skills • Projects • Certificates • Experience
-                            </span>
-                            <span className="inline-block text-gray-600 text-sm font-bold font-inter px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary-600 animate-pulse" />
-                                Boost your chances: Update Resume • Portfolio • Achievements
-                            </span>
-                            <span className="inline-block text-gray-600 text-sm font-bold font-inter px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                Get noticed faster: Add Skills • Projects • Professional Summary
-                            </span>
-                            {/* Duplicates for smooth loop */}
-                            <span className="inline-block text-gray-600 text-sm font-bold font-inter px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                Complete your profile: Add Skills • Projects • Certificates • Experience
-                            </span>
-                            <span className="inline-block text-gray-600 text-sm font-bold font-inter px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary-600 animate-pulse" />
-                                Boost your chances: Update Resume • Portfolio • Achievements
-                            </span>
-                            <span className="inline-block text-gray-600 text-sm font-semibold px-8 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                Get noticed faster: Add Skills • Projects • Professional Summary
-                            </span>
-                        </div>
-                    </div>
-                </div>
+
             </main>
         </div>
     );
