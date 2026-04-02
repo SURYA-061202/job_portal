@@ -29,7 +29,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,7 +60,6 @@ export default function Dashboard() {
             navigate('/jobs', { replace: true });
           }
           setUserRole(userData.role);
-          setUserId(usr.uid);
           setIsPremium(userData.isPremium || false);
         }
       } catch (error) {
@@ -147,7 +145,7 @@ export default function Dashboard() {
       case 'add-members':
         return <AddMembersTab />;
       case 'pipeline':
-        return <RecruitmentPipelineTab userRole={userRole} userId={userId} />;
+        return <RecruitmentPipelineTab />;
       case 'analytics':
         return <AnalyticsDashboard />;
       case 'profile':

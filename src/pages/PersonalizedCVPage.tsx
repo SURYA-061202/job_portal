@@ -5,7 +5,6 @@ import { FileDown, Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-r
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import UserHeader from '@/components/layout/UserHeader';
-import { StandardResumeTemplate } from '@/components/user/StandardResumeTemplate';
 import toast from 'react-hot-toast';
 
 export default function PersonalizedCVPage() {

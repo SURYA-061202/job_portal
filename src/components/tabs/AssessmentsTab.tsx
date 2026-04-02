@@ -24,7 +24,6 @@ export default function AssessmentsTab() {
     const [loading, setLoading] = useState(true);
     const [isAddingSection, setIsAddingSection] = useState(false);
     const [expandedSection, setExpandedSection] = useState<string | null>(null);
-    const [editingSection, setEditingSection] = useState<string | null>(null);
 
     const [newSection, setNewSection] = useState({
         title: '',

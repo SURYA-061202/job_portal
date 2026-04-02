@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import UserHeader from '@/components/layout/UserHeader';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { Loader2, BookOpen, ChevronRight, CheckCircle2, Clock, Award, X, ChevronLeft, AlertCircle, Sparkles } from 'lucide-react';
+import { Loader2, BookOpen, X, ChevronLeft, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface MCQ {
@@ -220,7 +220,6 @@ export default function TrainingModulePage() {
 function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection, onCancel: () => void, onComplete: (score: number) => void }) {
     const [currentIdx, setCurrentIdx] = useState(0);
     const [answers, setAnswers] = useState<Record<string, number>>({});
-    const [isFinished, setIsFinished] = useState(false);
 
     const questions = test.questions || [];
     const currentQ = questions[currentIdx];

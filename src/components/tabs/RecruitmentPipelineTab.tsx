@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate } from '@/types';
 import { toast } from 'react-hot-toast';
@@ -33,7 +33,7 @@ const getIconColor = (columnId: string) => {
     }
 };
 
-export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
+export default function RecruitmentPipelineTab() {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(true);
     const [_draggedId, setDraggedId] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     const fetchCandidates = async () => {
         try {
             setLoading(true);
-            const isAdmin = userRole === 'admin';
+            
             let candQ = query(collection(db, 'candidates'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(candQ);
             const data: Candidate[] = [];
