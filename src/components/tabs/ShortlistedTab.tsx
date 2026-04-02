@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, setDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Candidate } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
@@ -8,7 +8,7 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
-export default function ShortlistedTab({ candidateId, onBack }: { candidateId?: string | null; onBack?: () => void } = {}) {
+export default function ShortlistedTab({ candidateId, onBack, userRole, userId }: { candidateId?: string | null; onBack?: () => void; userRole?: string | null; userId?: string | null } = {}) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
@@ -18,9 +18,11 @@ export default function ShortlistedTab({ candidateId, onBack }: { candidateId?: 
     try {
       setLoading(true);
       const allCandidates: Candidate[] = [];
+      const isAdmin = userRole === 'admin';
 
       // 1. Fetch manually uploaded candidates from Firestore
-      const qs = await getDocs(collection(db, "candidates"));
+      let candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
+      const qs = await getDocs(candQ);
       qs.forEach((d) => {
         const data = d.data();
         if (data.status === 'shortlisted') {
@@ -28,11 +30,36 @@ export default function ShortlistedTab({ candidateId, onBack }: { candidateId?: 
         }
       });
 
+      // Sort manually
+      allCandidates.sort((a, b) => {
+        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+        return Number(dateB) - Number(dateA);
+      });
+
       // 2. Fetch shortlisted job applicants from Supabase
-      const { data: applications, error: appsError } = await supabase
+      let ownedPostIds: string[] = [];
+      if (!isAdmin && userId) {
+        const recruitsQs = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
+        ownedPostIds = recruitsQs.docs.map(doc => doc.id);
+
+        if (ownedPostIds.length === 0 && allCandidates.length === 0) {
+          setCandidates([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      let supabaseQuery = supabase
         .from('job_applications')
         .select('user_id, post_id')
         .eq('status', 'shortlisted');
+
+      if (!isAdmin && ownedPostIds.length > 0) {
+        supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
+      }
+
+      const { data: applications, error: appsError } = await supabaseQuery;
 
       if (appsError) {
         console.error('Error fetching shortlisted applications:', appsError);

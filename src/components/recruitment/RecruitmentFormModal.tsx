@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
@@ -17,6 +17,7 @@ interface RecruitmentFormModalProps {
 export default function RecruitmentFormModal({ isOpen, onClose, initialData }: RecruitmentFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [userProfile, setUserProfile] = useState<{ firstName?: string; lastName?: string; companyName?: string } | null>(null);
     const [formData, setFormData] = useState({
         jobTitle: '',
         urgencyLevel: 'Moderate' as 'Immediate' | 'Moderate' | 'Flexible',
@@ -31,11 +32,33 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         skills: '',
         description: '',
         budgetPay: '',
-        salaryBreakup: '',
-        requestedBy: 'Dinesh' as 'Dinesh' | 'Naresh'
+        salaryBreakup: ''
     });
 
     useEffect(() => {
+        const fetchUserProfile = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        setUserProfile({
+                            firstName: data.firstName,
+                            lastName: data.lastName,
+                            companyName: data.companyName
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error fetching user profile for job post:', error);
+                }
+            }
+        };
+
+        if (isOpen && !userProfile) {
+            fetchUserProfile();
+        }
+
         if (initialData) {
             setFormData({
                 jobTitle: initialData.jobTitle,
@@ -52,7 +75,6 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 description: initialData.description || '',
                 budgetPay: initialData.budgetPay,
                 salaryBreakup: initialData.salaryBreakup,
-                requestedBy: initialData.requestedBy,
             });
         } else if (isOpen) {
             // Reset to default values when opening modal without initialData
@@ -71,11 +93,10 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 description: '',
                 budgetPay: '',
                 salaryBreakup: '',
-                requestedBy: 'Dinesh'
             });
             setFile(null); // Also reset the file
         }
-    }, [initialData, isOpen]);
+    }, [initialData, isOpen, userProfile]);
 
     if (!isOpen) return null;
 
@@ -131,7 +152,6 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 description: formData.description,
                 budgetPay: formData.budgetPay,
                 salaryBreakup: formData.salaryBreakup,
-                requestedBy: formData.requestedBy,
                 jdUrl: jdUrl,
                 updatedAt: serverTimestamp()
             };
@@ -139,13 +159,23 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
             if (initialData?.id) {
                 // Update
                 console.log('Updating recruitment request...');
-                await updateDoc(doc(db, 'recruits', initialData.id), payload);
+                const updatePayload = {
+                    ...payload,
+                    // Optionally update recruiter/company if desired, but usually we stick to the original creator
+                    // recruiterName: `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || initialData.recruiterName,
+                    // companyName: userProfile?.companyName || initialData.companyName,
+                };
+                await updateDoc(doc(db, 'recruits', initialData.id), updatePayload);
                 toast.success('Recruitment request updated successfully!');
             } else {
                 // Create
                 console.log('Saving recruitment request to Firestore...');
+                const user = auth.currentUser;
                 await addDoc(collection(db, 'recruits'), {
                     ...payload,
+                    recruiterId: user?.uid || '',
+                    recruiterName: `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim(),
+                    companyName: userProfile?.companyName || '',
                     createdAt: serverTimestamp()
                 });
                 toast.success('Recruitment request raised successfully!');
@@ -187,7 +217,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="jobTitle"
                                 value={formData.jobTitle}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. Senior Frontend Developer"
                             />
                         </div>
@@ -199,7 +229,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="urgencyLevel"
                                 value={formData.urgencyLevel}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="Immediate">Immediate</option>
                                 <option value="Moderate">Moderate</option>
@@ -216,7 +246,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="department"
                                 value={formData.department}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. Engineering"
                             />
                         </div>
@@ -228,7 +258,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="candidateType"
                                 value={formData.candidateType}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="Permanent">Permanent</option>
                                 <option value="Contract">Contract</option>
@@ -244,7 +274,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="positionLevel"
                                 value={formData.positionLevel}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="Entry">Entry</option>
                                 <option value="Junior">Junior</option>
@@ -263,7 +293,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="yearsExperience"
                                 value={formData.yearsExperience}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. 5+ years"
                             />
                         </div>
@@ -275,7 +305,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="modeOfWork"
                                 value={formData.modeOfWork}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="Office">Office</option>
                                 <option value="Hybrid">Hybrid</option>
@@ -292,7 +322,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="location"
                                 value={formData.location}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. Bangalore, Karnataka"
                             />
                         </div>
@@ -307,7 +337,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="candidatesCount"
                                 value={formData.candidatesCount}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                             />
                         </div>
 
@@ -320,7 +350,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="qualification"
                                 value={formData.qualification}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. B.Tech / MCA"
                             />
                         </div>
@@ -334,7 +364,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="skills"
                                 value={formData.skills}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. React, Node.js, AWS"
                             />
                         </div>
@@ -348,7 +378,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             value={formData.description}
                             onChange={handleChange}
                             rows={6}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
                             placeholder="Paste the full job description here (Roles, Responsibilities, Requirements)..."
                         />
                     </div>
@@ -387,7 +417,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="budgetPay"
                                 value={formData.budgetPay}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                                 placeholder="e.g. 10L - 15L"
                             />
                         </div>
@@ -406,19 +436,6 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             />
                         </div>
 
-                        {/* Request Raised by */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Request Raised by *</label>
-                            <select
-                                name="requestedBy"
-                                value={formData.requestedBy}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                            >
-                                <option value="Dinesh">Dinesh</option>
-                                <option value="Naresh">Naresh</option>
-                            </select>
-                        </div>
                     </div>
                 </form>
 

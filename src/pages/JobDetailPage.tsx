@@ -87,7 +87,7 @@ export default function JobDetailPage() {
             <UserHeader />
             <RecruitmentDetailView
                 recruitment={job}
-                onBack={() => navigate('/jobs')}
+                onBack={() => navigate(-1)}
             />
         </div>
     );

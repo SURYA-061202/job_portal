@@ -3,15 +3,25 @@ import { MapPin, Briefcase, Clock, IndianRupee } from 'lucide-react';
 
 interface UserJobCardProps {
     recruitment: RecruitmentRequest;
+    currentUserId?: string;
     onViewDetails?: (recruitment: RecruitmentRequest) => void;
+    hideNewBadge?: boolean;
 }
 
-export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardProps) {
-    const companyName = recruitment.jobTitle || "Indian Infra";
+export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge }: UserJobCardProps) {
+    const companyName = recruitment.companyName || "Indian Infra";
+    const isNew = !hideNewBadge && currentUserId && !recruitment.viewedBy?.includes(currentUserId);
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 hover:border-orange-200 transition-all duration-300 relative group">
-            {/* Bookmark Icon Remved */}
+            {/* New Badge */}
+            {isNew && (
+                <div className="absolute -top-2 -left-2 z-10">
+                    <span className="flex h-6 items-center px-2.5 rounded-full bg-orange-600 text-white text-[10px] font-bold shadow-lg shadow-orange-600/20 animate-bounce cursor-default">
+                        New
+                    </span>
+                </div>
+            )}
 
             {/* Content Section */}
             <div className="flex-1">
@@ -19,7 +29,6 @@ export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardP
                     <h3 className="text-base md:text-xl font-bold text-gray-900 mb-0.5 md:mb-1">
                         {recruitment.jobTitle}
                     </h3>
-
                 </div>
 
                 {/* Badges */}
@@ -59,7 +68,7 @@ export default function UserJobCard({ recruitment, onViewDetails }: UserJobCardP
 
                     <button
                         onClick={() => onViewDetails?.(recruitment)}
-                        className="w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 transition-all text-[10px] md:text-xs"
+                        className="w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-orange-50 text-orange-600 border border-orange-200 font-bold rounded-xl hover:bg-orange-100 hover:border-orange-300 active:scale-95 transition-all text-[10px] md:text-xs"
                     >
                         View
                     </button>

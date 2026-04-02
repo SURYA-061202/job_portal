@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate, RecruitmentRequest } from '@/types';
@@ -18,7 +18,7 @@ import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 // @ts-ignore – pdfjsWorker will be resolved by Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-export default function UploadResumesTab() {
+export default function UploadResumesTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
     const [loading, setLoading] = useState(false);
     const [manualCandidate, setManualCandidate] = useState<Candidate | null>(null);
     const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
@@ -29,9 +29,24 @@ export default function UploadResumesTab() {
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const q = query(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+                const recruitsRef = collection(db, 'recruits');
+                let q = query(recruitsRef, orderBy('createdAt', 'desc'));
+
+                if (userRole && userRole !== 'admin' && userId) {
+                    // Remove orderBy to avoid composite index requirements
+                    q = query(recruitsRef, where('recruiterId', '==', userId));
+                }
+
                 const snapshot = await getDocs(q);
-                const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
+                let jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
+
+                if (userRole && userRole !== 'admin' && userId) {
+                    jobs = jobs.sort((a, b) => {
+                        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                        return Number(dateB) - Number(dateA);
+                    });
+                }
                 setJobPosts(jobs);
             } catch (error) {
                 console.error('Error fetching jobs:', error);
@@ -120,6 +135,7 @@ export default function UploadResumesTab() {
                 status: 'pending',
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                recruiterId: userId || '',
             } as any;
 
             // Save candidate to Firestore

@@ -1,16 +1,17 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award } from 'lucide-react';
+import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award, ClipboardCheck } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
 interface SidebarProps {
-  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile';
-  onTabChange: (tab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile') => void;
+  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
+  onTabChange: (tab: any) => void;
   onLogout: () => void;
+  userRole: string | null;
 }
 
-export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: SidebarProps) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -20,18 +21,19 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
   ];
 
   const screeningTabs = [
-    { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload },
+    { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload, adminOnly: true },
     { id: 'pipeline', label: 'Pipeline (Kanban)', icon: Trello },
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: MessageSquare },
     { id: 'selected', label: 'Selected Candidates', icon: Award },
     { id: 'stats', label: 'Stats', icon: BarChart },
+    { id: 'assessments', label: 'Assessments', icon: ClipboardCheck, adminOnly: true },
   ];
 
   const accountTabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'add-members', label: 'Add Members', icon: UserPlus },
+    { id: 'add-members', label: 'Add Members', icon: UserPlus, adminOnly: true },
   ];
 
   return (
@@ -128,7 +130,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
               Screenings
             </h2>
           )}
-          {screeningTabs.map((tab) => {
+          {screeningTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
@@ -197,7 +199,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
 
               {/* Collapsible items when sidebar is collapsed */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.map((tab) => {
+                {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -234,7 +236,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
 
               {/* Collapsible Content - Only when expanded */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.map((tab) => {
+                {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 

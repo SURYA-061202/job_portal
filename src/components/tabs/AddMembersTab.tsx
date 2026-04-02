@@ -15,7 +15,8 @@ interface UserData {
     email: string;
     mobile: string;
     department: string;
-    role: 'manager' | 'user';
+    role: 'manager' | 'user' | 'admin' | 'recruiter';
+    companyName?: string;
 }
 
 export default function AddMembersTab() {
@@ -29,7 +30,8 @@ export default function AddMembersTab() {
         email: '',
         mobile: '',
         department: '',
-        password: ''
+        password: '',
+        companyName: ''
     });
     const [addingMember, setAddingMember] = useState(false);
 
@@ -40,7 +42,7 @@ export default function AddMembersTab() {
     const fetchMembers = async () => {
         try {
             setLoading(true);
-            const q = query(collection(db, 'users'), where('role', '==', 'manager'));
+            const q = query(collection(db, 'users'), where('role', 'in', ['manager', 'recruiter']));
             const snapshot = await getDocs(q);
             const membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
             setMembers(membersData);
@@ -96,7 +98,8 @@ export default function AddMembersTab() {
                 email: formData.email,
                 mobile: formData.mobile,
                 department: formData.department,
-                role: 'manager',
+                companyName: formData.companyName,
+                role: 'recruiter',
                 createdAt: new Date().toISOString()
             });
 
@@ -119,7 +122,7 @@ export default function AddMembersTab() {
                 toast.success('Member added, but failed to send welcome email automatically.');
             }
             setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', email: '', mobile: '', department: '', password: '' });
+            setFormData({ firstName: '', lastName: '', email: '', mobile: '', department: '', password: '', companyName: '' });
             fetchMembers();
 
         } catch (error) {
@@ -196,7 +199,7 @@ export default function AddMembersTab() {
                                 {member.firstName?.[0]}{member.lastName?.[0]}
                             </div>
                             <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1 rounded-full border border-green-200">
-                                MANAGER
+                                {member.role?.toUpperCase() || 'MANAGER'}
                             </span>
                         </div>
 
@@ -287,6 +290,18 @@ export default function AddMembersTab() {
                                     <option value="Sales">Sales</option>
                                     <option value="Marketing">Marketing</option>
                                 </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">Company Name</label>
+                                <input
+                                    required
+                                    type="text"
+                                    value={formData.companyName}
+                                    placeholder="Enter company name"
+                                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                />
                             </div>
 
                             <div className="pt-4 flex gap-3">

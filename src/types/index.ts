@@ -4,6 +4,7 @@ export interface User {
   name: string;
   role: string;
   createdAt: Date;
+  matchingScores?: Record<string, number>;
 }
 
 export interface Candidate {
@@ -153,9 +154,13 @@ export interface RecruitmentRequest {
   jdUrl?: string;
   budgetPay: string;
   salaryBreakup: string;
-  requestedBy: 'Dinesh' | 'Naresh';
+  requestedBy?: 'Dinesh' | 'Naresh';
+  recruiterId?: string;
+  recruiterName?: string;
+  companyName?: string;
   createdAt: any;
   applicantCount?: number;
+  viewedBy?: string[];
 }
 
 // Ensure this file is treated as a module

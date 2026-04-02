@@ -23,17 +23,17 @@ export default function Home() {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            if (userData.role === 'manager' || userData.role === 'recruiter') {
+            if (userData.role === 'manager' || userData.role === 'recruiter' || userData.role === 'admin') {
               navigate('/dashboard', { replace: true });
             } else {
-              navigate('/jobs', { replace: true });
+              navigate('/home', { replace: true });
             }
           } else {
-            navigate('/jobs', { replace: true });
+            navigate('/home', { replace: true });
           }
         } catch (error) {
           console.error('Error fetching user role:', error);
-          navigate('/jobs', { replace: true });
+          navigate('/home', { replace: true });
         }
       }
       setChecking(false);

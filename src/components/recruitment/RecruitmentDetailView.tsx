@@ -158,128 +158,102 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     };
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-gray-50/20">
             {/* Header / Hero */}
-            <div className="bg-white border-b border-gray-100 sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4">
-                <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {/* Back & Title Row with Actions */}
-                    <div className="flex items-start gap-4 sm:gap-6">
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-3">
-                                <button
-                                    onClick={onBack}
-                                    className="p-1.5 sm:p-2 rounded-full transition-all text-gray-400 hover:text-orange-600 hover:bg-orange-50 flex-shrink-0"
-                                    title="Go back"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight tracking-tight">
-                                    {recruitment.jobTitle}
-                                </h1>
-                                <button
-                                    onClick={() => setShowShareModal(true)}
-                                    className="p-1.5 rounded-full transition-all bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
-                                    title="Share job"
-                                >
-                                    <Share2 className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
+            <div className="sticky top-0 z-20 py-4 sm:py-6 bg-gray-50/80 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-start gap-3 sm:gap-4 md:gap-5">
+                    {/* Back Button */}
+                    <button
+                        onClick={onBack}
+                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white border border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 rounded-xl transition-all group shadow-sm flex-shrink-0 mt-1"
+                        title="Go Back"
+                    >
+                        <ChevronLeft className="w-4.5 h-4.5 group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
 
-                            <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500 font-medium flex-wrap pl-10 sm:pl-11">
-
-                                <span className="flex items-center gap-1.5 text-gray-600">
-                                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                    <span className="truncate">{recruitment.location || 'Location not specified'}</span>
-                                </span>
-                                {recruitment.modeOfWork && (
-                                    <>
-                                        <span className="flex items-center gap-1.5 text-gray-600">
-                                            <Monitor className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                            <span className="truncate">{recruitment.modeOfWork}</span>
-                                        </span>
-                                    </>
-                                )}
-                                <span className="flex items-center gap-1.5 text-gray-600">
-                                    <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                                    <span>{recruitment.urgencyLevel} Priority</span>
-                                </span>
-
-                            </div>
+                    <div className="flex-1 min-w-0">
+                        {/* Title Row */}
+                        <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
+                            <h1 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight leading-none">
+                                {recruitment.jobTitle}
+                            </h1>
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className="p-1.5 rounded-full transition-all bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
+                                title="Share job"
+                            >
+                                <Share2 className="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                        {!isManager && hasApplied && !checkingProfile && (
-                            <span className="px-2 sm:px-3 py-1 bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-bold rounded-lg border border-emerald-100 flex items-center gap-1.5 flex-shrink-0">
-                                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                Applied
+
+                        {/* Metadata Row */}
+                        <div className="flex items-center gap-3 sm:gap-5 text-[11px] sm:text-sm text-gray-400 font-bold tracking-tight flex-wrap">
+                            <span className="flex items-center gap-1.5 line-clamp-1">
+                                <MapPin className="w-3.5 h-3.5 text-gray-300" />
+                                <span>{recruitment.location || 'Location not specified'}</span>
                             </span>
-                        )}
-
-                        {/* Action Buttons - Inline with Title */}
-
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                            {isManager ? (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => onEdit?.(recruitment)}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                            title="Edit Post"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={handleDelete}
-                                            disabled={actionLoading}
-                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                                            title="Delete Post"
-                                        >
-                                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                    <div className="h-6 w-px bg-gray-200 hidden sm:block" />
-                                    <button
-                                        onClick={() => onViewCandidates?.(recruitment.id!)}
-                                        disabled={!((recruitment as any).applicantCount > 0)}
-                                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
-                                        title={!((recruitment as any).applicantCount > 0) ? "No applicants yet" : "View Candidates"}
-                                    >
-                                        <Users className="w-4 h-4" />
-                                        <span className="hidden sm:inline">View Candidates</span>
-                                        <span className="sm:hidden">Candidates</span>
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    {checkingProfile ? (
-                                        <button disabled className="px-3 sm:px-5 py-2 bg-gray-100 text-gray-400 text-xs sm:text-sm font-bold rounded-lg flex items-center gap-2">
-                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            <span className="hidden sm:inline">Checking...</span>
-                                        </button>
-                                    ) : !hasApplied ? (
-                                        <button
-                                            onClick={handleApply}
-                                            disabled={actionLoading}
-                                            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
-                                        >
-                                            {actionLoading ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    Apply Now
-                                                    <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                                </>
-                                            )}
-                                        </button>
-                                    ) : null}
-                                </>
+                            {recruitment.modeOfWork && (
+                                <span className="flex items-center gap-1.5 line-clamp-1">
+                                    <Monitor className="w-3.5 h-3.5 text-gray-300" />
+                                    <span>{recruitment.modeOfWork}</span>
+                                </span>
                             )}
+                            <span className="flex items-center gap-1.5 font-black line-clamp-1">
+                                <CheckCircle2 className={`w-3.5 h-3.5 ${recruitment.urgencyLevel === 'Immediate' ? 'text-red-400' : recruitment.urgencyLevel === 'Moderate' ? 'text-orange-400' : 'text-emerald-400'}`} />
+                                <span className={recruitment.urgencyLevel === 'Immediate' ? 'text-red-500' : recruitment.urgencyLevel === 'Moderate' ? 'text-orange-500' : 'text-emerald-500'}>
+                                    {recruitment.urgencyLevel} Priority
+                                </span>
+                            </span>
                         </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                        {isManager ? (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => onEdit?.(recruitment)}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    title="Edit Post"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Delete Post"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => onViewCandidates?.(recruitment.id!)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs font-bold rounded-lg"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    <span>Candidates</span>
+                                </button>
+                            </div>
+                        ) : !hasApplied && !checkingProfile && (
+                            <button
+                                onClick={handleApply}
+                                disabled={actionLoading}
+                                className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                            >
+                                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Apply Now <Send className="w-3.5 h-3.5" /></>}
+                            </button>
+                        )}
+                        {!isManager && hasApplied && (
+                            <div className="px-4 py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Applied
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto w-full bg-gray-50/30">
-                <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+            <div className="flex-1 overflow-y-auto w-full">
+                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
 
                     {/* Key Info Row */}
                     <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
@@ -293,50 +267,40 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Requirements Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-1.5">
-                            <h3 className="text-lg font-bold text-gray-900">Requirements</h3>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
-                            <p className="text-gray-600 leading-relaxed">
-                                Candidates should have a <span className="font-semibold text-gray-900">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900">{recruitment.department}</span> department.
-                            </p>
-                        </div>
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Requirements</h3>
+                        <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+                            Candidates should have a <span className="font-semibold text-gray-900 underline decoration-orange-500/30 decoration-2">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900 underline decoration-pink-500/30 decoration-2">{recruitment.department}</span> department.
+                        </p>
                     </div>
 
                     {/* Description Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-1.5">
-                            <h3 className="text-lg font-bold text-gray-900">Job Description</h3>
-                        </div>
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Job Description</h3>
+                        <div className="space-y-4">
+                            {recruitment.description ? (
+                                recruitment.description
+                                    .split('\n')
+                                    .filter(line => line.trim().length > 0)
+                                    .map((line, i) => (
+                                        <div key={i} className="flex gap-3 items-start text-gray-600">
+                                            <p className="leading-relaxed text-sm sm:text-base">{line.trim().replace(/^[-*•]\s*/, '')}</p>
+                                        </div>
+                                    ))
+                            ) : (
+                                <p className="text-gray-500 italic">No detailed description provided.</p>
+                            )}
 
-                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
-                            <div className="space-y-3">
-                                {recruitment.description ? (
-                                    recruitment.description
-                                        .split('\n')
-                                        .filter(line => line.trim().length > 0)
-                                        .map((line, i) => (
-                                            <div key={i} className="flex gap-3 items-start text-gray-600">
-                                                <div className="flex-shrink-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full mt-1" />
-                                                <p className="leading-relaxed">{line.trim().replace(/^[-*•]\s*/, '')}</p>
-                                            </div>
-                                        ))
-                                ) : (
-                                    <p className="text-gray-500 italic">No detailed description provided.</p>
-                                )}
-                            </div>
                             {recruitment.jdUrl && (
-                                <div className="pt-5 mt-5 border-t border-gray-100">
+                                <div className="pt-6 border-t border-gray-50">
                                     <a
                                         href={recruitment.jdUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-black transition-colors shadow-lg shadow-gray-200"
+                                        className="inline-flex items-center gap-2.5 px-6 py-2.5 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-black transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
                                     >
                                         <FileText className="w-4 h-4" />
-                                        Download Detailed JD
+                                        <span>Download Detailed JD</span>
                                     </a>
                                 </div>
                             )}
@@ -344,22 +308,17 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Skills Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-1.5">
-                            <h3 className="text-lg font-bold text-gray-900">Required Skills</h3>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-6 border border-gray-100/50">
-                            <div className="flex flex-wrap gap-2.5">
-                                {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
-                                    <span
-                                        key={i}
-                                        className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border shadow-sm transition-transform hover:scale-105 cursor-default ${getSkillColor(i)}`}
-                                    >
-                                        {skill.trim()}
-                                    </span>
-                                )) : <p className="text-gray-500 italic">No specific skills listed.</p>}
-                            </div>
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Required Skills</h3>
+                        <div className="flex flex-wrap gap-2.5">
+                            {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
+                                <span
+                                    key={i}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold border shadow-sm transition-all hover:scale-105 cursor-default ${getSkillColor(i)}`}
+                                >
+                                    {skill.trim()}
+                                </span>
+                            )) : <p className="text-gray-500 italic">No specific skills listed.</p>}
                         </div>
                     </div>
 
