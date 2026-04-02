@@ -15,11 +15,12 @@ import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
 import AddMembersTab from '@/components/tabs/AddMembersTab';
 import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
+import AssessmentsTab from '@/components/tabs/AssessmentsTab';
 import { Menu, X } from 'lucide-react';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
@@ -27,6 +28,9 @@ export default function Dashboard() {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,9 +57,12 @@ export default function Dashboard() {
         const userDoc = await getDoc(doc(db, 'users', usr.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.role !== 'manager' && userData.role !== 'recruiter') {
+          if (userData.role !== 'manager' && userData.role !== 'recruiter' && userData.role !== 'admin') {
             navigate('/jobs', { replace: true });
           }
+          setUserRole(userData.role);
+          setUserId(usr.uid);
+          setIsPremium(userData.isPremium || false);
         }
       } catch (error) {
         console.error('Error checking role in Dashboard:', error);
@@ -96,17 +103,19 @@ export default function Dashboard() {
   };
 
   const renderTabContent = () => {
+    const userId = auth.currentUser?.uid;
+
     switch (activeTab) {
       case 'job-posts':
-        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} />;
       case 'upload-resumes':
-        return <UploadResumesTab />;
+        return <UploadResumesTab userRole={userRole} userId={userId} />;
       case 'candidates':
-        // Only show Back button if we have a selectedPostId (meaning we came from Job Details)
-        // If selectedPostId is null (Sidebar access), no Back button.
         return (
           <CandidatesTab
             postId={selectedPostId}
+            userRole={userRole}
+            userId={userId}
             onClearFilter={() => setSelectedPostId(null)}
             onBack={selectedPostId ? () => setActiveTab('job-posts') : undefined}
             onNavigateToShortlisted={(candidateId) => {
@@ -119,6 +128,8 @@ export default function Dashboard() {
         return (
           <ShortlistedTab
             candidateId={selectedCandidateId}
+            userRole={userRole}
+            userId={userId}
             onBack={selectedCandidateId ? () => {
               setSelectedCandidateId(null);
               setActiveTab('candidates');
@@ -126,23 +137,25 @@ export default function Dashboard() {
           />
         );
       case 'interviews':
-        return <InterviewsTab />;
+        return <InterviewsTab userRole={userRole} userId={userId} />;
       case 'selected':
-        return <SelectedCandidatesTab />;
+        return <SelectedCandidatesTab userRole={userRole} userId={userId} />;
       case 'stats':
-        return <StatsTab />;
+        return <StatsTab userRole={userRole} userId={userId} />;
       case 'notifications':
         return <NotificationsTab />;
       case 'add-members':
         return <AddMembersTab />;
       case 'pipeline':
-        return <RecruitmentPipelineTab />;
+        return <RecruitmentPipelineTab userRole={userRole} userId={userId} />;
       case 'analytics':
         return <AnalyticsDashboard />;
       case 'profile':
         return <ProfileTab />;
+      case 'assessments':
+        return <AssessmentsTab />;
       default:
-        return <JobPostsTab onViewCandidates={handleViewCandidates} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} userRole={userRole} userId={userId} isPremium={isPremium} />;
     }
   };
 
@@ -189,6 +202,7 @@ export default function Dashboard() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           onLogout={handleLogout}
+          userRole={userRole}
         />
       </div>
 

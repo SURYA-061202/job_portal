@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate } from '@/types';
 import { toast } from 'react-hot-toast';
@@ -33,7 +33,7 @@ const getIconColor = (columnId: string) => {
     }
 };
 
-export default function RecruitmentPipelineTab() {
+export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(true);
     const [_draggedId, setDraggedId] = useState<string | null>(null);
@@ -46,11 +46,21 @@ export default function RecruitmentPipelineTab() {
     const fetchCandidates = async () => {
         try {
             setLoading(true);
-            const querySnapshot = await getDocs(collection(db, 'candidates'));
+            const isAdmin = userRole === 'admin';
+            let candQ = query(collection(db, 'candidates'), orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(candQ);
             const data: Candidate[] = [];
             querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
                 data.push({ id: doc.id, ...doc.data() } as Candidate);
             });
+
+            // Sort manually
+            data.sort((a, b) => {
+                const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                return Number(dateB) - Number(dateA);
+            });
+
             setCandidates(data);
         } catch (error) {
             console.error('Error fetching candidates:', error);

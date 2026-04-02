@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query as fsQuery, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query as fsQuery, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { RecruitmentRequest } from '@/types';
@@ -9,7 +9,7 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import toast from 'react-hot-toast';
 import { Search, Plus } from 'lucide-react';
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }: { onViewCandidates?: (postId: string) => void; initialSelectedPostId?: string | null }) {
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, isPremium }: { onViewCandidates?: (postId: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
@@ -22,15 +22,29 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
         try {
             setLoadingPosts(true);
 
-            // 1. Fetch posts from Firestore
             const recruitsRef = collection(db, 'recruits');
-            const q = fsQuery(recruitsRef, orderBy('createdAt', 'desc'));
+            let q = fsQuery(recruitsRef, orderBy('createdAt', 'desc'));
+
+            if (userRole && userRole !== 'admin' && userId) {
+                // If filtering by recruiterId, remove orderBy to avoid index requirements
+                q = fsQuery(recruitsRef, where('recruiterId', '==', userId));
+            }
+
             const querySnapshot = await getDocs(q);
 
-            const recruits = querySnapshot.docs.map(doc => ({
+            let recruits = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             })) as any[];
+
+            // Sort manually if we didn't sort in the query
+            if (userRole && userRole !== 'admin' && userId) {
+                recruits = recruits.sort((a, b) => {
+                    const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                    const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                    return Number(dateB) - Number(dateA);
+                });
+            }
 
             // 2. Fetch all applications from Supabase to count them
             const { data: apps, error: appsError } = await supabase
@@ -154,15 +168,37 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId }:
                                     />
                                 </div>
                                 <button
-                                    onClick={() => setIsRecruitmentModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-gradient text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap"
+                                    onClick={() => {
+                                        if (userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5) {
+                                            toast.error("Get Premium to Post further");
+                                            return;
+                                        }
+                                        setIsRecruitmentModalOpen(true);
+                                    }}
+                                    disabled={userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5}
+                                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap ${userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5
+                                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                                        : 'bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20'
+                                        }`}
                                 >
                                     <Plus className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Add Recruitment</span>
-                                    <span className="sm:hidden">Add Post</span>
+                                    <span className="hidden sm:inline">{userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 ? 'Limit Reached' : 'Add Post'}</span>
+                                    <span className="sm:hidden">{userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 ? 'Limit Reached' : 'Add Post'}</span>
                                 </button>
                             </div>
                         </div>
+                        {userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 && (
+                            <div className="mt-4 p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                        <Plus className="w-4 h-4" />
+                                    </div>
+                                    <p className="text-sm text-orange-800 font-medium">
+                                        You've reached your free limit of 5 posts. <span className="font-bold underline cursor-pointer">Get Premium to Post further</span>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     {/* Posts Grid */}
                     <div className="flex-1">

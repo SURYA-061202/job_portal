@@ -1,36 +1,85 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { sendEmailVerification } from 'firebase/auth';
+import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { User, Mail, Phone, Save, Loader2, Plus, X, FileUp, Clock, Briefcase, DollarSign, CheckCircle2, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
-import { supabase } from '@/lib/supabase';
+import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, Sparkles, Star, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import UserHeader from '@/components/layout/UserHeader';
+
+import ProfileDetailsView from './ProfileDetailsView';
+import JobsAndApplicationsView from './JobsAndApplicationsView';
 
 export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [searchParams] = useSearchParams();
+    const activeTab = (searchParams.get('tab') || 'profile') as 'profile' | 'jobs' | 'applications';
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [calculatingScore, setCalculatingScore] = useState(false);
+    const [verifyingEmail, setVerifyingEmail] = useState(false);
+    const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
+
+    useEffect(() => {
+        let interval: any;
+        if (!isEmailVerified) {
+            interval = setInterval(async () => {
+                const user = auth.currentUser;
+                if (user) {
+                    await user.reload();
+                    if (user.emailVerified) {
+                        setIsEmailVerified(true);
+                        toast.success('Email verified successfully!');
+                        clearInterval(interval);
+                    }
+                }
+            }, 3000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isEmailVerified]);
+    
+    // Core Profile Fields
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         mobile: '',
-        skills: '',
-        projects: '',
-        certifications: '',
-        resumeUrl: '',
         yearsOfExperience: '',
         department: '',
-        expectedSalary: ''
+        address: '',
+        resumeUrl: '',
+        profileScore: 0,
+        
+        // Structured Array Data
+        educationItems: [] as any[],
+        projectItems: [] as any[],
+        certificateItems: [] as any[],
+        experienceItems: [] as any[],
+        courseItems: [] as string[],
+        skillItems: [] as string[],
+        matchingScores: {} as Record<string, number>
     });
-    const [showMoreFields, setShowMoreFields] = useState(false);
-    const [uploading, setUploading] = useState(false);
+
     const navigate = useNavigate();
 
     useEffect(() => {
+        if (!document.getElementById('poppins-font')) {
+            const link = document.createElement('link');
+            link.id = 'poppins-font';
+            link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+        }
         fetchUserProfile();
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'profile' && formData.email) {
+            calculateMatchingScores();
+        }
+    }, [activeTab, formData.email]);
 
     const fetchUserProfile = async () => {
         const user = auth.currentUser;
@@ -43,18 +92,31 @@ export default function UserProfile() {
             const userDoc = await getDoc(doc(db, 'users', user.uid));
             if (userDoc.exists()) {
                 const data = userDoc.data();
+                
+                // Migrate any old string data to the new structured arrays seamlessly
+                const migratedEducation = data.educationItems || (data.college ? [{ collegeName: data.college, course: '', specialization: '', graduatedYear: '', grade: '' }] : []);
+                const migratedProjects = data.projectItems || (data.projects ? [{ title: 'Legacy Portfolio', description: data.projects, link: '' }] : []);
+                const migratedCertificates = data.certificateItems || (data.certifications ? [{ name: data.certifications, organization: '', issueDate: '', url: '' }] : []);
+                const migratedSkills = data.skillItems || (data.skills ? data.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+
                 setFormData({
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
                     email: data.email || '',
                     mobile: data.mobile || '',
-                    skills: data.skills || '',
-                    projects: data.projects || '',
-                    certifications: data.certifications || '',
-                    resumeUrl: data.resumeUrl || '',
                     yearsOfExperience: data.yearsOfExperience || '',
                     department: data.department || '',
-                    expectedSalary: data.expectedSalary || ''
+                    address: data.address || '',
+                    resumeUrl: data.resumeUrl || '',
+                    
+                    educationItems: migratedEducation,
+                    projectItems: migratedProjects,
+                    certificateItems: migratedCertificates,
+                    experienceItems: data.experienceItems || [],
+                    courseItems: data.courseItems || [],
+                    skillItems: migratedSkills,
+                    profileScore: data.profileScore || 0,
+                    matchingScores: data.matchingScores || {}
                 });
             }
         } catch (error) {
@@ -65,8 +127,60 @@ export default function UserProfile() {
         }
     };
 
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const calculateProfileScore = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        setCalculatingScore(true);
+        try {
+            const prompt = `
+                Evaluate this user profile completeness and strength on a scale of 0-100.
+                Return ONLY a JSON object: { "score": number, "feedback": "very short string" }
+                
+                Profile Data:
+                - Name: ${formData.firstName} ${formData.lastName}
+                - Role: ${formData.department}
+                - Experience: ${formData.yearsOfExperience} years
+                - Education: ${JSON.stringify(formData.educationItems)}
+                - Projects: ${JSON.stringify(formData.projectItems)}
+                - Skills: ${JSON.stringify(formData.skillItems)}
+                - Certificates: ${JSON.stringify(formData.certificateItems)}
+                - Resume: ${formData.resumeUrl ? 'Uploaded' : 'Missing'}
+            `;
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.3
+                })
+            });
+
+            const data = await response.json();
+            const result = JSON.parse(data.choices[0].message.content);
+            const newScore = Math.min(100, Math.max(0, result.score || 0));
+
+            await updateDoc(doc(db, 'users', user.uid), {
+                profileScore: newScore,
+                updatedAt: new Date()
+            });
+
+            setFormData(prev => ({ ...prev, profileScore: newScore }));
+            toast.success(`Profile Score Updated: ${newScore}%`);
+        } catch (error) {
+            console.error('Score calculation error:', error);
+            toast.error('Failed to calculate profile score');
+        } finally {
+            setCalculatingScore(false);
+        }
+    };
+
+    const handleSaveProfileCard = async () => {
         const user = auth.currentUser;
         if (!user) return;
 
@@ -76,71 +190,99 @@ export default function UserProfile() {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 mobile: formData.mobile,
-                skills: formData.skills,
-                projects: formData.projects,
-                certifications: formData.certifications,
-                resumeUrl: formData.resumeUrl,
-                yearsOfExperience: formData.yearsOfExperience,
                 department: formData.department,
-                expectedSalary: formData.expectedSalary,
+                yearsOfExperience: formData.yearsOfExperience,
+                address: formData.address,
                 updatedAt: new Date()
             });
-            toast.success('Profile updated successfully!');
+            toast.success('Profile details updated!');
+            setIsEditingProfile(false);
         } catch (error) {
-            console.error('Error updating profile:', error);
-            toast.error('Failed to update profile');
+            console.error('Error updating profile card:', error);
+            toast.error('Failed to update profile details');
         } finally {
             setSaving(false);
         }
     };
 
-    const onDrop = async (acceptedFiles: File[]) => {
-        const file = acceptedFiles[0];
+    const calculateMatchingScores = async () => {
         const user = auth.currentUser;
-        if (!file || !user) return;
+        if (!user || !formData.skillItems.length) return;
 
-        // Check file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('File size exceeds 5MB limit');
-            return;
-        }
-
-        setUploading(true);
         try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}.${fileExt}`;
-            const filePath = `resumes/${user.uid}/${fileName}`;
+            const jobsSnap = await getDocs(collection(db, 'recruits'));
+            const currentScores = formData.matchingScores || {};
+            let hasNewScores = false;
+            const updatedScores = { ...currentScores };
 
-            const { error: uploadError } = await supabase.storage
-                .from('resumes')
-                .upload(filePath, file);
+            jobsSnap.docs.forEach(jobDoc => {
+                const job = jobDoc.data();
+                const jobId = jobDoc.id;
 
-            if (uploadError) throw uploadError;
+                // Skip if score already exists
+                if (currentScores[jobId] !== undefined) return;
 
-            const { data: { publicUrl } } = supabase.storage
-                .from('resumes')
-                .getPublicUrl(filePath);
+                // Simple Matching Logic
+                // 1. Skills Match (70% weight)
+                const jobSkills = job.skills?.toLowerCase().split(',').map((s: string) => s.trim()).filter(Boolean) || [];
+                const userSkills = formData.skillItems.map(s => s.toLowerCase());
+                
+                let skillScore = 0;
+                if (jobSkills.length > 0) {
+                    const matches = jobSkills.filter((s: string) => userSkills.includes(s)).length;
+                    skillScore = (matches / jobSkills.length) * 70;
+                }
 
-            setFormData(prev => ({ ...prev, resumeUrl: publicUrl }));
-            toast.success('Resume uploaded successfully!');
-        } catch (error: any) {
-            console.error('Upload error:', error);
-            toast.error(`Upload failed: ${error.message}`);
-        } finally {
-            setUploading(false);
+                // 2. Experience Match (30% weight)
+                const jobExp = parseInt(job.yearsExperience) || 0;
+                const userExp = parseInt(formData.yearsOfExperience) || 0;
+                
+                let expScore = 0;
+                if (jobExp === 0) {
+                    expScore = 30; // 0 required exp means perfect match for exp
+                } else {
+                    expScore = userExp >= jobExp ? 30 : (userExp / jobExp) * 30;
+                }
+
+                const totalScore = Math.round(skillScore + expScore);
+                updatedScores[jobId] = totalScore;
+                hasNewScores = true;
+            });
+
+            if (hasNewScores) {
+                await updateDoc(doc(db, 'users', user.uid), {
+                    matchingScores: updatedScores
+                });
+                setFormData(prev => ({ ...prev, matchingScores: updatedScores }));
+            }
+        } catch (error) {
+            console.error('Error calculating matching scores:', error);
         }
     };
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        accept: {
-            'application/pdf': ['.pdf'],
-            'application/msword': ['.doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
-        },
-        maxFiles: 1,
-        multiple: false
-    });
+    const handleVerifyEmail = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        setVerifyingEmail(true);
+        try {
+            await sendEmailVerification(user);
+            toast.success('Verification email sent! Please check your inbox.');
+        } catch (error: any) {
+            console.error('Error sending verification email:', error);
+            if (error.code === 'auth/too-many-requests') {
+                toast.error('Too many requests. Please try again later.');
+            } else {
+                toast.error('Failed to send verification email');
+            }
+        } finally {
+            setVerifyingEmail(false);
+        }
+    };
+
+    const handleInputChange = (field: keyof typeof formData, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
 
     if (loading) {
         return (
@@ -151,260 +293,197 @@ export default function UserProfile() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
             <UserHeader />
 
-            <main className="flex-1 max-w-4xl mx-auto w-full px-3 sm:px-4 py-6 sm:py-8">
-
-
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
-                    {/* Top Orange Gradient Line */}
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-orange-gradient z-20"></div>
-
-                    <div className="bg-white px-6 sm:px-8 py-8 sm:py-12 relative overflow-hidden border-b border-gray-200">
-                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-orange-50 flex items-center justify-center border-4 border-white shadow-xl">
-                                <User className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500" />
-                            </div>
-                            <div className="text-center sm:text-left">
-                                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium">{formData.email}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleUpdate} className="p-6 sm:p-8 space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.firstName}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                    />
-                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.lastName}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                    />
-                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                                <div className="relative">
-                                    <input
-                                        type="email"
-                                        disabled
-                                        value={formData.email}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed outline-none"
-                                    />
-                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Mobile Number</label>
-                                <div className="relative">
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={formData.mobile}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                    />
-                                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Expandable Additional Fields */}
-                        {showMoreFields && (
-                            <div className="space-y-6 pt-6 border-t border-gray-100 animate-in slide-in-from-top duration-300">
-                                {/* Career Info Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
-                                        Career Overview
-                                    </h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Experience (Years)</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    placeholder="e.g. 5"
-                                                    value={formData.yearsOfExperience}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, yearsOfExperience: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                                />
-                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Current Department</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. Engineering"
-                                                    value={formData.department}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                                />
-                                                <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Expected Salary</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. $80,000"
-                                                    value={formData.expectedSalary}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: e.target.value }))}
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
-                                                />
-                                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+                <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8 relative`}>
+                    
+                    {/* Left Column - Profile Card (Only shown in Profile tab) */}
+                    {activeTab === 'profile' && (
+                        <div className="w-full lg:w-[350px] flex-shrink-0">
+                            <div className="sticky top-24">
+                                <div className="bg-white rounded-[2rem] border border-gray-200 overflow-hidden group">
+                                    <div className="h-24 bg-orange-gradient relative">
+                                        <button
+                                            onClick={() => setIsEditingProfile(!isEditingProfile)}
+                                            className="absolute top-3 right-3 p-1.5 bg-white/50 hover:bg-white/70 backdrop-blur-sm rounded-full text-black transition-colors border border-white/20"
+                                            title="Edit Profile Info"
+                                        >
+                                            {isEditingProfile ? <X className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
+                                        </button>
                                     </div>
-                                </section>
+                                    
+                                    <div className="px-5 pb-5 relative">
+                                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border-4 border-white mx-auto -mt-10 mb-3 relative z-10">
+                                            <div 
+                                                className={`w-full h-full rounded-full flex items-center justify-center p-1 transition-all duration-500`}
+                                                style={{
+                                                    background: `conic-gradient(${formData.profileScore >= 75 ? '#10b981' : formData.profileScore >= 40 ? '#f59e0b' : '#ef4444'} ${formData.profileScore * 3.6}deg, #f3f4f6 0deg)`
+                                                }}
+                                            >
+                                                <div className="w-full h-full bg-white rounded-full flex items-center justify-center shadow-inner text-gray-400">
+                                                    <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-emerald-500' : formData.profileScore >= 40 ? 'text-amber-500' : 'text-rose-500'}`} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {isEditingProfile ? (
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">First Name</label>
+                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Last Name</label>
+                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Role / Department</label>
+                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Mobile</label>
+                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Years of Experience</label>
+                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Address</label>
+                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none resize-none h-12" />
+                                                </div>
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+                                                    {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center">
+                                                <h1 className="text-lg font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
+                                                {formData.department ? (
+                                                    <p className="text-xs text-primary-600 font-bold mt-1 mb-3 bg-primary-50 inline-block px-3 py-1 rounded-full border border-primary-100">{formData.department}</p>
+                                                ) : (
+                                                    <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-orange-500 font-bold mt-1 mb-3 bg-orange-50 hover:bg-orange-100 transition-colors inline-block px-3 py-1 rounded-full border border-orange-100">+ Add your role</button>
+                                                )}
+                                                
+                                                <div className="space-y-3 text-left border-t border-gray-100 pt-5 pb-2">
+                                                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                                                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                        <span className="truncate leading-none">{formData.email}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                                                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                        <span className="leading-none">{formData.mobile || <span className="text-gray-400 italic">No mobile added</span>}</span>
+                                                    </div>
+                                                    {formData.yearsOfExperience && (
+                                                        <div className="flex items-center gap-3 text-sm text-gray-600">
+                                                            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                            <span className="leading-none">{formData.yearsOfExperience} Years Experience</span>
+                                                        </div>
+                                                    )}
+                                                    {formData.address && (
+                                                        <div className="flex items-start gap-3 text-sm text-gray-600">
+                                                            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                                            <span className="whitespace-pre-wrap leading-tight">{formData.address}</span>
+                                                        </div>
+                                                    )}
 
-                                {/* Expertise Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
-                                        Expertise & Background
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Skills (Comma separated)</label>
-                                            <textarea
-                                                placeholder="e.g. React, Node.js, Python, UI Design..."
-                                                value={formData.skills}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Key Projects</label>
-                                            <textarea
-                                                placeholder="Highlight your best work..."
-                                                value={formData.projects}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, projects: e.target.value }))}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Certifications</label>
-                                            <textarea
-                                                placeholder="Degrees, licenses, online courses..."
-                                                value={formData.certifications}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none min-h-[80px] resize-none"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
+                                                    <div className="pt-3 border-t border-gray-100 mt-2">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                                                <span className="text-[11px] font-bold text-gray-900 uppercase">Profile Score: {formData.profileScore || 0}%</span>
+                                                            </div>
+                                                            <button 
+                                                                onClick={calculateProfileScore} 
+                                                                disabled={calculatingScore}
+                                                                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-500 transition-all disabled:opacity-50"
+                                                                title="Refresh Score"
+                                                            >
+                                                                <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-orange-500' : ''}`} />
+                                                            </button>
+                                                        </div>
+                                                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className={`h-full transition-all duration-1000 ${formData.profileScore >= 75 ? 'bg-emerald-500' : formData.profileScore >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                                                style={{ width: `${formData.profileScore || 0}%` }}
+                                                            />
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-400 mt-1.5 font-medium italic">
+                                                            Based on your profile completeness and content.
+                                                        </p>
+                                                    </div>
 
-                                {/* Resume Upload Section */}
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
-                                        Resume Upload
-                                    </h3>
-                                    <div
-                                        {...getRootProps()}
-                                        className={`cursor-pointer transition-all duration-300 ${isDragActive
-                                            ? 'bg-orange-50 border-2 border-dashed border-orange-400'
-                                            : 'bg-gray-50 border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
-                                            } rounded-xl p-6 flex flex-col items-center justify-center gap-3`}
-                                    >
-                                        <input {...getInputProps()} />
-                                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
-                                            {uploading ? (
-                                                <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
-                                            ) : (
-                                                <FileUp className="w-6 h-6 text-orange-500" />
-                                            )}
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-bold text-gray-900">
-                                                {isDragActive ? 'Drop your resume here' : 'Drop your resume or click to browse'}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-1">Supports PDF, DOCX up to 5MB</p>
-                                        </div>
-                                        {formData.resumeUrl && (
-                                            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
-                                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-bold">Resume Uploaded</span>
+                                                    {/* Email Verification Status */}
+                                                    <div className="pt-3 border-t border-gray-100 mt-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                {isEmailVerified ? (
+                                                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                                                                ) : (
+                                                                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                                                                )}
+                                                                <span className={`text-[11px] font-bold uppercase ${isEmailVerified ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                                    {isEmailVerified ? 'Email Verified' : 'Verify Email'}
+                                                                </span>
+                                                            </div>
+                                                            {!isEmailVerified && (
+                                                                <button 
+                                                                    onClick={handleVerifyEmail}
+                                                                    disabled={verifyingEmail}
+                                                                    className="text-[10px] font-bold text-orange-600 hover:text-orange-700 disabled:opacity-50 transition-all active:scale-95"
+                                                                >
+                                                                    {verifyingEmail ? 'Sending...' : 'Verify Now'}
+                                                                </button>
+                                                            )}
+                                                            {isEmailVerified && (
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Matching Jobs Navigation */}
+                                                    <div className="pt-3 border-t border-gray-100 mt-2">
+                                                        <button 
+                                                            onClick={() => navigate('/matching-jobs')}
+                                                            className="w-full flex items-center justify-between p-2 pb-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl transition-all group/match shadow-sm"
+                                                        >
+                                                            <div className="p-1.5 bg-white rounded-lg border border-orange-200 text-orange-600 shadow-sm animate-bounce group-hover/match:animate-none">
+                                                                <Sparkles className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <p className="text-xs font-bold text-gray-900 animate-pulse group-hover/match:animate-none pr-2">Matching Jobs</p>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                    {formData.resumeUrl && (
-                                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-orange-500" />
-                                                <span className="text-sm font-medium text-gray-700">Current Resume</span>
-                                            </div>
-                                            <a
-                                                href={formData.resumeUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs font-bold text-primary-600 hover:text-primary-700"
-                                            >
-                                                View
-                                            </a>
-                                        </div>
-                                    )}
-                                </section>
-                            </div>
-                        )}
-
-                        <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
-                            <button
-                                type="button"
-                                onClick={() => setShowMoreFields(!showMoreFields)}
-                                className="inline-flex items-center text-primary-600 font-bold hover:text-primary-700 transition-colors group"
-                            >
-                                <div className="p-1.5 rounded-lg bg-primary-50 group-hover:bg-primary-100 mr-2 transition-colors">
-                                    {showMoreFields ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                 </div>
-                                {showMoreFields ? 'Show less details' : 'Add more profile details'}
-                            </button>
-
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="inline-flex items-center px-8 py-3 bg-orange-gradient text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 active:scale-95"
-                            >
-                                {saving ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Save className="w-5 h-5 mr-2" />
-                                        Update Profile
-                                    </>
-                                )}
-                            </button>
+                            </div>
                         </div>
-                    </form>
+                    )}
+
+                    {/* Right Column - Content */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                        <div className="flex-1">
+                            {activeTab === 'profile' && (
+                                <ProfileDetailsView 
+                                    formData={formData} 
+                                    setFormData={setFormData}
+                                />
+                            )}
+                            {(activeTab === 'jobs' || activeTab === 'applications') && (
+                                <JobsAndApplicationsView 
+                                    activeTab={activeTab} 
+                                    onCompleteProfile={() => navigate('/home?tab=profile')}
+                                />
+                            )}
+                        </div>
+                    </div>
                 </div>
-
-
             </main>
         </div>
     );

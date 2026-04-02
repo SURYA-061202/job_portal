@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, getDocs, getDoc, query as fsQuery, orderBy, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query as fsQuery, orderBy, doc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate } from '@/types';
@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 
-function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void }) {
+function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, isPremium }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -123,11 +123,21 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                 setFilteredCandidates([]);
             }
 
-            const q = fsQuery(collection(db, 'candidates'), orderBy('createdAt', 'desc'));
+            const candidatesRef = collection(db, 'candidates');
+            let q = fsQuery(candidatesRef, orderBy('createdAt', 'desc'));
+
+            // No longer filtering candidates by recruiterId as per user request to show candidates/users same like before
             const querySnapshot = await getDocs(q);
-            const candidatesData: Candidate[] = [];
+            let candidatesData: Candidate[] = [];
             querySnapshot.forEach((doc) => {
                 candidatesData.push({ id: doc.id, ...doc.data() } as Candidate);
+            });
+
+            // Sort manually
+            candidatesData = candidatesData.sort((a, b) => {
+                const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                return Number(dateB) - Number(dateA);
             });
 
             // Race condition check: If we started filtering while this was fetching, stop.
@@ -358,20 +368,26 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
 
             if (applications && applications.length > 0) {
                 // Fetch job post details for each application
-                const applicationsWithDetails = await Promise.all(
+                const details = await Promise.all(
                     applications.map(async (app) => {
                         const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
                         if (postDoc.exists()) {
+                            const postData = postDoc.data();
                             return {
                                 ...app,
-                                postDetails: { id: postDoc.id, ...postDoc.data() }
+                                postDetails: { id: postDoc.id, ...postData }
                             };
                         }
                         return { ...app, postDetails: null };
                     })
                 );
 
-                setUserApplications(applicationsWithDetails);
+                // Filter: For non-admins, only show applications for their own posts
+                const filtered = userRole === 'admin' 
+                    ? details 
+                    : details.filter(app => app.postDetails && (app.postDetails as any).recruiterId === userId);
+
+                setUserApplications(filtered);
             } else {
                 setUserApplications([]);
             }
@@ -598,8 +614,13 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             }
         }
 
+        // 3. Apply Premium Limit (30 Candidates) for non-premium recruiters
+        if (userRole !== 'admin' && !isPremium) {
+            list = list.slice(0, 30);
+        }
+
         return list;
-    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates]);
+    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates, userRole, isPremium]);
 
     return (
         <div className="space-y-6 flex-1 flex flex-col">
@@ -637,10 +658,23 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                             )}
                                             <div>
                                                 <div className="flex items-center gap-3 mb-1">
-                                                    <h2 className="text-xl font-bold text-gray-900">Candidates</h2>
+                                                    <h2 className="text-xl font-bold text-gray-900">
+                                                        {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
+                                                    </h2>
                                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                                         {displayCandidates.length}
                                                     </span>
+                                                    {userRole !== 'admin' && !isPremium && (
+                                                        <div className="group relative">
+                                                            <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-black border border-orange-200 cursor-help uppercase tracking-tighter">
+                                                                Get Premium
+                                                            </span>
+                                                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-max px-3 py-1.5 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] font-bold">
+                                                                Get premium To View All Candidates
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-gray-900" />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
                                             </div>
@@ -681,7 +715,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                 </div>
                                             )}
 
-                                            {/* Registered Candidates Button - Hide when viewing a specific post */}
+                                            {/* Registered Candidates Button - When not viewing a specific post */}
                                             {!postId && (
                                                 <button
                                                     onClick={() => {
@@ -844,7 +878,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     );
 }
 
-export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void }) {
+export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     return (
         <ErrorBoundary>
             <CandidatesTabContent {...props} />

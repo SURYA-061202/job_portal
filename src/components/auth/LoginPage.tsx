@@ -30,14 +30,14 @@ export default function LoginPage() {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.role === 'manager' || userData.role === 'recruiter') {
+          if (userData.role === 'manager' || userData.role === 'recruiter' || userData.role === 'admin') {
             navigate('/dashboard');
           } else {
-            navigate('/jobs');
+            navigate('/home');
           }
         } else {
           // If no doc exists, default to user view
-          navigate('/jobs');
+          navigate('/home');
         }
         toast.success('Login successful!');
       } else {
@@ -56,7 +56,7 @@ export default function LoginPage() {
         });
 
         toast.success('Registration successful!');
-        navigate('/jobs');
+        navigate('/home');
       }
     } catch (error: any) {
       toast.error(error.message);

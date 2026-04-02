@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import CustomDropdown from '@/components/CustomDropdown';
@@ -12,7 +12,7 @@ const COLORS = ['#f97316', '#fb923c', '#fdba74', '#ea580c', '#c2410c', '#fed7aa'
 
 // Main component -------------------------------------------------------
 
-export default function StatsTab() {
+export default function StatsTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +23,21 @@ export default function StatsTab() {
   useEffect(() => {
     const load = async () => {
       try {
+        const isAdmin = userRole === 'admin';
+        const candRef = collection(db, 'candidates');
+        const jobsRef = collection(db, 'recruits');
+
+        let candQ = query(candRef);
+        let jobsQ = query(jobsRef);
+
+        if (!isAdmin && userId) {
+          candQ = query(candRef, where('recruiterId', '==', userId));
+          jobsQ = query(jobsRef, where('recruiterId', '==', userId));
+        }
+
         const [candidatesSnapshot, jobsSnapshot] = await Promise.all([
-          getDocs(collection(db, 'candidates')),
-          getDocs(collection(db, 'recruits'))
+          getDocs(candQ),
+          getDocs(jobsQ)
         ]);
 
         const candidatesList: Candidate[] = [];

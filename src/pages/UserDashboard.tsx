@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { supabase } from '@/lib/supabase';
 import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
@@ -205,13 +205,38 @@ export default function UserDashboard() {
         });
     };
 
+    const handleViewJobDetails = async (job: RecruitmentRequest) => {
+        const user = auth.currentUser;
+        if (user && job.id) {
+            try {
+                // If user hasn't viewed this job, add them to viewedBy
+                if (!job.viewedBy?.includes(user.uid)) {
+                    await updateDoc(doc(db, 'recruits', job.id), {
+                        viewedBy: arrayUnion(user.uid)
+                    });
+                    
+                    // Update local state to clear "New" badge immediately
+                    setPosts(prev => prev.map(p => 
+                        p.id === job.id 
+                            ? { ...p, viewedBy: [...(p.viewedBy || []), user.uid] } 
+                            : p
+                    ));
+                }
+            } catch (error) {
+                console.error('Error updating view status:', error);
+            }
+        }
+        setSelectedJob(job);
+    };
+
     // Filter posts: Match search AND sidebar filters AND exclude applied posts
     const filteredPosts = posts.filter(post => {
         // 1. Search Logic
         const matchesSearch =
             post.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
             post.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.skills.toLowerCase().includes(searchTerm.toLowerCase());
+            post.skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            post.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesLocation = post.location.toLowerCase().includes(locationTerm.toLowerCase());
 
@@ -506,7 +531,8 @@ export default function UserDashboard() {
                                             <UserJobCard
                                                 key={post.id}
                                                 recruitment={post}
-                                                onViewDetails={(j) => setSelectedJob(j)}
+                                                currentUserId={auth.currentUser?.uid}
+                                                onViewDetails={handleViewJobDetails}
                                             />
                                         ))}
                                     </div>
@@ -549,11 +575,12 @@ export default function UserDashboard() {
                                                     jdUrl: app.recruitment_requests.jdUrl,
                                                     budgetPay: app.recruitment_requests.budgetPay,
                                                     salaryBreakup: app.recruitment_requests.salaryBreakup,
-                                                    requestedBy: app.recruitment_requests.requestedBy,
+                                                    recruiterName: app.recruitment_requests.recruiterName,
+                                                    companyName: app.recruitment_requests.companyName,
                                                     createdAt: app.recruitment_requests.createdAt,
                                                     applicantCount: applicantCounts[app.recruitment_requests.id] || 0
                                                 } as any}
-                                                onViewDetails={(j) => setSelectedJob(j)}
+                                                onViewDetails={handleViewJobDetails}
                                             />
                                         ))}
                                     </div>
