@@ -154,7 +154,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   return (
     <div className="space-y-6 flex-1 flex flex-col">
       {/* Header Section */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -170,15 +170,15 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
 
       {/* Summary Cards - Moved to Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6">
           <div className="text-sm text-blue-700 font-medium mb-1">Total Candidates</div>
           <div className="text-3xl font-bold text-blue-900">{candidates.length}</div>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm border border-orange-200 p-6">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 p-6">
           <div className="text-sm text-orange-700 font-medium mb-1">Total Job Posts</div>
           <div className="text-3xl font-bold text-orange-900">{jobPosts.length}</div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 p-6">
           <div className="text-sm text-purple-700 font-medium mb-1">Unique Departments</div>
           <div className="text-3xl font-bold text-purple-900">{allDepartments.length}</div>
         </div>
@@ -187,7 +187,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Department Distribution - Donut Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Department Distribution</h3>
@@ -250,7 +250,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
         </div>
 
         {/* Skills Distribution - Pie Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Skills Distribution</h3>

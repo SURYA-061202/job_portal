@@ -150,7 +150,7 @@ export default function AddMembersTab() {
     return (
         <div className="space-y-6 flex-1 flex flex-col">
             {/* Header Section - Similar to Job Posts */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-white p-4 rounded-xl border border-gray-200">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     {/* Title and Description */}
                     <div>
@@ -192,7 +192,7 @@ export default function AddMembersTab() {
             {/* Member Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredMembers.map(member => (
-                    <div key={member.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-200 group">
+                    <div key={member.id} className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg hover:border-primary-200 transition-all duration-200 group">
                         {/* Avatar and Badge */}
                         <div className="flex flex-col items-center mb-4">
                             <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-orange-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-2xl mb-3 group-hover:scale-105 transition-transform duration-200">

@@ -36,7 +36,7 @@ export default function UserHeader() {
     const navLinks = [
         { to: '/home', label: 'Home' },
         { to: '/personalized-cv', label: 'Personalized CV' },
-        { to: '/training-module', label: 'Training Module' },
+        // { to: '/training-module', label: 'Training Module' },
         { to: '/career-assistance', label: 'Career Assistance' },
     ];
 
@@ -61,7 +61,7 @@ export default function UserHeader() {
                                 />
                                 <div className="absolute -inset-2 bg-orange-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             </div>
-                            <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
+                            <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter pr-1">
                                 <span className="text-gray-800">Indian Infra</span>
                                 <span className="bg-gradient-to-r from-orange-600 via-rose-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x">
                                     Jobs

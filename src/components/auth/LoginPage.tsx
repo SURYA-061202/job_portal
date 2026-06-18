@@ -120,30 +120,26 @@ export default function LoginPage() {
         {/* Content Overlay */}
         <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full h-full text-center">
           {/* Logo/Brand */}
-          <div className="flex flex-col items-center space-y-5 pt-20 group">
-            <div className="relative p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl transition-all duration-700 group-hover:scale-110 group-hover:rotate-[5deg]">
-              <img
-                src="/images/indianinfra.png"
-                alt="Indian Infra Logo"
-                className="h-16 w-auto object-contain"
-              />
-              <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            </div>
-            <div className="flex items-center gap-3 font-outfit text-5xl font-black tracking-tighter transition-transform duration-500 group-hover:scale-105">
+          <div className="flex flex-col items-center space-y-5 pt-20">
+            <div className="flex items-center gap-3 font-outfit text-5xl font-black tracking-tighter pr-1">
+              <div className="relative p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
+                <img
+                  src="/images/indianinfra.png"
+                  alt="Indian Infra Logo"
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
               <span className="text-white">Indian Infra</span>
               <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-amber-400 bg-clip-text text-transparent animate-gradient-x">
                 Jobs
               </span>
             </div>
-            <p className="text-primary-100/80 text-lg font-medium tracking-wide mt-6 border-t border-white/10 pt-4">
-              Your Gateway to Infrastructure Careers
-            </p>
           </div>
 
           {/* Main Content */}
           <div className="flex flex-col items-center justify-center px-4 pb-50">
             <h2 className="text-3xl md:text-4xl font-bold leading-snug text-white drop-shadow-lg max-w-2xl">
-              Continue building your future in Indian Infra
+              Continue building your future With Indian Infra
             </h2>
           </div>
         </div>
@@ -168,13 +164,17 @@ export default function LoginPage() {
         <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-10 flex flex-col items-center">
-            <div className="flex items-center gap-2 font-outfit text-3xl font-black tracking-tighter">
+            <div className="flex items-center gap-2 font-outfit text-3xl font-black tracking-tighter pr-1">
+              <img
+                src="/images/indianinfra.png"
+                alt="Indian Infra Logo"
+                className="h-10 w-auto object-contain"
+              />
               <span className="text-gray-800">Indian Infra</span>
               <span className="bg-gradient-to-r from-orange-600 via-rose-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x">
                 Jobs
               </span>
             </div>
-            <p className="text-gray-500 text-xs mt-3 font-medium">Your Gateway to Infrastructure Careers</p>
           </div>
 
           {/* Form Card */}

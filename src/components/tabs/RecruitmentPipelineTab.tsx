@@ -143,7 +143,7 @@ export default function RecruitmentPipelineTab() {
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
             {/* Header Section */}
-            <div className="bg-gradient-to-br from-primary-50 to-orange-50 p-4 rounded-xl border border-orange-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
+            <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Recruitment Pipeline</h2>
@@ -188,7 +188,7 @@ export default function RecruitmentPipelineTab() {
                                         key={candidate.id}
                                         draggable
                                         onDragStart={(e) => onDragStart(e, candidate.id || '')}
-                                        className="bg-white p-3 rounded border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
+                                        className="bg-white p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
                                     >
                                         <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                             <h4 className="font-medium text-gray-900 truncate pr-2" title={candidate.name}>{candidate.name}</h4>

@@ -39,7 +39,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
   return (
     <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white shadow-lg flex flex-col h-full max-h-screen border-r border-gray-200 transition-all duration-300 ease-in-out relative overflow-hidden`}>
       {/* Header with Logo and Branding */}
-      <div className="px-6 py-4 bg-gradient-to-br from-orange-400 to-orange-600 border-b border-orange-500 flex-shrink-0">
+      <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 group">
           <div className="relative">
             <img
@@ -47,12 +47,11 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
               alt="Indian Infra Logo"
               className="w-10 h-10 object-contain transition-transform duration-500 group-hover:rotate-[10deg]"
             />
-            <div className="absolute -inset-1.5 bg-white/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
           {!isCollapsed && (
-            <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter text-white">
-              <span className="opacity-90">Indian Infra</span>
-              <span className="text-white">Jobs</span>
+            <div className="flex items-center gap-1.5 font-outfit text-xl font-black tracking-tighter pr-1">
+              <span className="text-gray-800">Indian Infra</span>
+              <span className="text-gray-800">Jobs</span>
             </div>
           )}
         </div>
@@ -159,14 +158,14 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
       </nav>
 
       {/* Account Section - Fixed at Bottom */}
-      <div className="px-3 py-4 border-t border-orange-200 bg-gradient-to-br from-orange-400 to-orange-600 flex-shrink-0">
+      <div className="px-3 py-4 border-t border-gray-200 bg-white flex-shrink-0">
         {/* Expand/Collapse button for collapsed sidebar */}
         {isCollapsed && (
           <button
             onClick={() => setIsAccountOpen(!isAccountOpen)}
             className="w-full flex items-center justify-center mb-2"
           >
-            {!isAccountOpen ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5 text-white" />}
+            {!isAccountOpen ? <ChevronUp className="w-5 h-5 text-orange-600" /> : <ChevronDown className="w-5 h-5 text-orange-600" />}
           </button>
         )}
 
@@ -175,29 +174,24 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
             onClick={() => setIsAccountOpen(!isAccountOpen)}
             className="w-full flex items-center justify-between group px-3 mb-2"
           >
-            <h2 className="text-xs font-bold uppercase tracking-wider transition-colors text-white">
+            <h2 className="text-xs font-bold uppercase tracking-wider transition-colors text-orange-600">
               Account
             </h2>
-            {/* Arrow Logic: Up when collapsed (to expand up), Down when expanded (to collapse) */}
-            {/* BUT User said: "The expand arrow should be up before expand". So if !isAccountOpen (collapsed), show Up. */}
-            {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
+            {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-orange-600" /> : <ChevronDown className="w-4 h-4 text-orange-600" />}
           </button>
         )}
 
         <div className="space-y-1">
-          {/* When collapsed, show collapsible items. When expanded, show based on isAccountOpen state */}
           {isCollapsed ? (
-            // Collapsed sidebar - show Logout always, others when expanded
             <>
               <button
                 onClick={onLogout}
-                className="w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-white hover:bg-white/20 group"
+                className="w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-gray-700 hover:bg-red-50 hover:text-red-600 group"
                 title="Logout"
               >
                 <LogOut className="h-5 w-5" />
               </button>
 
-              {/* Collapsible items when sidebar is collapsed */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                 {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
                   const Icon = tab.icon;
@@ -208,8 +202,8 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
                       className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                        ? 'bg-white text-orange-600 shadow-md'
-                        : 'text-white hover:bg-white/20'
+                        ? 'bg-orange-50 text-orange-600 shadow-md border border-orange-200'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                         }`}
                       title={tab.label}
                     >
@@ -221,12 +215,10 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
               </div>
             </>
           ) : (
-            // Expanded sidebar - use expand/collapse functionality
             <>
-              {/* Logout Tab - Always Visible */}
               <button
                 onClick={onLogout}
-                className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-white hover:bg-white/20"
+                className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 text-gray-700 hover:bg-red-50 hover:text-red-600"
               >
                 <LogOut className="mr-3 h-5 w-5" />
                 <span className="font-semibold">
@@ -234,7 +226,6 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                 </span>
               </button>
 
-              {/* Collapsible Content - Only when expanded */}
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                 {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
                   const Icon = tab.icon;
@@ -245,8 +236,8 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
                       className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                        ? 'bg-white text-orange-600 shadow-md'
-                        : 'text-white hover:bg-white/20'
+                        ? 'bg-orange-50 text-orange-600 shadow-md border border-orange-200'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                         }`}
                     >
                       {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}

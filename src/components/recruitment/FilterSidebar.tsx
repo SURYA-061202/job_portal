@@ -43,7 +43,7 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-base md:text-lg font-bold text-gray-900">Filters</h3>
                     {hasActiveFilters && onClearFilters && (

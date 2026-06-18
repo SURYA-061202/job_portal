@@ -89,7 +89,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Key Skills</span>
                     <div className="flex flex-wrap gap-1.5">
                         {skills.map((skill, i) => (
-                            <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded shadow-sm">
+                            <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded">
                                 {skill.trim()}
                             </span>
                         ))}

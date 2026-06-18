@@ -106,7 +106,7 @@ export default function AssessmentsTab() {
     return (
         <div className="space-y-6 flex-1 flex flex-col p-4 md:p-6 pb-20 overflow-auto thin-scrollbar">
             {/* Header Section */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 overflow-hidden relative group">
                 {/* Decorative background element */}
                 <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-primary-50 rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity" />
                 
@@ -145,7 +145,7 @@ export default function AssessmentsTab() {
                     </div>
                 ) : (
                     sections.map(section => (
-                        <div key={section.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
+                        <div key={section.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all hover:shadow-md">
                             <div 
                                 className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${expandedSection === section.id ? 'bg-primary-50/30' : 'hover:bg-gray-50/50'}`}
                                 onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
@@ -323,7 +323,7 @@ function MCQEditor({ questions, onSave }: { questions: MCQ[], onSave: (updated: 
             </div>
 
             {localQuestions.map((q, idx) => (
-                <div key={q.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative group/q transition-all hover:border-primary-200">
+                <div key={q.id} className="bg-white p-5 rounded-xl border border-gray-200 relative group/q transition-all hover:border-primary-200">
                     {/* Delete Icon - Absolute Top Right */}
                     {isEditing && (
                         <button 

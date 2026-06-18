@@ -267,7 +267,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Requirements Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
                         <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Requirements</h3>
                         <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
                             Candidates should have a <span className="font-semibold text-gray-900 underline decoration-orange-500/30 decoration-2">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900 underline decoration-pink-500/30 decoration-2">{recruitment.department}</span> department.
@@ -275,7 +275,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Description Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
                         <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Job Description</h3>
                         <div className="space-y-4">
                             {recruitment.description ? (
@@ -308,7 +308,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Skills Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 shadow-sm transition-all hover:shadow-md space-y-4">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
                         <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Required Skills</h3>
                         <div className="flex flex-wrap gap-2.5">
                             {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
@@ -339,7 +339,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
 function InfoItem({ label, value, color, labelColor }: { label: string, value: string, color?: string, labelColor?: string }) {
     return (
-        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border shadow-sm transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
+        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
             <span className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 text-center ${labelColor || 'text-gray-400'}`}>{label}</span>
             <span className="font-bold break-words text-sm text-gray-900 text-center">{value}</span>
         </div>

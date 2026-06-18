@@ -140,7 +140,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             ) : (
                 <div className="space-y-6 flex-1 flex flex-col">
                     {/* Header Section */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             {/* Title and Count */}
                             <div>

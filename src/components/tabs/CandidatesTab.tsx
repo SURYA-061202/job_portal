@@ -643,7 +643,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                             {/* Unified Header & Controls */}
                             <div className="mb-6 space-y-4">
                                 {/* Top Bar: Title, Description & Controls */}
-                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <div className="bg-white p-4 rounded-xl border border-gray-200">
                                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         {/* Title, Count and Description */}
                                         <div className="flex items-start gap-3">
@@ -753,7 +753,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
 
                                 {/* AI Clustering Panel */}
                                 {clusters.length > 0 ? (
-                                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 animate-in fade-in slide-in-from-top-2">
+                                    <div className="bg-white rounded-xl border border-gray-200 p-4 animate-in fade-in slide-in-from-top-2">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">
