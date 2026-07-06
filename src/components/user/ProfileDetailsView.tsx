@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { auth, db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { CheckCircle2, FileUp, Loader2, Edit2, X, Plus, Trash2 } from 'lucide-react';
@@ -131,11 +131,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
             const filePath = `certificates/${user.uid}/${fileName}`;
+            const storageRef = ref(storage, filePath);
 
-            const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file);
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage.from('resumes').getPublicUrl(filePath);
+            const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
+            const publicUrl = await getDownloadURL(snapshot.ref);
 
             setCertForm({ ...certForm, url: publicUrl });
             toast.success('Certificate file uploaded!');
@@ -183,11 +182,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
             const filePath = `resumes/${user.uid}/${fileName}`;
+            const storageRef = ref(storage, filePath);
 
-            const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file);
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage.from('resumes').getPublicUrl(filePath);
+            const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
+            const publicUrl = await getDownloadURL(snapshot.ref);
 
             setFormData((prev: any) => ({ ...prev, resumeUrl: publicUrl }));
             await updateDoc(doc(db, 'users', user.uid), { resumeUrl: publicUrl, updatedAt: new Date() });

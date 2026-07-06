@@ -6,8 +6,8 @@ import { useState } from 'react';
 import InterviewInviteModal from './InterviewInviteModal';
 import AIScoringModal from './AIScoringModal';
 import { deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { db, storage } from '@/lib/firebase';
+import { ref, deleteObject } from 'firebase/storage';
 import { analyzeCandidateScores } from '@/lib/aiService';
 import toast from 'react-hot-toast';
 
@@ -66,13 +66,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       if (!candidate.id) throw new Error('Candidate ID is missing.');
       // Delete from Firestore
       await deleteDoc(doc(db, 'candidates', candidate.id));
-      // Delete from Supabase Storage
+      // Delete from Firebase Storage
       if (candidate.resumeUrl) {
-        // Extract file name from public URL 
         const match = candidate.resumeUrl.match(/resumes\/([^/?#]+)/);
         const fileName = match ? match[1] : null;
         if (fileName) {
-          await supabase.storage.from('resumes').remove([fileName]);
+          const fileRef = ref(storage, `resumes/${fileName}`);
+          await deleteObject(fileRef).catch(() => {});
         }
       }
       onRemoveCandidate?.();

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
@@ -64,35 +64,18 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
         try {
             setLoading(true);
 
-            // Upload file to Supabase Storage
+            // Upload file to Firebase Storage
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
+            const storageRef = ref(storage, `resumes/${fileName}`);
 
-            console.log('Uploading file to Supabase...', fileName);
+            console.log('Uploading file to Firebase Storage...', fileName);
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('resumes')
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+            const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
+            console.log('File uploaded successfully:', snapshot);
 
-            if (uploadError) {
-                console.error('Supabase upload error:', uploadError);
-                if (uploadError.message && uploadError.message.includes('row-level security policy')) {
-                    toast.error('Storage policy error. Please check Supabase storage policies.');
-                    throw new Error('Storage policy not configured. Please set up public access policies in Supabase dashboard.');
-                }
-                throw uploadError;
-            }
-
-            console.log('File uploaded successfully:', uploadData);
-
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('resumes')
-                .getPublicUrl(fileName);
-
+            // Get download URL
+            const publicUrl = await getDownloadURL(snapshot.ref);
             console.log('Public URL generated:', publicUrl);
 
             // Attempt to parse resume data using AI
@@ -334,14 +317,15 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                         try {
                             // Delete Firestore doc
                             await deleteDoc(doc(db, 'candidates', manualCandidate.id));
-                            // Delete file from Supabase storage
-                            if (manualCandidate.resumeUrl) {
-                                const match = manualCandidate.resumeUrl.match(/resumes\/([^/?#]+)/);
-                                const fileName = match ? match[1] : null;
-                                if (fileName) {
-                                    await supabase.storage.from('resumes').remove([fileName]);
-                                }
-                            }
+                    // Delete file from Firebase Storage
+                    if (manualCandidate.resumeUrl) {
+                        const match = manualCandidate.resumeUrl.match(/resumes\/([^/?#]+)/);
+                        const fileName = match ? match[1] : null;
+                        if (fileName) {
+                            const fileRef = ref(storage, `resumes/${fileName}`);
+                            await deleteObject(fileRef).catch(() => {});
+                        }
+                    }
                         } catch (err) {
                             console.error('Failed to clean up candidate on cancel', err);
                         } finally {

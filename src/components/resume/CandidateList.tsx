@@ -2,8 +2,8 @@ import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
 import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { db, storage } from '@/lib/firebase';
+import { ref, deleteObject } from 'firebase/storage';
 import toast from 'react-hot-toast';
 
 // Helper to convert to Title Case
@@ -79,12 +79,13 @@ export default function CandidateList({
       // 1. Delete from Firestore
       await deleteDoc(doc(db, 'candidates', candidate.id));
 
-      // 2. Delete resume from Supabase if exists
+      // 2. Delete resume from Firebase Storage if exists
       if (candidate.resumeUrl) {
-        const url = candidate.resumeUrl;
-        const fileName = url.split('/').pop()?.split('?')[0];
+        const match = candidate.resumeUrl.match(/resumes\/([^/?#]+)/);
+        const fileName = match ? match[1] : null;
         if (fileName) {
-          await supabase.storage.from('resumes').remove([fileName]);
+          const fileRef = ref(storage, `resumes/${fileName}`);
+          await deleteObject(fileRef).catch(() => {});
         }
       }
 

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
 
@@ -107,33 +107,13 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         try {
             let jdUrl = initialData?.jdUrl || '';
             if (file) {
-                console.log('Uploading JD to Supabase storage (jd bucket)...');
+                console.log('Uploading JD to Firebase Storage...');
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${Date.now()}-jd.${fileExt}`;
+                const storageRef = ref(storage, `jd/${fileName}`);
 
-                const { error: uploadError } = await supabase.storage
-                    .from('jd')
-                    .upload(fileName, file, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
-                if (uploadError) {
-                    console.error('Supabase upload error:', uploadError);
-                    let msg = uploadError.message;
-                    if (msg.includes('DatabaseTimeout')) {
-                        msg = 'Storage database connection timed out. Please try again or check Supabase status.';
-                    } else if (msg.includes('row-level security')) {
-                        msg = 'Storage policy (RLS) error. Please ensure "jd" bucket has public upload permissions.';
-                    }
-                    throw new Error(`Upload failed: ${msg}`);
-                }
-
-                const { data } = supabase.storage
-                    .from('jd')
-                    .getPublicUrl(fileName);
-
-                jdUrl = data.publicUrl;
+                const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
+                jdUrl = await getDownloadURL(snapshot.ref);
                 console.log('JD uploaded successfully, public URL:', jdUrl);
             }
 

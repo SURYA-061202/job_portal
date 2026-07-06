@@ -444,19 +444,6 @@ export default function UserProfile() {
                                                             )}
                                                         </div>
                                                     </div>
-
-                                                    {/* Matching Jobs Navigation */}
-                                                    <div className="pt-3 border-t border-gray-100 mt-2">
-                                                        <button 
-                                                            onClick={() => navigate('/matching-jobs')}
-                                                            className="w-full flex items-center justify-between p-2 pb-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl transition-all group/match shadow-sm"
-                                                        >
-                                                            <div className="p-1.5 bg-white rounded-lg border border-orange-200 text-orange-600 shadow-sm animate-bounce group-hover/match:animate-none">
-                                                                <Sparkles className="w-3.5 h-3.5" />
-                                                            </div>
-                                                            <p className="text-xs font-bold text-gray-900 animate-pulse group-hover/match:animate-none pr-2">Matching Jobs</p>
-                                                        </button>
-                                                    </div>
                                                 </div>
                                             </div>
                                         )}

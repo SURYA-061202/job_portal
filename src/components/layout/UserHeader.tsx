@@ -1,7 +1,7 @@
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { LogOut, Menu, X, ChevronDown } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
@@ -20,7 +20,10 @@ export default function UserHeader() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const isActive = (path: string) => location.pathname === path;
+    const isActive = (path: string) => {
+        const fullUrl = location.pathname + location.search;
+        return fullUrl === path;
+    };
 
     const handleLogout = async () => {
         try {
@@ -34,10 +37,10 @@ export default function UserHeader() {
     };
 
     const navLinks = [
-        { to: '/home', label: 'Home' },
+        { to: '/home?tab=profile', label: 'Profile' },
+        { to: '/home?tab=jobs', label: 'Find Jobs' },
+        { to: '/home?tab=applications', label: 'My Applications' },
         { to: '/personalized-cv', label: 'Personalized CV' },
-        // { to: '/training-module', label: 'Training Module' },
-        { to: '/career-assistance', label: 'Career Assistance' },
     ];
 
     return (
@@ -52,18 +55,10 @@ export default function UserHeader() {
                 <div className="flex justify-between items-center">
                     {/* Left Side - Logo and Desktop Navigation */}
                     <div className="flex items-center gap-10">
-                        <Link to="/home" className="flex items-center gap-3 group">
-                            <div className="relative">
-                                <img
-                                    src="/images/indianinfra.png"
-                                    alt="Indian Infra Logo"
-                                    className="w-9 h-9 object-contain transition-transform duration-500 group-hover:rotate-[10deg]"
-                                />
-                                <div className="absolute -inset-2 bg-orange-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            </div>
-                            <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter pr-1">
+                        <Link to="/home" className="flex items-center group">
+                            <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
                                 <span className="text-gray-800">Indian Infra</span>
-                                <span className="bg-gradient-to-r from-orange-600 via-rose-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x">
+                                <span className="text-gray-800">
                                     Jobs
                                 </span>
                             </div>
@@ -79,34 +74,7 @@ export default function UserHeader() {
                                         }`}
                                     >
                                         <span>{link.label}</span>
-                                        {link.label === 'Home' && <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover/nav:rotate-180 transition-transform duration-300" />}
                                     </Link>
-
-                                    {/* Sub-tab dropdown for Home */}
-                                    {link.label === 'Home' && (
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-300 transform group-hover/nav:translate-y-0 translate-y-2 z-50">
-                                            <div className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden min-w-[200px] p-2 flex flex-col gap-1 ring-1 ring-black/5">
-                                                <Link 
-                                                    to="/home?tab=profile" 
-                                                    className="px-4 py-3 text-xs font-bold text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
-                                                >
-                                                    Profile Update
-                                                </Link>
-                                                <Link 
-                                                    to="/home?tab=jobs" 
-                                                    className="px-4 py-3 text-xs font-bold text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                                >
-                                                    Find Jobs
-                                                </Link>
-                                                <Link 
-                                                    to="/home?tab=applications" 
-                                                    className="px-4 py-3 text-xs font-bold text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                                                >
-                                                    My Applications
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             ))}
                         </nav>
@@ -140,46 +108,18 @@ export default function UserHeader() {
                 }`}>
                 <div className="px-6 py-4 flex flex-col gap-2">
                     {navLinks.map((link) => (
-                        <div key={link.to}>
-                            <Link
-                                to={link.to}
-                                onClick={() => link.label !== 'Home' && setIsMenuOpen(false)}
-                                className={`flex items-center justify-between p-4 rounded-xl transition-all ${
-                                    isActive(link.to) 
-                                    ? 'bg-orange-50 text-orange-600 font-bold' 
-                                    : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                            >
-                                <span className="text-base">{link.label}</span>
-                                {link.label === 'Home' && <ChevronDown className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />}
-                            </Link>
-                            
-                            {link.label === 'Home' && (
-                                <div className="pl-6 pr-4 py-2 flex flex-col gap-1">
-                                    <Link 
-                                        to="/home?tab=profile" 
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className="py-3 px-4 text-sm font-semibold text-gray-600 hover:text-orange-600 rounded-lg hover:bg-orange-50 transition-colors"
-                                    >
-                                        Profile Update
-                                    </Link>
-                                    <Link 
-                                        to="/home?tab=jobs" 
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className="py-3 px-4 text-sm font-semibold text-gray-600 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                                    >
-                                        Find Jobs
-                                    </Link>
-                                    <Link 
-                                        to="/home?tab=applications" 
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className="py-3 px-4 text-sm font-semibold text-gray-600 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors"
-                                    >
-                                        My Applications
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
+                        <Link
+                            key={link.to}
+                            to={link.to}
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`flex items-center p-4 rounded-xl transition-all ${
+                                isActive(link.to) 
+                                ? 'bg-orange-50 text-orange-600 font-bold' 
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            <span className="text-base">{link.label}</span>
+                        </Link>
                     ))}
                     <div className="h-px bg-gray-100 my-2"></div>
                     <button

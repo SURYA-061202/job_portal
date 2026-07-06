@@ -96,52 +96,42 @@ export default function LoginPage() {
         }}></div>
       </div>
 
-      {/* Left Panel - Hero Image with Overlay */}
+      {/* Left Panel - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <style>
-          {`
-            @keyframes subtle-zoom {
-              0% { transform: scale(1); }
-              100% { transform: scale(1.1); }
-            }
-          `}
-        </style>
-        {/* Reduced overlay opacity for clearer image */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 to-black/60 z-5"></div>
+        {/* Background Image - fills entire panel */}
         <div
           className="absolute inset-0 w-full h-full bg-no-repeat"
           style={{
-            backgroundImage: 'url("/images/job1.png")',
+            backgroundImage: 'url("/images/jobslogo.png")',
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
+            filter: 'brightness(0.8)'
           }}
         />
 
-        {/* Content Overlay */}
-        <div className="relative z-20 flex flex-col justify-between p-12 text-white w-full h-full text-center">
-          {/* Logo/Brand */}
-          <div className="flex flex-col items-center space-y-5 pt-20">
-            <div className="flex items-center gap-3 font-outfit text-5xl font-black tracking-tighter pr-1">
-              <div className="relative p-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
-                <img
-                  src="/images/indianinfra.png"
-                  alt="Indian Infra Logo"
-                  className="h-10 w-auto object-contain"
-                />
-              </div>
-              <span className="text-white">Indian Infra</span>
-              <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-amber-400 bg-clip-text text-transparent animate-gradient-x">
-                Jobs
+        {/* Title Overlay */}
+        <div className="relative z-20 p-6 w-full">
+          <style>
+            {`
+              @keyframes letter-glow {
+                0%, 45%, 100% { color: #ffffff; }
+                50% { color: #fb923c; }
+                55% { color: #ffffff; }
+              }
+            `}
+          </style>
+          <h1 className="text-xl font-bold drop-shadow-lg text-white">
+            {'Indian Infra Jobs'.split('').map((char, i) => (
+              <span
+                key={i}
+                style={{
+                  animation: `letter-glow 4s ease-in-out ${i * 0.12}s infinite`
+                }}
+              >
+                {char === ' ' ? '\u00A0' : char}
               </span>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex flex-col items-center justify-center px-4 pb-50">
-            <h2 className="text-3xl md:text-4xl font-bold leading-snug text-white drop-shadow-lg max-w-2xl">
-              Continue building your future With Indian Infra
-            </h2>
-          </div>
+            ))}
+          </h1>
         </div>
       </div>
 
