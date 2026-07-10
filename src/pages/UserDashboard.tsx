@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { supabase } from '@/lib/supabase';
+import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion, where } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
 
@@ -76,21 +75,15 @@ export default function UserDashboard() {
 
         try {
             setLoading(true);
-            // 1. Fetch applications from Supabase
-            const { data: apps, error } = await supabase
-                .from('job_applications')
-                .select('*')
-                .eq('user_id', user.uid)
-                .order('created_at', { ascending: false });
 
-            if (error) throw error;
-            if (!apps) {
-                setApplications([]);
-                return;
-            }
+            const appsQuery = query(
+                collection(db, 'job_applications'),
+                where('user_id', '==', user.uid)
+            );
+            const appsSnap = await getDocs(appsQuery);
+            const apps = appsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            // 2. Fetch corresponding job posts from Firestore
-            const detailedApplications = await Promise.all(apps.map(async (app) => {
+            const detailedApplications = await Promise.all(apps.map(async (app: any) => {
                 try {
                     const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
                     if (postDoc.exists()) {
@@ -102,35 +95,28 @@ export default function UserDashboard() {
                             }
                         };
                     }
-                    return null; // Post might have been deleted
+                    return null;
                 } catch (err) {
                     console.error('Error fetching post details:', err);
                     return null;
                 }
             }));
 
-            // Filter out nulls (deleted posts)
             setApplications(detailedApplications.filter(Boolean));
 
-            // Also fetch counts for cards
-            const { data: countData } = await supabase
-                .from('job_applications')
-                .select('post_id');
-
+            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
             const counts: Record<string, number> = {};
-            countData?.forEach(app => {
-                if (app.post_id) {
-                    counts[app.post_id] = (counts[app.post_id] || 0) + 1;
+            allAppsSnap.docs.forEach(d => {
+                const data = d.data();
+                if (data.post_id) {
+                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
                 }
             });
             setApplicantCounts(counts);
 
-            // We'll use this in the render mapping
-            setPosts(prev => prev.map(p => ({ ...p, applicantCount: counts[p.id!] || 0 })));
-
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching applications:', error);
-            toast.error('Failed to load applications');
+            toast.error('Failed to load applications. ' + (error?.message || ''));
         } finally {
             setLoading(false);
         }
@@ -148,19 +134,12 @@ export default function UserDashboard() {
                 ...doc.data()
             })) as RecruitmentRequest[];
 
-            // Fetch application counts from Supabase
-            const { data: apps, error: appsError } = await supabase
-                .from('job_applications')
-                .select('post_id');
-
-            if (appsError) {
-                console.error('Error fetching application counts:', appsError);
-            }
-
+            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
             const counts: Record<string, number> = {};
-            apps?.forEach(app => {
-                if (app.post_id) {
-                    counts[app.post_id] = (counts[app.post_id] || 0) + 1;
+            allAppsSnap.docs.forEach(d => {
+                const data = d.data();
+                if (data.post_id) {
+                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
                 }
             });
             setApplicantCounts(counts);

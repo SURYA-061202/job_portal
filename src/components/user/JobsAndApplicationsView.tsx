@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
-import { supabase } from '@/lib/supabase';
+import { collection, query, orderBy, getDocs, doc, getDoc, where } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import UserJobCard from '@/components/recruitment/UserJobCard';
@@ -47,19 +46,15 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
 
         try {
             setLoading(true);
-            const { data: apps, error } = await supabase
-                .from('job_applications')
-                .select('*')
-                .eq('user_id', user.uid)
-                .order('created_at', { ascending: false });
 
-            if (error) throw error;
-            if (!apps) {
-                setApplications([]);
-                return;
-            }
+            const appsQuery = query(
+                collection(db, 'job_applications'),
+                where('user_id', '==', user.uid)
+            );
+            const appsSnap = await getDocs(appsQuery);
+            const apps = appsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            const detailedApplications = await Promise.all(apps.map(async (app) => {
+            const detailedApplications = await Promise.all(apps.map(async (app: any) => {
                 try {
                     const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
                     if (postDoc.exists()) {
@@ -80,18 +75,19 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
 
             setApplications(detailedApplications.filter(Boolean));
 
-            const { data: countData } = await supabase.from('job_applications').select('post_id');
+            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
             const counts: Record<string, number> = {};
-            countData?.forEach(app => {
-                if (app.post_id) {
-                    counts[app.post_id] = (counts[app.post_id] || 0) + 1;
+            allAppsSnap.docs.forEach(d => {
+                const data = d.data();
+                if (data.post_id) {
+                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
                 }
             });
             setApplicantCounts(counts);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching applications:', error);
-            toast.error('Failed to load applications');
+            toast.error('Failed to load applications. ' + (error?.message || ''));
         } finally {
             setLoading(false);
         }
@@ -109,11 +105,12 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                 ...docSnap.data()
             })) as RecruitmentRequest[];
 
-            const { data: apps } = await supabase.from('job_applications').select('post_id');
+            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
             const counts: Record<string, number> = {};
-            apps?.forEach(app => {
-                if (app.post_id) {
-                    counts[app.post_id] = (counts[app.post_id] || 0) + 1;
+            allAppsSnap.docs.forEach(d => {
+                const data = d.data();
+                if (data.post_id) {
+                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
                 }
             });
             setApplicantCounts(counts);

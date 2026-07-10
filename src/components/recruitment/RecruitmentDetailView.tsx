@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2, Monitor, Share2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
 import ShareJobModal from './ShareJobModal';
@@ -52,14 +51,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             }
 
             // Check if already applied (only for candidates)
-            const { data } = await supabase
-                .from('job_applications')
-                .select('*')
-                .eq('post_id', recruitment.id)
-                .eq('user_id', user.uid)
-                .maybeSingle();
-
-            if (data) setHasApplied(true);
+            const appDoc = await getDoc(doc(db, 'job_applications', `${recruitment.id}_${user.uid}`));
+            if (appDoc.exists()) setHasApplied(true);
 
         } catch (err) {
             console.error('Error checking status:', err);
@@ -112,31 +105,32 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             return;
         }
 
-        if (!userProfile?.skills && recruitment.skills) {
+        const userSkills = userProfile?.skillItems || userProfile?.skills;
+        if ((!userSkills || (Array.isArray(userSkills) ? userSkills.length === 0 : !userSkills.trim())) && recruitment.skills) {
             toast.error('Profile Incomplete: Please add your skills to your profile before applying.');
             return;
         }
 
         setActionLoading(true);
         try {
-            const { error } = await supabase
-                .from('job_applications')
-                .insert({
-                    post_id: recruitment.id,
-                    user_id: user.uid,
-                    status: 'applied'
-                });
+            const appId = `${recruitment.id}_${user.uid}`;
+            const appRef = doc(db, 'job_applications', appId);
+            const appDoc = await getDoc(appRef);
 
-            if (error) {
-                if (error.code === '23505') {
-                    toast.error('You have already applied for this position.');
-                } else {
-                    throw error;
-                }
-            } else {
-                toast.success('Successfully applied!');
+            if (appDoc.exists()) {
+                toast.error('You have already applied for this position.');
                 setHasApplied(true);
+                return;
             }
+
+            await setDoc(appRef, {
+                post_id: recruitment.id,
+                user_id: user.uid,
+                status: 'applied',
+                created_at: serverTimestamp()
+            });
+            toast.success('Successfully applied!');
+            setHasApplied(true);
         } catch (err: any) {
             console.error('Apply error:', err);
             toast.error(`Failed to apply: ${err.message}`);
