@@ -55,7 +55,7 @@ export default function UserDashboard() {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    if (userData.role === 'manager' || userData.role === 'recruiter') {
+                    if (userData.role === 'manager' || userData.role === 'recruiter' || userData.role === 'admin') {
                         navigate('/dashboard', { replace: true });
                         return;
                     }

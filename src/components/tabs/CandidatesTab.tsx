@@ -9,9 +9,7 @@ import CandidateList from '@/components/resume/CandidateList';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
-import { clusterCandidates, saveClusters, fetchClusters } from '@/lib/clusteringService';
-import { analyzeCandidateScores } from '@/lib/aiService';
-import { ArrowLeft, Sparkles, X, Clock, Search } from 'lucide-react';
+import { ArrowLeft, Search, LayoutGrid, Briefcase, MapPin, Calendar, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
@@ -24,9 +22,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
 
     // Clustering State
     const [clusters, setClusters] = useState<{ id: number; label: string; candidateIds: string[] }[]>([]);
-    const [clusterLastUpdated, setClusterLastUpdated] = useState<Date | null>(null);
     const [activeClusterId, setActiveClusterId] = useState<number | null>(null);
-    const [isClustering, setIsClustering] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<'list' | 'history'>('list');
@@ -40,6 +36,8 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     const [userApplications, setUserApplications] = useState<any[]>([]);
     const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all');
     const [userAppDates, setUserAppDates] = useState<Record<string, Date[]>>({});
+    const [showPostView, setShowPostView] = useState(false);
+    const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
 
     // Extract unique dates for filter
     const availableDates = useMemo(() => {
@@ -59,9 +57,6 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         });
     }, [userAppDates]);
 
-    // Job Post Details for Scoring
-    const [recruitmentPost, setRecruitmentPost] = useState<RecruitmentRequest | null>(null);
-
     const isFilteringRef = useRef(false);
 
     useEffect(() => {
@@ -74,13 +69,11 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         // 1. Always clear clusters and active selection when context changes
         setClusters([]);
         setActiveClusterId(null);
-        setClusterLastUpdated(null);
 
         // 2. Handle Job-Specific Context (Applied Candidates)
         if (postId) {
             setFilterPostId(postId);
             fetchApplicantsForPost(postId);
-            fetchPostDetails(postId);
         }
         // 3. Handle Registered Users Context
         else if (viewMode === 'registered-users') {
@@ -95,15 +88,34 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             setIsFilteringApplicants(false);
             isFilteringRef.current = false;
             fetchCandidates(true);
-
-            // Reload global clusters only for this view
-            fetchClusters().then((res) => {
-                if (res.clusters && res.clusters.length > 0) {
-                    setClusters(res.clusters);
-                }
-            });
         }
     }, [postId, viewMode]);
+
+    // Fetch posts + applicant counts for post card grid view
+    useEffect(() => {
+        if (!showPostView) return;
+        const fetchPostCards = async () => {
+            try {
+                const q = fsQuery(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                const posts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+
+                // Fetch applicant counts from Supabase
+                const { data: allApps } = await supabase.from('job_applications').select('post_id');
+                const counts: Record<string, number> = {};
+                if (allApps) {
+                    allApps.forEach((app: any) => {
+                        counts[app.post_id] = (counts[app.post_id] || 0) + 1;
+                    });
+                }
+
+                setPostCards(posts.map(p => ({ ...p, applicantCount: counts[p.id || ''] || 0 })));
+            } catch (error) {
+                console.error('Error fetching post cards:', error);
+            }
+        };
+        fetchPostCards();
+    }, [showPostView]);
 
     const fetchCandidates = async (force = false) => {
         // If we are currently filtering for a specific post and this was called automatically, 
@@ -162,17 +174,6 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
             console.error('Error fetching candidates:', error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchPostDetails = async (id: string) => {
-        try {
-            const docSnap = await getDoc(doc(db, 'recruits', id));
-            if (docSnap.exists()) {
-                setRecruitmentPost({ id: docSnap.id, ...docSnap.data() } as RecruitmentRequest);
-            }
-        } catch (error) {
-            console.error("Error fetching post details:", error);
         }
     };
 
@@ -397,148 +398,6 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
         }
     };
 
-    const handleAIAnalysis = async () => {
-        let targetList = isFilteringApplicants ? filteredCandidates : candidates;
-
-        // Use registered users if in that view mode
-        if (viewMode === 'registered-users') {
-            targetList = registeredUsers;
-        }
-
-        if (targetList.length === 0) {
-            toast.error("No candidates to analyze.");
-            return;
-        }
-
-        try {
-            setIsClustering(true);
-
-            // 1. Resume Scoring
-            if (viewMode === 'registered-users') {
-                // --- MULTI-JOB SCORING FOR REGISTERED USERS ---
-                toast.loading("Fetching applications for registered users...", { id: "ai-scoring" });
-
-                const userIds = targetList.map(u => u.id);
-                console.log('[AI Analysis] Fetching apps for User IDs:', userIds);
-
-                // Fetch all applications for these users
-                const { data: allApps, error } = await supabase
-                    .from('job_applications')
-                    .select('user_id, post_id')
-                    .in('user_id', userIds);
-
-                if (error) {
-                    console.error('[AI Analysis] Supabase Error:', error);
-                    throw error;
-                }
-
-                console.log('[AI Analysis] Apps found:', allApps);
-
-                if (!allApps || allApps.length === 0) {
-                    toast.error("No job applications found for these users.", { id: "ai-scoring" });
-                    setIsClustering(false);
-                    return;
-                }
-
-                // Group users by post_id
-                const jobsMap: Record<string, string[]> = {}; // postId -> [userIds]
-                allApps.forEach(app => {
-                    if (!jobsMap[app.post_id]) jobsMap[app.post_id] = [];
-                    jobsMap[app.post_id].push(app.user_id);
-                });
-
-                const postIds = Object.keys(jobsMap);
-                console.log(`[AI Analysis] Found ${postIds.length} unique jobs applied to by these users.`);
-
-                let processedCount = 0;
-
-                // Iterate over each job
-                for (const postId of postIds) {
-                    // Fetch job details
-                    const jobDoc = await getDoc(doc(db, 'recruits', postId));
-                    if (!jobDoc.exists()) continue;
-
-                    const jobData = jobDoc.data();
-                    const jobDescription = jobData?.description;
-                    const jobTitle = jobData?.jobTitle;
-
-                    if (!jobDescription) continue;
-
-                    // Get candidates for this job
-                    const candidateIdsForJob = jobsMap[postId];
-                    const candidatesForJob = targetList.filter(c => candidateIdsForJob.includes(c.id));
-
-                    if (candidatesForJob.length > 0) {
-                        toast.loading(`Scoring ${candidatesForJob.length} candidates for "${jobTitle}"...`, { id: "ai-scoring" });
-
-                        // Run Analysis
-                        await analyzeCandidateScores(
-                            candidatesForJob,
-                            jobDescription,
-                            postId,
-                            jobTitle || 'Unknown Job'
-                        );
-                        processedCount++;
-                    }
-                }
-
-                if (processedCount > 0) {
-                    toast.success(`Scored candidates across ${processedCount} jobs!`, { id: "ai-scoring" });
-                    // Refresh data to show new scores
-                    fetchRegisteredUsers();
-                } else {
-                    toast("No eligible candidates/jobs found to score.", { id: "ai-scoring" });
-                }
-
-            } else {
-                // --- SINGLE JOB SCORING (Existing Logic) ---
-                if (recruitmentPost && recruitmentPost.description && recruitmentPost.id) {
-                    toast.loading("AI Scoring candidates...", { id: "ai-scoring" });
-                    const scoredCandidates = await analyzeCandidateScores(
-                        targetList,
-                        recruitmentPost.description,
-                        recruitmentPost.id,
-                        recruitmentPost.jobTitle
-                    );
-
-                    // Update local state with new scores
-                    if (isFilteringApplicants) {
-                        setFilteredCandidates(scoredCandidates);
-                    } else {
-                        setCandidates(scoredCandidates);
-                    }
-                    toast.success("Resumes scored!", { id: "ai-scoring" });
-                }
-            }
-
-            // 2. Clustering (if enough candidates)
-            if (targetList.length >= 3) {
-                toast.loading("Generating clusters...", { id: "clustering" });
-                const result = await clusterCandidates(targetList);
-                setClusters(result);
-                setClusterLastUpdated(new Date());
-
-                // Only persist to global storage if we are in the global view
-                if (!postId && viewMode === 'job-candidates') {
-                    saveClusters(result);
-                }
-
-                toast.success("Clusters generated!", { id: "clustering" });
-            } else if (recruitmentPost) {
-                // If we didn't cluster but did score, that's fine.
-            } else {
-                toast.error("Need at least 3 candidates to perform clustering.");
-            }
-
-        } catch (error) {
-            console.error(error);
-            toast.error("Analysis failed", { id: "clustering" });
-            toast.error("Analysis failed", { id: "ai-scoring" });
-        } finally {
-            setIsClustering(false);
-        }
-    };
-
     const handleCandidateSelect = (candidate: Candidate) => {
         // If in registered users view, fetch their application history
         if (viewMode === 'registered-users') {
@@ -682,6 +541,20 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
 
                                         {/* Search and AI Group Controls */}
                                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
+                                            {/* Post View Toggle */}
+                                            {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
+                                                <button
+                                                    onClick={() => setShowPostView(!showPostView)}
+                                                    className={`p-2 rounded-lg transition-all ${showPostView
+                                                        ? 'bg-orange-600 text-white shadow-md'
+                                                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                                                        }`}
+                                                    title="Post-based view"
+                                                >
+                                                    <LayoutGrid className="w-5 h-5" />
+                                                </button>
+                                            )}
+
                                             {/* Search */}
                                             <div className="relative flex-1 sm:w-64 md:w-72">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -734,86 +607,129 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                     {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
                                                 </button>
                                             )}
-
-                                            {/* AI Action Button (If no clusters) */}
-                                            {clusters.length === 0 && (
-                                                <button
-                                                    onClick={handleAIAnalysis}
-                                                    disabled={isClustering}
-                                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-70"
-                                                >
-                                                    {isClustering ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                    <span className="hidden sm:inline">{isClustering ? 'Analyzing' : 'AI Group'}</span>
-                                                    <span className="sm:hidden">{isClustering ? 'Analyzing...' : 'AI Group'}</span>
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* AI Clustering Panel */}
-                                {clusters.length > 0 ? (
-                                    <div className="bg-white rounded-xl border border-gray-200 p-4 animate-in fade-in slide-in-from-top-2">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">
-                                                    <Sparkles className="w-3.5 h-3.5" />
-                                                    AI Analysis Active
-                                                </div>
-                                                {clusterLastUpdated && !isNaN(clusterLastUpdated.getTime()) && (
-                                                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                                        <Clock className="w-3 h-3" />
-                                                        Updated {clusterLastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => { setClusters([]); setActiveClusterId(null); }}
-                                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors text-xs flex items-center gap-1"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                                Clear Analysis
-                                            </button>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2">
-                                            {clusters.map((c) => (
-                                                <button
-                                                    key={c.id}
-                                                    onClick={() => setActiveClusterId(activeClusterId === c.id ? null : c.id)}
-                                                    className={`group relative inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200 ${activeClusterId === c.id
-                                                        ? 'bg-gray-900 text-white border-gray-900 shadow-md ring-1 ring-gray-900/10'
-                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:text-gray-900'
-                                                        }`}
-                                                >
-                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeClusterId === c.id ? 'bg-indigo-400' : 'bg-gray-300 group-hover:bg-indigo-400'
-                                                        }`} />
-                                                    {c.label}
-                                                    <span className={`ml-2 text-xs py-0.5 px-1.5 rounded-md transition-colors ${activeClusterId === c.id
-                                                        ? 'bg-white/20 text-white'
-                                                        : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                                                        }`}>
-                                                        {c.candidateIds.length}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : null}
                             </div>
 
-                            <CandidateList
-                                candidates={displayCandidates}
-                                onSelectCandidate={handleCandidateSelect}
-                                loading={loading}
-                                searchTerm={searchTerm}
-                                onSearchTermChange={setSearchTerm}
-                                onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
-                                emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
-                                onEdit={(candidate) => setEditingCandidate(candidate)}
-                                hideHeader={true}
-                                jobId={filterPostId}
-                            />
+                            {showPostView ? (
+                                /* Post Card Grid View */
+                                <div className="space-y-4">
+                                    {postCards.length === 0 ? (
+                                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                                            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                            <h3 className="text-lg font-medium text-gray-900">No posts found</h3>
+                                            <p className="mt-1 text-gray-500">Create a job post to get started.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                            {postCards.map((post) => (
+                                                <div
+                                                    key={post.id}
+                                                    onClick={() => {
+                                                        setShowPostView(false);
+                                                        setFilterPostId(post.id || null);
+                                                        setIsFilteringApplicants(true);
+                                                        isFilteringRef.current = true;
+                                                        fetchApplicantsForPost(post.id || '');
+                                                    }}
+                                                    className="bg-white rounded-2xl border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden group"
+                                                >
+                                                    {/* Top accent bar */}
+                                                    <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+
+                                                    <div className="p-4 sm:p-6 flex-1 flex flex-col">
+                                                        {/* Title + Position Level */}
+                                                        <div className="flex items-start justify-between gap-2 mb-3">
+                                                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight line-clamp-2">{post.jobTitle}</h3>
+                                                            {post.positionLevel && (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
+                                                                    {post.positionLevel}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Department */}
+                                                        {post.department && (
+                                                            <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                                                                <Briefcase className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                                                                {post.department}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Metrics grid */}
+                                                        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
+                                                            {post.yearsExperience && (
+                                                                <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Experience</div>
+                                                                    <div className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                                                                        <Clock className="w-3 h-3 mr-1 text-orange-500" />
+                                                                        {post.yearsExperience}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {post.location && (
+                                                                <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Location</div>
+                                                                    <div className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                                                                        <MapPin className="w-3 h-3 mr-1 text-blue-500" />
+                                                                        {post.location}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Skills */}
+                                                        {post.skills && (
+                                                            <div className="flex flex-wrap gap-1 mb-4">
+                                                                {post.skills.split(',').slice(0, 3).map((skill: string, i: number) => (
+                                                                    <span key={i} className="text-[10px] px-2 py-0.5 bg-white border border-gray-200 text-gray-600 font-bold rounded">
+                                                                        {skill.trim()}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Footer */}
+                                                        <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                                                            {post.createdAt && (
+                                                                <div className="flex items-center text-xs font-medium text-gray-400">
+                                                                    <Calendar className="w-3 h-3 mr-1" />
+                                                                    {(() => {
+                                                                        const d = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date(post.createdAt);
+                                                                        const diff = Date.now() - d.getTime();
+                                                                        const days = Math.floor(diff / 86400000);
+                                                                        if (days === 0) return 'Just now';
+                                                                        if (days === 1) return '1d ago';
+                                                                        if (days < 30) return `${days}d ago`;
+                                                                        return d.toLocaleDateString();
+                                                                    })()}
+                                                                </div>
+                                                            )}
+                                                            <div className="text-xs font-bold text-orange-600">
+                                                                {post.applicantCount} Applicant{post.applicantCount !== 1 ? 's' : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <CandidateList
+                                    candidates={displayCandidates}
+                                    onSelectCandidate={handleCandidateSelect}
+                                    loading={loading}
+                                    searchTerm={searchTerm}
+                                    onSearchTermChange={setSearchTerm}
+                                    onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
+                                    emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
+                                    onEdit={(candidate) => setEditingCandidate(candidate)}
+                                    hideHeader={true}
+                                    jobId={filterPostId}
+                                />
+                            )}
                         </>
                     )}
 

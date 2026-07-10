@@ -1,14 +1,13 @@
 'use client';
 
 import type { Candidate, RecruitmentRequest } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, Sparkles } from 'lucide-react';
-import { useState } from 'react';
-import InterviewInviteModal from './InterviewInviteModal';
-import AIScoringModal from './AIScoringModal';
-import { deleteDoc, doc } from 'firebase/firestore';
+import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, ArrowRightCircle, UserCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
+import InterviewInviteModal from './InterviewInviteModal';
 import { ref, deleteObject } from 'firebase/storage';
-import { analyzeCandidateScores } from '@/lib/aiService';
 import toast from 'react-hot-toast';
 
 interface CandidateDetailProps {
@@ -24,39 +23,28 @@ interface CandidateDetailProps {
 export default function CandidateDetail({ candidate: initialCandidate, onBack, onEdit, onInviteSent, onRemoveCandidate, onUpdateCandidate, userApplications }: CandidateDetailProps) {
   const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showScoreModal, setShowScoreModal] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [scoring, setScoring] = useState(false);
+  const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
+  const [shortlistPostId, setShortlistPostId] = useState('');
+  const [shortlisting, setShortlisting] = useState(false);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const q = query(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        setJobPosts(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest)));
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   // If initialCandidate changes, update local state
   if (initialCandidate.id !== candidate.id) {
     setCandidate(initialCandidate);
   }
-
-  const handleScoreJob = async (job: RecruitmentRequest) => {
-    if (!job.id || !job.description) return;
-    setScoring(true);
-    toast.loading(`Evaluating match for ${job.jobTitle}...`, { id: 'score-job' });
-    try {
-      const [updatedCandidate] = await analyzeCandidateScores(
-        [candidate],
-        job.description,
-        job.id,
-        job.jobTitle
-      );
-
-      setCandidate(updatedCandidate);
-      if (onUpdateCandidate) onUpdateCandidate(updatedCandidate);
-
-      toast.success(`Score updated: ${updatedCandidate.rankings?.[job.id].score}%`, { id: 'score-job' });
-      setShowScoreModal(false);
-    } catch (error) {
-      console.error('Scoring failed:', error);
-      toast.error('Failed to analyze candidate', { id: 'score-job' });
-    } finally {
-      setScoring(false);
-    }
-  };
 
   const handleRemove = async () => {
     if (!window.confirm('Are you sure you want to remove this candidate?')) return;
@@ -82,136 +70,148 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
     }
   };
 
+  const handleShortlistToPost = async () => {
+    if (!shortlistPostId) return;
+    setShortlisting(true);
+    try {
+      const isJobApplicant = !!(candidate as any).postId;
+
+      if (isJobApplicant) {
+        // Registered user / job applicant — update Supabase
+        const { error } = await supabase
+          .from('job_applications')
+          .update({ status: 'shortlisted' })
+          .eq('user_id', candidate.id)
+          .eq('post_id', shortlistPostId);
+        if (error) throw error;
+      } else {
+        // Manual candidate — update Firestore + Supabase
+        const candidateRef = doc(db, 'candidates', candidate.id);
+        await import('firebase/firestore').then(({ updateDoc }) =>
+          updateDoc(candidateRef, {
+            postId: shortlistPostId,
+            status: 'shortlisted',
+            updatedAt: new Date(),
+          })
+        );
+
+        const { error: appError } = await supabase
+          .from('job_applications')
+          .upsert({
+            user_id: candidate.id,
+            post_id: shortlistPostId,
+            status: 'shortlisted',
+            created_at: new Date().toISOString(),
+          }, { onConflict: 'user_id, post_id' });
+        if (appError) throw appError;
+      }
+
+      // Update local candidate state
+      setCandidate(prev => ({ ...prev, status: 'shortlisted', postId: shortlistPostId } as Candidate));
+      if (onUpdateCandidate) {
+        onUpdateCandidate({ ...candidate, status: 'shortlisted', postId: shortlistPostId } as Candidate);
+      }
+    } catch (err: any) {
+      console.error('Shortlist failed:', err);
+      toast.error(err.message || 'Failed to shortlist candidate');
+    } finally {
+      setShortlisting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={onBack}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span>Back to Candidates</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow">
-        {/* Header */}
-        <div className="px-6 py-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Left: Back + Name/Role */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="p-1.5 mt-0.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors flex-shrink-0"
+              title="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 flex-wrap">
-                <span>{candidate.name}</span>
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {candidate.name}{candidate.role && ` - ${candidate.role}`}
+                </h2>
                 {candidate.email && (
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all"
+                    className="p-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all"
                     title="Send Interview Invite"
                   >
                     <MailPlus className="h-4 w-4" />
                   </button>
                 )}
-              </h1>
-              {candidate.role && (
-                <p className="text-lg text-gray-600">{candidate.role}</p>
-              )}
-              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
-                {(candidate as any).selectedInterviewDate && (
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4 text-primary-600" />
-                    <span>Interview on {(candidate as any).selectedInterviewDate}</span>
-                  </div>
-                )}
-                {candidate.email && (
-                  <div className="flex items-center space-x-1.5">
-                    <Mail className="h-4 w-4 text-blue-600" />
-                    <span>{candidate.email}</span>
-                  </div>
-                )}
-                {candidate.phone && (
-                  <div className="flex items-center space-x-1.5">
-                    <Phone className="h-4 w-4 text-green-600" />
-                    <span>{candidate.phone}</span>
-                  </div>
-                )}
-                {(() => {
-                  const expStr = candidate.experience ?? '';
-                  if (/month/i.test(expStr)) {
-                    return (
-                      <div className="flex items-center space-x-1.5">
-                        <Briefcase className="h-4 w-4 text-orange-600" />
-                        <span>{expStr}</span>
-                      </div>
-                    );
-                  }
-                  const yrs = (() => {
-                    const numMatch = expStr.match(/\d+(?:\.\d+)?/);
-                    return numMatch ? parseFloat(numMatch[0]) : 0;
-                  })();
-                  return (
-                    <div className="flex items-center space-x-1.5">
-                      <Briefcase className="h-4 w-4 text-orange-600" />
-                      <span>{`${yrs} years experience`}</span>
-                    </div>
-                  );
-                })()}
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              {/* AI Score Badge (Existing) */}
-              {candidate.rankings && Object.keys(candidate.rankings).length > 0 && (
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-100 text-purple-700 shadow-sm animate-in fade-in zoom-in spin-in-1 mr-2">
-                  <Sparkles className="h-4 w-4 fill-purple-300" />
-                  <span className="font-bold text-sm">
-                    {/* Show highest score or first one found */}
-                    {Object.values(candidate.rankings).reduce((max, r) => Math.max(max, r.score), 0)}%
-                  </span>
+              {(candidate as any).selectedInterviewDate && (
+                <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <Calendar className="h-4 w-4 text-primary-600" />
+                  <span>Interview on {(candidate as any).selectedInterviewDate}</span>
                 </div>
               )}
-
-              {onEdit && (
-                <button
-                  onClick={() => onEdit(candidate)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Profile
-                </button>
-              )}
-
-              {/* Manual AI Score Trigger (New) */}
-              {(!candidate.rankings || Object.keys(candidate.rankings).length === 0) && (
-                <button
-                  onClick={() => setShowScoreModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-pink-50 border border-pink-200 text-pink-700 rounded-md hover:bg-pink-100 transition-colors text-sm font-medium"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  AI Score
-                </button>
-              )}
-
-              <a
-                href={candidate.resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors text-sm font-medium"
-              >
-                View Resume
-              </a>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="px-6 py-6">
-          <div className="space-y-6">
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Shortlist to Post */}
+            <div className="flex items-center gap-2">
+              <select
+                value={shortlistPostId}
+                onChange={(e) => setShortlistPostId(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50 max-w-[180px]"
+              >
+                <option value="">Select Post</option>
+                {jobPosts.map((job) => (
+                  <option key={job.id} value={job.id}>{job.jobTitle}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleShortlistToPost}
+                disabled={!shortlistPostId || shortlisting}
+                className="flex items-center gap-1.5 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                <ArrowRightCircle className="w-4 h-4" />
+                {shortlisting ? 'Moving...' : 'Move'}
+              </button>
+            </div>
+
+            {onEdit && (
+              <button
+                onClick={() => onEdit(candidate)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+
+            <a
+              href={candidate.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+            >
+              Resume
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="bg-white rounded-lg shadow px-6 py-6">
+        <div className="space-y-6">
             {/* Application History */}
             {userApplications && userApplications.length > 0 && (
               <div className="bg-white border rounded-lg shadow p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-blue-600" />
-                  Applied Jobs
+                  Applied Posts
                 </h3>
                 <div className="space-y-3">
                   {userApplications.map((app, index) => (
@@ -254,6 +254,28 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 </div>
               </div>
             )}
+
+            {/* Contact Info */}
+            <div className="bg-white border rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                <UserCircle className="h-5 w-5 mr-2 text-blue-600" />
+                Contact Information
+              </h3>
+              <div className="space-y-3">
+                {candidate.email && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Mail className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-gray-700">{candidate.email}</span>
+                  </div>
+                )}
+                {candidate.phone && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Phone className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span className="text-gray-700">{candidate.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
@@ -311,13 +333,23 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               </div>
             )}
 
-            {/* Work Experience */}
-            {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (
-              <div className="bg-white border rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
-                  Work Experience
-                </h3>
+            {/* Experience */}
+            <div className="bg-white border rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
+                Experience
+              </h3>
+              {/* Overall Experience */}
+              {candidate.experience && (
+                <div className="mb-4 pb-4 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">Overall:</span>
+                    <span className="text-sm font-semibold text-gray-900">{candidate.experience}</span>
+                  </div>
+                </div>
+              )}
+              {/* Work Experience */}
+              {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (
                 <div className="space-y-4">
                   {candidate.extractedData.workExperience.map((exp, index) => (
                     <div key={index} className="border-l-4 border-blue-200 pl-4">
@@ -329,8 +361,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Projects */}
             {(() => {
@@ -439,21 +471,12 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             })()}
           </div>
         </div>
-      </div>
 
       {showInviteModal && (
         <InterviewInviteModal
           candidate={candidate}
           onClose={() => setShowInviteModal(false)}
           onSent={onInviteSent}
-        />
-      )}
-
-      {showScoreModal && (
-        <AIScoringModal
-          onClose={() => setShowScoreModal(false)}
-          onSelectJob={handleScoreJob}
-          isLoading={scoring}
         />
       )}
 

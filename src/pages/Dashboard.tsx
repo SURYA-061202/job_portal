@@ -105,7 +105,7 @@ export default function Dashboard() {
 
     switch (activeTab) {
       case 'job-posts':
-        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} isPremium={isPremium} />;
       case 'upload-resumes':
         return <UploadResumesTab userRole={userRole} userId={userId} />;
       case 'candidates':

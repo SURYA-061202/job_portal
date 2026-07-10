@@ -174,6 +174,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
   const [sent, setSent] = useState(false);
   const [details, setDetails] = useState<any>(null);
   const [moveLoading, setMoveLoading] = useState(false);
+  const [roundName, setRoundName] = useState('Technical');
 
   useEffect(() => {
     const loadInterview = async () => {
@@ -236,6 +237,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
     if (moveLoading) return;
     setMoveLoading(true);
     try {
+      const effectiveRoundName = roundName.trim() || 'Round 1';
       const applicantPostId = (candidate as any).postId;
       if (applicantPostId) {
         const { error } = await supabase
@@ -247,6 +249,32 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
         if (error) throw error;
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), { status: "round1", updatedAt: new Date() });
+      }
+
+      // Save round name to interviews collection
+      const interviewRef = doc(db, "interviews", candidate.id);
+      const intSnap = await getDoc(interviewRef);
+      if (intSnap.exists()) {
+        await updateDoc(interviewRef, { roundType: effectiveRoundName, status: 'round1', updatedAt: new Date() });
+      } else {
+        const { setDoc } = await import('firebase/firestore');
+        await setDoc(interviewRef, { roundType: effectiveRoundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() });
+      }
+
+      // Send round invite email
+      try {
+        const baseUrl = window.location.origin;
+        await supabase.functions.invoke('send_round_invite', {
+          body: {
+            candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+            roundName: effectiveRoundName,
+            roundNumber: 1,
+            role: candidate.role || 'the position',
+            baseUrl
+          }
+        });
+      } catch (emailErr) {
+        console.error('Failed to send round email:', emailErr);
       }
       
       toast.success("Moved to Round 1");
@@ -345,13 +373,22 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
 
         <div className="flex justify-end pt-4 gap-4">
           {sent && (
-            <button
-              disabled={moveLoading}
-              onClick={moveToRound1}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              {moveLoading ? 'Moving…' : 'Move to Round1'}
-            </button>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={roundName}
+                onChange={(e) => setRoundName(e.target.value)}
+                placeholder="Round name (e.g. Technical)"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              />
+              <button
+                disabled={moveLoading}
+                onClick={moveToRound1}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                {moveLoading ? 'Moving…' : 'Move to Round1'}
+              </button>
+            </div>
           )}
           <button
             disabled={sending || sent}

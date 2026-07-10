@@ -10,9 +10,7 @@ import toast from "react-hot-toast";
 
 const FILTER_STATUSES = [
   "all",
-  "round1",
-  "round2",
-  "round3",
+  "round",
   "selected",
 ] as const;
 
@@ -65,7 +63,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       let supabaseQuery = supabase
         .from('job_applications')
         .select('user_id, post_id, status')
-        .in('status', ['round1', 'round2', 'round3', 'selected']);
+        .or('status.eq.round1,status.eq.round2,status.eq.round3,status.eq.round4,status.eq.round5,status.eq.round6,status.eq.round7,status.eq.round8,status.eq.round9,status.eq.selected');
 
       if (!isAdmin && ownedPostIds.length > 0) {
         supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
@@ -129,7 +127,9 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       const st = (c as any).status || '';
       return st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected');
     })
-    : candidates.filter((c) => (c as any).status === filter);
+    : filter === 'round'
+      ? candidates.filter((c) => /^round\d+$/.test((c as any).status || ''))
+      : candidates.filter((c) => (c as any).status === filter);
 
   const handleStatusUpdated = () => {
     fetchCandidates();
@@ -162,7 +162,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         filterValue={filter}
         filterOptions={FILTER_STATUSES.map(s => ({
           value: s,
-          label: s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)
+          label: s === 'all' ? 'All' : s === 'round' ? 'Rounds' : s.charAt(0).toUpperCase() + s.slice(1)
         }))}
         onFilterChange={(value) => setFilter(value as FilterStatus)}
       />

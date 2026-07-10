@@ -1,5 +1,5 @@
 import type { Candidate } from "@/types";
-import { ArrowLeft, ChevronRight, Calendar, XCircle, Pencil } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +25,8 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const [experienceIn, setExperienceIn] = useState<string>(interview.experienceIn ?? '');
   const [readyRelocate, setReadyRelocate] = useState<string>(interview.readyToRelocate ?? '');
   const [feedback, setFeedback] = useState<string>(interview.feedback ?? 'Good');
+  const [roundName, setRoundName] = useState<string>('');
+  const [moving, setMoving] = useState(false);
   const [editCurSal, setEditCurSal] = useState(false);
   const [editExpSal, setEditExpSal] = useState(false);
   const [editJoinDate, setEditJoinDate] = useState(false);
@@ -53,55 +55,55 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
     fetchInterview();
   }, [candidate.id]);
 
-  /** Determine next round from current status */
+  /** Dynamic: determine next round from current status */
   const getNextRound = (current?: string): string | null => {
-    switch (current) {
-      case "pending":
-        return "round1";
-      case "round1":
-        return "round2";
-      case "round2":
-        return "round3";
-      case "round3":
-        return "selected";
-      default:
-        return null;
-    }
+    if (!current) return 'round1';
+    if (current === 'pending') return 'round1';
+    const match = current.match(/^round(\d+)$/);
+    if (match) return `round${parseInt(match[1]) + 1}`;
+    return null;
+  };
+
+  /** Extract round number from status (e.g. "round3" -> 3) */
+  const getRoundNumber = (current?: string): number => {
+    if (!current) return 0;
+    const match = current.match(/^round(\d+)$/);
+    return match ? parseInt(match[1]) : 0;
   };
 
   const nextRound = getNextRound(status);
+  const isRound = /^round\d+$/.test(status || '');
+
+  /** Check if status is already 'selected' */
+  const isSelected = status === 'selected';
 
   const moveToNextRound = async () => {
-    if (!nextRound) return;
+    if (!nextRound || !roundName.trim()) {
+      toast.error('Please enter a round name');
+      return;
+    }
+    setMoving(true);
     try {
-      const update: any = { status: nextRound, updatedAt: new Date() };
-      if (nextRound === 'round2') update['interviewDetails.roundType'] = 'Technical 2';
-      if (nextRound === 'round3') update['interviewDetails.roundType'] = 'HR';
-      if (nextRound === 'selected') update['interviewDetails.roundType'] = 'HR';
+      const effectiveRoundName = roundName.trim();
+      const nextRoundNum = getRoundNumber(nextRound);
 
-      update['interviewDetails.currentSalary'] = currentSalary;
-      update['interviewDetails.expectedSalary'] = expectedSalary;
-      update['interviewDetails.joiningDate'] = joiningDate;
-      update['interviewDetails.feedback'] = feedback;
-
+      // 1. Update status
       const applicantPostId = (candidate as any).postId;
-
       if (applicantPostId) {
-        // 1. Update status in Supabase
         const { error } = await supabase
           .from('job_applications')
           .update({ status: nextRound })
           .eq('user_id', candidate.id)
           .eq('post_id', applicantPostId);
-
         if (error) throw error;
       } else {
-        // Manual Candidate
-        const ref = doc(db, "candidates", candidate.id);
-        await updateDoc(ref, update);
+        await updateDoc(doc(db, "candidates", candidate.id), {
+          status: nextRound,
+          updatedAt: new Date()
+        });
       }
 
-      // 2. Centralized update descriptive columns inner interviews collection too (BOTH candidates)
+      // 2. Update interviews collection
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       const updatePayload = {
@@ -109,7 +111,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         expectedSalary,
         joiningDate,
         feedback,
-        roundType: update['interviewDetails.roundType'] || interview.roundType || 'Technical',
+        roundType: effectiveRoundName,
         status: nextRound,
         updatedAt: new Date()
       };
@@ -121,12 +123,78 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, createdAt: new Date() });
       }
 
-      toast.success(`Moved to ${nextRound}`);
+      // 3. Send round invite email
+      try {
+        const baseUrl = window.location.origin;
+        await supabase.functions.invoke('send_round_invite', {
+          body: {
+            candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+            roundName: effectiveRoundName,
+            roundNumber: nextRoundNum,
+            role: interview.role || candidate.role || 'the position',
+            baseUrl
+          }
+        });
+      } catch (emailErr) {
+        console.error('Failed to send round email:', emailErr);
+      }
+
+      toast.success(`Moved to Round ${nextRoundNum} (${effectiveRoundName})`);
       onStatusUpdated?.();
       onBack();
     } catch (err: any) {
       console.error("Failed to update status", err);
       toast.error(err.message || "Failed to update");
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  const handleSelect = async () => {
+    if (!confirm("Select this candidate?")) return;
+    setMoving(true);
+    try {
+      const applicantPostId = (candidate as any).postId;
+      if (applicantPostId) {
+        const { error } = await supabase
+          .from('job_applications')
+          .update({ status: 'selected' })
+          .eq('user_id', candidate.id)
+          .eq('post_id', applicantPostId);
+        if (error) throw error;
+      } else {
+        await updateDoc(doc(db, "candidates", candidate.id), {
+          status: 'selected',
+          updatedAt: new Date()
+        });
+      }
+
+      const interviewRef = doc(db, "interviews", candidate.id);
+      const intSnap = await getDoc(interviewRef);
+      const updatePayload = {
+        currentSalary,
+        expectedSalary,
+        joiningDate,
+        feedback,
+        status: 'selected',
+        updatedAt: new Date()
+      };
+
+      if (intSnap.exists()) {
+        await updateDoc(interviewRef, updatePayload);
+      } else {
+        const { setDoc } = await import('firebase/firestore');
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, createdAt: new Date() });
+      }
+
+      toast.success("Candidate selected!");
+      onStatusUpdated?.();
+      onBack();
+    } catch (err: any) {
+      console.error("Failed to select candidate", err);
+      toast.error(err.message || "Failed to select");
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -142,13 +210,11 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
           .update({ status: newStatus })
           .eq('user_id', candidate.id)
           .eq('post_id', applicantPostId);
-
         if (error) throw error;
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, updatedAt: new Date() });
       }
 
-      // Update in interviews collection too
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       if (intSnap.exists()) {
@@ -164,7 +230,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
     }
   };
 
-  const displayedRoundType = status === 'round3' ? 'HR' : (interview.roundType || '-');
+  const displayedRoundType = interview.roundType || '-';
 
   return (
     <div className="space-y-6">
@@ -191,8 +257,6 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
               )}
             </p>
           </div>
-
-          {/* action button removed from header */}
         </div>
 
         {/* Interview info table */}
@@ -312,26 +376,48 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
           </table>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-4 pt-6">
-          {nextRound && (
-            <button
-              onClick={moveToNextRound}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow"
-            >
-              {nextRound === 'selected' ? 'Select' : `Move to ${nextRound.replace(/^./, c => c.toUpperCase())}`}
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleReject}
-            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium shadow"
-          >
-            <XCircle className="h-5 w-5 mr-2" /> Reject Candidate
-          </button>
-        </div>
+        {/* Round Name Input + Actions */}
+        {isRound && !isSelected && (
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Round Name:</label>
+              <input
+                type="text"
+                value={roundName}
+                onChange={(e) => setRoundName(e.target.value)}
+                placeholder="e.g. Technical, HR, Manager Round"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 w-full sm:w-56"
+              />
+              {nextRound && (
+                <button
+                  onClick={moveToNextRound}
+                  disabled={moving || !roundName.trim()}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {moving ? 'Moving...' : `Move to ${nextRound.replace(/^round/, 'Round ')}`}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={handleSelect}
+                disabled={moving}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow disabled:opacity-50"
+              >
+                <Check className="h-4 w-4" />
+                Select
+              </button>
+              <button
+                type="button"
+                onClick={handleReject}
+                disabled={moving}
+                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium shadow disabled:opacity-50"
+              >
+                <XCircle className="h-5 w-5 mr-2" /> Reject
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}

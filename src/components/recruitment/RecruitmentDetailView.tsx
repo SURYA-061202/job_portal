@@ -46,7 +46,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 const userData = userDoc.data();
                 setUserProfile(userData);
 
-                if (userData.role === 'manager' || userData.role === 'recruiter') {
+                if (userData.role === 'manager' || userData.role === 'recruiter' || userData.role === 'admin') {
                     setIsManager(true);
                 }
             }
@@ -159,9 +159,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
-            {/* Header / Hero */}
-            <div className="sticky top-0 z-20 py-4 sm:py-6 bg-gray-50/80 backdrop-blur-md">
-                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-start gap-3 sm:gap-4 md:gap-5">
+            {/* Header */}
+            <div className="bg-white shrink-0 rounded-xl shadow-sm border border-gray-200">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-start gap-3 sm:gap-4 md:gap-5">
                     {/* Back Button */}
                     <button
                         onClick={onBack}
@@ -198,11 +198,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     <span>{recruitment.modeOfWork}</span>
                                 </span>
                             )}
-                            <span className="flex items-center gap-1.5 font-black line-clamp-1">
-                                <CheckCircle2 className={`w-3.5 h-3.5 ${recruitment.urgencyLevel === 'Immediate' ? 'text-red-400' : recruitment.urgencyLevel === 'Moderate' ? 'text-orange-400' : 'text-emerald-400'}`} />
-                                <span className={recruitment.urgencyLevel === 'Immediate' ? 'text-red-500' : recruitment.urgencyLevel === 'Moderate' ? 'text-orange-500' : 'text-emerald-500'}>
-                                    {recruitment.urgencyLevel} Priority
-                                </span>
+                            <span className="flex items-center gap-1.5 line-clamp-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-gray-300" />
+                                <span>{recruitment.urgencyLevel} Priority</span>
                             </span>
                         </div>
                     </div>
@@ -253,30 +251,30 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto w-full">
-                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
+                <div className="px-4 sm:px-6 py-8 sm:py-10 space-y-8 sm:space-y-10 bg-white rounded-xl shadow-sm border border-gray-200 mt-4">
 
                     {/* Key Info Row */}
                     <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
-                        <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-100 text-blue-900" labelColor="text-blue-500" />
-                        <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
-                        <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-100 text-pink-900" labelColor="text-pink-500" />
-                        <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-100 text-emerald-900" labelColor="text-emerald-500" />
+                        <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-200 text-blue-900" labelColor="text-blue-500" />
+                        <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-200 text-orange-900" labelColor="text-orange-500" />
+                        <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-200 text-pink-900" labelColor="text-pink-500" />
+                        <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-200 text-emerald-900" labelColor="text-emerald-500" />
                         {isManager && (recruitment as any).applicantCount !== undefined && (
-                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-100 text-orange-900" labelColor="text-orange-500" />
+                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-200 text-orange-900" labelColor="text-orange-500" />
                         )}
                     </div>
 
                     {/* Requirements Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Requirements</h3>
+                    <div className="p-6 sm:p-8 border border-gray-100 rounded-2xl space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">Requirements</h3>
                         <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
                             Candidates should have a <span className="font-semibold text-gray-900 underline decoration-orange-500/30 decoration-2">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900 underline decoration-pink-500/30 decoration-2">{recruitment.department}</span> department.
                         </p>
                     </div>
 
                     {/* Description Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Job Description</h3>
+                    <div className="p-6 sm:p-8 border border-gray-100 rounded-2xl space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">Job Description</h3>
                         <div className="space-y-4">
                             {recruitment.description ? (
                                 recruitment.description
@@ -292,7 +290,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             )}
 
                             {recruitment.jdUrl && (
-                                <div className="pt-6 border-t border-gray-50">
+                                <div className="pt-6 border-t border-gray-200">
                                     <a
                                         href={recruitment.jdUrl}
                                         target="_blank"
@@ -308,8 +306,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Skills Section */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100/50 transition-all hover:shadow-md space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-50 pb-3">Required Skills</h3>
+                    <div className="p-6 sm:p-8 border border-gray-100 rounded-2xl space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">Required Skills</h3>
                         <div className="flex flex-wrap gap-2.5">
                             {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
                                 <span
@@ -339,7 +337,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
 function InfoItem({ label, value, color, labelColor }: { label: string, value: string, color?: string, labelColor?: string }) {
     return (
-        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all hover:shadow-md ${color || 'bg-white border-gray-100'}`}>
+        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${color || 'bg-white border-gray-200'}`}>
             <span className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 text-center ${labelColor || 'text-gray-400'}`}>{label}</span>
             <span className="font-bold break-words text-sm text-gray-900 text-center">{value}</span>
         </div>
