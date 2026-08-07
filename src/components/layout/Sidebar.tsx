@@ -5,7 +5,7 @@ import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
 interface SidebarProps {
-  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
+  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
   onTabChange: (tab: any) => void;
   onLogout: () => void;
   userRole: string | null;
@@ -20,14 +20,13 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
-  const screeningTabs = [
+    const screeningTabs = [
     { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload, adminOnly: true },
     { id: 'pipeline', label: 'Pipeline (Kanban)', icon: Trello },
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: MessageSquare },
     { id: 'selected', label: 'Selected Candidates', icon: Award },
-    { id: 'stats', label: 'Stats', icon: BarChart },
     { id: 'assessments', label: 'Assessments', icon: ClipboardCheck, adminOnly: true },
   ];
 

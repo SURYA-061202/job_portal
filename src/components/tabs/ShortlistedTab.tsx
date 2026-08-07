@@ -255,10 +255,14 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       if (intSnap.exists()) {
-        await updateDoc(interviewRef, { roundType: effectiveRoundName, status: 'round1', updatedAt: new Date() });
+        const updateData: any = { roundType: effectiveRoundName, status: 'round1', updatedAt: new Date() };
+        if (applicantPostId) updateData.postId = applicantPostId;
+        await updateDoc(interviewRef, updateData);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(interviewRef, { roundType: effectiveRoundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() });
+        const createData: any = { roundType: effectiveRoundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
+        if (applicantPostId) createData.postId = applicantPostId;
+        await setDoc(interviewRef, createData);
       }
 
       // Send round invite email

@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 
-function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, isPremium }: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -523,19 +523,13 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
                                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                                         {displayCandidates.length}
                                                     </span>
-                                                    {userRole !== 'admin' && !isPremium && (
-                                                        <div className="group relative">
-                                                            <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-black border border-orange-200 cursor-help uppercase tracking-tighter">
-                                                                Get Premium
-                                                            </span>
-                                                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-max px-3 py-1.5 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] font-bold">
-                                                                Get premium To View All Candidates
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-gray-900" />
-                                                            </div>
-                                                        </div>
-                                                    )}
                                                 </div>
-                                                <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
+                                                {postId && postTitle && (
+                                                    <p className="text-sm font-medium text-gray-700">{postTitle}</p>
+                                                )}
+                                                {!postId && (
+                                                    <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
+                                                )}
                                             </div>
                                         </div>
 
@@ -794,7 +788,7 @@ function CandidatesTabContent({ postId, onClearFilter: _onClearFilter, onBack, o
     );
 }
 
-export default function CandidatesTab(props: { postId?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+export default function CandidatesTab(props: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     return (
         <ErrorBoundary>
             <CandidatesTabContent {...props} />

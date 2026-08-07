@@ -120,7 +120,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         await updateDoc(interviewRef, updatePayload);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, createdAt: new Date() });
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: (candidate as any).postId || interview.postId, createdAt: new Date() });
       }
 
       // 3. Send round invite email
@@ -184,7 +184,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         await updateDoc(interviewRef, updatePayload);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, createdAt: new Date() });
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: (candidate as any).postId || interview.postId, createdAt: new Date() });
       }
 
       toast.success("Candidate selected!");

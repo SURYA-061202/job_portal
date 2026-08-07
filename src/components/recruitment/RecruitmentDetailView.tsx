@@ -5,6 +5,7 @@ import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firest
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
 import ShareJobModal from './ShareJobModal';
+import { usePopup } from '@/components/ui/Popup';
 
 interface RecruitmentDetailViewProps {
     recruitment: RecruitmentRequest;
@@ -17,11 +18,13 @@ interface RecruitmentDetailViewProps {
 export default function RecruitmentDetailView({ recruitment: initialData, onBack, onViewCandidates, onEdit, onDelete }: RecruitmentDetailViewProps) {
     const [recruitment, setRecruitment] = useState<RecruitmentRequest>(initialData);
     const [actionLoading, setActionLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [checkingProfile, setCheckingProfile] = useState(true);
     const [hasApplied, setHasApplied] = useState(false);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const { showSuccess, showError } = usePopup();
 
     useEffect(() => {
         setRecruitment(initialData);
@@ -63,19 +66,17 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     const handleDelete = async () => {
         if (!recruitment.id) return;
-        if (!window.confirm('Are you sure you want to delete this recruitment post? This action cannot be undone.')) return;
-
-        setActionLoading(true);
+        setDeleting(true);
         try {
             await deleteDoc(doc(db, 'recruits', recruitment.id));
-            toast.success('Recruitment post deleted successfully');
+            showSuccess('Recruitment post deleted successfully');
             onDelete?.(recruitment.id);
             onBack();
         } catch (err: any) {
             console.error('Delete error:', err);
-            toast.error(`Failed to delete: ${err.message}`);
+            showError(`Failed to delete: ${err.message}`);
         } finally {
-            setActionLoading(false);
+            setDeleting(false);
         }
     };
 
@@ -154,12 +155,12 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
             {/* Header */}
-            <div className="bg-white shrink-0 rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white shrink-0 rounded-xl border border-gray-200">
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-start gap-3 sm:gap-4 md:gap-5">
                     {/* Back Button */}
                     <button
                         onClick={onBack}
-                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white border border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 rounded-xl transition-all group shadow-sm flex-shrink-0 mt-1"
+                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white border border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 rounded-xl transition-all group flex-shrink-0 mt-1"
                         title="Go Back"
                     >
                         <ChevronLeft className="w-4.5 h-4.5 group-hover:-translate-x-0.5 transition-transform" />
@@ -168,7 +169,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     <div className="flex-1 min-w-0">
                         {/* Title Row */}
                         <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
-                            <h1 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight leading-none">
+                            <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight leading-none">
                                 {recruitment.jobTitle}
                             </h1>
                             <button
@@ -211,10 +212,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 </button>
                                 <button
                                     onClick={handleDelete}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    disabled={deleting}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                                     title="Delete Post"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 </button>
                                 <button
                                     onClick={() => onViewCandidates?.(recruitment.id!)}

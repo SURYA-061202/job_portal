@@ -3,7 +3,8 @@ import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot, 
 import { db } from '@/lib/firebase';
 import type { Candidate } from '@/types';
 import { toast } from 'react-hot-toast';
-import { User, X, ArrowRight, Trash2, Search } from 'lucide-react';
+import { User, X, ArrowRight, Trash2, Search, Loader2 } from 'lucide-react';
+import { usePopup } from '@/components/ui/Popup';
 
 type PipelineColumn = {
     id: string;
@@ -38,6 +39,8 @@ export default function RecruitmentPipelineTab() {
     const [loading, setLoading] = useState(true);
     const [_draggedId, setDraggedId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const { showSuccess, showError } = usePopup();
 
     useEffect(() => {
         fetchCandidates();
@@ -89,14 +92,16 @@ export default function RecruitmentPipelineTab() {
     };
 
     const handleDelete = async (candidateId: string) => {
-        if (!window.confirm("Are you sure you want to delete this candidate?")) return;
+        setDeletingId(candidateId);
         try {
             await deleteDoc(doc(db, 'candidates', candidateId));
             setCandidates((prev: Candidate[]) => prev.filter(c => c.id !== candidateId));
-            toast.success("Candidate deleted");
+            showSuccess('Candidate deleted');
         } catch (err) {
             console.error(err);
-            toast.error("Failed to delete");
+            showError('Failed to delete');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -192,8 +197,16 @@ export default function RecruitmentPipelineTab() {
                                     >
                                         <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                             <h4 className="font-medium text-gray-900 truncate pr-2" title={candidate.name}>{candidate.name}</h4>
-                                            <button onClick={() => handleDelete(candidate.id || '')} className="text-gray-400 hover:text-red-500 transition-opacity">
-                                                <Trash2 className="h-4 w-4" />
+                                            <button
+                                                onClick={() => handleDelete(candidate.id || '')}
+                                                disabled={deletingId === candidate.id}
+                                                className="text-gray-400 hover:text-red-500 transition-opacity disabled:opacity-50"
+                                            >
+                                                {deletingId === candidate.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+                                                ) : (
+                                                    <Trash2 className="h-4 w-4" />
+                                                )}
                                             </button>
                                         </div>
 

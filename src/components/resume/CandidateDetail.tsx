@@ -1,14 +1,14 @@
 'use client';
 
 import type { Candidate, RecruitmentRequest } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, ArrowRightCircle, UserCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, ArrowRightCircle, UserCircle, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import InterviewInviteModal from './InterviewInviteModal';
 import { ref, deleteObject } from 'firebase/storage';
-import toast from 'react-hot-toast';
+import { usePopup } from '@/components/ui/Popup';
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -27,6 +27,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [shortlistPostId, setShortlistPostId] = useState('');
   const [shortlisting, setShortlisting] = useState(false);
+  const { showSuccess, showError } = usePopup();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -47,7 +48,6 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   }
 
   const handleRemove = async () => {
-    if (!window.confirm('Are you sure you want to remove this candidate?')) return;
     setRemoving(true);
     try {
       // Defensive check
@@ -63,9 +63,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
           await deleteObject(fileRef).catch(() => {});
         }
       }
+      showSuccess('Candidate removed successfully');
       onRemoveCandidate?.();
     } catch (err) {
-      alert('Failed to remove candidate.');
+      showError('Failed to remove candidate');
       setRemoving(false);
     }
   };
@@ -483,10 +484,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       {/* Remove Candidate Button */}
       <div className="flex justify-end">
         <button
-          className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
           onClick={handleRemove}
           disabled={removing}
         >
+          {removing && <Loader2 className="h-4 w-4 animate-spin" />}
           {removing ? 'Removing...' : 'Remove Candidate'}
         </button>
       </div>

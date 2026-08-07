@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query as fsQuery, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs, query as fsQuery, orderBy, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
-import type { RecruitmentRequest } from '@/types';
+import type { RecruitmentRequest, PremiumRequestStatus } from '@/types';
 import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
+import PremiumRequestModal from '@/components/recruitment/PremiumRequestModal';
 import toast from 'react-hot-toast';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Clock, CheckCircle, Crown } from 'lucide-react';
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, isPremium }: { onViewCandidates?: (postId: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, isPremium }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
@@ -17,6 +18,8 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
+    const [premiumRequestStatus, setPremiumRequestStatus] = useState<PremiumRequestStatus>('none');
+    const [showPremiumModal, setShowPremiumModal] = useState(false);
 
     const fetchRecruitmentRequests = async () => {
         try {
@@ -89,6 +92,22 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         fetchRecruitmentRequests();
     }, []);
 
+    // Fetch premium request status for non-admin users
+    useEffect(() => {
+        if (!userId || userRole === 'admin') return;
+        const fetchPremiumStatus = async () => {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                    setPremiumRequestStatus(userDoc.data().premiumRequestStatus || 'none');
+                }
+            } catch (error) {
+                console.error('Error fetching premium status:', error);
+            }
+        };
+        fetchPremiumStatus();
+    }, [userId, userRole]);
+
     // Handle initial selection from navigation
     useEffect(() => {
         if (!loadingPosts && initialSelectedPostId && isRestoring) {
@@ -126,7 +145,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                     onBack={() => setSelectedPost(null)}
                     onViewCandidates={(postId) => {
                         setSelectedPost(null);
-                        onViewCandidates?.(postId);
+                        onViewCandidates?.(postId, selectedPost.jobTitle);
                     }}
                     onEdit={(post) => {
                         setEditingPost(post);
@@ -170,14 +189,13 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <button
                                     onClick={() => {
                                         if (userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5) {
-                                            toast.error("Get Premium to Post further");
-                                            return;
+                                            setShowPremiumModal(true);
+                                        } else {
+                                            setIsRecruitmentModalOpen(true);
                                         }
-                                        setIsRecruitmentModalOpen(true);
                                     }}
-                                    disabled={userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5}
                                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap ${userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5
-                                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                                        ? 'bg-gray-400 text-white hover:bg-gray-500'
                                         : 'bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20'
                                         }`}
                                 >
@@ -191,10 +209,18 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             <div className="mt-4 p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                                        <Plus className="w-4 h-4" />
+                                        {premiumRequestStatus === 'pending' ? <Clock className="w-4 h-4" /> : premiumRequestStatus === 'approved' ? <CheckCircle className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
                                     </div>
                                     <p className="text-sm text-orange-800 font-medium">
-                                        You've reached your free limit of 5 posts. <span className="font-bold underline cursor-pointer">Get Premium to Post further</span>
+                                        {premiumRequestStatus === 'pending' ? (
+                                            <>Premium request is pending admin approval.</>
+                                        ) : premiumRequestStatus === 'approved' ? (
+                                            <>Premium approved! You can post unlimited jobs.</>
+                                        ) : premiumRequestStatus === 'rejected' ? (
+                                            <>Previous request was declined. <span className="font-bold underline cursor-pointer" onClick={() => setShowPremiumModal(true)}>Request Again</span></>
+                                        ) : (
+                                            <>You've reached your free limit of 5 posts. <span className="font-bold underline cursor-pointer" onClick={() => setShowPremiumModal(true)}>Get Premium to Post further</span></>
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -240,6 +266,13 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                     fetchRecruitmentRequests();
                 }}
                 initialData={editingPost}
+            />
+
+            <PremiumRequestModal
+                isOpen={showPremiumModal}
+                onClose={() => setShowPremiumModal(false)}
+                currentStatus={premiumRequestStatus}
+                onStatusChange={setPremiumRequestStatus}
             />
         </>
     );

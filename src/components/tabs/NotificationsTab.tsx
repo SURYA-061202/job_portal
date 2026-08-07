@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Crown, CheckCircle, XCircle, Bell } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -11,7 +12,26 @@ interface Notification {
   ref: any;
   title?: string;
   userId?: string;
+  type?: string;
 }
+
+const notificationStyles: Record<string, { icon: React.ReactNode; bgClass: string; borderClass: string }> = {
+  premium_request: {
+    icon: <Crown className="w-5 h-5 text-amber-600" />,
+    bgClass: 'bg-amber-50',
+    borderClass: 'border-amber-200',
+  },
+  premium_approved: {
+    icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+    bgClass: 'bg-green-50',
+    borderClass: 'border-green-200',
+  },
+  premium_rejected: {
+    icon: <XCircle className="w-5 h-5 text-red-600" />,
+    bgClass: 'bg-red-50',
+    borderClass: 'border-red-200',
+  },
+};
 
 export default function NotificationsTab() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -66,13 +86,26 @@ export default function NotificationsTab() {
         <p className="p-4 sm:p-6 text-gray-600 text-sm sm:text-base">No notifications.</p>
       ) : (
         <ul>
-          {notifications.map((n) => (
-            <li key={n.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50">
-              {n.title && <p className="text-sm font-medium text-primary-700">{n.title}</p>}
-              <p className="text-sm text-gray-800 mt-0.5">{n.message}</p>
-              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt?.seconds * 1000).toLocaleString()}</p>
-            </li>
-          ))}
+          {notifications.map((n) => {
+            const style = n.type && notificationStyles[n.type] ? notificationStyles[n.type] : null;
+            return (
+              <li
+                key={n.id}
+                className={`px-4 sm:px-6 py-4 hover:bg-gray-50 ${style ? `${style.bgClass} border-l-4 ${style.borderClass}` : ''}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {style ? style.icon : <Bell className="w-4 h-4 text-gray-400" />}
+                  </div>
+                  <div className="flex-1">
+                    {n.title && <p className="text-sm font-medium text-primary-700">{n.title}</p>}
+                    <p className="text-sm text-gray-800 mt-0.5">{n.message}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt?.seconds * 1000).toLocaleString()}</p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

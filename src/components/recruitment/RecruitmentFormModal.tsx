@@ -5,8 +5,8 @@ import { X, Upload, Loader2 } from 'lucide-react';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
-import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
+import { usePopup } from '@/components/ui/Popup';
 
 interface RecruitmentFormModalProps {
     isOpen: boolean;
@@ -18,6 +18,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [userProfile, setUserProfile] = useState<{ firstName?: string; lastName?: string; companyName?: string } | null>(null);
+    const { showSuccess, showError } = usePopup();
     const [formData, setFormData] = useState({
         jobTitle: '',
         urgencyLevel: 'Moderate' as 'Immediate' | 'Moderate' | 'Flexible',
@@ -146,7 +147,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     // companyName: userProfile?.companyName || initialData.companyName,
                 };
                 await updateDoc(doc(db, 'recruits', initialData.id), updatePayload);
-                toast.success('Recruitment request updated successfully!');
+                showSuccess('Recruitment request updated successfully!');
             } else {
                 // Create
                 console.log('Saving recruitment request to Firestore...');
@@ -158,14 +159,14 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     companyName: userProfile?.companyName || '',
                     createdAt: serverTimestamp()
                 });
-                toast.success('Recruitment request raised successfully!');
+                showSuccess('Recruitment request raised successfully!');
             }
 
             onClose();
         } catch (error: any) {
             console.error('Error raising recruitment request:', error);
             const errorMessage = error.message || String(error);
-            toast.error(`Submission failed: ${errorMessage}`);
+            showError(`Submission failed: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
@@ -404,9 +405,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Salary Breakup */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Salary Breakup Guidelines *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Salary Breakup Guidelines</label>
                             <input
-                                required
                                 type="text"
                                 name="salaryBreakup"
                                 value={formData.salaryBreakup}

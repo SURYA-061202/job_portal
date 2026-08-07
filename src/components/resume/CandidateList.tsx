@@ -4,7 +4,7 @@ import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown } fr
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
-import toast from 'react-hot-toast';
+import { usePopup } from '@/components/ui/Popup';
 
 // Helper to convert to Title Case
 function toTitleCase(str?: string) {
@@ -66,14 +66,13 @@ export default function CandidateList({
   jobId
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { showSuccess, showError } = usePopup();
 
   // State for sorting
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
 
   const handleRemove = async (e: React.MouseEvent, candidate: Candidate) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to remove ${candidate.name}?`)) return;
-
     setDeletingId(candidate.id);
     try {
       // 1. Delete from Firestore
@@ -89,11 +88,11 @@ export default function CandidateList({
         }
       }
 
-      toast.success('Candidate removed successfully');
+      showSuccess('Candidate removed successfully');
       onRefresh?.();
     } catch (error: any) {
       console.error('Error removing candidate:', error);
-      toast.error('Failed to remove candidate');
+      showError('Failed to remove candidate');
     } finally {
       setDeletingId(null);
     }

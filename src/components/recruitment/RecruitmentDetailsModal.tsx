@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { usePopup } from '@/components/ui/Popup';
 
 interface RecruitmentDetailsModalProps {
     recruitment: RecruitmentRequest;
@@ -17,9 +18,11 @@ interface RecruitmentDetailsModalProps {
 
 export default function RecruitmentDetailsModal({ recruitment, onClose, onApplied, onViewCandidates, onDelete, onEdit }: RecruitmentDetailsModalProps) {
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [checkingProfile, setCheckingProfile] = useState(true);
     const [hasApplied, setHasApplied] = useState(false);
     const [userProfile, setUserProfile] = useState<any>(null);
+    const { showSuccess, showError } = usePopup();
 
     useEffect(() => {
         checkStatus();
@@ -54,19 +57,17 @@ export default function RecruitmentDetailsModal({ recruitment, onClose, onApplie
 
     const handleDelete = async () => {
         if (!recruitment.id) return;
-        if (!window.confirm('Are you sure you want to delete this recruitment post? This action cannot be undone.')) return;
-
-        setLoading(true);
+        setDeleting(true);
         try {
             await deleteDoc(doc(db, 'recruits', recruitment.id));
-            toast.success('Recruitment post deleted successfully');
+            showSuccess('Recruitment post deleted successfully');
             onClose();
             onDelete?.(recruitment.id);
         } catch (err: any) {
             console.error('Delete error:', err);
-            toast.error(`Failed to delete: ${err.message}`);
+            showError(`Failed to delete: ${err.message}`);
         } finally {
-            setLoading(false);
+            setDeleting(false);
         }
     };
 
@@ -155,11 +156,11 @@ export default function RecruitmentDetailsModal({ recruitment, onClose, onApplie
                         )}
                         <button
                             onClick={handleDelete}
-                            disabled={loading}
+                            disabled={deleting}
                             title="Delete this post"
                             className="p-2 hover:bg-red-50 rounded-full text-gray-400 hover:text-red-600 transition-all disabled:opacity-50"
                         >
-                            <Trash2 className="w-5 h-5" />
+                            {deleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
                         </button>
                         <button
                             onClick={onClose}

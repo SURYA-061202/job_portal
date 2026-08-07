@@ -1,33 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { supabase } from "@/lib/supabase";
 import type { Candidate } from "@/types";
+import type { RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import InterviewCandidateDetail from "@/components/interview/InterviewCandidateDetail";
 import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab";
+import { ArrowLeft, Users, Briefcase, MapPin, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
-const FILTER_STATUSES = [
-  "all",
-  "round",
-  "selected",
-] as const;
+const ROUND_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+  round1: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700" },
+  round2: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "bg-purple-100 text-purple-700" },
+  round3: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
+  round4: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-700" },
+  round5: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", badge: "bg-rose-100 text-rose-700" },
+  round6: { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-700", badge: "bg-cyan-100 text-cyan-700" },
+  round7: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700" },
+  round8: { bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", badge: "bg-pink-100 text-pink-700" },
+  round9: { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", badge: "bg-teal-100 text-teal-700" },
+  selected: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", badge: "bg-green-100 text-green-700" },
+};
 
-type FilterStatus = (typeof FILTER_STATUSES)[number];
+const DEFAULT_COLORS = { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-700", badge: "bg-gray-100 text-gray-700" };
+
+interface PostWithCount extends RecruitmentRequest {
+  interviewCount: number;
+}
 
 export default function InterviewsTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [posts, setPosts] = useState<PostWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [filter, setFilter] = useState<FilterStatus>("all");
+  const [selectedPost, setSelectedPost] = useState<PostWithCount | null>(null);
+  const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchCandidates();
+    fetchData();
   }, []);
 
-  const fetchCandidates = async () => {
+  const fetchData = async () => {
     try {
       const allCandidates: Candidate[] = [];
       const isAdmin = userRole === 'admin';
@@ -39,7 +54,6 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         allCandidates.push({ id: d.id, ...d.data() } as Candidate);
       });
 
-      // Sort manually
       allCandidates.sort((a, b) => {
         const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
         const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
@@ -53,7 +67,6 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         ownedPostIds = recruitsQs.docs.map(doc => doc.id);
 
         if (ownedPostIds.length === 0) {
-          // If recruiter has no posts, they have no applicants
           setCandidates(allCandidates);
           setLoading(false);
           return;
@@ -114,25 +127,90 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       }
 
       setCandidates(allCandidates);
+
+      // 3. Fetch posts that have candidates in interview rounds
+      const postIds = new Set<string>();
+      for (const c of allCandidates) {
+        const st = (c as any).status || '';
+        const pid = (c as any).postId;
+        if (pid && st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected')) {
+          postIds.add(pid);
+        }
+      }
+
+      const postList: PostWithCount[] = [];
+      for (const pid of postIds) {
+        try {
+          const postDoc = await getDoc(doc(db, 'recruits', pid));
+          if (postDoc.exists()) {
+            const postData = { id: postDoc.id, ...postDoc.data() } as RecruitmentRequest;
+            const count = allCandidates.filter(c => (c as any).postId === pid && (() => {
+              const st = (c as any).status || '';
+              return st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected');
+            })()).length;
+            postList.push({ ...postData, interviewCount: count });
+          }
+        } catch (err) {
+          console.error(`Error fetching post ${pid}:`, err);
+        }
+      }
+
+      postList.sort((a, b) => {
+        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+        return Number(dateB) - Number(dateA);
+      });
+
+      setPosts(postList);
     } catch (err) {
-      console.error("Failed to load interview candidates", err);
-      toast.error("Failed to load candidates");
+      console.error("Failed to load interview data", err);
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
-  const filtered = filter === 'all'
-    ? candidates.filter((c) => {
+  const activeCandidates = useMemo(() =>
+    candidates.filter((c) => {
       const st = (c as any).status || '';
       return st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected');
-    })
-    : filter === 'round'
-      ? candidates.filter((c) => /^round\d+$/.test((c as any).status || ''))
-      : candidates.filter((c) => (c as any).status === filter);
+    }),
+    [candidates]
+  );
+
+  const postRounds = useMemo(() => {
+    if (!selectedPost) return [];
+    const map = new Map<string, number>();
+    for (const c of activeCandidates) {
+      if ((c as any).postId !== selectedPost.id) continue;
+      const st = (c as any).status || '';
+      map.set(st, (map.get(st) || 0) + 1);
+    }
+    const entries = Array.from(map.entries());
+    entries.sort((a, b) => {
+      const numA = parseInt((a[0].match(/^round(\d+)$/) || [,'0'])[1]);
+      const numB = parseInt((b[0].match(/^round(\d+)$/) || [,'0'])[1]);
+      if (numA !== numB) return numA - numB;
+      if (a[0] === 'selected') return 1;
+      if (b[0] === 'selected') return -1;
+      return a[0].localeCompare(b[0]);
+    });
+    return entries;
+  }, [activeCandidates, selectedPost]);
+
+  const roundCandidates = useMemo(() => {
+    if (!selectedPost || !selectedRound) return [];
+    return candidates.filter((c) => {
+      const st = (c as any).status || '';
+      const pid = (c as any).postId;
+      if (pid !== selectedPost.id) return false;
+      if (selectedRound === 'selected') return st === 'selected';
+      return st === selectedRound;
+    });
+  }, [candidates, selectedPost, selectedRound]);
 
   const handleStatusUpdated = () => {
-    fetchCandidates();
+    fetchData();
   };
 
   if (selectedCandidate) {
@@ -149,23 +227,200 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
     );
   }
 
+  // View 3: Candidates in a round for a post
+  if (selectedPost && selectedRound) {
+    const displayName = selectedRound === 'selected' ? 'Selected' : selectedRound.replace(/^round/, 'Round ');
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button
+            className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            onClick={() => { setSelectedRound(null); setSearchTerm(''); }}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
+            <h2 className="text-lg font-bold text-gray-900">{displayName}</h2>
+          </div>
+        </div>
+
+        <CandidateList
+          candidates={roundCandidates}
+          onSelectCandidate={setSelectedCandidate}
+          loading={loading}
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          emptyMessage={`No candidates found in ${displayName}.`}
+          title={`${displayName} Candidates`}
+        />
+      </div>
+    );
+  }
+
+  // View 2: Rounds for a post
+  if (selectedPost) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button
+            className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            onClick={() => { setSelectedPost(null); setSelectedRound(null); }}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
+            <h2 className="text-lg font-bold text-gray-900">Interview Rounds</h2>
+          </div>
+        </div>
+
+        {postRounds.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No rounds yet</h3>
+            <p className="mt-1 text-gray-500">Candidates will appear here once they enter the interview pipeline.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {postRounds.map(([status, count]) => {
+              const colors = ROUND_COLORS[status] || DEFAULT_COLORS;
+              const displayName = status === 'selected' ? 'Selected' : status.replace(/^round/, 'Round ');
+              const roundNum = (status.match(/^round(\d+)$/) || [,''])[1];
+
+              return (
+                <button
+                  key={status}
+                  onClick={() => setSelectedRound(status)}
+                  className={`${colors.bg} ${colors.border} border rounded-xl p-6 text-left hover:shadow-md transition-all duration-200 group`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className={`text-sm font-semibold ${colors.text} uppercase tracking-wide`}>
+                        {displayName}
+                      </p>
+                      <p className="mt-3 text-3xl font-bold text-gray-900">{count}</p>
+                      <p className="mt-1 text-sm text-gray-500">
+                        candidate{count !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    {roundNum && (
+                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-lg`}>
+                        R{roundNum}
+                      </span>
+                    )}
+                    {status === 'selected' && (
+                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-lg`}>
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                    View candidates →
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // View 1: Post cards
   return (
     <div className="space-y-6">
-      <CandidateList
-        candidates={filtered}
-        onSelectCandidate={setSelectedCandidate}
-        loading={loading}
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-        emptyMessage="No interview candidates found."
-        title="Interview Candidates"
-        filterValue={filter}
-        filterOptions={FILTER_STATUSES.map(s => ({
-          value: s,
-          label: s === 'all' ? 'All' : s === 'round' ? 'Rounds' : s.charAt(0).toUpperCase() + s.slice(1)
-        }))}
-        onFilterChange={(value) => setFilter(value as FilterStatus)}
-      />
+      <div className="bg-white p-4 rounded-xl border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-900">Interview Posts</h3>
+        <p className="text-sm text-gray-500 mt-1">Select a post to view interview rounds</p>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+              <div className="h-5 bg-gray-100 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">No interview posts</h3>
+          <p className="mt-1 text-gray-500">Posts will appear here once candidates enter the interview pipeline.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {posts.map((post) => (
+            <button
+              key={post.id}
+              onClick={() => setSelectedPost(post)}
+              className="bg-white border border-gray-200 rounded-xl p-6 text-left hover:shadow-md hover:border-orange-200 transition-all duration-200 group"
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <h4 className="text-base font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate">
+                    {post.jobTitle}
+                  </h4>
+                  {post.department && (
+                    <p className="text-sm text-gray-500 truncate">{post.department}</p>
+                  )}
+                </div>
+                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                  {post.interviewCount}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+                {post.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {post.location}
+                  </span>
+                )}
+                {post.positionLevel && (
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" /> {post.positionLevel}
+                  </span>
+                )}
+                {post.createdAt && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {
+                      (() => {
+                        const d = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date(post.createdAt);
+                        const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diff === 0) return 'Today';
+                        if (diff === 1) return 'Yesterday';
+                        return `${diff}d ago`;
+                      })()
+                    }
+                  </span>
+                )}
+              </div>
+
+              {post.skills && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {post.skills.split(',').slice(0, 3).map((skill, i) => (
+                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                      {skill.trim()}
+                    </span>
+                  ))}
+                  {post.skills.split(',').length > 3 && (
+                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-500">
+                      +{post.skills.split(',').length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 text-sm text-gray-500 group-hover:text-orange-600 transition-colors">
+                View rounds →
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
-} 
+}

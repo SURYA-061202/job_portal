@@ -137,6 +137,8 @@ export interface CandidateData {
   projects?: Project[];
 }
 
+export type PremiumRequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
+
 export interface RecruitmentRequest {
   id?: string;
   jobTitle: string;

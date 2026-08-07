@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, X, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, X, ClipboardCheck, BookOpen, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
+import { usePopup } from '@/components/ui/Popup';
 
 interface MCQ {
     id: string;
@@ -24,6 +25,8 @@ export default function AssessmentsTab() {
     const [loading, setLoading] = useState(true);
     const [isAddingSection, setIsAddingSection] = useState(false);
     const [expandedSection, setExpandedSection] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const { showSuccess, showError } = usePopup();
 
     const [newSection, setNewSection] = useState({
         title: '',
@@ -71,14 +74,16 @@ export default function AssessmentsTab() {
     };
 
     const handleDeleteSection = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this assessment section?')) return;
+        setDeletingId(id);
         try {
             await deleteDoc(doc(db, 'assessments', id));
-            toast.success('Section deleted');
+            showSuccess('Section deleted');
             fetchSections();
         } catch (error) {
             console.error('Error deleting section:', error);
-            toast.error('Failed to delete section');
+            showError('Failed to delete section');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -165,9 +170,14 @@ export default function AssessmentsTab() {
                                             e.stopPropagation();
                                             handleDeleteSection(section.id);
                                         }}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        disabled={deletingId === section.id}
+                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                                     >
-                                        <Trash2 className="w-5 h-5" />
+                                        {deletingId === section.id ? (
+                                            <Loader2 className="w-5 h-5 animate-spin text-red-500" />
+                                        ) : (
+                                            <Trash2 className="w-5 h-5" />
+                                        )}
                                     </button>
                                     {expandedSection === section.id ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
                                 </div>

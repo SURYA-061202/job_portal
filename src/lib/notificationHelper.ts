@@ -1,7 +1,7 @@
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
-export type NotificationType = 'interview_invite' | 'verify_details' | 'congratulations' | 'manager_invite';
+export type NotificationType = 'interview_invite' | 'verify_details' | 'congratulations' | 'manager_invite' | 'premium_request' | 'premium_approved' | 'premium_rejected';
 
 export interface NotificationData {
     userId: string; // User email or UID
@@ -98,5 +98,46 @@ export async function createManagerInviteNotification(
         metadata: {
             name,
         },
+    });
+}
+
+export async function createPremiumRequestNotification(
+    adminEmail: string,
+    recruiterName: string,
+    recruiterEmail: string
+): Promise<string> {
+    return createNotification({
+        userId: adminEmail,
+        type: 'premium_request',
+        title: 'Premium Access Request',
+        message: `${recruiterName} (${recruiterEmail}) has requested premium access to post more than 5 jobs. Please review in Add Members.`,
+        metadata: {
+            recruiterName,
+            recruiterEmail,
+        },
+    });
+}
+
+export async function createPremiumApprovedNotification(
+    recruiterEmail: string,
+    recruiterName: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'premium_approved',
+        title: 'Premium Access Approved',
+        message: `Congratulations ${recruiterName}! Your premium access request has been approved. You can now post unlimited jobs.`,
+    });
+}
+
+export async function createPremiumRejectedNotification(
+    recruiterEmail: string,
+    recruiterName: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'premium_rejected',
+        title: 'Premium Access Request Declined',
+        message: `Hi ${recruiterName}, your premium access request has been declined. Please contact admin for more details.`,
     });
 }

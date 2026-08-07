@@ -9,10 +9,10 @@ import UploadResumesTab from '@/components/tabs/UploadResumesTab';
 import CandidatesTab from '@/components/tabs/CandidatesTab';
 import InterviewsTab from '@/components/tabs/InterviewsTab';
 import SelectedCandidatesTab from '@/components/tabs/SelectedCandidatesTab';
-import StatsTab from '@/components/tabs/StatsTab';
 import NotificationsTab from '@/components/tabs/NotificationsTab';
 import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
 import AddMembersTab from '@/components/tabs/AddMembersTab';
+import MemberDetailContent from '@/components/tabs/MemberDetailContent';
 import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
 import AssessmentsTab from '@/components/tabs/AssessmentsTab';
@@ -20,12 +20,14 @@ import { Menu, X } from 'lucide-react';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [selectedPostTitle, setSelectedPostTitle] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -81,22 +83,21 @@ export default function Dashboard() {
     }
   };
 
-  const handleViewCandidates = (postId: string) => {
+  const handleViewCandidates = (postId: string, postTitle?: string) => {
     setSelectedPostId(postId);
+    setSelectedPostTitle(postTitle || null);
     setActiveTab('candidates');
   };
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    setIsMobileSidebarOpen(false); // Close mobile sidebar when tab is selected
-    // When manually switching tabs, clear selectedPostId so we don't carry over context unwontedly.
-    // Specifically for Candidates tab, we want to show ALL candidates if accessed via sidebar.
-    // For Job Posts, we want to show the list, not a specific detail view.
-    // For others, it doesn't matter much but cleaner to reset.
-    // However, if we stay on 'candidates', selectedPostId is preserved if we just view details and come back?
-    // This function is for global tab switching (Sidebar).
+    setIsMobileSidebarOpen(false);
     if (tab === 'candidates' || tab === 'job-posts') {
       setSelectedPostId(null);
+      setSelectedPostTitle(null);
+    }
+    if (tab !== 'member-detail') {
+      setSelectedMemberId(null);
     }
   };
 
@@ -112,6 +113,7 @@ export default function Dashboard() {
         return (
           <CandidatesTab
             postId={selectedPostId}
+            postTitle={selectedPostTitle}
             userRole={userRole}
             userId={userId}
             onClearFilter={() => setSelectedPostId(null)}
@@ -138,12 +140,23 @@ export default function Dashboard() {
         return <InterviewsTab userRole={userRole} userId={userId} />;
       case 'selected':
         return <SelectedCandidatesTab userRole={userRole} userId={userId} />;
-      case 'stats':
-        return <StatsTab userRole={userRole} userId={userId} />;
       case 'notifications':
         return <NotificationsTab />;
       case 'add-members':
-        return <AddMembersTab />;
+        return <AddMembersTab onViewMember={(memberId) => {
+          setSelectedMemberId(memberId);
+          setActiveTab('member-detail');
+        }} />;
+      case 'member-detail':
+        return (
+          <MemberDetailContent
+            memberId={selectedMemberId}
+            onBack={() => {
+              setSelectedMemberId(null);
+              setActiveTab('add-members');
+            }}
+          />
+        );
       case 'pipeline':
         return <RecruitmentPipelineTab />;
       case 'analytics':

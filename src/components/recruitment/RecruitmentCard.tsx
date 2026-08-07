@@ -58,8 +58,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                             )}
                         </div>
 
-                        <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1 flex items-center">
-                            <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
                             {recruitment.department}
                         </p>
                     </div>

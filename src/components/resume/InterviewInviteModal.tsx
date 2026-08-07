@@ -78,10 +78,11 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
 
     try {
       setLoading(true);
+      const effectivePostId = isJobApplicant ? (candidate as any).postId : selectedPostId;
       const { data, error } = await supabase.functions.invoke('send_interview_invite', {
         body: {
           candidate,
-          interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl },
+          interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl, postId: effectivePostId },
           baseUrl: interviewurl,
         },
       });
@@ -167,7 +168,9 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
         const { setDoc } = await import('firebase/firestore');
         const interviewRef = doc(db, 'interviews', candidate.id);
         const todayStr = new Date().toISOString().split('T')[0];
+        const effectivePostId = isJobApplicant ? (candidate as any).postId : selectedPostId;
         await setDoc(interviewRef, {
+          postId: effectivePostId,
           role,
           dates,
           roundType,
