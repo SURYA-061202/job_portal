@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query as fsQuery, orderBy, where, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query as fsQuery, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
-import type { RecruitmentRequest, PremiumRequestStatus } from '@/types';
+import type { RecruitmentRequest } from '@/types';
 import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
-import PremiumRequestModal from '@/components/recruitment/PremiumRequestModal';
 import toast from 'react-hot-toast';
-import { Search, Plus, Clock, CheckCircle, Crown } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, isPremium }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userId }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
@@ -18,8 +17,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
-    const [premiumRequestStatus, setPremiumRequestStatus] = useState<PremiumRequestStatus>('none');
-    const [showPremiumModal, setShowPremiumModal] = useState(false);
 
     const fetchRecruitmentRequests = async () => {
         try {
@@ -28,7 +25,8 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             const recruitsRef = collection(db, 'recruits');
             let q = fsQuery(recruitsRef, orderBy('createdAt', 'desc'));
 
-            if (userRole && userRole !== 'admin' && userId) {
+            if (userId) {
+                // Every user (recruiter or admin) only sees the posts they created.
                 // If filtering by recruiterId, remove orderBy to avoid index requirements
                 q = fsQuery(recruitsRef, where('recruiterId', '==', userId));
             }
@@ -41,7 +39,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             })) as any[];
 
             // Sort manually if we didn't sort in the query
-            if (userRole && userRole !== 'admin' && userId) {
+            if (userId) {
                 recruits = recruits.sort((a, b) => {
                     const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
                     const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
@@ -91,22 +89,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     useEffect(() => {
         fetchRecruitmentRequests();
     }, []);
-
-    // Fetch premium request status for non-admin users
-    useEffect(() => {
-        if (!userId || userRole === 'admin') return;
-        const fetchPremiumStatus = async () => {
-            try {
-                const userDoc = await getDoc(doc(db, 'users', userId));
-                if (userDoc.exists()) {
-                    setPremiumRequestStatus(userDoc.data().premiumRequestStatus || 'none');
-                }
-            } catch (error) {
-                console.error('Error fetching premium status:', error);
-            }
-        };
-        fetchPremiumStatus();
-    }, [userId, userRole]);
 
     // Handle initial selection from navigation
     useEffect(() => {
@@ -187,44 +169,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     />
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        if (userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5) {
-                                            setShowPremiumModal(true);
-                                        } else {
-                                            setIsRecruitmentModalOpen(true);
-                                        }
-                                    }}
-                                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap ${userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5
-                                        ? 'bg-gray-400 text-white hover:bg-gray-500'
-                                        : 'bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20'
-                                        }`}
+                                    onClick={() => setIsRecruitmentModalOpen(true)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 ? 'Limit Reached' : 'Add Post'}</span>
-                                    <span className="sm:hidden">{userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 ? 'Limit Reached' : 'Add Post'}</span>
+                                    <span className="hidden sm:inline">Add Post</span>
+                                    <span className="sm:hidden">Add Post</span>
                                 </button>
                             </div>
                         </div>
-                        {userRole !== 'admin' && !isPremium && recruitmentRequests.length >= 5 && (
-                            <div className="mt-4 p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                                        {premiumRequestStatus === 'pending' ? <Clock className="w-4 h-4" /> : premiumRequestStatus === 'approved' ? <CheckCircle className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
-                                    </div>
-                                    <p className="text-sm text-orange-800 font-medium">
-                                        {premiumRequestStatus === 'pending' ? (
-                                            <>Premium request is pending admin approval.</>
-                                        ) : premiumRequestStatus === 'approved' ? (
-                                            <>Premium approved! You can post unlimited jobs.</>
-                                        ) : premiumRequestStatus === 'rejected' ? (
-                                            <>Previous request was declined. <span className="font-bold underline cursor-pointer" onClick={() => setShowPremiumModal(true)}>Request Again</span></>
-                                        ) : (
-                                            <>You've reached your free limit of 5 posts. <span className="font-bold underline cursor-pointer" onClick={() => setShowPremiumModal(true)}>Get Premium to Post further</span></>
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
                     </div>
                     {/* Posts Grid */}
                     <div className="flex-1">
@@ -266,13 +219,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                     fetchRecruitmentRequests();
                 }}
                 initialData={editingPost}
-            />
-
-            <PremiumRequestModal
-                isOpen={showPremiumModal}
-                onClose={() => setShowPremiumModal(false)}
-                currentStatus={premiumRequestStatus}
-                onStatusChange={setPremiumRequestStatus}
             />
         </>
     );

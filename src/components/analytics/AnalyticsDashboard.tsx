@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query as fsQuery, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import {
@@ -20,7 +20,7 @@ import CustomDropdown from '@/components/CustomDropdown';
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#ea580c', '#c2410c', '#fed7aa', '#ffedd5', '#9a3412'];
 
-export default function AnalyticsDashboard() {
+export default function AnalyticsDashboard({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,11 +30,56 @@ export default function AnalyticsDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [candSnapshot, jobsSnapshot] = await Promise.all([
-                    getDocs(collection(db, 'candidates')),
-                    getDocs(collection(db, 'recruits'))
+                const isAdmin = userRole === 'admin';
+                const candidatesRef = collection(db, 'candidates');
+                const jobsRef = collection(db, 'recruits');
+
+                // Recruiters only see analytics for posts/candidates they created; admin sees all.
+                const candQuery = (!isAdmin && userId) ? fsQuery(candidatesRef, where('recruiterId', '==', userId)) : fsQuery(candidatesRef);
+                const jobsQuery = (!isAdmin && userId) ? fsQuery(jobsRef, where('recruiterId', '==', userId)) : fsQuery(jobsRef);
+
+                const [candSnapshot, jobsSnapshot, usersSnapshot] = await Promise.all([
+                    getDocs(candQuery),
+                    getDocs(jobsQuery),
+                    !isAdmin ? getDocs(collection(db, 'users')) : Promise.resolve(null)
                 ]);
-                setCandidates(candSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Candidate[]);
+
+                const uploadedCandidates = candSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Candidate[];
+
+                // For recruiters, also fold in registered users (job seekers) so analytics reflects
+                // the same two pools they see in the Candidates tab: their own uploads + registered users.
+                const registeredUsers: Candidate[] = [];
+                if (usersSnapshot) {
+                    usersSnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.role !== 'user') return;
+                        registeredUsers.push({
+                            id: doc.id,
+                            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed User',
+                            email: data.email || '',
+                            phone: data.mobile || '',
+                            role: data.department || 'User',
+                            experience: data.yearsOfExperience || '',
+                            skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                            resumeUrl: data.resumeUrl || '',
+                            extractedData: {
+                                summary: '',
+                                workExperience: [],
+                                education: [],
+                                skills: [],
+                                certifications: data.certifications || [],
+                                projects: data.keyProjects || data.projects || []
+                            },
+                            education: [],
+                            createdAt: data.createdAt,
+                            updatedAt: data.updatedAt,
+                            status: 'pending' as any,
+                            rankings: data.rankings
+                        } as Candidate);
+                    });
+                }
+
+                setCandidates(isAdmin ? uploadedCandidates : [...uploadedCandidates, ...registeredUsers]);
                 setJobPosts(jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as RecruitmentRequest[]);
             } catch (error) {
                 console.error("Error fetching analytics data:", error);
@@ -43,7 +88,7 @@ export default function AnalyticsDashboard() {
             }
         };
         fetchData();
-    }, []);
+    }, [userRole, userId]);
 
     // --- Candidate Analytics ---
 

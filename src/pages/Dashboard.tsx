@@ -158,9 +158,9 @@ export default function Dashboard() {
           />
         );
       case 'pipeline':
-        return <RecruitmentPipelineTab />;
+        return <RecruitmentPipelineTab userRole={userRole} userId={userId} />;
       case 'analytics':
-        return <AnalyticsDashboard />;
+        return <AnalyticsDashboard userRole={userRole} userId={userId} />;
       case 'profile':
         return <ProfileTab />;
       case 'assessments':

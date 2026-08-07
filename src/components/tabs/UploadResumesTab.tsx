@@ -82,7 +82,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             let parsedData: any = {};
             let parseFailed = false;
             try {
-                parsedData = await parseResumeWithAI(publicUrl);
+                parsedData = await parseResumeWithAI(file);
             } catch (err) {
                 console.warn('Resume parsing failed, will require manual entry');
                 parseFailed = true;
@@ -169,17 +169,20 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
         }
     };
 
-    const parseResumeWithAI = async (publicUrl: string) => {
+    const parseResumeWithAI = async (file: File) => {
         try {
             if (!isOpenAIConfigured()) {
                 console.warn("OpenAI key missing, skipping AI parsing");
                 throw new Error("OpenAI API Key is missing"); // Throwing to trigger fallback
             }
 
-            console.log('Parsing resume locally via OpenAI:', publicUrl);
+            console.log('Parsing resume locally via OpenAI:', file.name);
 
-            // 1) Extract raw text from the PDF using pdfjs
-            const loadingTask = pdfjsLib.getDocument({ url: publicUrl, useSystemFonts: true });
+            // 1) Extract raw text from the PDF using pdfjs. Parse the local file bytes directly
+            // instead of re-fetching the Storage URL, which avoids a cross-origin fetch that the
+            // Storage bucket's CORS policy would otherwise block.
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, useSystemFonts: true });
             const pdf = await loadingTask.promise;
             let rawText = '';
             for (let i = 1; i <= pdf.numPages; i++) {

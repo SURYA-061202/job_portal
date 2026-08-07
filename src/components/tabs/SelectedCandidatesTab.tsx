@@ -298,7 +298,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         searchTerm={search}
         onSearchTermChange={setSearch}
         emptyMessage="No candidates found."
-        title="Candidates"
+        title={view === 'selected' ? 'Selected Candidates' : 'Rejected Candidates'}
         filterValue={view}
         filterOptions={[
           { value: 'selected', label: 'Selected Candidates' },

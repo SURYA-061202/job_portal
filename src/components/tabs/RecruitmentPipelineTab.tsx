@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, QueryDocumentSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Candidate } from '@/types';
+import { supabase } from '@/lib/supabase';
+import type { RecruitmentRequest } from '@/types';
 import { toast } from 'react-hot-toast';
-import { User, X, ArrowRight, Trash2, Search, Loader2 } from 'lucide-react';
+import { User, X, ArrowRight, Trash2, Search, Loader2, Briefcase as BriefcaseIcon, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePopup } from '@/components/ui/Popup';
 
 type PipelineColumn = {
@@ -34,56 +35,200 @@ const getIconColor = (columnId: string) => {
     }
 };
 
-export default function RecruitmentPipelineTab() {
-    const [candidates, setCandidates] = useState<Candidate[]>([]);
+// A pipeline card can represent three kinds of person, each backed by a different
+// data source and mutable in a different way:
+//  - 'manual'     : a resume this recruiter uploaded, not yet shortlisted to a post
+//                    (Firestore `candidates` doc, status lives there).
+//  - 'registered'  : a platform job-seeker who hasn't applied/been shortlisted to any
+//                    of this recruiter's posts yet (Firestore `users` doc, no status yet).
+//  - 'applicant'   : anyone (uploaded candidate or registered user) once they've been
+//                    shortlisted to a specific post (status lives in Supabase job_applications).
+type PipelineItem = {
+    key: string;
+    id: string;
+    name: string;
+    role: string;
+    experience: string;
+    skills: string[];
+    summary?: string;
+    status: string;
+    postId?: string;
+    postTitle?: string;
+    source: 'manual' | 'registered' | 'applicant';
+    createdAt?: any;
+};
+
+const normalizeSkills = (skills: any): string[] => {
+    if (!skills) return [];
+    if (Array.isArray(skills)) return skills.filter(Boolean);
+    if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+};
+
+export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
+    const [items, setItems] = useState<PipelineItem[]>([]);
+    const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [_draggedId, setDraggedId] = useState<string | null>(null);
+    const [_draggedKey, setDraggedKey] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [deletingKey, setDeletingKey] = useState<string | null>(null);
+    const [pickerItem, setPickerItem] = useState<PipelineItem | null>(null);
+    const [pickerPostId, setPickerPostId] = useState('');
+    const [shortlisting, setShortlisting] = useState(false);
+    const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
     const { showSuccess, showError } = usePopup();
 
-    useEffect(() => {
-        fetchCandidates();
-    }, []);
+    const toggleSkillsExpanded = (key: string) => {
+        setExpandedSkills(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
 
-    const fetchCandidates = async () => {
+    useEffect(() => {
+        fetchData();
+    }, [userRole, userId]);
+
+    const fetchData = async () => {
         try {
             setLoading(true);
-            
-            let candQ = query(collection(db, 'candidates'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(candQ);
-            const data: Candidate[] = [];
-            querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
-                data.push({ id: doc.id, ...doc.data() } as Candidate);
+            const isAdmin = userRole === 'admin';
+
+            // Posts this recruiter owns (all posts for admin) — scopes both the
+            // "uploaded candidates" and "applicants" pools, and labels applicant cards.
+            const postsQ = (!isAdmin && userId)
+                ? query(collection(db, 'recruits'), where('recruiterId', '==', userId))
+                : query(collection(db, 'recruits'));
+            const postsSnap = await getDocs(postsQ);
+            const postsData = postsSnap.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+            const postTitleById: Record<string, string> = {};
+            postsData.forEach(p => { if (p.id) postTitleById[p.id] = p.jobTitle || 'Untitled Post'; });
+            const ownedPostIds = postsData.map(p => p.id as string);
+            setPosts(postsData);
+
+            // Candidates uploaded by this recruiter (all, for admin)
+            const candQ = (!isAdmin && userId)
+                ? query(collection(db, 'candidates'), where('recruiterId', '==', userId))
+                : query(collection(db, 'candidates'));
+            const candSnap = await getDocs(candQ);
+            const manualById: Record<string, any> = {};
+            candSnap.forEach(d => { manualById[d.id] = d.data(); });
+
+            const nextItems: PipelineItem[] = [];
+
+            // New Applicants (manual): uploaded but not yet shortlisted to any post
+            Object.entries(manualById).forEach(([id, data]) => {
+                if (data.postId) return; // now tracked via the application below
+                nextItems.push({
+                    key: `${id}::new`,
+                    id,
+                    name: data.name || 'Unnamed Candidate',
+                    role: data.role || 'Not specified',
+                    experience: data.experience || '',
+                    skills: normalizeSkills(data.skills),
+                    summary: data.extractedData?.summary,
+                    status: data.status || 'new',
+                    source: 'manual',
+                    createdAt: data.createdAt,
+                });
             });
 
-            // Sort manually
-            data.sort((a, b) => {
+            // Registered users (job seekers), visible to every recruiter
+            const usersSnap = await getDocs(collection(db, 'users'));
+            const registeredById: Record<string, any> = {};
+            usersSnap.forEach(d => {
+                const data = d.data();
+                if (data.role === 'user') registeredById[d.id] = data;
+            });
+
+            // Applications against owned posts: covers registered users who applied,
+            // and uploaded candidates once shortlisted to a post.
+            let apps: { user_id: string; post_id: string; status: string }[] = [];
+            if (isAdmin || ownedPostIds.length > 0) {
+                let appsQuery = supabase.from('job_applications').select('user_id, post_id, status');
+                if (!isAdmin) appsQuery = appsQuery.in('post_id', ownedPostIds);
+                const { data, error } = await appsQuery;
+                if (error) console.error('Error fetching applications:', error);
+                apps = data || [];
+            }
+
+            const appliedRegisteredIds = new Set<string>();
+            apps.forEach(app => {
+                const registered = registeredById[app.user_id];
+                const manual = manualById[app.user_id];
+                const display = registered || manual;
+                if (!display) return; // orphaned application (e.g. candidate deleted)
+
+                if (registered) appliedRegisteredIds.add(app.user_id);
+
+                nextItems.push({
+                    key: `${app.user_id}::${app.post_id}`,
+                    id: app.user_id,
+                    name: registered
+                        ? (`${registered.firstName || ''} ${registered.lastName || ''}`.trim() || registered.email || 'Unnamed')
+                        : (display.name || 'Unnamed Candidate'),
+                    role: (registered ? registered.department : display.role) || 'Not specified',
+                    experience: (registered ? registered.yearsOfExperience : display.experience) || '',
+                    skills: normalizeSkills(display.skills),
+                    status: app.status || 'shortlisted',
+                    postId: app.post_id,
+                    postTitle: postTitleById[app.post_id] || 'Untitled Post',
+                    source: registered ? 'applicant' : 'manual',
+                    createdAt: display.createdAt,
+                });
+            });
+
+            // Registered users with no application yet against an owned post
+            Object.entries(registeredById).forEach(([id, data]) => {
+                if (appliedRegisteredIds.has(id)) return;
+                nextItems.push({
+                    key: `${id}::new`,
+                    id,
+                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed',
+                    role: data.department || 'Not specified',
+                    experience: data.yearsOfExperience || '',
+                    skills: normalizeSkills(data.skills),
+                    status: 'new',
+                    source: 'registered',
+                    createdAt: data.createdAt,
+                });
+            });
+
+            nextItems.sort((a, b) => {
                 const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
                 const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
                 return Number(dateB) - Number(dateA);
             });
 
-            setCandidates(data);
+            setItems(nextItems);
         } catch (error) {
-            console.error('Error fetching candidates:', error);
+            console.error('Error fetching pipeline data:', error);
             toast.error('Failed to load pipeline');
         } finally {
             setLoading(false);
         }
     };
 
-    const updateStatus = async (candidateId: string, newStatus: string) => {
+    // Status changes for items that already have a post association (source 'applicant',
+    // or 'manual' once shortlisted) go to Supabase; raw uploaded-but-unshortlisted
+    // 'manual' items are updated directly in Firestore.
+    const updateStatus = async (item: PipelineItem, newStatus: string) => {
         try {
-            const candidateRef = doc(db, 'candidates', candidateId);
-            await updateDoc(candidateRef, {
-                status: newStatus,
-                updatedAt: new Date()
-            });
-
-            setCandidates((prev: Candidate[]) => prev.map(c =>
-                c.id === candidateId ? { ...c, status: newStatus } : c
-            ));
+            if (item.postId) {
+                const { error } = await supabase
+                    .from('job_applications')
+                    .update({ status: newStatus })
+                    .eq('user_id', item.id)
+                    .eq('post_id', item.postId);
+                if (error) throw error;
+            } else if (item.source === 'manual') {
+                await updateDoc(doc(db, 'candidates', item.id), { status: newStatus, updatedAt: new Date() });
+            } else {
+                return; // registered user with no post yet — must be shortlisted first
+            }
+            setItems(prev => prev.map(i => i.key === item.key ? { ...i, status: newStatus } : i));
             toast.success(`Moved to ${newStatus}`);
         } catch (error) {
             console.error('Error updating status:', error);
@@ -91,54 +236,97 @@ export default function RecruitmentPipelineTab() {
         }
     };
 
-    const handleDelete = async (candidateId: string) => {
-        setDeletingId(candidateId);
+    const handleDelete = async (item: PipelineItem) => {
+        if (item.source !== 'manual' || item.postId) return; // only raw uploads are deletable here
+        setDeletingKey(item.key);
         try {
-            await deleteDoc(doc(db, 'candidates', candidateId));
-            setCandidates((prev: Candidate[]) => prev.filter(c => c.id !== candidateId));
+            await deleteDoc(doc(db, 'candidates', item.id));
+            setItems(prev => prev.filter(i => i.key !== item.key));
             showSuccess('Candidate deleted');
         } catch (err) {
             console.error(err);
             showError('Failed to delete');
         } finally {
-            setDeletingId(null);
+            setDeletingKey(null);
         }
     };
 
-    const getCandidatesByStatus = (statusList: string[]) => {
-        return candidates.filter((c: Candidate) => {
-            const s = (c as any).status || 'pending';
-            const matchesStatus = statusList.includes(s) || (statusList.includes('new') && !s);
+    const openShortlistPicker = (item: PipelineItem) => {
+        setPickerItem(item);
+        setPickerPostId(posts[0]?.id || '');
+    };
+
+    const confirmShortlist = async () => {
+        if (!pickerItem || !pickerPostId) return;
+        setShortlisting(true);
+        try {
+            if (pickerItem.source === 'manual') {
+                await updateDoc(doc(db, 'candidates', pickerItem.id), {
+                    postId: pickerPostId,
+                    status: 'shortlisted',
+                    updatedAt: new Date(),
+                });
+            }
+            const { error } = await supabase
+                .from('job_applications')
+                .upsert({
+                    user_id: pickerItem.id,
+                    post_id: pickerPostId,
+                    status: 'shortlisted',
+                    created_at: new Date().toISOString(),
+                }, { onConflict: 'user_id, post_id' });
+            if (error) throw error;
+
+            toast.success('Shortlisted');
+            setPickerItem(null);
+            fetchData();
+        } catch (error) {
+            console.error('Error shortlisting:', error);
+            toast.error('Failed to shortlist');
+        } finally {
+            setShortlisting(false);
+        }
+    };
+
+    const getItemsByStatus = (statusList: string[]) => {
+        return items.filter((item) => {
+            const matchesStatus = statusList.includes(item.status) || (statusList.includes('new') && !item.status);
 
             if (!searchTerm) return matchesStatus;
 
-            // Search filter
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch =
-                c.name?.toLowerCase().includes(searchLower) ||
-                c.role?.toLowerCase().includes(searchLower) ||
-                c.experience?.toLowerCase().includes(searchLower);
+                item.name?.toLowerCase().includes(searchLower) ||
+                item.role?.toLowerCase().includes(searchLower) ||
+                item.postTitle?.toLowerCase().includes(searchLower);
 
             return matchesStatus && matchesSearch;
         });
     };
 
-    const onDragStart = (e: React.DragEvent, id: string) => {
-        e.dataTransfer.setData('candidateId', id);
-        setDraggedId(id);
+    const onDragStart = (e: React.DragEvent, key: string) => {
+        e.dataTransfer.setData('itemKey', key);
+        setDraggedKey(key);
     };
 
     const onDragOver = (e: React.DragEvent) => {
         e.preventDefault();
     };
 
-    const onDrop = async (e: React.DragEvent, targetStatus: string) => {
+    const onDrop = async (e: React.DragEvent, col: PipelineColumn) => {
         e.preventDefault();
-        const id = e.dataTransfer.getData('candidateId');
-        if (id) {
-            await updateStatus(id, targetStatus);
+        const key = e.dataTransfer.getData('itemKey');
+        const item = items.find(i => i.key === key);
+        setDraggedKey(null);
+        if (!item) return;
+
+        if (!item.postId) {
+            // Not yet tied to a post — the only valid move from here is into Shortlisted,
+            // which requires picking which post they're being shortlisted for.
+            if (col.id === 'shortlisted') openShortlistPicker(item);
+            return;
         }
-        setDraggedId(null);
+        await updateStatus(item, col.status[0]);
     };
 
     if (loading) {
@@ -163,7 +351,7 @@ export default function RecruitmentPipelineTab() {
                     </div>
                     <input
                         type="text"
-                        placeholder="Search by name, role, experience..."
+                        placeholder="Search by name, role, post..."
                         className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -176,96 +364,134 @@ export default function RecruitmentPipelineTab() {
                     {COLUMNS.map(col => (
                         <div
                             key={col.id}
-                            className={`flex-[0_0_300px] w-[300px] bg-gray-50 rounded-lg flex flex-col h-full border-t-4 ${col.color}`} // Fixed width and full height
+                            className={`flex-[0_0_300px] w-[300px] bg-gray-50 rounded-lg flex flex-col h-full border-t-4 ${col.color}`}
                             onDragOver={onDragOver}
-                            onDrop={(e) => onDrop(e, col.status[0])}
+                            onDrop={(e) => onDrop(e, col)}
                         >
                             <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-lg flex-shrink-0">
                                 <h3 className="font-semibold text-gray-700">{col.title}</h3>
                                 <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                                    {getCandidatesByStatus(col.status).length}
+                                    {getItemsByStatus(col.status).length}
                                 </span>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 hover-scrollbar">
-                                {getCandidatesByStatus(col.status).map(candidate => (
-                                    <div
-                                        key={candidate.id}
-                                        draggable
-                                        onDragStart={(e) => onDragStart(e, candidate.id || '')}
-                                        className="bg-white p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
-                                    >
-                                        <div className="flex justify-between items-start mb-2 flex-shrink-0">
-                                            <h4 className="font-medium text-gray-900 truncate pr-2" title={candidate.name}>{candidate.name}</h4>
-                                            <button
-                                                onClick={() => handleDelete(candidate.id || '')}
-                                                disabled={deletingId === candidate.id}
-                                                className="text-gray-400 hover:text-red-500 transition-opacity disabled:opacity-50"
-                                            >
-                                                {deletingId === candidate.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin text-red-500" />
-                                                ) : (
-                                                    <Trash2 className="h-4 w-4" />
+                                {getItemsByStatus(col.status).map(item => {
+                                    const canDelete = item.source === 'manual' && !item.postId;
+                                    const canReject = item.source === 'manual' || !!item.postId;
+                                    const canShortlist = col.id === 'new';
+                                    return (
+                                        <div
+                                            key={item.key}
+                                            draggable
+                                            onDragStart={(e) => onDragStart(e, item.key)}
+                                            className="bg-white p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
+                                        >
+                                            <div className="flex justify-between items-start mb-2 flex-shrink-0">
+                                                <h4 className="font-medium text-gray-900 truncate pr-2" title={item.name}>{item.name}</h4>
+                                                {canDelete && (
+                                                    <button
+                                                        onClick={() => handleDelete(item)}
+                                                        disabled={deletingKey === item.key}
+                                                        className="text-gray-400 hover:text-red-500 transition-opacity disabled:opacity-50"
+                                                    >
+                                                        {deletingKey === item.key ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+                                                        ) : (
+                                                            <Trash2 className="h-4 w-4" />
+                                                        )}
+                                                    </button>
                                                 )}
-                                            </button>
-                                        </div>
+                                            </div>
 
-                                        <div className="text-xs text-gray-500 space-y-1 flex-1">
-                                            <div className="flex items-center gap-1">
-                                                <BriefcaseIcon className={`h-3 w-3 flex-shrink-0 ${getIconColor(col.id)}`} />
-                                                <span className="">{candidate.role || 'No Role'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <User className={`h-3 w-3 flex-shrink-0 ${getIconColor(col.id)}`} />
-                                                <span>{candidate.experience || '0'} YoE</span>
-                                            </div>
-                                            {/* Example of potentially long content */}
-                                            {candidate.extractedData?.summary && (
-                                                <p className="mt-1 text-[10px] text-gray-400 border-t border-gray-50 pt-1">
-                                                    {candidate.extractedData.summary}
-                                                </p>
+                                            {item.postTitle && (
+                                                <div className="mb-2 flex-shrink-0">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-100">
+                                                        <BriefcaseIcon className="h-2.5 w-2.5" />
+                                                        {item.postTitle}
+                                                    </span>
+                                                </div>
                                             )}
-                                        </div>
 
-                                        <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center flex-shrink-0">
-                                            <span className="text-[10px] text-gray-400">
-                                                {new Date((candidate as any).createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}
-                                            </span>
-
-                                            {/* Quick Move Buttons (if dragndrop is hard) */}
-                                            <div className="flex gap-1">
-                                                {col.id !== 'rejected' && (
-                                                    <button
-                                                        onClick={() => updateStatus(candidate.id || '', 'rejected')}
-                                                        className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded"
-                                                        title="Reject"
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
+                                            <div className="text-xs text-gray-500 space-y-1 flex-1">
+                                                <div className="flex items-center gap-1">
+                                                    <BriefcaseIcon className={`h-3 w-3 flex-shrink-0 ${getIconColor(col.id)}`} />
+                                                    <span>{item.role || 'No Role'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <User className={`h-3 w-3 flex-shrink-0 ${getIconColor(col.id)}`} />
+                                                    <span>{item.experience || '0'} YoE</span>
+                                                </div>
+                                                {item.skills.length > 0 && (
+                                                    <div className="flex items-start gap-1 pt-0.5">
+                                                        <Tag className={`h-3 w-3 flex-shrink-0 mt-0.5 ${getIconColor(col.id)}`} />
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(expandedSkills.has(item.key) ? item.skills : item.skills.slice(0, 6)).map((skill, i) => (
+                                                                <span key={i} className="px-1.5 py-0.5 bg-gray-50 border border-gray-200 text-gray-600 text-[9px] font-bold rounded">
+                                                                    {skill}
+                                                                </span>
+                                                            ))}
+                                                            {item.skills.length > 6 && (
+                                                                <button
+                                                                    onClick={() => toggleSkillsExpanded(item.key)}
+                                                                    className="flex items-center gap-0.5 px-1.5 py-0.5 text-gray-400 hover:text-gray-600 text-[9px] font-bold"
+                                                                >
+                                                                    {expandedSkills.has(item.key) ? (
+                                                                        <>Less <ChevronUp className="h-2.5 w-2.5" /></>
+                                                                    ) : (
+                                                                        <>+{item.skills.length - 6} <ChevronDown className="h-2.5 w-2.5" /></>
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 )}
-                                                {col.id === 'new' && (
-                                                    <button
-                                                        onClick={() => updateStatus(candidate.id || '', 'shortlisted')}
-                                                        className="p-1 hover:bg-blue-50 text-blue-500 rounded"
-                                                        title="Shortlist"
-                                                    >
-                                                        <ArrowRight className="h-3 w-3" />
-                                                    </button>
-                                                )}
-                                                {col.id === 'shortlisted' && (
-                                                    <button
-                                                        onClick={() => updateStatus(candidate.id || '', 'round1')}
-                                                        className="p-1 hover:bg-purple-50 text-purple-500 rounded"
-                                                        title="Move to Screening"
-                                                    >
-                                                        <ArrowRight className="h-3 w-3" />
-                                                    </button>
+                                                {item.summary && (
+                                                    <p className="mt-1 text-[10px] text-gray-400 border-t border-gray-50 pt-1">
+                                                        {item.summary}
+                                                    </p>
                                                 )}
                                             </div>
+
+                                            <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center flex-shrink-0">
+                                                <span className="text-[10px] text-gray-400">
+                                                    {new Date((item.createdAt as any)?.seconds * 1000 || Date.now()).toLocaleDateString()}
+                                                </span>
+
+                                                <div className="flex gap-1">
+                                                    {col.id !== 'rejected' && canReject && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'rejected')}
+                                                            className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded"
+                                                            title="Reject"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {canShortlist && (
+                                                        <button
+                                                            onClick={() => openShortlistPicker(item)}
+                                                            className="p-1 hover:bg-blue-50 text-blue-500 rounded"
+                                                            title="Shortlist"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {col.id === 'shortlisted' && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'round1')}
+                                                            className="p-1 hover:bg-purple-50 text-purple-500 rounded"
+                                                            title="Move to Screening"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                {getCandidatesByStatus(col.status).length === 0 && (
+                                    );
+                                })}
+                                {getItemsByStatus(col.status).length === 0 && (
                                     <div className="text-center py-8 text-gray-300 text-sm italic">
                                         No candidates
                                     </div>
@@ -275,26 +501,44 @@ export default function RecruitmentPipelineTab() {
                     ))}
                 </div>
             </div>
+
+            {/* Shortlist post-picker modal */}
+            {pickerItem && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">Shortlist {pickerItem.name}</h3>
+                        <p className="text-sm text-gray-500 mb-4">Choose which of your job posts to shortlist them for.</p>
+                        {posts.length === 0 ? (
+                            <p className="text-sm text-red-600">You don't have any job posts yet.</p>
+                        ) : (
+                            <select
+                                value={pickerPostId}
+                                onChange={(e) => setPickerPostId(e.target.value)}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                            >
+                                {posts.map(p => (
+                                    <option key={p.id} value={p.id}>{p.jobTitle}</option>
+                                ))}
+                            </select>
+                        )}
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setPickerItem(null)}
+                                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmShortlist}
+                                disabled={shortlisting || !pickerPostId}
+                                className="px-4 py-2 rounded-lg text-sm font-bold bg-orange-gradient text-white disabled:opacity-50"
+                            >
+                                {shortlisting ? 'Shortlisting…' : 'Shortlist'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-}
-
-function BriefcaseIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-        </svg>
-    )
 }

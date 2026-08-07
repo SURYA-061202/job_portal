@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc, setDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Candidate } from "@/types";
+import type { Candidate, RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, Briefcase, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
 export default function ShortlistedTab({ candidateId, onBack, userRole, userId }: { candidateId?: string | null; onBack?: () => void; userRole?: string | null; userId?: string | null } = {}) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
+  const [selectedPostView, setSelectedPostView] = useState<RecruitmentRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [search, setSearch] = useState("");
@@ -20,14 +22,25 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       const allCandidates: Candidate[] = [];
       const isAdmin = userRole === 'admin';
 
-      // 1. Fetch manually uploaded candidates from Firestore
+      // 0. Posts this user can see (their own, unless admin), used both to scope
+      // shortlisted data and to group it by post.
+      const postsQ = (!isAdmin && userId)
+        ? query(collection(db, 'recruits'), where('recruiterId', '==', userId))
+        : query(collection(db, 'recruits'));
+      const postsSnap = await getDocs(postsQ);
+      const postsData = postsSnap.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+      setPosts(postsData);
+      const ownedPostIds = postsData.map(p => p.id as string);
+
+      // 1. Fetch manually uploaded candidates from Firestore, only ones shortlisted
+      // to a post this user owns (or all, for admin).
       let candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
       const qs = await getDocs(candQ);
       qs.forEach((d) => {
         const data = d.data();
-        if (data.status === 'shortlisted') {
-          allCandidates.push({ id: d.id, ...data } as Candidate);
-        }
+        if (data.status !== 'shortlisted') return;
+        if (!isAdmin && (!data.postId || !ownedPostIds.includes(data.postId))) return;
+        allCandidates.push({ id: d.id, ...data } as Candidate);
       });
 
       // Sort manually
@@ -37,17 +50,11 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         return Number(dateB) - Number(dateA);
       });
 
-      // 2. Fetch shortlisted job applicants from Supabase
-      let ownedPostIds: string[] = [];
-      if (!isAdmin && userId) {
-        const recruitsQs = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
-        ownedPostIds = recruitsQs.docs.map(doc => doc.id);
-
-        if (ownedPostIds.length === 0 && allCandidates.length === 0) {
-          setCandidates([]);
-          setLoading(false);
-          return;
-        }
+      // 2. Fetch shortlisted job applicants from Supabase, scoped to owned posts
+      if (!isAdmin && ownedPostIds.length === 0) {
+        setCandidates(allCandidates);
+        setLoading(false);
+        return;
       }
 
       let supabaseQuery = supabase
@@ -55,7 +62,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         .select('user_id, post_id')
         .eq('status', 'shortlisted');
 
-      if (!isAdmin && ownedPostIds.length > 0) {
+      if (!isAdmin) {
         supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
       }
 
@@ -111,6 +118,11 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         const candidate = allCandidates.find(c => c.id === candidateId);
         if (candidate) {
           setSelected(candidate);
+          const postId = (candidate as any).postId;
+          if (postId) {
+            const post = postsData.find(p => p.id === postId);
+            if (post) setSelectedPostView(post);
+          }
         }
       }
     } catch (err) {
@@ -146,16 +158,84 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
     );
   }
 
+  const postsWithCounts = posts
+    .map(p => ({ ...p, shortlistedCount: candidates.filter(c => (c as any).postId === p.id).length }))
+    .filter(p => p.shortlistedCount > 0);
+
+  if (!selectedPostView) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-4 rounded-xl border border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
+          <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-gray-400">Loading…</div>
+        ) : postsWithCounts.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No shortlisted candidates yet</h3>
+            <p className="mt-1 text-gray-500">Candidates you shortlist for your posts will appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {postsWithCounts.map((post) => (
+              <div
+                key={post.id}
+                onClick={() => setSelectedPostView(post)}
+                className="bg-white rounded-2xl border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden group p-4 sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">{post.jobTitle}</h3>
+                  {post.positionLevel && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
+                      {post.positionLevel}
+                    </span>
+                  )}
+                </div>
+                {post.department && (
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-2">
+                    <Briefcase className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                    {post.department}
+                  </div>
+                )}
+                {post.location && (
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                    {post.location}
+                  </div>
+                )}
+                <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-orange-600">
+                    {post.shortlistedCount} Shortlisted
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      <button
+        onClick={() => { setSelectedPostView(null); setSearch(''); }}
+        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Posts
+      </button>
       <CandidateList
-        candidates={candidates}
+        candidates={candidates.filter(c => (c as any).postId === selectedPostView.id)}
         onSelectCandidate={setSelected}
         loading={loading}
         searchTerm={search}
         onSearchTermChange={setSearch}
         emptyMessage="No shortlisted candidates found."
-        title="Shortlisted Candidates"
+        title={`Shortlisted — ${selectedPostView.jobTitle}`}
       />
     </div>
   );

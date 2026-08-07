@@ -21,7 +21,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
   ];
 
     const screeningTabs = [
-    { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload, adminOnly: true },
+    { id: 'upload-resumes', label: 'Upload Resumes', icon: Upload },
     { id: 'pipeline', label: 'Pipeline (Kanban)', icon: Trello },
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },

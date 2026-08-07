@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Mail, Phone, Building2, Shield, Loader2, CheckCircle, XCircle, Clock, Briefcase, Crown } from 'lucide-react';
-import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { createPremiumApprovedNotification, createPremiumRejectedNotification } from '@/lib/notificationHelper';
+import { ArrowLeft, Mail, Phone, Building2, Shield, Loader2, Briefcase } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import type { PremiumRequestStatus } from '@/types';
 
 interface MemberData {
     id: string;
@@ -15,8 +13,6 @@ interface MemberData {
     department: string;
     role: string;
     companyName?: string;
-    premiumRequestStatus?: PremiumRequestStatus;
-    premiumRequestedAt?: any;
 }
 
 interface Post {
@@ -37,9 +33,6 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingPosts, setLoadingPosts] = useState(true);
-    const [approving, setApproving] = useState(false);
-    const [rejecting, setRejecting] = useState(false);
-    const [requestStatus, setRequestStatus] = useState<PremiumRequestStatus>('none');
 
     useEffect(() => {
         if (!memberId) return;
@@ -51,7 +44,6 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                     const data = memberDoc.data() as MemberData;
                     data.id = memberDoc.id;
                     setMember(data);
-                    setRequestStatus(data.premiumRequestStatus || 'none');
                 }
             } catch (error) {
                 console.error('Error fetching member:', error);
@@ -85,51 +77,6 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
         };
         fetchPosts();
     }, [memberId]);
-
-    const handleApprove = async () => {
-        const admin = auth.currentUser;
-        if (!admin || !member) return;
-        setApproving(true);
-        try {
-            await updateDoc(doc(db, 'users', member.id), {
-                isPremium: true,
-                premiumRequestStatus: 'approved',
-                premiumReviewedAt: serverTimestamp(),
-                premiumReviewedBy: admin.uid,
-            });
-            await createPremiumApprovedNotification(member.email, member.firstName);
-            setRequestStatus('approved');
-            setMember(prev => prev ? { ...prev, premiumRequestStatus: 'approved', isPremium: true } : prev);
-            toast.success(`Premium access approved for ${member.firstName}`);
-        } catch (error) {
-            console.error('Error approving premium:', error);
-            toast.error('Failed to approve premium');
-        } finally {
-            setApproving(false);
-        }
-    };
-
-    const handleReject = async () => {
-        const admin = auth.currentUser;
-        if (!admin || !member) return;
-        setRejecting(true);
-        try {
-            await updateDoc(doc(db, 'users', member.id), {
-                premiumRequestStatus: 'rejected',
-                premiumReviewedAt: serverTimestamp(),
-                premiumReviewedBy: admin.uid,
-            });
-            await createPremiumRejectedNotification(member.email, member.firstName);
-            setRequestStatus('rejected');
-            setMember(prev => prev ? { ...prev, premiumRequestStatus: 'rejected' } : prev);
-            toast.success(`Premium request rejected for ${member.firstName}`);
-        } catch (error) {
-            console.error('Error rejecting premium:', error);
-            toast.error('Failed to reject premium');
-        } finally {
-            setRejecting(false);
-        }
-    };
 
     if (loading) {
         return (
@@ -208,72 +155,6 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Premium Access Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                    <h3 className="text-lg font-bold text-gray-900">Premium Access</h3>
-                </div>
-
-                {requestStatus === 'pending' ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                        <div className="flex items-center justify-between gap-4 mb-2">
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                                <p className="text-base font-bold text-amber-800">Premium Request Pending</p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <button
-                                    onClick={handleApprove}
-                                    disabled={approving}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-md hover:bg-green-700 transition-all disabled:opacity-50"
-                                >
-                                    {approving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                                    Approve
-                                </button>
-                                <button
-                                    onClick={handleReject}
-                                    disabled={rejecting}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-md hover:bg-red-700 transition-all disabled:opacity-50"
-                                >
-                                    {rejecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
-                                    Reject
-                                </button>
-                            </div>
-                        </div>
-                        {member.premiumRequestedAt && (
-                            <p className="text-sm text-gray-500 ml-7">
-                                Requested: {member.premiumRequestedAt?.toDate ? member.premiumRequestedAt.toDate().toLocaleString() : 'Recently'}
-                            </p>
-                        )}
-                    </div>
-                ) : requestStatus === 'approved' ? (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center gap-4">
-                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
-                        <div>
-                            <p className="text-base font-bold text-green-800">Premium Active</p>
-                            <p className="text-sm text-green-600">This member has premium access and can post unlimited jobs.</p>
-                        </div>
-                    </div>
-                ) : requestStatus === 'rejected' ? (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-5 flex items-center gap-4">
-                        <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                        <div>
-                            <p className="text-base font-bold text-red-800">Request Declined</p>
-                            <p className="text-sm text-red-600">Premium request was declined. Member is limited to 5 posts.</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-center gap-4">
-                        <Crown className="w-6 h-6 text-gray-400 flex-shrink-0" />
-                        <div>
-                            <p className="text-base font-medium text-gray-700">No premium request</p>
-                            <p className="text-sm text-gray-500">This member has not requested premium access yet.</p>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Posts Section */}

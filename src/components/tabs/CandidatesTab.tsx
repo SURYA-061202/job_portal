@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, getDocs, getDoc, query as fsQuery, orderBy, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import type { Candidate } from '@/types';
@@ -13,8 +13,9 @@ import { ArrowLeft, Search, LayoutGrid, Briefcase, MapPin, Calendar, Clock } fro
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
+import RecruitCandidateDropdown from '@/components/recruitment/RecruitCandidateDropdown';
 
-function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -96,9 +97,20 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         if (!showPostView) return;
         const fetchPostCards = async () => {
             try {
-                const q = fsQuery(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+                const recruitsRef = collection(db, 'recruits');
+                // Each user (recruiter or admin) only sees posts they created.
+                const q = userId
+                    ? fsQuery(recruitsRef, where('recruiterId', '==', userId))
+                    : fsQuery(recruitsRef, orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
-                const posts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+                let posts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+                if (userId) {
+                    posts = posts.sort((a, b) => {
+                        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                        return Number(dateB) - Number(dateA);
+                    });
+                }
 
                 // Fetch applicant counts from Supabase
                 const { data: allApps } = await supabase.from('job_applications').select('post_id');
@@ -115,7 +127,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             }
         };
         fetchPostCards();
-    }, [showPostView]);
+    }, [showPostView, userId]);
 
     const fetchCandidates = async (force = false) => {
         // If we are currently filtering for a specific post and this was called automatically, 
@@ -138,7 +150,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             const candidatesRef = collection(db, 'candidates');
             let q = fsQuery(candidatesRef, orderBy('createdAt', 'desc'));
 
-            // No longer filtering candidates by recruiterId as per user request to show candidates/users same like before
+            if (userRole && userRole !== 'admin' && userId) {
+                // Recruiters only see candidates they uploaded themselves; admin sees all.
+                q = fsQuery(candidatesRef, where('recruiterId', '==', userId));
+            }
             const querySnapshot = await getDocs(q);
             let candidatesData: Candidate[] = [];
             querySnapshot.forEach((doc) => {
@@ -547,6 +562,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 >
                                                     <LayoutGrid className="w-5 h-5" />
                                                 </button>
+                                            )}
+
+                                            {/* Recruit Candidate (only when viewing a specific post's applicants) */}
+                                            {postId && (
+                                                <RecruitCandidateDropdown
+                                                    postId={postId}
+                                                    userRole={userRole}
+                                                    userId={userId}
+                                                    excludeIds={filteredCandidates.map(c => c.id)}
+                                                    onRecruited={() => fetchApplicantsForPost(postId)}
+                                                />
                                             )}
 
                                             {/* Search */}
