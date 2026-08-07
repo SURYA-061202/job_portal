@@ -121,6 +121,16 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                     });
                 }
 
+                // Add counts from Firestore uploaded candidates
+                const candSnap = await getDocs(collection(db, 'candidates'));
+                candSnap.forEach(cDoc => {
+                    const cData = cDoc.data();
+                    const targetPostId = cData.postId || cData.recruitmentId;
+                    if (targetPostId) {
+                        counts[targetPostId] = (counts[targetPostId] || 0) + 1;
+                    }
+                });
+
                 setPostCards(posts.map(p => ({ ...p, applicantCount: counts[p.id || ''] || 0 })));
             } catch (error) {
                 console.error('Error fetching post cards:', error);
@@ -234,12 +244,11 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
             if (appsError) {
                 console.error('[DEBUG] Supabase apps fetch error:', appsError);
-                throw appsError;
+                // Don't throw — uploaded candidates are in Firestore only
             }
 
             if (!apps || apps.length === 0) {
                 console.log('[DEBUG] No applicants found for this post in Supabase.');
-                // Don't return here - we might still have manual candidates
                 if (allCandidates.length === 0) {
                     setFilteredCandidates([]);
                     return;

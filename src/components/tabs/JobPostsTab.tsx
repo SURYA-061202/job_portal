@@ -56,13 +56,23 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 console.error('Error fetching application counts:', appsError);
             }
 
-            // 3. Map counts
+            // 3. Map counts from Supabase
             const counts: Record<string, number> = {};
             apps?.forEach(app => {
                 counts[app.post_id] = (counts[app.post_id] || 0) + 1;
             });
 
-            // 4. Combine
+            // 4. Add counts from Firestore uploaded candidates
+            const candSnap = await getDocs(collection(db, 'candidates'));
+            candSnap.forEach(cDoc => {
+                const cData = cDoc.data();
+                const targetPostId = cData.postId || cData.recruitmentId;
+                if (targetPostId) {
+                    counts[targetPostId] = (counts[targetPostId] || 0) + 1;
+                }
+            });
+
+            // 5. Combine
             const postsData: RecruitmentRequest[] = recruits.map(post => ({
                 ...post,
                 applicantCount: counts[post.id] || 0

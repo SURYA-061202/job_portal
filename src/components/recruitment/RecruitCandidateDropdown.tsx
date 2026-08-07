@@ -107,21 +107,23 @@ export default function RecruitCandidateDropdown({
         try {
             const registeredIds = new Set(registeredOptions.map(o => o.id));
             for (const id of selected) {
-                if (!registeredIds.has(id)) {
-                    // Manually uploaded candidate — tie them to this post in Firestore too
+                if (registeredIds.has(id)) {
+                    // Registered user — create application in Supabase
+                    const { error } = await supabase.from('job_applications').upsert({
+                        user_id: id,
+                        post_id: postId,
+                        status: 'pending',
+                        created_at: new Date().toISOString(),
+                    }, { onConflict: 'user_id, post_id' });
+                    if (error) throw error;
+                } else {
+                    // Manually uploaded candidate — tie them to this post in Firestore only
                     await updateDoc(doc(db, 'candidates', id), {
                         postId,
                         status: 'pending',
                         updatedAt: new Date(),
                     });
                 }
-                const { error } = await supabase.from('job_applications').upsert({
-                    user_id: id,
-                    post_id: postId,
-                    status: 'pending',
-                    created_at: new Date().toISOString(),
-                }, { onConflict: 'user_id, post_id' });
-                if (error) throw error;
             }
             toast.success(`Recruited ${selected.size} candidate${selected.size > 1 ? 's' : ''}`);
             setSelected(new Set());
