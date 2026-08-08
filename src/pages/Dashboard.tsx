@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,6 +63,7 @@ export default function Dashboard() {
             navigate('/jobs', { replace: true });
           }
           setUserRole(userData.role);
+          setUserId(usr.uid);
           setIsPremium(userData.isPremium || false);
         }
       } catch (error) {
@@ -102,8 +104,6 @@ export default function Dashboard() {
   };
 
   const renderTabContent = () => {
-    const userId = auth.currentUser?.uid;
-
     switch (activeTab) {
       case 'job-posts':
         return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} isPremium={isPremium} />;

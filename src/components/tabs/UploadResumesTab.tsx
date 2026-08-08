@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where, limit } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Candidate, RecruitmentRequest } from '@/types';
@@ -17,6 +17,20 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 // @ts-ignore – pdfjsWorker will be resolved by Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+// Check if an email already exists in the users collection
+const checkEmailExistsInUsers = async (email: string): Promise<boolean> => {
+    if (!email || !email.trim()) return false;
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', email.trim().toLowerCase()), limit(1));
+        const snapshot = await getDocs(q);
+        return !snapshot.empty;
+    } catch (error) {
+        console.error('Error checking email in users:', error);
+        return false; // Fail open - don't block if check fails
+    }
+};
 
 export default function UploadResumesTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
     const [loading, setLoading] = useState(false);
@@ -94,6 +108,16 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                 email: !parsedData.email || isPlaceholderEmail(parsedData.email) ? '' : parsedData.email,
                 phone: !parsedData.phone || isPlaceholderPhone(parsedData.phone) ? '' : parsedData.phone,
             };
+
+            // Check if email already exists in users collection (registered users)
+            if (sanitized.email) {
+                const emailExists = await checkEmailExistsInUsers(sanitized.email);
+                if (emailExists) {
+                    toast.error(`This email (${sanitized.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
+                    setLoading(false);
+                    return;
+                }
+            }
 
             // Determine if manual input is required (core info missing after sanitisation)
             const missingCoreInfo = !sanitized.name || !sanitized.email || !sanitized.phone;

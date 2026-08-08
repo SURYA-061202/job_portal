@@ -47,8 +47,8 @@ export default function UserHeader() {
         <header 
             className={`sticky top-0 z-50 transition-all duration-300 ${
                 scrolled 
-                ? 'bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm py-1' 
-                : 'bg-white border-b border-gray-200 py-2'
+                ? 'bg-gray-900/80 backdrop-blur-md border-b border-gray-800/50 shadow-sm py-1' 
+                : 'bg-gray-900 border-b border-gray-800 py-2'
             }`}
         >
             <div className="w-full px-6 lg:px-12">
@@ -57,8 +57,8 @@ export default function UserHeader() {
                     <div className="flex items-center gap-10">
                         <Link to="/home" className="flex items-center group">
                             <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
-                                <span className="text-gray-800">Indian Infra</span>
-                                <span className="text-gray-800">
+                                <span className="text-gray-100">Indian Infra</span>
+                                <span className="text-gray-100">
                                     Jobs
                                 </span>
                             </div>
@@ -70,7 +70,7 @@ export default function UserHeader() {
                                     <Link
                                         to={link.to}
                                         className={`flex items-center gap-2 text-sm font-semibold transition-all relative py-3 ${
-                                            isActive(link.to) ? 'text-orange-600' : 'text-gray-500 hover:text-orange-600'
+                                            isActive(link.to) ? 'text-orange-500' : 'text-gray-400 hover:text-orange-500'
                                         }`}
                                     >
                                         <span>{link.label}</span>
@@ -84,7 +84,7 @@ export default function UserHeader() {
                     <div className="hidden md:flex items-center gap-4">
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-400 hover:text-red-400 hover:bg-red-950/50 rounded-xl transition-all"
                         >
                             <LogOut className="w-4 h-4" />
                             <span>Logout</span>
@@ -95,7 +95,7 @@ export default function UserHeader() {
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all focus:outline-none"
+                            className="p-2 text-gray-400 hover:bg-gray-800 rounded-xl transition-all focus:outline-none"
                         >
                             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -104,7 +104,7 @@ export default function UserHeader() {
             </div>
 
             {/* Mobile Menu Overlay */}
-            <div className={`md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
+            <div className={`md:hidden absolute top-full left-0 w-full bg-gray-900 border-b border-gray-800 shadow-xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
                 }`}>
                 <div className="px-6 py-4 flex flex-col gap-2">
                     {navLinks.map((link) => (
@@ -114,20 +114,20 @@ export default function UserHeader() {
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center p-4 rounded-xl transition-all ${
                                 isActive(link.to) 
-                                ? 'bg-orange-50 text-orange-600 font-bold' 
-                                : 'text-gray-600 hover:bg-gray-50'
+                                ? 'bg-orange-950/50 text-orange-500 font-bold' 
+                                : 'text-gray-400 hover:bg-gray-800'
                             }`}
                         >
                             <span className="text-base">{link.label}</span>
                         </Link>
                     ))}
-                    <div className="h-px bg-gray-100 my-2"></div>
+                    <div className="h-px bg-gray-800 my-2"></div>
                     <button
                         onClick={() => {
                             setIsMenuOpen(false);
                             handleLogout();
                         }}
-                        className="flex items-center gap-4 p-4 rounded-xl text-red-600 hover:bg-red-50 transition-all text-left w-full"
+                        className="flex items-center gap-4 p-4 rounded-xl text-red-400 hover:bg-red-950/50 transition-all text-left w-full"
                     >
                         <LogOut className="w-5 h-5" />
                         <span className="text-base font-medium">Logout</span>

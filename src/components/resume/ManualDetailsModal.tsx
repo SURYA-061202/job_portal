@@ -2,8 +2,22 @@ import { useState } from 'react';
 import type { Candidate } from '@/types';
 import { X } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+
+// Check if an email already exists in the users collection
+const checkEmailExistsInUsers = async (email: string): Promise<boolean> => {
+    if (!email || !email.trim()) return false;
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', email.trim().toLowerCase()), limit(1));
+        const snapshot = await getDocs(q);
+        return !snapshot.empty;
+    } catch (error) {
+        console.error('Error checking email in users:', error);
+        return false; // Fail open - don't block if check fails
+    }
+};
 
 interface Props {
   candidate: Candidate;
@@ -48,6 +62,14 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
       toast.error('Please fill name, email and phone');
       return;
     }
+
+    // Check if email already exists in users collection (registered users)
+    const emailExists = await checkEmailExistsInUsers(form.email);
+    if (emailExists) {
+      toast.error(`This email (${form.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
+      return;
+    }
+
     try {
       setSaving(true);
       await updateDoc(doc(db, 'candidates', candidate.id), {

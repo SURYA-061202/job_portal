@@ -117,12 +117,20 @@ export default function RecruitCandidateDropdown({
                     }, { onConflict: 'user_id, post_id' });
                     if (error) throw error;
                 } else {
-                    // Manually uploaded candidate — tie them to this post in Firestore only
+                    // Manually uploaded candidate — tie them to this post in Firestore
                     await updateDoc(doc(db, 'candidates', id), {
                         postId,
                         status: 'pending',
                         updatedAt: new Date(),
                     });
+                    // Also create a job_applications row in Supabase so the pipeline can track them
+                    const { error } = await supabase.from('job_applications').upsert({
+                        user_id: id,
+                        post_id: postId,
+                        status: 'pending',
+                        created_at: new Date().toISOString(),
+                    }, { onConflict: 'user_id, post_id' });
+                    if (error) throw error;
                 }
             }
             toast.success(`Recruited ${selected.size} candidate${selected.size > 1 ? 's' : ''}`);
