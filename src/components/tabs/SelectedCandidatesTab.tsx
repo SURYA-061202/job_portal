@@ -5,7 +5,8 @@ import type { Candidate } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { sendCongratulationsMail } from "@/lib/emailFunctions";
+import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
 
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
@@ -72,10 +73,9 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                   onClick={async () => {
                     setSending(true);
                     try {
-                      const { data, error } = await supabase.functions.invoke('send_congratulations_mail', {
-                        body: { candidate: { id: candidate.id, name: candidate.name, email: candidate.email } },
+                      await sendCongratulationsMail({
+                        candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
                       });
-                      if (error || !data?.success) throw new Error(error?.message || data?.error || 'Failed to send');
 
                       // update Firestore interviews doc
                       const interviewRef = doc(db, 'interviews', candidate.id);
@@ -194,7 +194,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
           return Number(dateB) - Number(dateA);
         });
 
-        // 2. Fetch from Supabase job_applications
+        // 2. Fetch job applications
         let ownedPostIds: string[] = [];
         if (!isAdmin && userId) {
           const recruitsQs = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
@@ -207,19 +207,17 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
           }
         }
 
-        let supabaseQuery = supabase
-          .from('job_applications')
-          .select('user_id, post_id, status');
-
-        if (!isAdmin && ownedPostIds.length > 0) {
-          supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
+        let applications: { user_id: string; post_id: string; status: string }[] = [];
+        try {
+          applications = await getAllApplications();
+          if (!isAdmin && ownedPostIds.length > 0) {
+            applications = applications.filter(app => ownedPostIds.includes(app.post_id));
+          }
+        } catch (appsError) {
+          console.error('Error fetching applications:', appsError);
         }
 
-        const { data: applications, error: appsError } = await supabaseQuery;
-
-        if (appsError) {
-          console.error('Error fetching Supabase applications:', appsError);
-        } else if (applications && applications.length > 0) {
+        if (applications && applications.length > 0) {
           for (const app of applications) {
             const st = app.status || '';
             const isTarget = st === 'selected' || st.endsWith('rejected');

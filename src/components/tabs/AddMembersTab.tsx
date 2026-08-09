@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firesto
 import { db, firebaseConfig } from '@/lib/firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { supabase } from '@/lib/supabase';
+import { sendManagerInvite } from '@/lib/emailFunctions';
 import toast from 'react-hot-toast';
 import { createManagerInviteNotification } from '@/lib/notificationHelper';
 
@@ -56,19 +56,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
 
     const sendWelcomeEmail = async (email: string, name: string, password: string) => {
         try {
-            const { data, error } = await supabase.functions.invoke('manager_invite', {
-                body: {
-                    email,
-                    name,
-                    password,
-                    baseUrl: window.location.origin,
-                },
-            });
-
-            if (error || !data?.success) {
-                console.error('Email send error:', error || data?.error);
-                return false;
-            }
+            await sendManagerInvite({ email, name, password, baseUrl: window.location.origin });
             return true;
         } catch (error) {
             console.error('Error sending email:', error);

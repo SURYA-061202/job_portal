@@ -99,15 +99,15 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
             </div>
 
             {/* Pro Tip Card */}
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white overflow-hidden relative">
+            <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
                 <div className="relative z-10">
                     <h3 className="font-bold text-lg mb-2">Reminder!</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                    <p className="text-gray-500 text-sm leading-relaxed mb-4">
                         Keep your profile updated to get 3x more visibility from recruiters.
                     </p>
                     <button
                         onClick={onCompleteProfile}
-                        className="text-orange-500 font-bold text-sm hover:text-orange-400 transition-colors"
+                        className="text-orange-600 font-bold text-sm hover:text-orange-700 transition-colors"
                     >
                         Complete Profile →
                     </button>

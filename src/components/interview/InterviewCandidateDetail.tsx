@@ -2,7 +2,8 @@ import type { Candidate } from "@/types";
 import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { supabase } from "@/lib/supabase";
+import { sendRoundInvite } from "@/lib/emailFunctions";
+import { setApplicationStatus } from "@/lib/jobApplications";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 
@@ -90,12 +91,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
       // 1. Update status
       const applicantPostId = (candidate as any).postId;
       if (applicantPostId) {
-        const { error } = await supabase
-          .from('job_applications')
-          .update({ status: nextRound })
-          .eq('user_id', candidate.id)
-          .eq('post_id', applicantPostId);
-        if (error) throw error;
+        await setApplicationStatus(applicantPostId, candidate.id, nextRound);
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), {
           status: nextRound,
@@ -126,14 +122,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
       // 3. Send round invite email
       try {
         const baseUrl = window.location.origin;
-        await supabase.functions.invoke('send_round_invite', {
-          body: {
-            candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
-            roundName: effectiveRoundName,
-            roundNumber: nextRoundNum,
-            role: interview.role || candidate.role || 'the position',
-            baseUrl
-          }
+        await sendRoundInvite({
+          candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+          roundName: effectiveRoundName,
+          roundNumber: nextRoundNum,
+          role: interview.role || candidate.role || 'the position',
+          baseUrl,
         });
       } catch (emailErr) {
         console.error('Failed to send round email:', emailErr);
@@ -156,12 +150,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
     try {
       const applicantPostId = (candidate as any).postId;
       if (applicantPostId) {
-        const { error } = await supabase
-          .from('job_applications')
-          .update({ status: 'selected' })
-          .eq('user_id', candidate.id)
-          .eq('post_id', applicantPostId);
-        if (error) throw error;
+        await setApplicationStatus(applicantPostId, candidate.id, 'selected');
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), {
           status: 'selected',
@@ -205,12 +194,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
       const applicantPostId = (candidate as any).postId;
 
       if (applicantPostId) {
-        const { error } = await supabase
-          .from('job_applications')
-          .update({ status: newStatus })
-          .eq('user_id', candidate.id)
-          .eq('post_id', applicantPostId);
-        if (error) throw error;
+        await setApplicationStatus(applicantPostId, candidate.id, newStatus);
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, updatedAt: new Date() });
       }

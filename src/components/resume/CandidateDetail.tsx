@@ -5,10 +5,11 @@ import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { setApplicationStatus, upsertApplication } from '@/lib/jobApplications';
 import InterviewInviteModal from './InterviewInviteModal';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
+import toast from 'react-hot-toast';
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -18,9 +19,11 @@ interface CandidateDetailProps {
   onRemoveCandidate?: () => void;
   onUpdateCandidate?: (updatedCandidate: Candidate) => void;
   userApplications?: any[];
+  /** Post ID this candidate list is currently filtered to (set only when reached via the Posts module). Gates the "Send Interview Invite" action. */
+  activePostId?: string | null;
 }
 
-export default function CandidateDetail({ candidate: initialCandidate, onBack, onEdit, onInviteSent, onRemoveCandidate, onUpdateCandidate, userApplications }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate: initialCandidate, onBack, onEdit, onInviteSent, onRemoveCandidate, onUpdateCandidate, userApplications, activePostId }: CandidateDetailProps) {
   const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -78,15 +81,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       const isJobApplicant = !!(candidate as any).postId;
 
       if (isJobApplicant) {
-        // Registered user / job applicant — update Supabase
-        const { error } = await supabase
-          .from('job_applications')
-          .update({ status: 'shortlisted' })
-          .eq('user_id', candidate.id)
-          .eq('post_id', shortlistPostId);
-        if (error) throw error;
+        // Registered user / job applicant — update existing application
+        await setApplicationStatus(shortlistPostId, candidate.id, 'shortlisted');
       } else {
-        // Manual candidate — update Firestore + Supabase
+        // Manual candidate — update Firestore + create application
         const candidateRef = doc(db, 'candidates', candidate.id);
         await import('firebase/firestore').then(({ updateDoc }) =>
           updateDoc(candidateRef, {
@@ -96,15 +94,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
           })
         );
 
-        const { error: appError } = await supabase
-          .from('job_applications')
-          .upsert({
-            user_id: candidate.id,
-            post_id: shortlistPostId,
-            status: 'shortlisted',
-            created_at: new Date().toISOString(),
-          }, { onConflict: 'user_id, post_id' });
-        if (appError) throw appError;
+        await upsertApplication(shortlistPostId, candidate.id, 'shortlisted');
       }
 
       // Update local candidate state
@@ -139,7 +129,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 <h2 className="text-xl font-bold text-gray-900">
                   {candidate.name}{candidate.role && ` - ${candidate.role}`}
                 </h2>
-                {candidate.email && (
+                {candidate.email && activePostId && (
                   <button
                     onClick={() => setShowInviteModal(true)}
                     className="p-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all"
@@ -478,6 +468,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
           candidate={candidate}
           onClose={() => setShowInviteModal(false)}
           onSent={onInviteSent}
+          defaultPostId={activePostId}
         />
       )}
 

@@ -38,7 +38,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
     return (
         <div
             onClick={handleClick}
-            className="group relative bg-white rounded-2xl border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group relative bg-white rounded-lg border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             {/* Top Accent Line */}
             <div className={`h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />

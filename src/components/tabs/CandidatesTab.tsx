@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { getApplicantCounts, getPostApplications, getAllApplications, getUserApplications } from '@/lib/jobApplications';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
 
@@ -112,14 +112,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                     });
                 }
 
-                // Fetch applicant counts from Supabase
-                const { data: allApps } = await supabase.from('job_applications').select('post_id');
-                const counts: Record<string, number> = {};
-                if (allApps) {
-                    allApps.forEach((app: any) => {
-                        counts[app.post_id] = (counts[app.post_id] || 0) + 1;
-                    });
-                }
+                // Fetch applicant counts
+                const counts: Record<string, number> = await getApplicantCounts();
 
                 // Add counts from Firestore uploaded candidates
                 const candSnap = await getDocs(collection(db, 'candidates'));
@@ -236,19 +230,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
             console.log(`[DEBUG] Found ${allCandidates.length} manually uploaded candidates for this post`);
 
-            // 2. Fetch applications from Supabase (include all statuses)
-            const { data: apps, error: appsError } = await supabase
-                .from('job_applications')
-                .select('user_id, status')
-                .eq('post_id', postId);
-
-            if (appsError) {
-                console.error('[DEBUG] Supabase apps fetch error:', appsError);
+            // 2. Fetch applications (include all statuses)
+            let apps: { user_id: string; status: string }[] = [];
+            try {
+                apps = await getPostApplications(postId);
+            } catch (appsError) {
+                console.error('[DEBUG] job_applications fetch error:', appsError);
                 // Don't throw — uploaded candidates are in Firestore only
             }
 
             if (!apps || apps.length === 0) {
-                console.log('[DEBUG] No applicants found for this post in Supabase.');
+                console.log('[DEBUG] No applicants found for this post.');
                 if (allCandidates.length === 0) {
                     setFilteredCandidates([]);
                     return;
@@ -288,8 +280,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 education: [],
                                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                                 updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-                                postId: postId, // Add postId for Supabase updates
-                                status: appStatus as any, // Add status from Supabase
+                                postId: postId,
+                                status: appStatus as any,
                                 rankings: data.rankings // Include AI rankings
                             } as Candidate);
                         }
@@ -354,23 +346,21 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             setRegisteredUsers(users);
 
             // Fetch all applications to determine applied dates
-            const { data: allApps, error: appsError } = await supabase
-                .from('job_applications')
-                .select('user_id, created_at');
-
-            if (appsError) {
-                console.error('[DateFilter] Error fetching apps:', appsError);
-            } else if (allApps) {
+            try {
+                const allApps = await getAllApplications();
                 console.log(`[DateFilter] Fetched ${allApps.length} applications.`);
                 const datesMap: Record<string, Date[]> = {};
                 allApps.forEach(app => {
                     if (app.user_id && app.created_at) {
                         if (!datesMap[app.user_id]) datesMap[app.user_id] = [];
-                        datesMap[app.user_id].push(new Date(app.created_at));
+                        const createdAt: any = app.created_at;
+                        datesMap[app.user_id].push(createdAt?.toDate ? createdAt.toDate() : new Date(createdAt));
                     }
                 });
                 console.log(`[DateFilter] Constructed datesMap for ${Object.keys(datesMap).length} users.`);
                 setUserAppDates(datesMap);
+            } catch (appsError) {
+                console.error('[DateFilter] Error fetching apps:', appsError);
             }
 
         } catch (error) {
@@ -384,12 +374,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // Fetch job applications for a specific user
     const fetchUserApplications = async (userId: string) => {
         try {
-            const { data: applications, error } = await supabase
-                .from('job_applications')
-                .select('post_id, status, created_at')
-                .eq('user_id', userId);
-
-            if (error) throw error;
+            const applications = await getUserApplications(userId);
 
             if (applications && applications.length > 0) {
                 // Fetch job post details for each application
@@ -518,6 +503,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                         setSelectedCandidate(null);
                     }}
                     userApplications={viewMode === 'registered-users' ? userApplications : undefined}
+                    activePostId={postId}
                 />
             ) : (
                 <>

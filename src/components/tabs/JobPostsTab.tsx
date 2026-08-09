@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query as fsQuery, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
@@ -47,20 +47,8 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 });
             }
 
-            // 2. Fetch all applications from Supabase to count them
-            const { data: apps, error: appsError } = await supabase
-                .from('job_applications')
-                .select('post_id');
-
-            if (appsError) {
-                console.error('Error fetching application counts:', appsError);
-            }
-
-            // 3. Map counts from Supabase
-            const counts: Record<string, number> = {};
-            apps?.forEach(app => {
-                counts[app.post_id] = (counts[app.post_id] || 0) + 1;
-            });
+            // 2. Fetch application counts (Firestore job_applications)
+            const counts: Record<string, number> = await getApplicantCounts();
 
             // 4. Add counts from Firestore uploaded candidates
             const candSnap = await getDocs(collection(db, 'candidates'));
@@ -130,7 +118,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     );
 
     return (
-        <>
+        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-white flex-1 flex flex-col h-full overflow-hidden">
             {selectedPost ? (
                 <RecruitmentDetailView
                     recruitment={selectedPost}
@@ -149,9 +137,9 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                     }}
                 />
             ) : (
-                <div className="space-y-6 flex-1 flex flex-col">
-                    {/* Header Section */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6">
+                <div className="flex-1 flex flex-col min-h-0">
+                    {/* Header Section - static, does not scroll */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6 flex-shrink-0">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             {/* Title and Count */}
                             <div>
@@ -189,8 +177,8 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
                         </div>
                     </div>
-                    {/* Posts Grid */}
-                    <div className="flex-1">
+                    {/* Posts Grid - the only scrollable region */}
+                    <div className="flex-1 overflow-y-auto min-h-0">
                         {loadingPosts ? (
                             <div className="flex justify-center items-center h-64">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
@@ -230,6 +218,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 }}
                 initialData={editingPost}
             />
-        </>
+        </div>
     );
 }

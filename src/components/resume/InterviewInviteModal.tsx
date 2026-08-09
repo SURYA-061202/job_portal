@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { supabase } from '@/lib/supabase';
+import { sendInterviewInvite } from '@/lib/emailFunctions';
+import { upsertApplication, setApplicationStatus } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
@@ -11,9 +12,11 @@ interface Props {
   candidate: Candidate;
   onClose: () => void;
   onSent?: () => void;
+  /** Post to pre-select for manual candidates (the post whose candidate list this invite was opened from). */
+  defaultPostId?: string | null;
 }
 
-export default function InterviewInviteModal({ candidate, onClose, onSent }: Props) {
+export default function InterviewInviteModal({ candidate, onClose, onSent, defaultPostId }: Props) {
   const [role, setRole] = useState(candidate.role || '');
   const [dates, setDates] = useState<string[]>(['', '', '']);
   const [roundType, setRoundType] = useState('Technical');
@@ -46,6 +49,13 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
           const snapshot = await getDocs(q);
           const fetchedJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
           setJobPosts(fetchedJobs);
+
+          // Default to the post this invite was opened from, if any
+          if (defaultPostId) {
+            setSelectedPostId(defaultPostId);
+            const defaultJob = fetchedJobs.find(j => j.id === defaultPostId);
+            if (defaultJob) setRole(defaultJob.jobTitle);
+          }
         } catch (error) {
           console.error('Error fetching jobs:', error);
         } finally {
@@ -54,7 +64,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
       };
       fetchJobs();
     }
-  }, [candidate]);
+  }, [candidate, defaultPostId]);
 
   const handlePostChange = (postId: string) => {
     setSelectedPostId(postId);
@@ -79,20 +89,14 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
     try {
       setLoading(true);
       const effectivePostId = isJobApplicant ? (candidate as any).postId : selectedPostId;
-      const { data, error } = await supabase.functions.invoke('send_interview_invite', {
-        body: {
-          candidate,
-          interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl, postId: effectivePostId },
-          baseUrl: interviewurl,
-        },
+      await sendInterviewInvite({
+        candidate,
+        interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl, postId: effectivePostId },
+        baseUrl: interviewurl,
       });
 
-      if (error || !data?.success) throw new Error(error?.message || data?.error || 'Failed to send');
-
-      // Determine if this is a manually uploaded candidate or a job applicant
-      // Job applicants have postId (set when fetching from job_applications)
-      // Manual candidates are in the 'candidates' collection without postId
-      const isJobApplicant = !!(candidate as any).postId;
+      // isJobApplicant (declared above): job applicants have postId (set when fetching
+      // from job_applications); manual candidates are in the 'candidates' collection without postId
 
       if (!isJobApplicant) {
         try {
@@ -119,45 +123,22 @@ export default function InterviewInviteModal({ candidate, onClose, onSent }: Pro
             });
           }
 
-          // Also create a job_application in Supabase to make it show up in the specific post view
-          const { error: appError } = await supabase
-            .from('job_applications')
-            .upsert({
-              user_id: candidate.id,
-              post_id: selectedPostId,
-              status: 'shortlisted',
-              created_at: new Date().toISOString()
-            }, { onConflict: 'user_id, post_id' });
-
-          if (appError) {
-            console.error('Error creating job application in Supabase:', appError);
-            toast.error(`Supabase Sync Error: ${appError.message}`);
+          // Also create a job_application to make it show up in the specific post view
+          try {
+            await upsertApplication(selectedPostId, candidate.id, 'shortlisted');
+          } catch (appError: any) {
+            console.error('Error creating job application:', appError);
+            toast.error(`Sync Error: ${appError.message}`);
           }
 
         } catch (err) {
           console.error('Failed to update candidate after sending invite', err);
         }
       } else {
-        // Update job application status in Supabase for job applicants
+        // Update job application status for job applicants
         try {
           console.log('[InterviewInvite] Updating application:', { user_id: candidate.id, post_id: (candidate as any).postId });
-
-          let query = supabase
-            .from('job_applications')
-            .update({ status: 'shortlisted' })
-            .eq('user_id', candidate.id);
-
-          if ((candidate as any).postId) {
-            query = query.eq('post_id', (candidate as any).postId);
-          }
-
-          const { error: updateError, data: updateData } = await query.select();
-
-          if (updateError) {
-            console.error('[InterviewInvite] Failed to update:', updateError);
-          } else {
-            console.log('[InterviewInvite] Successfully updated:', updateData);
-          }
+          await setApplicationStatus((candidate as any).postId, candidate.id, 'shortlisted');
         } catch (err) {
           console.error('Failed to update job application after sending invite', err);
         }

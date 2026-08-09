@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion, where } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
 
@@ -76,12 +77,7 @@ export default function UserDashboard() {
         try {
             setLoading(true);
 
-            const appsQuery = query(
-                collection(db, 'job_applications'),
-                where('user_id', '==', user.uid)
-            );
-            const appsSnap = await getDocs(appsQuery);
-            const apps = appsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const apps = await getUserApplications(user.uid);
 
             const detailedApplications = await Promise.all(apps.map(async (app: any) => {
                 try {
@@ -104,14 +100,7 @@ export default function UserDashboard() {
 
             setApplications(detailedApplications.filter(Boolean));
 
-            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
-            const counts: Record<string, number> = {};
-            allAppsSnap.docs.forEach(d => {
-                const data = d.data();
-                if (data.post_id) {
-                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
-                }
-            });
+            const counts = await getApplicantCounts();
             setApplicantCounts(counts);
 
         } catch (error: any) {
@@ -134,14 +123,7 @@ export default function UserDashboard() {
                 ...doc.data()
             })) as RecruitmentRequest[];
 
-            const allAppsSnap = await getDocs(collection(db, 'job_applications'));
-            const counts: Record<string, number> = {};
-            allAppsSnap.docs.forEach(d => {
-                const data = d.data();
-                if (data.post_id) {
-                    counts[data.post_id] = (counts[data.post_id] || 0) + 1;
-                }
-            });
+            const counts = await getApplicantCounts();
             setApplicantCounts(counts);
 
             const merged = postsData.map(post => ({
@@ -490,7 +472,7 @@ export default function UserDashboard() {
                         <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20">
-                                    <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                                    <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
                                     <p className="text-gray-500 font-medium">Loading content...</p>
                                 </div>
                             ) : activeTab === 'jobs' ? (
@@ -528,7 +510,7 @@ export default function UserDashboard() {
                                         </p>
                                         <button
                                             onClick={() => navigate('/jobs')}
-                                            className="inline-flex items-center px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all"
+                                            className="inline-flex items-center px-6 py-2.5 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-all"
                                         >
                                             Browse Jobs
                                         </button>

@@ -3,9 +3,10 @@ import {
   query,
   where,
   getDocs,
-  addDoc,
+  setDoc,
   deleteDoc,
   doc,
+  getDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
@@ -15,8 +16,12 @@ export interface JobApplication {
   id: string;
   post_id: string;
   user_id: string;
-  status: 'applied' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired';
+  status: string;
   created_at: Timestamp;
+}
+
+function applicationId(postId: string, userId: string) {
+  return `${postId}_${userId}`;
 }
 
 // Check if user has already applied for a job
@@ -24,13 +29,8 @@ export async function hasUserApplied(
   postId: string,
   userId: string
 ): Promise<boolean> {
-  const q = query(
-    collection(db, 'job_applications'),
-    where('post_id', '==', postId),
-    where('user_id', '==', userId)
-  );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  const snap = await getDoc(doc(db, 'job_applications', applicationId(postId, userId)));
+  return snap.exists();
 }
 
 // Apply for a job
@@ -38,13 +38,12 @@ export async function applyForJob(
   postId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
-  // Check for duplicate
   const exists = await hasUserApplied(postId, userId);
   if (exists) {
     return { success: false, error: 'You have already applied for this position.' };
   }
 
-  await addDoc(collection(db, 'job_applications'), {
+  await setDoc(doc(db, 'job_applications', applicationId(postId, userId)), {
     post_id: postId,
     user_id: userId,
     status: 'applied',
@@ -52,6 +51,38 @@ export async function applyForJob(
   });
 
   return { success: true };
+}
+
+// Create or update an application's status, keyed by the (postId, userId) pair
+export async function upsertApplication(
+  postId: string,
+  userId: string,
+  status: string
+): Promise<void> {
+  await setDoc(
+    doc(db, 'job_applications', applicationId(postId, userId)),
+    {
+      post_id: postId,
+      user_id: userId,
+      status,
+      created_at: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+// Update an existing application's status. Uses a merge-set rather than
+// updateDoc so it never throws if the underlying doc doesn't exist yet.
+export async function setApplicationStatus(
+  postId: string,
+  userId: string,
+  status: string
+): Promise<void> {
+  await setDoc(
+    doc(db, 'job_applications', applicationId(postId, userId)),
+    { status },
+    { merge: true }
+  );
 }
 
 // Get all applications for a user
@@ -106,15 +137,11 @@ export async function withdrawApplication(
   postId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const q = query(
-    collection(db, 'job_applications'),
-    where('post_id', '==', postId),
-    where('user_id', '==', userId)
-  );
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) {
+  const appRef = doc(db, 'job_applications', applicationId(postId, userId));
+  const snap = await getDoc(appRef);
+  if (!snap.exists()) {
     return { success: false, error: 'Application not found.' };
   }
-  await deleteDoc(doc(db, 'job_applications', snapshot.docs[0].id));
+  await deleteDoc(appRef);
   return { success: true };
 }

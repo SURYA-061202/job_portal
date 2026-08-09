@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { getAllApplications, upsertApplication, setApplicationStatus } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import { toast } from 'react-hot-toast';
 import { User, X, ArrowRight, Trash2, Search, Loader2, Briefcase as BriefcaseIcon, Tag, ChevronDown, ChevronUp } from 'lucide-react';
@@ -42,7 +42,7 @@ const getIconColor = (columnId: string) => {
 //  - 'registered'  : a platform job-seeker who hasn't applied/been shortlisted to any
 //                    of this recruiter's posts yet (Firestore `users` doc, no status yet).
 //  - 'applicant'   : anyone (uploaded candidate or registered user) once they've been
-//                    shortlisted to a specific post (status lives in Supabase job_applications).
+//                    shortlisted to a specific post (status lives in the job_applications collection).
 type PipelineItem = {
     key: string;
     id: string;
@@ -147,11 +147,12 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
             // and uploaded candidates once shortlisted to a post.
             let apps: { user_id: string; post_id: string; status: string }[] = [];
             if (isAdmin || ownedPostIds.length > 0) {
-                let appsQuery = supabase.from('job_applications').select('user_id, post_id, status');
-                if (!isAdmin) appsQuery = appsQuery.in('post_id', ownedPostIds);
-                const { data, error } = await appsQuery;
-                if (error) console.error('Error fetching applications:', error);
-                apps = data || [];
+                try {
+                    apps = await getAllApplications();
+                    if (!isAdmin) apps = apps.filter(app => ownedPostIds.includes(app.post_id));
+                } catch (error) {
+                    console.error('Error fetching applications:', error);
+                }
             }
 
             const appliedRegisteredIds = new Set<string>();
@@ -212,17 +213,12 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     };
 
     // Status changes for items that already have a post association (source 'applicant',
-    // or 'manual' once shortlisted) go to Supabase; raw uploaded-but-unshortlisted
+    // or 'manual' once shortlisted) go to job_applications; raw uploaded-but-unshortlisted
     // 'manual' items are updated directly in Firestore.
     const updateStatus = async (item: PipelineItem, newStatus: string) => {
         try {
             if (item.postId) {
-                const { error } = await supabase
-                    .from('job_applications')
-                    .update({ status: newStatus })
-                    .eq('user_id', item.id)
-                    .eq('post_id', item.postId);
-                if (error) throw error;
+                await setApplicationStatus(item.postId, item.id, newStatus);
             } else if (item.source === 'manual') {
                 await updateDoc(doc(db, 'candidates', item.id), { status: newStatus, updatedAt: new Date() });
             } else {
@@ -267,15 +263,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                     updatedAt: new Date(),
                 });
             }
-            const { error } = await supabase
-                .from('job_applications')
-                .upsert({
-                    user_id: pickerItem.id,
-                    post_id: pickerPostId,
-                    status: 'shortlisted',
-                    created_at: new Date().toISOString(),
-                }, { onConflict: 'user_id, post_id' });
-            if (error) throw error;
+            await upsertApplication(pickerPostId, pickerItem.id, 'shortlisted');
 
             toast.success('Shortlisted');
             setPickerItem(null);

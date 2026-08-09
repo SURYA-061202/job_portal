@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { supabase } from "@/lib/supabase";
+import { getAllApplications } from "@/lib/jobApplications";
 import type { Candidate } from "@/types";
 import type { RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
@@ -60,7 +60,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         return Number(dateB) - Number(dateA);
       });
 
-      // 2. Fetch from Supabase job_applications
+      // 2. Fetch job applications currently in an interview round or selected
       let ownedPostIds: string[] = [];
       if (!isAdmin && userId) {
         const recruitsQs = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
@@ -73,20 +73,19 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         }
       }
 
-      let supabaseQuery = supabase
-        .from('job_applications')
-        .select('user_id, post_id, status')
-        .or('status.eq.round1,status.eq.round2,status.eq.round3,status.eq.round4,status.eq.round5,status.eq.round6,status.eq.round7,status.eq.round8,status.eq.round9,status.eq.selected');
-
-      if (!isAdmin && ownedPostIds.length > 0) {
-        supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
+      let applications: { user_id: string; post_id: string; status: string }[] = [];
+      try {
+        applications = (await getAllApplications()).filter(app => {
+          const isRoundOrSelected = /^round\d+$/.test(app.status) || app.status === 'selected';
+          if (!isRoundOrSelected) return false;
+          if (!isAdmin && ownedPostIds.length > 0 && !ownedPostIds.includes(app.post_id)) return false;
+          return true;
+        });
+      } catch (appsError) {
+        console.error('Error fetching applications:', appsError);
       }
 
-      const { data: applications, error: appsError } = await supabaseQuery;
-
-      if (appsError) {
-        console.error('Error fetching Supabase applications:', appsError);
-      } else if (applications && applications.length > 0) {
+      if (applications && applications.length > 0) {
         for (const app of applications) {
           try {
             const userDoc = await getDoc(doc(db, 'users', app.user_id));

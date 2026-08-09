@@ -184,7 +184,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             console.error('Error uploading resume:', error);
 
             if (error.message && error.message.includes('Storage policy')) {
-                toast.error('Storage configuration issue. Please check Supabase settings.');
+                toast.error('Storage configuration issue. Please check Firebase Storage settings.');
             } else {
                 toast.error(error.message || 'Failed to upload resume');
             }

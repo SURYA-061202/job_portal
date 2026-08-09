@@ -2,7 +2,7 @@ import { db } from './firebase';
 import openai from './openai';
 import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import type { Candidate, RecruitmentRequest } from '@/types';
-import { supabase } from './supabase';
+import { getPostApplications } from './jobApplications';
 
 export async function rankCandidatesForJob(jobId: string) {
     try {
@@ -23,16 +23,10 @@ export async function rankCandidatesForJob(jobId: string) {
     `;
 
         // 2. Fetch Applicants for this Job
-        // First get the user_ids from supabase job_applications table
-        const { data: apps, error: appsError } = await supabase
-            .from('job_applications')
-            .select('user_id')
-            .eq('post_id', jobId);
-
-        if (appsError) throw appsError;
+        const apps = await getPostApplications(jobId);
         if (!apps || apps.length === 0) return { success: true, message: 'No applicants to rank', count: 0 };
 
-        const userIds = apps.map(a => (a as any).user_id);
+        const userIds = apps.map(a => a.user_id);
 
         let processedCount = 0;
 

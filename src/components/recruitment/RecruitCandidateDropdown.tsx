@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { supabase } from '@/lib/supabase';
+import { upsertApplication } from '@/lib/jobApplications';
 import { UserPlus, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -108,14 +108,8 @@ export default function RecruitCandidateDropdown({
             const registeredIds = new Set(registeredOptions.map(o => o.id));
             for (const id of selected) {
                 if (registeredIds.has(id)) {
-                    // Registered user — create application in Supabase
-                    const { error } = await supabase.from('job_applications').upsert({
-                        user_id: id,
-                        post_id: postId,
-                        status: 'pending',
-                        created_at: new Date().toISOString(),
-                    }, { onConflict: 'user_id, post_id' });
-                    if (error) throw error;
+                    // Registered user — create application
+                    await upsertApplication(postId, id, 'pending');
                 } else {
                     // Manually uploaded candidate — tie them to this post in Firestore
                     await updateDoc(doc(db, 'candidates', id), {
@@ -123,14 +117,8 @@ export default function RecruitCandidateDropdown({
                         status: 'pending',
                         updatedAt: new Date(),
                     });
-                    // Also create a job_applications row in Supabase so the pipeline can track them
-                    const { error } = await supabase.from('job_applications').upsert({
-                        user_id: id,
-                        post_id: postId,
-                        status: 'pending',
-                        created_at: new Date().toISOString(),
-                    }, { onConflict: 'user_id, post_id' });
-                    if (error) throw error;
+                    // Also create a job_applications row so the pipeline can track them
+                    await upsertApplication(postId, id, 'pending');
                 }
             }
             toast.success(`Recruited ${selected.size} candidate${selected.size > 1 ? 's' : ''}`);

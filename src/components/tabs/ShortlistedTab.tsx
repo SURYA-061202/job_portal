@@ -5,7 +5,8 @@ import type { Candidate, RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
 import { ArrowLeft, Calendar, Briefcase, MapPin } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { sendVerifyDetails, sendRoundInvite } from "@/lib/emailFunctions";
+import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
 export default function ShortlistedTab({ candidateId, onBack, userRole, userId }: { candidateId?: string | null; onBack?: () => void; userRole?: string | null; userId?: string | null } = {}) {
@@ -50,27 +51,25 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         return Number(dateB) - Number(dateA);
       });
 
-      // 2. Fetch shortlisted job applicants from Supabase, scoped to owned posts
+      // 2. Fetch shortlisted job applicants, scoped to owned posts
       if (!isAdmin && ownedPostIds.length === 0) {
         setCandidates(allCandidates);
         setLoading(false);
         return;
       }
 
-      let supabaseQuery = supabase
-        .from('job_applications')
-        .select('user_id, post_id')
-        .eq('status', 'shortlisted');
-
-      if (!isAdmin) {
-        supabaseQuery = supabaseQuery.in('post_id', ownedPostIds);
+      let applications: { user_id: string; post_id: string }[] = [];
+      try {
+        applications = (await getAllApplications()).filter(app => {
+          if (app.status !== 'shortlisted') return false;
+          if (!isAdmin && !ownedPostIds.includes(app.post_id)) return false;
+          return true;
+        });
+      } catch (appsError) {
+        console.error('Error fetching shortlisted applications:', appsError);
       }
 
-      const { data: applications, error: appsError } = await supabaseQuery;
-
-      if (appsError) {
-        console.error('Error fetching shortlisted applications:', appsError);
-      } else if (applications && applications.length > 0) {
+      if (applications && applications.length > 0) {
         // Fetch user details for each shortlisted applicant
         for (const app of applications) {
           try {
@@ -279,13 +278,10 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
     setSending(true);
     try {
       const interviewurl = `${window.location.origin}`;
-      const { data, error } = await supabase.functions.invoke("send_verify_details", {
-        body: {
-          candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
-          baseUrl: interviewurl,
-        },
+      await sendVerifyDetails({
+        candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+        baseUrl: interviewurl,
       });
-      if (error || !data?.success) throw new Error(error?.message || data?.error || "Failed to send mail");
 
       // Mark that verify details mail sent in interview doc (create if needed)
       const interviewRef = doc(db, "interviews", candidate.id);
@@ -320,13 +316,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
       const effectiveRoundName = roundName.trim() || 'Round 1';
       const applicantPostId = (candidate as any).postId;
       if (applicantPostId) {
-        const { error } = await supabase
-          .from('job_applications')
-          .update({ status: 'round1' })
-          .eq('user_id', candidate.id)
-          .eq('post_id', applicantPostId);
-          
-        if (error) throw error;
+        await setApplicationStatus(applicantPostId, candidate.id, 'round1');
       } else {
         await updateDoc(doc(db, "candidates", candidate.id), { status: "round1", updatedAt: new Date() });
       }
@@ -348,14 +338,12 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
       // Send round invite email
       try {
         const baseUrl = window.location.origin;
-        await supabase.functions.invoke('send_round_invite', {
-          body: {
-            candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
-            roundName: effectiveRoundName,
-            roundNumber: 1,
-            role: candidate.role || 'the position',
-            baseUrl
-          }
+        await sendRoundInvite({
+          candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+          roundName: effectiveRoundName,
+          roundNumber: 1,
+          role: candidate.role || 'the position',
+          baseUrl,
         });
       } catch (emailErr) {
         console.error('Failed to send round email:', emailErr);

@@ -131,7 +131,7 @@ export default function MatchingJobs() {
                         </p>
                         <button 
                             onClick={() => navigate('/home?tab=profile')}
-                            className="inline-flex items-center px-8 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all shadow-lg shadow-gray-200"
+                            className="inline-flex items-center px-8 py-3 bg-orange-600 text-white font-bold rounded-2xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-200"
                         >
                             Update Profile
                         </button>
