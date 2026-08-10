@@ -1,0 +1,52 @@
+/* ============================================================================
+   Application theme tokens.
+
+   Single source of truth for the brand colours. This is a Tailwind v4 @theme
+   block, so every token below is automatically available as a utility class:
+
+     bg-brand-500   text-brand-600   border-brand-200   ring-brand-500/20
+     bg-surface     bg-surface-muted  border-surface-border
+
+   Imported once from src/index.css. To retheme the app, change the values
+   here — nothing else needs to be touched.
+   ============================================================================ */
+
+@theme {
+  /* --- Brand orange -------------------------------------------------------
+     500 is the reference brand colour: #FE6700.
+     The rest of the ramp is derived from it (same hue 24deg, same 100%
+     saturation, lightness stepped) so tints and shades stay on-brand.        */
+  --color-brand-50: #fff3eb;
+  --color-brand-100: #ffe4d1;
+  --color-brand-200: #ffc9a3;
+  --color-brand-300: #ffaa70;
+  --color-brand-400: #ff8938;
+  --color-brand-500: #fe6700;
+  --color-brand-600: #e05b00;
+  --color-brand-700: #b84a00;
+  --color-brand-800: #943c00;
+  --color-brand-900: #7a3200;
+  --color-brand-950: #471d00;
+
+  /* --- Surfaces -----------------------------------------------------------
+     The white the Posts module sits on, plus the neutrals that pair with it
+     (input fill and hairline borders).                                       */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
+  --color-surface-border: #e5e7eb;
+}
+
+@layer utilities {
+  /* Brand fill. Deliberately flat rather than a gradient so the rendered
+     colour is exactly the brand colour, not a blend that merely passes
+     through it. Keeps the historic class name so call sites need no change. */
+  .bg-brand-gradient {
+    background: var(--color-brand-500);
+  }
+
+  .text-brand-gradient {
+    background-image: none;
+    -webkit-text-fill-color: currentcolor;
+    color: var(--color-brand-500);
+  }
+}

@@ -178,6 +178,11 @@ export default function Dashboard() {
     );
   }
 
+  // Tabs that manage their own internal scrolling (fixed header + scrollable body).
+  // For these, <main> must not scroll, and the content wrapper needs min-h-0 so the
+  // flex chain resolves to a bounded height instead of growing with its content.
+  const isSelfScrollingTab = activeTab === 'job-posts';
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       {/* Mobile Hamburger Menu Button */}
@@ -217,7 +222,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <main className="flex-1 overflow-auto thin-scrollbar flex flex-col relative w-full md:w-auto pl-0 md:pl-0">
+      <main className={`flex-1 ${isSelfScrollingTab ? 'overflow-hidden' : 'overflow-auto'} thin-scrollbar flex flex-col relative w-full md:w-auto pl-0 md:pl-0`}>
         {/* Gradient Background with Dotted Patterns */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Soft gradient overlay - top to bottom */}
@@ -259,7 +264,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="p-4 md:p-6 flex-1 flex flex-col relative z-10 pt-16 md:pt-6">{renderTabContent()}</div>
+        <div className={`p-4 md:p-6 flex-1 flex flex-col relative z-10 pt-16 md:pt-6 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
       </main>
     </div>
   );

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* Brand theme tokens (brand-* / surface-* utilities). See src/styles/theme.css.
+   Must stay up here with the other @import - CSS requires @import to precede
+   all other statements, so it cannot go below @config. */
+@import "./styles/theme.css";
 @config "../tailwind.config.cjs";
 
 /* Remove Vite template boilerplate styles that conflict with app layout */
@@ -57,15 +61,17 @@ body {
     text-wrap: balance;
   }
 
+  /* Deprecated aliases - kept so modules not yet migrated to the theme still
+     render the brand orange. Prefer .bg-brand-gradient / .text-brand-gradient
+     from src/styles/theme.css for new work. */
   .bg-orange-gradient {
-    background: linear-gradient(to bottom right, #de923b, #e73c11, #df5f04);
+    background: var(--color-brand-500);
   }
 
   .text-orange-gradient {
-    background: linear-gradient(to right, #de923b, #e73c11, #df5f04);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    background-image: none;
+    -webkit-text-fill-color: currentcolor;
+    color: var(--color-brand-500);
   }
 
   /* Alias for semantic naming */

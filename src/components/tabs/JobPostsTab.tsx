@@ -105,7 +105,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     if (isRestoring) {
         return (
             <div className="flex justify-center items-center h-full min-h-[500px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500" />
             </div>
         );
     }
@@ -118,7 +118,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     );
 
     return (
-        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-white flex-1 flex flex-col h-full overflow-hidden">
+        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface flex-1 min-h-0 flex flex-col overflow-hidden">
             {selectedPost ? (
                 <RecruitmentDetailView
                     recruitment={selectedPost}
@@ -139,7 +139,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Header Section - static, does not scroll */}
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6 flex-shrink-0">
+                    <div className="bg-surface p-4 rounded-lg border border-surface-border mb-6 flex-shrink-0">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             {/* Title and Count */}
                             <div>
@@ -161,14 +161,14 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     <input
                                         type="text"
                                         placeholder="Search posts..."
-                                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                                        className="block w-full pl-10 pr-3 py-2 border border-surface-border rounded-lg leading-5 bg-surface-muted placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 sm:text-sm transition-all duration-200"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
                                 <button
                                     onClick={() => setIsRecruitmentModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20"
+                                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all whitespace-nowrap bg-brand-gradient text-white hover:shadow-lg hover:shadow-brand-500/20"
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span className="hidden sm:inline">Add Post</span>
@@ -177,14 +177,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
                         </div>
                     </div>
-                    {/* Posts Grid - the only scrollable region */}
-                    <div className="flex-1 overflow-y-auto min-h-0">
+                    {/* Posts Grid - the only scrollable region. The mb-6 on the header
+                        above sits outside this box, so that gap is never scrolled into. */}
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
                         {loadingPosts ? (
                             <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500" />
                             </div>
                         ) : filteredRecruitmentRequests.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
+                            <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-gray-300">
                                 <p className="text-gray-500">No recruitment requests found.</p>
                             </div>
                         ) : (

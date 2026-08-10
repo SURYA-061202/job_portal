@@ -132,7 +132,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             'bg-blue-50 text-blue-700 border-blue-100',
             'bg-purple-50 text-purple-700 border-purple-100',
             'bg-pink-50 text-pink-700 border-pink-100',
-            'bg-orange-50 text-orange-700 border-orange-100',
+            'bg-brand-50 text-brand-700 border-brand-100',
             'bg-emerald-50 text-emerald-700 border-emerald-100',
             'bg-indigo-50 text-indigo-700 border-indigo-100',
         ];
@@ -142,12 +142,12 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
             {/* Header */}
-            <div className="bg-white shrink-0 rounded-xl border border-gray-200">
+            <div className="bg-surface shrink-0 rounded-xl border border-surface-border">
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-start gap-3 sm:gap-4 md:gap-5">
                     {/* Back Button */}
                     <button
                         onClick={onBack}
-                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white border border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 rounded-xl transition-all group flex-shrink-0 mt-1"
+                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-surface border border-surface-border text-gray-500 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 rounded-xl transition-all group flex-shrink-0 mt-1"
                         title="Go Back"
                     >
                         <ChevronLeft className="w-4.5 h-4.5 group-hover:-translate-x-0.5 transition-transform" />
@@ -161,7 +161,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             </h1>
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className="p-1.5 rounded-full transition-all bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
+                                className="p-1.5 rounded-full transition-all bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:shadow-lg hover:shadow-brand-500/30 hover:scale-110 active:scale-95 flex-shrink-0"
                                 title="Share job"
                             >
                                 <Share2 className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 </button>
                                 <button
                                     onClick={() => onViewCandidates?.(recruitment.id!)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs font-bold rounded-lg"
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white text-xs font-bold rounded-lg"
                                 >
                                     <Users className="w-4 h-4" />
                                     <span>Candidates</span>
@@ -217,7 +217,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             <button
                                 onClick={handleApply}
                                 disabled={actionLoading}
-                                className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-brand-500/20 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
                             >
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Apply Now <Send className="w-3.5 h-3.5" /></>}
                             </button>
@@ -239,11 +239,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     {/* Key Info Row */}
                     <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
                         <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-blue-50/50 border-blue-200 text-blue-900" labelColor="text-blue-500" />
-                        <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-orange-50/50 border-orange-200 text-orange-900" labelColor="text-orange-500" />
+                        <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-brand-50/50 border-brand-200 text-brand-900" labelColor="text-brand-500" />
                         <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-pink-50/50 border-pink-200 text-pink-900" labelColor="text-pink-500" />
                         <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-200 text-emerald-900" labelColor="text-emerald-500" />
                         {isManager && (recruitment as any).applicantCount !== undefined && (
-                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-orange-50/50 border-orange-200 text-orange-900" labelColor="text-orange-500" />
+                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-brand-50/50 border-brand-200 text-brand-900" labelColor="text-brand-500" />
                         )}
                     </div>
 
@@ -251,7 +251,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     <div className="p-6 sm:p-8 border border-gray-100 rounded-2xl space-y-4">
                         <h3 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">Requirements</h3>
                         <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                            Candidates should have a <span className="font-semibold text-gray-900 underline decoration-orange-500/30 decoration-2">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900 underline decoration-pink-500/30 decoration-2">{recruitment.department}</span> department.
+                            Candidates should have a <span className="font-semibold text-gray-900 underline decoration-brand-500/30 decoration-2">{recruitment.qualification}</span> qualification and be from the <span className="font-semibold text-gray-900 underline decoration-pink-500/30 decoration-2">{recruitment.department}</span> department.
                         </p>
                     </div>
 

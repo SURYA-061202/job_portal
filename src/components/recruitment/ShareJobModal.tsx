@@ -39,7 +39,7 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
                 </div>
 
                 {/* Job Title */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg border border-orange-200">
+                <div className="mb-6 p-4 bg-gradient-to-r from-brand-50 to-brand-100 rounded-lg border border-brand-200">
                     <p className="text-sm font-semibold text-gray-900 line-clamp-2">{jobTitle}</p>
                 </div>
 
@@ -51,13 +51,13 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
                             type="text"
                             value={shareUrl}
                             readOnly
-                            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            className="flex-1 px-4 py-3 bg-surface-muted border border-surface-border rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                         />
                         <button
                             onClick={handleCopyLink}
                             className={`px-5 py-3 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${copied
                                 ? 'bg-green-500 text-white'
-                                : 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95'
+                                : 'bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:shadow-lg hover:shadow-brand-500/30 hover:scale-105 active:scale-95'
                                 }`}
                         >
                             {copied ? (

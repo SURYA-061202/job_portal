@@ -38,10 +38,10 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
     return (
         <div
             onClick={handleClick}
-            className="group relative bg-white rounded-lg border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group relative bg-surface rounded-lg border border-surface-border hover:border-brand-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             {/* Top Accent Line */}
-            <div className={`h-1 w-full bg-gradient-to-r from-orange-500 to-pink-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
+            <div className={`h-1 w-full bg-gradient-to-r from-brand-500 to-brand-600 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
 
             <div className="p-4 sm:p-6 flex-1 flex flex-col">
                 {/* Header */}
@@ -69,7 +69,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                     <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Experience</span>
                         <div className="flex items-center text-xs sm:text-sm font-bold text-gray-700">
-                            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-orange-500" />
+                            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-brand-500" />
                             {recruitment.yearsExperience}
                         </div>
                     </div>
@@ -88,7 +88,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Key Skills</span>
                     <div className="flex flex-wrap gap-1.5">
                         {skills.map((skill, i) => (
-                            <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded">
+                            <span key={i} className="px-2 py-1 bg-surface border border-surface-border text-gray-600 text-[10px] font-bold rounded">
                                 {skill.trim()}
                             </span>
                         ))}
@@ -102,7 +102,7 @@ export default function RecruitmentCard({ recruitment, onClick, onViewDetails, a
                         {timeAgo(recruitment.createdAt)}
                     </div>
                     {applicantCount !== undefined && (
-                        <div className="flex items-center text-xs font-bold text-orange-600">
+                        <div className="flex items-center text-xs font-bold text-brand-600">
                             {applicantCount} Applicant{applicantCount !== 1 ? 's' : ''}
                         </div>
                     )}
