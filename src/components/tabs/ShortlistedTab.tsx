@@ -164,18 +164,18 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   if (!selectedPostView) {
     return (
       <div className="space-y-6">
-        <div className="bg-white p-4 rounded-xl border border-gray-200">
+        <div className="bg-surface p-4 rounded-xl border border-brand/20">
           <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
-          <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
+          <p className="text-sm text-brand">Select a job post to view its shortlisted candidates.</p>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-400">Loading…</div>
+          <div className="text-center py-12 text-brand">Loading…</div>
         ) : postsWithCounts.length === 0 ? (
-          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <div className="bg-surface rounded-xl border border-dashed border-brand/30 p-12 text-center">
+            <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900">No shortlisted candidates yet</h3>
-            <p className="mt-1 text-gray-500">Candidates you shortlist for your posts will appear here.</p>
+            <p className="mt-1 text-brand">Candidates you shortlist for your posts will appear here.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -183,30 +183,30 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
               <div
                 key={post.id}
                 onClick={() => setSelectedPostView(post)}
-                className="bg-white rounded-2xl border border-gray-200 hover:border-orange-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden group p-4 sm:p-6"
+                className="bg-surface rounded-2xl border border-brand/20 hover:border-brand/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden group p-4 sm:p-6"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">{post.jobTitle}</h3>
                   {post.positionLevel && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand/10 text-brand border border-brand/20 whitespace-nowrap">
                       {post.positionLevel}
                     </span>
                   )}
                 </div>
                 {post.department && (
-                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-2">
-                    <Briefcase className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                  <div className="flex items-center text-xs sm:text-sm text-brand font-medium mb-2">
+                    <Briefcase className="w-3.5 h-3.5 mr-1.5 text-brand" />
                     {post.department}
                   </div>
                 )}
                 {post.location && (
-                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
-                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                  <div className="flex items-center text-xs sm:text-sm text-brand font-medium mb-3">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-brand" />
                     {post.location}
                   </div>
                 )}
-                <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-orange-600">
+                <div className="mt-3 pt-3 border-t border-brand/10 flex items-center justify-between">
+                  <span className="text-xs font-bold text-brand">
                     {post.shortlistedCount} Shortlisted
                   </span>
                 </div>
@@ -365,7 +365,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
         <span>Back to List</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto p-6 space-y-4">
+      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
           <p className="text-gray-600 text-sm">
@@ -389,7 +389,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
                 <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Selected Date</th>
                 <td className="px-4 py-3">
                   {selectedDate && response === 'accept' ? (
-                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-primary-600" /> {selectedDate}</span>
+                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
                   ) : response && response !== 'accept' ? (
                     <span className="text-red-600">Candidate responded "{response}"</span>
                   ) : (
@@ -451,7 +451,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
                 value={roundName}
                 onChange={(e) => setRoundName(e.target.value)}
                 placeholder="Round name (e.g. Technical)"
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
               <button
                 disabled={moveLoading}
@@ -465,7 +465,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
           <button
             disabled={sending || sent}
             onClick={handleVerifyDetails}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium shadow ${sent ? "bg-gray-300 text-gray-600" : "bg-primary-600 text-white hover:bg-primary-700"} disabled:opacity-50`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium shadow ${sent ? "bg-gray-300 text-gray-600" : "bg-brand text-white hover:bg-brand"} disabled:opacity-50`}
           >
             {sending ? "Sending…" : sent ? "Sent" : "Verify Details"}
           </button>

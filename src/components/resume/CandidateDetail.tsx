@@ -113,7 +113,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
+      <div className="bg-surface p-4 rounded-xl border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Left: Back + Name/Role */}
           <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 {candidate.email && activePostId && (
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="p-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-lg hover:shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all"
+                    className="p-1.5 rounded-lg bg-brand text-white hover:shadow-lg hover:shadow-brand/30 hover:scale-110 active:scale-95 transition-all"
                     title="Send Interview Invite"
                   >
                     <MailPlus className="h-4 w-4" />
@@ -141,7 +141,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               </div>
               {(candidate as any).selectedInterviewDate && (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <Calendar className="h-4 w-4 text-primary-600" />
+                  <Calendar className="h-4 w-4 text-brand" />
                   <span>Interview on {(candidate as any).selectedInterviewDate}</span>
                 </div>
               )}
@@ -155,7 +155,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               <select
                 value={shortlistPostId}
                 onChange={(e) => setShortlistPostId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50 max-w-[180px]"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-gray-50 max-w-[180px]"
               >
                 <option value="">Select Post</option>
                 {jobPosts.map((job) => (
@@ -165,7 +165,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               <button
                 onClick={handleShortlistToPost}
                 disabled={!shortlistPostId || shortlisting}
-                className="flex items-center gap-1.5 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-lg hover:bg-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
                 <ArrowRightCircle className="w-4 h-4" />
                 {shortlisting ? 'Moving...' : 'Move'}
@@ -175,7 +175,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {onEdit && (
               <button
                 onClick={() => onEdit(candidate)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-2 bg-surface border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit
@@ -186,7 +186,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               href={candidate.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-lg hover:bg-brand transition-colors text-sm font-medium"
             >
               Resume
             </a>
@@ -195,13 +195,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       </div>
 
       {/* Content */}
-      <div className="bg-white rounded-lg shadow px-6 py-6">
+      <div className="bg-surface rounded-lg shadow px-6 py-6">
         <div className="space-y-6">
             {/* Application History */}
             {userApplications && userApplications.length > 0 && (
-              <div className="bg-white border rounded-lg shadow p-6">
+              <div className="bg-surface border rounded-lg shadow p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-blue-600" />
+                  <Briefcase className="w-5 h-5 text-brand" />
                   Applied Posts
                 </h3>
                 <div className="space-y-3">
@@ -216,7 +216,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                                 {/* AI Score for this specific job */}
                                 {candidate.rankings && candidate.rankings[app.post_id] && (
                                   <span className={`text-xs px-2 py-0.5 rounded border ${candidate.rankings[app.post_id].score >= 70 ? 'bg-green-50 text-green-700 border-green-200' :
-                                    candidate.rankings[app.post_id].score >= 40 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                    candidate.rankings[app.post_id].score >= 40 ? 'bg-brand/10 text-brand border-brand/30' :
                                       'bg-red-50 text-red-700 border-red-200'
                                     }`}>
                                     {candidate.rankings[app.post_id].score}% Match
@@ -228,7 +228,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                                 Applied: {new Date(app.created_at).toLocaleDateString()}
                               </p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.status === 'shortlisted' ? 'bg-orange-100 text-orange-700' :
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.status === 'shortlisted' ? 'bg-brand/20 text-brand' :
                               app.status === 'selected' ? 'bg-green-100 text-green-700' :
                                 app.status === 'rejected' ? 'bg-red-100 text-red-700' :
                                   'bg-gray-100 text-gray-700'
@@ -247,15 +247,15 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Contact Info */}
-            <div className="bg-white border rounded-lg shadow p-6">
+            <div className="bg-surface border rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <UserCircle className="h-5 w-5 mr-2 text-blue-600" />
+                <UserCircle className="h-5 w-5 mr-2 text-brand" />
                 Contact Information
               </h3>
               <div className="space-y-3">
                 {candidate.email && (
                   <div className="flex items-center gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <Mail className="h-4 w-4 text-brand flex-shrink-0" />
                     <span className="text-gray-700">{candidate.email}</span>
                   </div>
                 )}
@@ -270,9 +270,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div className="bg-white border rounded-lg shadow p-6">
+              <div className="bg-surface border rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-orange-600" />
+                  <Award className="h-5 w-5 mr-2 text-brand" />
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -290,9 +290,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div className="bg-white border rounded-lg shadow p-6">
+              <div className="bg-surface border rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2 text-indigo-600" />
+                  <GraduationCap className="h-5 w-5 mr-2 text-brand" />
                   Education
                   {(() => {
                     // Find first CGPA value if present
@@ -309,7 +309,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 </h3>
                 <div className="space-y-4">
                   {candidate.education.map((edu, index) => (
-                    <div key={index} className="border-l-4 border-indigo-200 pl-4">
+                    <div key={index} className="border-l-4 border-brand/30 pl-4">
                       {(edu.degree || edu.field) && (
                         <p className="text-gray-800 font-medium">
                           {edu.degree}
@@ -325,9 +325,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div className="bg-white border rounded-lg shadow p-6">
+            <div className="bg-surface border rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
+                <Briefcase className="h-5 w-5 mr-2 text-brand" />
                 Experience
               </h3>
               {/* Overall Experience */}
@@ -343,7 +343,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (
                 <div className="space-y-4">
                   {candidate.extractedData.workExperience.map((exp, index) => (
-                    <div key={index} className="border-l-4 border-blue-200 pl-4">
+                    <div key={index} className="border-l-4 border-brand/30 pl-4">
                       {(exp.position || exp.company) && (
                         <p className="text-gray-700 font-medium">{`${exp.position || ''}${exp.position && exp.company ? ' @ ' : ''}${exp.company || ''}`}</p>
                       )}
@@ -364,14 +364,14 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div className="bg-white border rounded-lg shadow p-6">
+                    <div className="bg-surface border rounded-lg shadow p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <FolderKanban className="h-5 w-5 mr-2 text-purple-600" />
+                        <FolderKanban className="h-5 w-5 mr-2 text-brand" />
                         Key Projects
                       </h3>
                       <div className="space-y-3">
                         {projectLines.map((line: string, index: number) => (
-                          <div key={index} className="border-l-4 border-purple-200 pl-4">
+                          <div key={index} className="border-l-4 border-brand/30 pl-4">
                             <p className="text-gray-700">{line.trim()}</p>
                           </div>
                         ))}
@@ -384,14 +384,14 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               // Handle array format (from resume parsing)
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div className="bg-white border rounded-lg shadow p-6">
+                  <div className="bg-surface border rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                      <FolderKanban className="h-5 w-5 mr-2 text-purple-600" />
+                      <FolderKanban className="h-5 w-5 mr-2 text-brand" />
                       Projects
                     </h3>
                     <div className="space-y-4">
                       {projectsRaw.map((proj: any, index: number) => (
-                        <div key={index} className="border-l-4 border-purple-200 pl-4">
+                        <div key={index} className="border-l-4 border-brand/30 pl-4">
                           {(proj.name || proj.title) && (
                             <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
                           )}
@@ -415,7 +415,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div className="bg-white border rounded-lg shadow p-6">
+                    <div className="bg-surface border rounded-lg shadow p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                         <Award className="h-5 w-5 mr-2 text-emerald-600" />
                         Certifications
@@ -435,7 +435,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               // Handle array format (from resume parsing)
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div className="bg-white border rounded-lg shadow p-6">
+                  <div className="bg-surface border rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                       <Award className="h-5 w-5 mr-2 text-emerald-600" />
                       Certifications

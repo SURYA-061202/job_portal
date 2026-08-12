@@ -140,18 +140,18 @@ export default function RecruitCandidateDropdown({
         <div className="relative" ref={containerRef}>
             <button
                 onClick={toggleOpen}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-orange-gradient text-white hover:shadow-lg hover:shadow-orange-500/20 transition-all whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-orange-gradient text-white hover:shadow-lg hover:shadow-brand/20 transition-all whitespace-nowrap"
             >
                 <UserPlus className="w-4 h-4" />
                 Recruit Candidate
                 {selected.size > 0 && (
-                    <span className="bg-white/25 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{selected.size}</span>
+                    <span className="bg-surface/25 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{selected.size}</span>
                 )}
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
-                <div className="absolute z-20 mt-2 w-full bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
+                <div className="absolute z-20 mt-2 w-full bg-surface rounded-xl border border-gray-200 shadow-xl overflow-hidden">
                     <div className="max-h-80 overflow-y-auto hover-scrollbar">
                         {loading ? (
                             <div className="p-6 text-center text-sm text-gray-400">Loading…</div>
@@ -170,7 +170,7 @@ export default function RecruitCandidateDropdown({
                                                     type="checkbox"
                                                     checked={selected.has(opt.id)}
                                                     onChange={() => toggleSelect(opt.id)}
-                                                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                                    className="rounded border-gray-300 text-brand focus:ring-brand"
                                                 />
                                                 <span className="flex-1 min-w-0">
                                                     <span className="block truncate text-gray-800">{opt.name}</span>
@@ -191,7 +191,7 @@ export default function RecruitCandidateDropdown({
                                                     type="checkbox"
                                                     checked={selected.has(opt.id)}
                                                     onChange={() => toggleSelect(opt.id)}
-                                                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                                    className="rounded border-gray-300 text-brand focus:ring-brand"
                                                 />
                                                 <span className="flex-1 min-w-0">
                                                     <span className="block truncate text-gray-800">{opt.name}</span>
@@ -208,7 +208,7 @@ export default function RecruitCandidateDropdown({
                         <button
                             onClick={handleRecruit}
                             disabled={selected.size === 0 || submitting}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand text-white hover:bg-brand disabled:opacity-50"
                         >
                             {submitting ? 'Recruiting…' : `Recruit Selected (${selected.size})`}
                         </button>

@@ -46,23 +46,23 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
   return (
     <div className="space-y-6">
-      <button onClick={onBack} className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
+      <button onClick={onBack} className="flex items-center space-x-2 text-brand hover:text-gray-900">
         <ArrowLeft className="h-5 w-5" />
         <span>Back to List</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto p-6 space-y-4">
+      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
         <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-brand/20 text-sm">
+          <thead className="bg-brand/5">
             <tr>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Action</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Email</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Mobile</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Action</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-surface divide-y divide-brand/20">
             <tr>
               <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.email}</td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.phone || '-'}</td>
@@ -137,23 +137,23 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
   return (
     <div className="space-y-6">
-      <button onClick={onBack} className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
+      <button onClick={onBack} className="flex items-center space-x-2 text-brand hover:text-gray-900">
         <ArrowLeft className="h-5 w-5" />
         <span>Back to List</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto p-6 space-y-4">
+      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
         <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-brand/20 text-sm">
+          <thead className="bg-brand/5">
             <tr>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Rejected In</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Email</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Mobile</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Rejected In</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-surface divide-y divide-brand/20">
             <tr>
               <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.email}</td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.phone || '-'}</td>

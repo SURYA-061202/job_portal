@@ -182,10 +182,10 @@ export default function CandidateList({
       {/* Header with Search and Optional Filter — always shown, even while loading or empty,
           so filter/search controls (e.g. the Selected/Rejected toggle) never disappear. */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             {title || 'Candidates'}
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-100">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
               {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
             </span>
           </h3>
@@ -195,7 +195,7 @@ export default function CandidateList({
               <select
                 value={filterValue}
                 onChange={(e) => onFilterChange(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-gray-50 w-40"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-gray-50 w-40"
               >
                 {filterOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -212,7 +212,7 @@ export default function CandidateList({
               <input
                 type="text"
                 placeholder="Search candidates..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => onSearchTermChange?.(e.target.value)}
               />
@@ -222,7 +222,7 @@ export default function CandidateList({
       )}
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-surface rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center space-x-4 animate-pulse">
@@ -236,7 +236,7 @@ export default function CandidateList({
           </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <div className="mx-auto h-12 w-12 text-gray-300 mb-4">
             <User className="h-full w-full" />
           </div>
@@ -244,7 +244,7 @@ export default function CandidateList({
           <p className="mt-1 text-gray-500">{emptyMessage || 'Upload a resume to get started.'}</p>
         </div>
       ) : (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50 sticky top-0 z-10">
@@ -257,18 +257,18 @@ export default function CandidateList({
                     <span>AI Score</span>
                     <button
                       onClick={toggleSort}
-                      className="flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none ring-offset-1 focus:ring-2 focus:ring-primary-500/50"
+                      className="flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none ring-offset-1 focus:ring-2 focus:ring-brand/50"
                       title="Sort by AI Score"
                     >
-                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-primary-600 stroke-[3px]' : 'text-gray-400'}`} />
-                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-primary-600 stroke-[3px]' : 'text-gray-400'}`} />
+                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-brand stroke-[3px]' : 'text-gray-400'}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-brand stroke-[3px]' : 'text-gray-400'}`} />
                     </button>
                   </div>
                 </th>
                 <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-surface divide-y divide-gray-100">
               {filteredCandidates.map((candidate) => {
                 const aiScore = getCandidateScore(candidate, jobId);
 
@@ -281,12 +281,12 @@ export default function CandidateList({
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-bold shadow-sm">
+                          <div className="h-10 w-10 rounded-full bg-brand/20 text-brand flex items-center justify-center text-sm font-bold shadow-sm">
                             {candidate.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                          <div className="text-sm font-semibold text-gray-900 group-hover:text-brand transition-colors">
                             {toTitleCase(candidate.name)}
                           </div>
                           <div className="text-xs text-gray-500 mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={toTitleCase(candidate.role) || 'No Role'}>
@@ -315,9 +315,9 @@ export default function CandidateList({
                     <td className="px-6 py-4 whitespace-nowrap">
                       {aiScore !== null ? (
                         <div className="flex items-center">
-                          <div className={`flex-shrink-0 h-2 w-2 rounded-full mr-2 ${aiScore >= 80 ? 'bg-green-500' : aiScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                          <div className={`flex-shrink-0 h-2 w-2 rounded-full mr-2 ${aiScore >= 80 ? 'bg-green-500' : aiScore >= 50 ? 'bg-brand' : 'bg-red-500'
                             }`}></div>
-                          <span className={`text-sm font-semibold ${aiScore >= 80 ? 'text-green-700' : aiScore >= 50 ? 'text-yellow-700' : 'text-red-700'
+                          <span className={`text-sm font-semibold ${aiScore >= 80 ? 'text-green-700' : aiScore >= 50 ? 'text-brand' : 'text-red-700'
                             }`}>
                             {aiScore}%
                           </span>

@@ -32,10 +32,10 @@ export default function AIScoringModal({ onClose, onSelectJob, isLoading }: AISc
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-orange-600" />
+                        <Sparkles className="w-5 h-5 text-brand" />
                         AI Scoring
                     </h3>
                     <button
@@ -53,7 +53,7 @@ export default function AIScoringModal({ onClose, onSelectJob, isLoading }: AISc
 
                     {loadingJobs ? (
                         <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
                         </div>
                     ) : (
                         <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
@@ -65,9 +65,9 @@ export default function AIScoringModal({ onClose, onSelectJob, isLoading }: AISc
                                         key={job.id}
                                         onClick={() => onSelectJob(job)}
                                         disabled={isLoading}
-                                        className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all group"
+                                        className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-brand/60 hover:bg-brand/10 transition-all group"
                                     >
-                                        <div className="font-medium text-gray-900 group-hover:text-orange-700">{job.jobTitle}</div>
+                                        <div className="font-medium text-gray-900 group-hover:text-brand">{job.jobTitle}</div>
                                         <div className="text-xs text-gray-500 mt-1">{job.department}</div>
                                     </button>
                                 ))

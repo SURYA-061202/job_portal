@@ -103,7 +103,7 @@ export default function AssessmentsTab() {
     if (loading) {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand" />
             </div>
         );
     }
@@ -111,15 +111,15 @@ export default function AssessmentsTab() {
     return (
         <div className="space-y-6 flex-1 flex flex-col p-4 md:p-6 pb-20 overflow-auto thin-scrollbar">
             {/* Header Section */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 overflow-hidden relative group">
+            <div className="bg-surface p-6 rounded-2xl border border-gray-100 overflow-hidden relative group">
                 {/* Decorative background element */}
-                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-primary-50 rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity" />
+                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-brand/10 rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity" />
                 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <div className="p-2 bg-primary-100 rounded-lg">
-                                <ClipboardCheck className="w-5 h-5 text-primary-600" />
+                            <div className="p-2 bg-brand/20 rounded-lg">
+                                <ClipboardCheck className="w-5 h-5 text-brand" />
                             </div>
                             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Skill Assessments</h2>
                         </div>
@@ -128,7 +128,7 @@ export default function AssessmentsTab() {
 
                     <button
                         onClick={() => setIsAddingSection(true)}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all hover:-translate-y-0.5"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-brand/20 hover:shadow-brand/30 transition-all hover:-translate-y-0.5"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Create New Section</span>
@@ -139,9 +139,9 @@ export default function AssessmentsTab() {
             {/* Assessment Grid */}
             <div className="grid grid-cols-1 gap-6">
                 {sections.length === 0 && !isAddingSection ? (
-                    <div className="text-center py-20 bg-white rounded-[2rem] border-2 border-dashed border-gray-200">
-                        <div className="bg-primary-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <BookOpen className="w-8 h-8 text-primary-400" />
+                    <div className="text-center py-20 bg-surface rounded-[2rem] border-2 border-dashed border-gray-200">
+                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <BookOpen className="w-8 h-8 text-brand" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">No Assessments Created</h3>
                         <p className="text-gray-500 max-w-sm mx-auto mb-8">
@@ -150,13 +150,13 @@ export default function AssessmentsTab() {
                     </div>
                 ) : (
                     sections.map(section => (
-                        <div key={section.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all hover:shadow-md">
+                        <div key={section.id} className="bg-surface rounded-2xl border border-gray-100 overflow-hidden transition-all hover:shadow-md">
                             <div 
-                                className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${expandedSection === section.id ? 'bg-primary-50/30' : 'hover:bg-gray-50/50'}`}
+                                className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${expandedSection === section.id ? 'bg-brand/3' : 'hover:bg-gray-50/50'}`}
                                 onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${expandedSection === section.id ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
+                                    <div className={`p-3 rounded-xl ${expandedSection === section.id ? 'bg-brand/20 text-brand' : 'bg-gray-100 text-gray-500'}`}>
                                         <BookOpen className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -199,7 +199,7 @@ export default function AssessmentsTab() {
             {/* Add Section Modal */}
             {isAddingSection && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm px-6">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                    <div className="bg-surface rounded-2xl w-full max-w-md p-6 shadow-2xl">
                         <h3 className="text-xl font-bold text-gray-900 mb-6 font-poppins">New Assessment Section</h3>
                         <form onSubmit={handleAddSection} className="space-y-4">
                             <div>
@@ -210,7 +210,7 @@ export default function AssessmentsTab() {
                                     placeholder="e.g. React Native Skill Test"
                                     value={newSection.title}
                                     onChange={e => setNewSection({ ...newSection, title: e.target.value })}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-gray-400 font-medium"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand outline-none transition-all placeholder:text-gray-400 font-medium"
                                 />
                             </div>
                             <div>
@@ -221,7 +221,7 @@ export default function AssessmentsTab() {
                                     placeholder="Brief description of the skills assessed..."
                                     value={newSection.description}
                                     onChange={e => setNewSection({ ...newSection, description: e.target.value })}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-gray-400 font-medium"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand outline-none transition-all placeholder:text-gray-400 font-medium"
                                 />
                             </div>
                             <div className="pt-4 flex gap-3">
@@ -234,7 +234,7 @@ export default function AssessmentsTab() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-3 text-white font-bold bg-orange-gradient hover:opacity-90 rounded-xl transition-all shadow-lg shadow-orange-500/20"
+                                    className="flex-1 py-3 text-white font-bold bg-orange-gradient hover:opacity-90 rounded-xl transition-all shadow-lg shadow-brand/20"
                                 >
                                     Create Section
                                 </button>
@@ -292,7 +292,7 @@ function MCQEditor({ questions, onSave }: { questions: MCQ[], onSave: (updated: 
                 <div className="flex gap-2">
                     <button 
                         onClick={addQuestion}
-                        className="p-1.5 bg-primary-100 text-primary-600 rounded-lg hover:bg-primary-200 transition-all flex items-center gap-1.5 text-xs font-bold"
+                        className="p-1.5 bg-brand/20 text-brand rounded-lg hover:bg-brand/30 transition-all flex items-center gap-1.5 text-xs font-bold"
                     >
                         <Plus className="w-4 h-4" />
                         Add Question
@@ -333,7 +333,7 @@ function MCQEditor({ questions, onSave }: { questions: MCQ[], onSave: (updated: 
             </div>
 
             {localQuestions.map((q, idx) => (
-                <div key={q.id} className="bg-white p-5 rounded-xl border border-gray-200 relative group/q transition-all hover:border-primary-200">
+                <div key={q.id} className="bg-surface p-5 rounded-xl border border-gray-200 relative group/q transition-all hover:border-brand/30">
                     {/* Delete Icon - Absolute Top Right */}
                     {isEditing && (
                         <button 
@@ -361,7 +361,7 @@ function MCQEditor({ questions, onSave }: { questions: MCQ[], onSave: (updated: 
                                         value={q.question}
                                         onChange={(e) => updateQuestionText(q.id, e.target.value)}
                                         placeholder="Enter question text..."
-                                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm font-medium transition-all"
+                                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand outline-none text-sm font-medium transition-all"
                                         rows={2}
                                     />
                                 ) : (
@@ -373,7 +373,7 @@ function MCQEditor({ questions, onSave }: { questions: MCQ[], onSave: (updated: 
                                 {q.options.map((opt, oIdx) => (
                                     <div 
                                         key={oIdx} 
-                                        className={`flex items-center p-2.5 rounded-lg border transition-all focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 ${
+                                        className={`flex items-center p-2.5 rounded-lg border transition-all focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 ${
                                             q.correctAnswer === oIdx 
                                             ? 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-500/20' 
                                             : 'bg-gray-50 border-gray-100'

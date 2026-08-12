@@ -5,8 +5,8 @@ interface TabHeaderProps {
 
 export default function TabHeader({ title, subtitle }: TabHeaderProps) {
     return (
-        <div className="bg-gradient-to-r from-orange-50 to-primary-50 border-b border-orange-100 px-6 py-4 mb-6 rounded-t-xl">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
+        <div className="bg-brand/10 border-b border-brand/20 px-6 py-4 mb-6 rounded-t-xl">
+            <h1 className="text-2xl font-bold bg-brand bg-clip-text text-transparent">
                 {title}
             </h1>
             {subtitle && (

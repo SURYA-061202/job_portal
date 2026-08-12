@@ -226,7 +226,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         <span>Back to List</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
+      <div className="bg-surface rounded-lg shadow p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
@@ -273,7 +273,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Selected Date</th>
                 <td className="px-4 py-3">
                   {selectedDate && response === 'accept' ? (
-                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-primary-600" /> {selectedDate}</span>
+                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
                   ) : response && response !== 'accept' ? (
                     <span className="text-red-600">Candidate responded "{response}"</span>
                   ) : (
@@ -289,7 +289,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                       onChange={e => setCurrentSalary(parseInt(e.target.value) || 0)}
                       onBlur={() => setEditCurSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditCurSal(true)}>
                       ₹ {currentSalary.toLocaleString()}
@@ -305,7 +305,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                       onChange={e => setExpectedSalary(parseInt(e.target.value) || 0)}
                       onBlur={() => setEditExpSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditExpSal(true)}>
                       ₹ {expectedSalary.toLocaleString()}
@@ -321,7 +321,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                       onChange={e => setJoiningDate(e.target.value)}
                       onBlur={() => setEditJoinDate(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditJoinDate(true)}>{joiningDate}</span>
                   )}
@@ -347,9 +347,9 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                       onChange={e => setFeedback(e.target.value)}
                       onBlur={() => setEditFeedback(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-brand" />
                   ) : (
-                    <span className="cursor-pointer inline-flex items-center space-x-1 hover:text-primary-600" onClick={() => setEditFeedback(true)}>
+                    <span className="cursor-pointer inline-flex items-center space-x-1 hover:text-brand" onClick={() => setEditFeedback(true)}>
                       <span>{feedback}</span>
                       <Pencil className="h-3.5 w-3.5 text-gray-400" />
                     </span>
@@ -370,7 +370,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 value={roundName}
                 onChange={(e) => setRoundName(e.target.value)}
                 placeholder="e.g. Technical, HR, Manager Round"
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 w-full sm:w-56"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand w-full sm:w-56"
               />
               {nextRound && (
                 <button
@@ -385,7 +385,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
               <button
                 onClick={handleSelect}
                 disabled={moving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-brand hover:bg-brand shadow disabled:opacity-50"
               >
                 <Check className="h-4 w-4" />
                 Select

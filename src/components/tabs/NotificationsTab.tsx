@@ -17,9 +17,9 @@ interface Notification {
 
 const notificationStyles: Record<string, { icon: React.ReactNode; bgClass: string; borderClass: string }> = {
   premium_request: {
-    icon: <Crown className="w-5 h-5 text-amber-600" />,
-    bgClass: 'bg-amber-50',
-    borderClass: 'border-amber-200',
+    icon: <Crown className="w-5 h-5 text-brand" />,
+    bgClass: 'bg-brand/10',
+    borderClass: 'border-brand/30',
   },
   premium_approved: {
     icon: <CheckCircle className="w-5 h-5 text-green-600" />,
@@ -78,7 +78,7 @@ export default function NotificationsTab() {
   }, [currentUserEmail]);
 
   return (
-    <div className="bg-white rounded-lg shadow divide-y divide-gray-200">
+    <div className="bg-surface rounded-lg shadow divide-y divide-gray-200">
       <div className="px-4 sm:px-6 py-4">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900">Notifications ({notifications.length})</h2>
       </div>
@@ -98,7 +98,7 @@ export default function NotificationsTab() {
                     {style ? style.icon : <Bell className="w-4 h-4 text-gray-400" />}
                   </div>
                   <div className="flex-1">
-                    {n.title && <p className="text-sm font-medium text-primary-700">{n.title}</p>}
+                    {n.title && <p className="text-sm font-medium text-brand">{n.title}</p>}
                     <p className="text-sm text-gray-800 mt-0.5">{n.message}</p>
                     <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt?.seconds * 1000).toLocaleString()}</p>
                   </div>

@@ -146,7 +146,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand" />
       </div>
     );
   }
@@ -154,44 +154,44 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   return (
     <div className="space-y-6 flex-1 flex flex-col">
       {/* Header Section */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
+      <div className="bg-surface p-4 rounded-xl border border-brand/20">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-xl font-bold text-gray-900">Stats & Analytics</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+              <span className="px-2.5 py-0.5 rounded-full bg-brand/10 text-brand text-xs font-bold border border-brand/20">
                 {jobPosts.length} Posts
               </span>
             </div>
-            <p className="text-sm text-gray-500">Department and skills distribution across job postings</p>
+            <p className="text-sm text-brand">Department and skills distribution across job postings</p>
           </div>
         </div>
       </div>
 
       {/* Summary Cards - Moved to Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6">
-          <div className="text-sm text-blue-700 font-medium mb-1">Total Candidates</div>
-          <div className="text-3xl font-bold text-blue-900">{candidates.length}</div>
+        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
+          <div className="text-sm text-brand font-medium mb-1">Total Candidates</div>
+          <div className="text-3xl font-bold text-brand">{candidates.length}</div>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 p-6">
-          <div className="text-sm text-orange-700 font-medium mb-1">Total Job Posts</div>
-          <div className="text-3xl font-bold text-orange-900">{jobPosts.length}</div>
+        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
+          <div className="text-sm text-brand font-medium mb-1">Total Job Posts</div>
+          <div className="text-3xl font-bold text-brand">{jobPosts.length}</div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 p-6">
-          <div className="text-sm text-purple-700 font-medium mb-1">Unique Departments</div>
-          <div className="text-3xl font-bold text-purple-900">{allDepartments.length}</div>
+        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
+          <div className="text-sm text-brand font-medium mb-1">Unique Departments</div>
+          <div className="text-3xl font-bold text-brand">{allDepartments.length}</div>
         </div>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Department Distribution - Donut Chart */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-surface rounded-xl border border-brand/20 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Department Distribution</h3>
-              <p className="text-sm text-gray-500">Top 5 departments by job postings</p>
+              <p className="text-sm text-brand">Top 5 departments by job postings</p>
             </div>
 
             {/* Department Dropdown - Moved to Title Row */}
@@ -232,17 +232,17 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
           ) : (
             departmentStats && (
               <div className="space-y-4 mt-6">
-                <div className="bg-orange-50 border border-orange-100 rounded-lg p-4">
+                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                   <div className="text-sm text-gray-600 mb-1">Total Job Posts</div>
-                  <div className="text-2xl font-bold text-orange-600">{departmentStats.totalPosts}</div>
+                  <div className="text-2xl font-bold text-brand">{departmentStats.totalPosts}</div>
                 </div>
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                   <div className="text-sm text-gray-600 mb-1">Total Openings</div>
-                  <div className="text-2xl font-bold text-blue-600">{departmentStats.totalOpenings}</div>
+                  <div className="text-2xl font-bold text-brand">{departmentStats.totalOpenings}</div>
                 </div>
-                <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                <div className="bg-brand/5 border border-brand/20 rounded-lg p-4">
                   <div className="text-sm text-gray-600 mb-1">Salary Ranges</div>
-                  <div className="text-sm font-medium text-gray-700">{departmentStats.avgSalary}</div>
+                  <div className="text-sm font-medium text-gray-900">{departmentStats.avgSalary}</div>
                 </div>
               </div>
             )
@@ -250,11 +250,11 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
         </div>
 
         {/* Skills Distribution - Pie Chart */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-surface rounded-xl border border-brand/20 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Skills Distribution</h3>
-              <p className="text-sm text-gray-500">Top 5 most demanded skills</p>
+              <p className="text-sm text-brand">Top 5 most demanded skills</p>
             </div>
 
             {/* Skills Dropdown - Moved to Title Row */}
@@ -293,15 +293,15 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
           ) : (
             skillStats && (
               <div className="space-y-4 mt-6">
-                <div className="bg-orange-50 border border-orange-100 rounded-lg p-4">
+                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                   <div className="text-sm text-gray-600 mb-1">Job Posts Requiring This Skill</div>
-                  <div className="text-2xl font-bold text-orange-600">{skillStats.totalPosts}</div>
+                  <div className="text-2xl font-bold text-brand">{skillStats.totalPosts}</div>
                 </div>
-                <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                   <div className="text-sm text-gray-600 mb-1">Departments</div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {skillStats.departments.map((dept) => (
-                      <span key={dept} className="px-2 py-1 bg-white border border-purple-200 text-purple-700 text-xs font-medium rounded">
+                      <span key={dept} className="px-2 py-1 bg-surface border border-brand/30 text-brand text-xs font-medium rounded">
                         {dept}
                       </span>
                     ))}

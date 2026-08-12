@@ -91,15 +91,15 @@ export default function NotificationBell({ className = '', simpleMode = false }:
 
   return (
     <div className="relative">
-      <button onClick={handleToggle} className={`relative p-2 rounded-full hover:bg-primary-50 ${className}`}>
-        <Bell className="h-5 w-5 text-primary-600" />
+      <button onClick={handleToggle} className={`relative p-2 rounded-full hover:bg-brand/10 ${className}`}>
+        <Bell className="h-5 w-5 text-brand" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5">{unreadCount}</span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 mt-2 w-72 bg-surface border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
           <div className="px-4 py-2 border-b flex justify-between items-center">
             <span className="font-semibold text-gray-700">Notifications</span>
             <span className="text-sm text-gray-500">{notifications.length}</span>

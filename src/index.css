@@ -61,22 +61,12 @@ body {
     text-wrap: balance;
   }
 
-  /* Deprecated aliases - kept so modules not yet migrated to the theme still
-     render the brand orange. Prefer .bg-brand-gradient / .text-brand-gradient
-     from src/styles/theme.css for new work. */
-  .bg-orange-gradient {
-    background: var(--color-brand-500);
-  }
-
-  .text-orange-gradient {
-    background-image: none;
-    -webkit-text-fill-color: currentcolor;
-    color: var(--color-brand-500);
-  }
+  /* .bg-orange-gradient / .text-orange-gradient now live in styles/theme.css
+     alongside the token they resolve to. */
 
   /* Alias for semantic naming */
   .bg-navy-gradient {
-    background: linear-gradient(to bottom right, #0f172a, #1e293b, #334155);
+    background: var(--color-ink);
   }
 
   /* Horizontal scrolling animation */

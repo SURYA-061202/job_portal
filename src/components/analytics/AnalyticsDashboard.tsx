@@ -229,7 +229,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     if (loading) {
         return (
             <div className="flex h-96 items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-brand" />
             </div>
         );
     }
@@ -237,7 +237,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     return (
         <div className="space-y-6 flex-1 flex flex-col">
             {/* Header */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <div className="bg-surface p-4 rounded-xl border border-gray-200">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
                         <div className="flex items-center gap-3 mb-1">
@@ -253,8 +253,8 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
 
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center">
-                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600 mr-3">
+                <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                    <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                         <Users className="w-5 h-5" />
                     </div>
                     <div>
@@ -262,8 +262,8 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         <h3 className="text-xl font-bold text-gray-900">{totalCandidates}</h3>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center">
-                    <div className="p-2 rounded-lg bg-purple-50 text-purple-600 mr-3">
+                <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                    <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                         <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
@@ -271,8 +271,8 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         <h3 className="text-xl font-bold text-gray-900">{avgExperience} Yrs</h3>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center">
-                    <div className="p-2 rounded-lg bg-orange-50 text-orange-600 mr-3">
+                <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                    <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                         <MapPin className="w-5 h-5" />
                     </div>
                     <div>
@@ -280,8 +280,8 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         <h3 className="text-lg font-bold text-gray-900 truncate max-w-[100px]">{locationData[0]?.name || 'N/A'}</h3>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center">
-                    <div className="p-2 rounded-lg bg-amber-50 text-amber-600 mr-3">
+                <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                    <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                         <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
@@ -289,8 +289,8 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         <h3 className="text-xl font-bold text-gray-900">{jobPosts.length}</h3>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center">
-                    <div className="p-2 rounded-lg bg-pink-50 text-pink-600 mr-3">
+                <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                    <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                         <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
@@ -302,7 +302,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
 
             {/* Experience & Location Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100">
+                <div className="bg-surface p-4 sm:p-6 rounded-xl border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Experience Distribution</h3>
                     <div className="h-56 sm:h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -316,7 +316,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100">
+                <div className="bg-surface p-4 sm:p-6 rounded-xl border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Candidates by Location (Top 7)</h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -335,7 +335,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
             {/* Department & Skills Distribution */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Department Distribution */}
-                <div className="bg-white rounded-xl border border-gray-100 p-6">
+                <div className="bg-surface rounded-xl border border-gray-100 p-6">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-gray-900">Department Distribution</h3>
                         <CustomDropdown
@@ -363,13 +363,13 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                     ) : (
                         departmentStats && (
                             <div className="space-y-4 mt-6">
-                                <div className="bg-orange-50 border border-orange-100 rounded-lg p-4">
+                                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                                     <div className="text-sm text-gray-600 mb-1">Total Job Posts</div>
-                                    <div className="text-2xl font-bold text-orange-600">{departmentStats.totalPosts}</div>
+                                    <div className="text-2xl font-bold text-brand">{departmentStats.totalPosts}</div>
                                 </div>
-                                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                                     <div className="text-sm text-gray-600 mb-1">Total Openings</div>
-                                    <div className="text-2xl font-bold text-blue-600">{departmentStats.totalOpenings}</div>
+                                    <div className="text-2xl font-bold text-brand">{departmentStats.totalOpenings}</div>
                                 </div>
                                 <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
                                     <div className="text-sm text-gray-600 mb-1">Salary Ranges</div>
@@ -381,7 +381,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                 </div>
 
                 {/* Skills Distribution */}
-                <div className="bg-white rounded-xl border border-gray-100 p-6">
+                <div className="bg-surface rounded-xl border border-gray-100 p-6">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-gray-900">Skills Distribution</h3>
                         <CustomDropdown
@@ -409,15 +409,15 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                     ) : (
                         skillStats && (
                             <div className="space-y-4 mt-6">
-                                <div className="bg-orange-50 border border-orange-100 rounded-lg p-4">
+                                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                                     <div className="text-sm text-gray-600 mb-1">Job Posts Requiring This Skill</div>
-                                    <div className="text-2xl font-bold text-orange-600">{skillStats.totalPosts}</div>
+                                    <div className="text-2xl font-bold text-brand">{skillStats.totalPosts}</div>
                                 </div>
-                                <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                                <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
                                     <div className="text-sm text-gray-600 mb-1">Departments</div>
                                     <div className="flex flex-wrap gap-2 mt-2">
                                         {skillStats.departments.map((dept) => (
-                                            <span key={dept} className="px-2 py-1 bg-white border border-purple-200 text-purple-700 text-xs font-medium rounded">
+                                            <span key={dept} className="px-2 py-1 bg-surface border border-brand/30 text-brand text-xs font-medium rounded">
                                                 {dept}
                                             </span>
                                         ))}

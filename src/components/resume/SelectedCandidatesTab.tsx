@@ -29,7 +29,7 @@ export default function CandidatesTab() {
           {['selected','rejected','not'].map(v => (
             <button key={v}
               onClick={()=>setView(v as any)}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${view===v?'bg-primary-600 text-white':'border border-primary-600 text-primary-600 hover:bg-primary-50'}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${view===v?'bg-brand text-white':'border border-brand text-brand hover:bg-brand/10'}`}
             >{v==='selected'?'Selected':v==='rejected'?'Rejected':'Not Interested'}</button>
           ))}
         </div>

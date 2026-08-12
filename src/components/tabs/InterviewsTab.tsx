@@ -11,15 +11,15 @@ import { ArrowLeft, Users, Briefcase, MapPin, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 const ROUND_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  round1: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700" },
-  round2: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "bg-purple-100 text-purple-700" },
+  round1: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
+  round2: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
   round3: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
-  round4: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-700" },
+  round4: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
   round5: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", badge: "bg-rose-100 text-rose-700" },
-  round6: { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-700", badge: "bg-cyan-100 text-cyan-700" },
-  round7: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700" },
-  round8: { bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", badge: "bg-pink-100 text-pink-700" },
-  round9: { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", badge: "bg-teal-100 text-teal-700" },
+  round6: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
+  round7: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
+  round8: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
+  round9: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
   selected: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", badge: "bg-green-100 text-green-700" },
 };
 
@@ -233,13 +233,13 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-lg text-brand hover:text-gray-900 hover:bg-brand/10 transition-colors"
             onClick={() => { setSelectedRound(null); setSearchTerm(''); }}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
+            <p className="text-xs text-brand uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
             <h2 className="text-lg font-bold text-gray-900">{displayName}</h2>
           </div>
         </div>
@@ -263,22 +263,22 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-lg text-brand hover:text-gray-900 hover:bg-brand/10 transition-colors"
             onClick={() => { setSelectedPost(null); setSelectedRound(null); }}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
+            <p className="text-xs text-brand uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
             <h2 className="text-lg font-bold text-gray-900">Interview Rounds</h2>
           </div>
         </div>
 
         {postRounds.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <div className="bg-surface rounded-xl shadow-sm border border-brand/20 p-12 text-center">
+            <Users className="h-12 w-12 text-brand mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900">No rounds yet</h3>
-            <p className="mt-1 text-gray-500">Candidates will appear here once they enter the interview pipeline.</p>
+            <p className="mt-1 text-brand">Candidates will appear here once they enter the interview pipeline.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -329,26 +329,26 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
   // View 1: Post cards
   return (
     <div className="space-y-6">
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
+      <div className="bg-surface p-4 rounded-xl border border-brand/20">
         <h3 className="text-lg font-bold text-gray-900">Interview Posts</h3>
-        <p className="text-sm text-gray-500 mt-1">Select a post to view interview rounds</p>
+        <p className="text-sm text-brand mt-1">Select a post to view interview rounds</p>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-white rounded-xl border border-gray-200 p-6 space-y-3">
-              <div className="h-5 bg-gray-100 rounded w-2/3"></div>
-              <div className="h-4 bg-gray-100 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+            <div key={i} className="animate-pulse bg-surface rounded-xl border border-brand/20 p-6 space-y-3">
+              <div className="h-5 bg-brand/10 rounded w-2/3"></div>
+              <div className="h-4 bg-brand/10 rounded w-1/3"></div>
+              <div className="h-3 bg-brand/10 rounded w-1/2"></div>
             </div>
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <div className="bg-surface rounded-xl shadow-sm border border-brand/20 p-12 text-center">
+          <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">No interview posts</h3>
-          <p className="mt-1 text-gray-500">Posts will appear here once candidates enter the interview pipeline.</p>
+          <p className="mt-1 text-brand">Posts will appear here once candidates enter the interview pipeline.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -356,23 +356,23 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
             <button
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="bg-white border border-gray-200 rounded-xl p-6 text-left hover:shadow-md hover:border-orange-200 transition-all duration-200 group"
+              className="bg-surface border border-brand/20 rounded-xl p-6 text-left hover:shadow-md hover:border-brand/30 transition-all duration-200 group"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1 min-w-0">
-                  <h4 className="text-base font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate">
+                  <h4 className="text-base font-semibold text-gray-900 group-hover:text-brand transition-colors truncate">
                     {post.jobTitle}
                   </h4>
                   {post.department && (
-                    <p className="text-sm text-gray-500 truncate">{post.department}</p>
+                    <p className="text-sm text-brand truncate">{post.department}</p>
                   )}
                 </div>
-                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand/20 text-brand">
                   {post.interviewCount}
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-brand">
                 {post.location && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> {post.location}
@@ -401,19 +401,19 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               {post.skills && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-brand/10 text-brand border border-brand/20">
                       {skill.trim()}
                     </span>
                   ))}
                   {post.skills.split(',').length > 3 && (
-                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-500">
+                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-brand/10 text-brand">
                       +{post.skills.split(',').length - 3}
                     </span>
                   )}
                 </div>
               )}
 
-              <div className="mt-4 text-sm text-gray-500 group-hover:text-orange-600 transition-colors">
+              <div className="mt-4 text-sm text-brand group-hover:text-brand transition-colors">
                 View rounds →
               </div>
             </button>

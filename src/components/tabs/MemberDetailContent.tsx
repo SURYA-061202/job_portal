@@ -81,7 +81,7 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-brand" />
             </div>
         );
     }
@@ -90,7 +90,7 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
         return (
             <div className="text-center py-12">
                 <p className="text-gray-500">Member not found.</p>
-                <button onClick={onBack} className="mt-4 text-primary-600 font-medium hover:underline">Go back</button>
+                <button onClick={onBack} className="mt-4 text-brand font-medium hover:underline">Go back</button>
             </div>
         );
     }
@@ -98,7 +98,7 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     return (
         <div className="space-y-6 flex-1 flex flex-col">
             {/* Back Button */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <div className="bg-surface p-4 rounded-xl border border-gray-200">
                 <button
                     onClick={onBack}
                     className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
@@ -109,15 +109,15 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
             </div>
 
             {/* Profile Card */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-primary-600 to-orange-500 px-6 py-8">
+            <div className="bg-surface rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-brand px-6 py-8">
                     <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                        <div className="w-20 h-20 bg-surface/20 rounded-full flex items-center justify-center text-white font-bold text-3xl">
                             {member.firstName?.[0]}{member.lastName?.[0]}
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-white">{member.firstName} {member.lastName}</h2>
-                            <span className="inline-block text-xs bg-white/20 text-white px-3 py-1 rounded-full font-medium mt-1">
+                            <span className="inline-block text-xs bg-surface/20 text-white px-3 py-1 rounded-full font-medium mt-1">
                                 {member.role?.toUpperCase()}
                             </span>
                         </div>
@@ -125,31 +125,31 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                 </div>
                 <div className="p-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg">
-                            <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
+                            <Mail className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
-                                <p className="text-xs text-gray-400 font-bold">Email</p>
+                                <p className="text-xs text-brand font-bold">Email</p>
                                 <p className="text-sm text-gray-900 truncate">{member.email}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg">
-                            <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
+                            <Phone className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
-                                <p className="text-xs text-gray-400 font-bold">Phone</p>
+                                <p className="text-xs text-brand font-bold">Phone</p>
                                 <p className="text-sm text-gray-900">{member.mobile || 'N/A'}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg">
-                            <Building2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
+                            <Building2 className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
-                                <p className="text-xs text-gray-400 font-bold">Department</p>
+                                <p className="text-xs text-brand font-bold">Department</p>
                                 <p className="text-sm text-gray-900">{member.department || 'N/A'}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg">
-                            <Shield className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
+                            <Shield className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
-                                <p className="text-xs text-gray-400 font-bold">Role</p>
+                                <p className="text-xs text-brand font-bold">Role</p>
                                 <p className="text-sm text-gray-900 capitalize">{member.role}</p>
                             </div>
                         </div>
@@ -158,40 +158,40 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
             </div>
 
             {/* Posts Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-surface rounded-xl border border-brand/20 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-primary-600" />
+                        <Briefcase className="w-5 h-5 text-brand" />
                         <h3 className="text-lg font-bold text-gray-900">Posted Jobs</h3>
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-sm font-bold">
+                    <span className="px-3 py-1 rounded-full bg-brand/20 text-brand text-sm font-bold">
                         {posts.length} posts
                     </span>
                 </div>
 
                 {loadingPosts ? (
                     <div className="flex justify-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                        <Loader2 className="w-8 h-8 animate-spin text-brand" />
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-8 text-center">
-                        <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500">No posts yet</p>
+                    <div className="bg-brand/5 border border-dashed border-brand/30 rounded-xl p-8 text-center">
+                        <Briefcase className="w-10 h-10 text-brand mx-auto mb-3" />
+                        <p className="text-brand">No posts yet</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {posts.map(post => (
-                            <div key={post.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors">
+                            <div key={post.id} className="bg-brand/5 border border-brand/20 rounded-xl p-4 hover:bg-brand/10 transition-colors">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 min-w-0">
                                         <p className="text-base font-bold text-gray-900">{post.jobTitle}</p>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-sm text-gray-500">{post.department}</span>
-                                            <span className="text-gray-300">|</span>
-                                            <span className="text-sm text-gray-500">{post.location}</span>
+                                            <span className="text-sm text-brand">{post.department}</span>
+                                            <span className="text-brand/30">|</span>
+                                            <span className="text-sm text-brand">{post.location}</span>
                                         </div>
                                     </div>
-                                    <span className="text-sm text-gray-400 flex-shrink-0 ml-4">
+                                    <span className="text-sm text-brand flex-shrink-0 ml-4">
                                         {post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>

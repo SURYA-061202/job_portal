@@ -47,8 +47,8 @@ export default function UserHeader() {
         <header 
             className={`sticky top-0 z-50 transition-all duration-300 ${
                 scrolled
-                ? 'bg-white/80 backdrop-blur-md border-b border-gray-200/70 shadow-sm py-1'
-                : 'bg-white border-b border-gray-200 py-2'
+                ? 'bg-surface/80 backdrop-blur-md border-b border-gray-200/70 shadow-sm py-1'
+                : 'bg-surface border-b border-gray-200 py-2'
             }`}
         >
             <div className="w-full px-6 lg:px-12">
@@ -70,7 +70,7 @@ export default function UserHeader() {
                                     <Link
                                         to={link.to}
                                         className={`flex items-center gap-2 text-sm font-semibold transition-all relative py-3 ${
-                                            isActive(link.to) ? 'text-orange-600' : 'text-gray-500 hover:text-orange-600'
+                                            isActive(link.to) ? 'text-brand' : 'text-gray-500 hover:text-brand'
                                         }`}
                                     >
                                         <span>{link.label}</span>
@@ -104,7 +104,7 @@ export default function UserHeader() {
             </div>
 
             {/* Mobile Menu Overlay */}
-            <div className={`md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
+            <div className={`md:hidden absolute top-full left-0 w-full bg-surface border-b border-gray-200 shadow-xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
                 }`}>
                 <div className="px-6 py-4 flex flex-col gap-2">
                     {navLinks.map((link) => (
@@ -114,7 +114,7 @@ export default function UserHeader() {
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center p-4 rounded-xl transition-all ${
                                 isActive(link.to)
-                                ? 'bg-orange-50 text-orange-600 font-bold'
+                                ? 'bg-brand/10 text-brand font-bold'
                                 : 'text-gray-500 hover:bg-gray-100'
                             }`}
                         >

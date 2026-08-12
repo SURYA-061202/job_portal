@@ -307,10 +307,10 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
     return (
         <div className="space-y-6 flex-1 flex flex-col h-full">
             {/* Header Section */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-surface p-4 rounded-xl border border-brand/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900">Upload Resumes</h2>
-                    <p className="text-sm text-gray-500 mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
+                    <p className="text-sm text-brand mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
                 </div>
 
                 {/* Job Selector */}
@@ -318,7 +318,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                     <select
                         value={selectedJobId}
                         onChange={(e) => setSelectedJobId(e.target.value)}
-                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white border shadow-sm"
+                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-brand/30 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm rounded-md bg-surface border shadow-sm"
                     >
                         <option value="">Select Post</option>
                         {jobPosts.map((job) => (

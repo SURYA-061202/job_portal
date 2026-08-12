@@ -15,20 +15,20 @@ type PipelineColumn = {
 };
 
 const COLUMNS: PipelineColumn[] = [
-    { id: 'new', title: 'New Applicants', status: ['pending', 'new'], color: 'border-blue-500' },
-    { id: 'shortlisted', title: 'Shortlisted', status: ['shortlisted'], color: 'border-yellow-500' },
-    { id: 'screening', title: 'Screening / Interview', status: ['round1', 'round2', 'round3', 'technical', 'hr'], color: 'border-purple-500' },
-    { id: 'offer', title: 'Offer Sent', status: ['offer_sent', 'offer'], color: 'border-indigo-500' },
+    { id: 'new', title: 'New Applicants', status: ['pending', 'new'], color: 'border-brand' },
+    { id: 'shortlisted', title: 'Shortlisted', status: ['shortlisted'], color: 'border-brand' },
+    { id: 'screening', title: 'Screening / Interview', status: ['round1', 'round2', 'round3', 'technical', 'hr'], color: 'border-brand' },
+    { id: 'offer', title: 'Offer Sent', status: ['offer_sent', 'offer'], color: 'border-brand' },
     { id: 'hired', title: 'Hired', status: ['hired', 'selected'], color: 'border-green-500' },
     { id: 'rejected', title: 'Rejected', status: ['rejected', 'declined'], color: 'border-red-500' },
 ];
 
 const getIconColor = (columnId: string) => {
     switch (columnId) {
-        case 'new': return 'text-blue-500';
-        case 'shortlisted': return 'text-yellow-500';
-        case 'screening': return 'text-purple-500';
-        case 'offer': return 'text-indigo-500';
+        case 'new': return 'text-brand';
+        case 'shortlisted': return 'text-brand';
+        case 'screening': return 'text-brand';
+        case 'offer': return 'text-brand';
         case 'hired': return 'text-green-500';
         case 'rejected': return 'text-red-500';
         default: return 'text-gray-500';
@@ -324,23 +324,23 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
             {/* Header Section */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
+            <div className="bg-surface p-4 rounded-xl border border-brand/20 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Recruitment Pipeline</h2>
-                        <p className="text-sm text-gray-500">Manage candidates through different stages of the hiring process.</p>
+                        <p className="text-sm text-brand">Manage candidates through different stages of the hiring process.</p>
                     </div>
                 </div>
 
                 {/* Search Input */}
                 <div className="relative w-full md:w-72">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
+                        <Search className="h-4 w-4 text-brand" />
                     </div>
                     <input
                         type="text"
                         placeholder="Search by name, role, post..."
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm transition-all duration-200"
+                        className="block w-full pl-10 pr-3 py-2 border border-brand/30 rounded-lg leading-5 bg-white placeholder-brand/50 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -356,7 +356,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             onDragOver={onDragOver}
                             onDrop={(e) => onDrop(e, col)}
                         >
-                            <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-lg flex-shrink-0">
+                            <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-surface rounded-t-lg flex-shrink-0">
                                 <h3 className="font-semibold text-gray-700">{col.title}</h3>
                                 <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-medium">
                                     {getItemsByStatus(col.status).length}
@@ -373,7 +373,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                             key={item.key}
                                             draggable
                                             onDragStart={(e) => onDragStart(e, item.key)}
-                                            className="bg-white p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
+                                            className="bg-surface p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
                                         >
                                             <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                                 <h4 className="font-medium text-gray-900 truncate pr-2" title={item.name}>{item.name}</h4>
@@ -394,7 +394,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
                                             {item.postTitle && (
                                                 <div className="mb-2 flex-shrink-0">
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-100">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-brand/10 text-brand border border-brand/20">
                                                         <BriefcaseIcon className="h-2.5 w-2.5" />
                                                         {item.postTitle}
                                                     </span>
@@ -459,7 +459,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                     {canShortlist && (
                                                         <button
                                                             onClick={() => openShortlistPicker(item)}
-                                                            className="p-1 hover:bg-blue-50 text-blue-500 rounded"
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
                                                             title="Shortlist"
                                                         >
                                                             <ArrowRight className="h-3 w-3" />
@@ -468,7 +468,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                     {col.id === 'shortlisted' && (
                                                         <button
                                                             onClick={() => updateStatus(item, 'round1')}
-                                                            className="p-1 hover:bg-purple-50 text-purple-500 rounded"
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
                                                             title="Move to Screening"
                                                         >
                                                             <ArrowRight className="h-3 w-3" />
@@ -493,7 +493,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
             {/* Shortlist post-picker modal */}
             {pickerItem && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+                    <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-1">Shortlist {pickerItem.name}</h3>
                         <p className="text-sm text-gray-500 mb-4">Choose which of your job posts to shortlist them for.</p>
                         {posts.length === 0 ? (
@@ -502,7 +502,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             <select
                                 value={pickerPostId}
                                 onChange={(e) => setPickerPostId(e.target.value)}
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                             >
                                 {posts.map(p => (
                                     <option key={p.id} value={p.id}>{p.jobTitle}</option>

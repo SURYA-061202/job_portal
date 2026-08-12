@@ -1,52 +1,58 @@
 /* ============================================================================
-   Application theme tokens.
+   Application theme.
 
-   Single source of truth for the brand colours. This is a Tailwind v4 @theme
-   block, so every token below is automatically available as a utility class:
+   THREE colours, and only three. Everything in the UI is built from these:
 
-     bg-brand-500   text-brand-600   border-brand-200   ring-brand-500/20
-     bg-surface     bg-surface-muted  border-surface-border
+     brand    #FE6700   the one orange - every accent, every CTA
+     surface  #FFFFFF   the page/card background
+     ink      #030712   dark - reserved for the sidebar only
 
-   Imported once from src/index.css. To retheme the app, change the values
-   here — nothing else needs to be touched.
+   There is deliberately NO orange ramp (no brand-400/500/600). A ramp means
+   several different oranges, which is exactly what this theme exists to
+   avoid. Where a lighter or darker shade is needed, use an opacity modifier
+   on the same token so it stays one colour:
+
+     bg-brand          solid #FE6700
+     bg-brand/10       the old "orange-50" tint
+     border-brand/20   the old "orange-100" hairline
+     bg-surface/5      elevation on top of ink (sidebar)
+
+   Neutral greys for body text and hairlines are left to Tailwind's stock
+   gray-* scale - they are neutrals, not part of the colour palette.
+
+   This is a Tailwind v4 @theme block, so each token below is automatically a
+   utility: bg-brand, text-brand, border-brand, ring-brand, from-brand,
+   decoration-brand, shadow-brand, bg-surface, bg-ink, ...
+
+   Imported from src/index.css (must sit with the other @import, above
+   @config - CSS requires @import to precede all other statements).
+   To retheme the app, change the three values here and nothing else.
    ============================================================================ */
 
 @theme {
-  /* --- Brand orange -------------------------------------------------------
-     500 is the reference brand colour: #FE6700.
-     The rest of the ramp is derived from it (same hue 24deg, same 100%
-     saturation, lightness stepped) so tints and shades stay on-brand.        */
-  --color-brand-50: #fff3eb;
-  --color-brand-100: #ffe4d1;
-  --color-brand-200: #ffc9a3;
-  --color-brand-300: #ffaa70;
-  --color-brand-400: #ff8938;
-  --color-brand-500: #fe6700;
-  --color-brand-600: #e05b00;
-  --color-brand-700: #b84a00;
-  --color-brand-800: #943c00;
-  --color-brand-900: #7a3200;
-  --color-brand-950: #471d00;
+  /* The single brand orange. */
+  --color-brand: #fe6700;
 
-  /* --- Surfaces -----------------------------------------------------------
-     The white the Posts module sits on, plus the neutrals that pair with it
-     (input fill and hairline borders).                                       */
+  /* The white the app sits on. */
   --color-surface: #ffffff;
-  --color-surface-muted: #f9fafb;
-  --color-surface-border: #e5e7eb;
+
+  /* The dark. Sidebar only - do not use it for page content. */
+  --color-ink: #030712;
 }
 
 @layer utilities {
-  /* Brand fill. Deliberately flat rather than a gradient so the rendered
-     colour is exactly the brand colour, not a blend that merely passes
-     through it. Keeps the historic class name so call sites need no change. */
-  .bg-brand-gradient {
-    background: var(--color-brand-500);
+  /* Historic class names kept as aliases so call sites that still say
+     "gradient" keep working. Both are flat: the rendered colour is exactly
+     the brand colour, never a blend that merely passes through it. */
+  .bg-brand-gradient,
+  .bg-orange-gradient {
+    background: var(--color-brand);
   }
 
-  .text-brand-gradient {
+  .text-brand-gradient,
+  .text-orange-gradient {
     background-image: none;
     -webkit-text-fill-color: currentcolor;
-    color: var(--color-brand-500);
+    color: var(--color-brand);
   }
 }

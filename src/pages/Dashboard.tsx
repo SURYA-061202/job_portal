@@ -173,7 +173,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600" />
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand" />
       </div>
     );
   }
@@ -188,7 +188,7 @@ export default function Dashboard() {
       {/* Mobile Hamburger Menu Button */}
       <button
         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-white p-2.5 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-50 bg-surface p-2.5 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
         aria-label="Toggle menu"
       >
         {isMobileSidebarOpen ? (
