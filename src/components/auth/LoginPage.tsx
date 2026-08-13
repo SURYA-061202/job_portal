@@ -88,7 +88,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-primary-50">
+    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-brand/10">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -114,9 +114,9 @@ export default function LoginPage() {
           <style>
             {`
               @keyframes letter-glow {
-                0%, 45%, 100% { color: #ffffff; }
-                50% { color: #fb923c; }
-                55% { color: #ffffff; }
+                0%, 45%, 100% { color: var(--color-surface); }
+                50% { color: var(--color-brand); }
+                55% { color: var(--color-surface); }
               }
             `}
           </style>
@@ -142,13 +142,13 @@ export default function LoginPage() {
 
 
           {/* Top Right Vibrant Glow (Orange/Pink) */}
-          <div className="absolute -top-[30%] -right-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-br from-orange-400/30 to-pink-500/30 blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute -top-[30%] -right-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-br from-brand/30 to-brand/10 blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
           
           {/* Bottom Left Vibrant Glow (Blue/Primary) */}
-          <div className="absolute -bottom-[30%] -left-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-tr from-blue-400/30 to-primary-500/30 blur-3xl opacity-70"></div>
+          <div className="absolute -bottom-[30%] -left-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-tr from-brand/10 to-brand/30 blur-3xl opacity-70"></div>
           
           {/* Middle Floating Accent */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-gradient-to-r from-orange-100/40 to-primary-100/40 blur-3xl opacity-50"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-brand/10 blur-3xl opacity-50"></div>
         </div>
 
         <div className="w-full max-w-md relative z-10">
@@ -161,7 +161,7 @@ export default function LoginPage() {
                 className="h-10 w-auto object-contain"
               />
               <span className="text-gray-800">Indian Infra</span>
-              <span className="bg-gradient-to-r from-orange-600 via-rose-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x">
+              <span className="text-brand">
                 Jobs
               </span>
             </div>
@@ -172,9 +172,9 @@ export default function LoginPage() {
             <div className="text-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1.5 tracking-tight">
                 {isLogin ? (
-                  <>Welcome <span className="bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">Back</span></>
+                  <>Welcome <span className="text-brand">Back</span></>
                 ) : (
-                  <>Join <span className="bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">Us</span></>
+                  <>Join <span className="text-brand">Us</span></>
                 )}
               </h2>
               <p className="text-gray-500 text-sm font-medium">
@@ -190,7 +190,7 @@ export default function LoginPage() {
                     <input
                       type="text"
                       id="firstName"
-                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
                       placeholder=" "
                       required
                       value={firstName}
@@ -199,18 +199,18 @@ export default function LoginPage() {
                     <label
                       htmlFor="firstName"
                       className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
-                               peer-focus:text-primary-600"
+                               peer-focus:text-brand"
                     >
                       First Name
                     </label>
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
                   </div>
                   {/* Last Name */}
                   <div className="relative group">
                     <input
                       type="text"
                       id="lastName"
-                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
                       placeholder=" "
                       required
                       value={lastName}
@@ -219,11 +219,11 @@ export default function LoginPage() {
                     <label
                       htmlFor="lastName"
                       className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
-                               peer-focus:text-primary-600"
+                               peer-focus:text-brand"
                     >
                       Last Name
                     </label>
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
                   </div>
                 </div>
               )}
@@ -234,7 +234,7 @@ export default function LoginPage() {
                   <input
                     type="tel"
                     id="mobile"
-                    className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                    className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
                     placeholder=" "
                     required
                     value={mobile}
@@ -243,11 +243,11 @@ export default function LoginPage() {
                   <label
                     htmlFor="mobile"
                     className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
-                             peer-focus:text-primary-600"
+                             peer-focus:text-brand"
                   >
                     Mobile Number
                   </label>
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
                 </div>
               )}
 
@@ -256,7 +256,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="email"
-                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
                   placeholder=" "
                   required
                   value={email}
@@ -265,11 +265,11 @@ export default function LoginPage() {
                 <label
                   htmlFor="email"
                   className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
-                           peer-focus:text-primary-600"
+                           peer-focus:text-brand"
                 >
                   Email Address
                 </label>
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-primary-600 transition-colors" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
               </div>
 
               {/* Password */}
@@ -277,7 +277,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
-                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
                   placeholder=" "
                   required
                   value={password}
@@ -286,14 +286,14 @@ export default function LoginPage() {
                 <label
                   htmlFor="password"
                   className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
-                           peer-focus:text-primary-600"
+                           peer-focus:text-brand"
                 >
                   Password
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -304,7 +304,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-gray-500 hover:text-primary-600 text-sm font-medium transition-colors duration-200"
+                    className="text-gray-500 hover:text-brand text-sm font-medium transition-colors duration-200"
                   >
                     Forgot Password?
                   </button>
@@ -315,7 +315,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-primary-600 to-orange-500 text-white rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
+                className="w-full bg-brand text-white rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-brand/25 hover:shadow-xl hover:shadow-brand/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
@@ -335,7 +335,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setIsLogin(false)}
-                      className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+                      className="text-brand hover:text-brand font-semibold transition-colors"
                     >
                       Sign up
                     </button>
@@ -346,7 +346,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setIsLogin(true)}
-                      className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+                      className="text-brand hover:text-brand font-semibold transition-colors"
                     >
                       Sign in
                     </button>

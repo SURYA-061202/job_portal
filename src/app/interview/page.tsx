@@ -108,8 +108,8 @@ export default function InterviewResponsePage() {
               onClick={() => setInterest(opt.value as any)}
               className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
                 interest === opt.value
-                  ? "bg-primary-600 text-white border-primary-600"
-                  : "bg-white text-primary-600 border-primary-600 hover:bg-primary-50"
+                  ? "bg-brand text-white border-brand"
+                  : "bg-white text-brand border-brand hover:bg-brand/10"
               }`}
             >
               {opt.label}
@@ -133,7 +133,7 @@ export default function InterviewResponsePage() {
                       setSelectedDate(d);
                       setSelectedTime('');
                     }}
-                    className="form-radio text-primary-600"
+                    className="form-radio text-brand"
                     disabled={interest !== "interested"}
                   />
                   {d}
@@ -148,7 +148,7 @@ export default function InterviewResponsePage() {
                           value={t}
                           checked={selectedTime === t}
                           onChange={() => setSelectedTime(t)}
-                          className="form-radio text-primary-600"
+                          className="form-radio text-brand"
                         />
                         {t}
                       </label>
@@ -162,7 +162,7 @@ export default function InterviewResponsePage() {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 mt-4"
+          className="w-full bg-brand text-white px-4 py-2 rounded-md hover:bg-brand/90 disabled:opacity-50 mt-4"
           disabled={!interest || (interest === "interested" && (!selectedDate || !selectedTime))}
         >
           Submit

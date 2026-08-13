@@ -4,11 +4,12 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import CustomDropdown from '@/components/CustomDropdown';
+import { CHART_COLORS } from '@/constants/colors';
 
 // Helpers ------------------------------------------------------------
 
-// Chart colors - different orange shades
-const COLORS = ['#f97316', '#fb923c', '#fdba74', '#ea580c', '#c2410c', '#fed7aa', '#ffedd5', '#9a3412'];
+// Chart colors - lightness steps of the one brand orange (see constants/colors.ts)
+const COLORS = CHART_COLORS;
 
 // Main component -------------------------------------------------------
 
@@ -152,35 +153,35 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   }
 
   return (
-    <div className="space-y-6 flex-1 flex flex-col">
+    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 flex flex-col">
       {/* Header Section */}
-      <div className="bg-surface p-4 rounded-xl border border-brand/20">
+      <div className="bg-surface p-4 rounded-xl border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-xl font-bold text-gray-900">Stats & Analytics</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-brand/10 text-brand text-xs font-bold border border-brand/20">
+              <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold border border-gray-200">
                 {jobPosts.length} Posts
               </span>
             </div>
-            <p className="text-sm text-brand">Department and skills distribution across job postings</p>
+            <p className="text-sm text-gray-500">Department and skills distribution across job postings</p>
           </div>
         </div>
       </div>
 
       {/* Summary Cards - Moved to Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
-          <div className="text-sm text-brand font-medium mb-1">Total Candidates</div>
-          <div className="text-3xl font-bold text-brand">{candidates.length}</div>
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <div className="text-sm text-gray-500 font-medium mb-1">Total Candidates</div>
+          <div className="text-3xl font-bold text-gray-900">{candidates.length}</div>
         </div>
-        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
-          <div className="text-sm text-brand font-medium mb-1">Total Job Posts</div>
-          <div className="text-3xl font-bold text-brand">{jobPosts.length}</div>
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <div className="text-sm text-gray-500 font-medium mb-1">Total Job Posts</div>
+          <div className="text-3xl font-bold text-gray-900">{jobPosts.length}</div>
         </div>
-        <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
-          <div className="text-sm text-brand font-medium mb-1">Unique Departments</div>
-          <div className="text-3xl font-bold text-brand">{allDepartments.length}</div>
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <div className="text-sm text-gray-500 font-medium mb-1">Unique Departments</div>
+          <div className="text-3xl font-bold text-gray-900">{allDepartments.length}</div>
         </div>
       </div>
 

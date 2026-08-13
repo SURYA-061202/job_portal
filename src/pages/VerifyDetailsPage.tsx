@@ -147,7 +147,7 @@ export default function VerifyDetailsPage() {
           </div>
         </div>
 
-        <button onClick={handleSubmit} className="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700">
+        <button onClick={handleSubmit} className="w-full bg-brand text-white px-4 py-2 rounded-md hover:bg-brand/90">
           Submit
         </button>
       </div>

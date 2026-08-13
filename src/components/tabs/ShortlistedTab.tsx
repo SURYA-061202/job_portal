@@ -9,6 +9,13 @@ import { sendVerifyDetails, sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
 
+const normalizeSkills = (skills: any): string[] => {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills.filter(Boolean);
+  if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+};
+
 export default function ShortlistedTab({ candidateId, onBack, userRole, userId }: { candidateId?: string | null; onBack?: () => void; userRole?: string | null; userId?: string | null } = {}) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
@@ -32,6 +39,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       const postsData = postsSnap.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
       setPosts(postsData);
       const ownedPostIds = postsData.map(p => p.id as string);
+      console.log('[Shortlisted] Owned posts:', ownedPostIds);
 
       // 1. Fetch manually uploaded candidates from Firestore, only ones shortlisted
       // to a post this user owns (or all, for admin).
@@ -39,10 +47,12 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       const qs = await getDocs(candQ);
       qs.forEach((d) => {
         const data = d.data();
+        console.log('[Shortlisted] Candidate:', d.id, 'status:', data.status, 'postId:', data.postId);
         if (data.status !== 'shortlisted') return;
         if (!isAdmin && (!data.postId || !ownedPostIds.includes(data.postId))) return;
         allCandidates.push({ id: d.id, ...data } as Candidate);
       });
+      console.log('[Shortlisted] Candidates from candidates collection:', allCandidates.length);
 
       // Sort manually
       allCandidates.sort((a, b) => {
@@ -60,7 +70,9 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
       let applications: { user_id: string; post_id: string }[] = [];
       try {
-        applications = (await getAllApplications()).filter(app => {
+        const allApps = await getAllApplications();
+        console.log('[Shortlisted] ALL applications:', allApps.map(a => `user: ${a.user_id} | post: ${a.post_id} | status: ${a.status}`));
+        applications = allApps.filter(app => {
           if (app.status !== 'shortlisted') return false;
           if (!isAdmin && !ownedPostIds.includes(app.post_id)) return false;
           return true;
@@ -68,35 +80,50 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       } catch (appsError) {
         console.error('Error fetching shortlisted applications:', appsError);
       }
+      console.log('[Shortlisted] Shortlisted applications:', applications.map(a => `user: ${a.user_id} | post: ${a.post_id} | status: ${a.status}`));
 
       if (applications && applications.length > 0) {
         // Fetch user details for each shortlisted applicant
         for (const app of applications) {
           try {
+            let userData: any = null;
+            let intData: any = {};
+
+            // First try users collection (registered users)
             const userDoc = await getDoc(doc(db, 'users', app.user_id));
             if (userDoc.exists()) {
-              const userData = userDoc.data();
+              userData = userDoc.data();
+            } else {
+              // Fallback: try candidates collection (uploaded candidates)
+              const candDoc = await getDoc(doc(db, 'candidates', app.user_id));
+              if (candDoc.exists()) {
+                userData = candDoc.data();
+              }
+            }
+
+            if (userData) {
               const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-              const intData = intDoc.exists() ? intDoc.data() : {};
+              intData = intDoc.exists() ? intDoc.data() : {};
+              console.log('[Shortlisted] Found user for application:', app.user_id, userData.name || userData.firstName);
 
               allCandidates.push({
                 id: app.user_id,
-                name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
+                name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
                 email: userData.email || '',
-                phone: userData.mobile || '',
-                role: userData.department || 'Applicant',
-                experience: userData.yearsOfExperience || '',
-                skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                phone: userData.phone || userData.mobile || '',
+                role: userData.role || userData.department || 'Applicant',
+                experience: userData.experience || userData.yearsOfExperience || '',
+                skills: normalizeSkills(userData.skills),
                 resumeUrl: userData.resumeUrl || '',
                 extractedData: {
-                  summary: '',
-                  workExperience: [],
-                  education: [],
-                  skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
-                  certifications: [],
-                  projects: []
+                  summary: userData.extractedData?.summary || '',
+                  workExperience: userData.extractedData?.workExperience || [],
+                  education: userData.extractedData?.education || [],
+                  skills: normalizeSkills(userData.skills),
+                  certifications: userData.extractedData?.certifications || [],
+                  projects: userData.extractedData?.projects || []
                 },
-                education: [],
+                education: userData.education || [],
                 createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                 updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
                 status: 'shortlisted' as any,
@@ -110,6 +137,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         }
       }
 
+      console.log('[Shortlisted] Total candidates found:', allCandidates.length);
       setCandidates(allCandidates);
 
       // Auto-select candidate if candidateId is provided
@@ -163,50 +191,52 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   if (!selectedPostView) {
     return (
-      <div className="space-y-6">
-        <div className="bg-surface p-4 rounded-xl border border-brand/20">
-          <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
-          <p className="text-sm text-brand">Select a job post to view its shortlisted candidates.</p>
-        </div>
+    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
+      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0">
+        <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
+        <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-brand">Loading…</div>
-        ) : postsWithCounts.length === 0 ? (
-          <div className="bg-surface rounded-xl border border-dashed border-brand/30 p-12 text-center">
-            <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
+      {loading ? (
+        <div className="text-center py-12 text-gray-500 flex-1 flex items-center justify-center">Loading…</div>
+      ) : postsWithCounts.length === 0 ? (
+        <div className="bg-surface rounded-xl border border-dashed border-gray-300 p-12 text-center flex-1 flex items-center justify-center">
+          <div>
+            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900">No shortlisted candidates yet</h3>
-            <p className="mt-1 text-brand">Candidates you shortlist for your posts will appear here.</p>
+            <p className="mt-1 text-gray-500">Candidates you shortlist for your posts will appear here.</p>
           </div>
+        </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 content-start">
             {postsWithCounts.map((post) => (
               <div
                 key={post.id}
                 onClick={() => setSelectedPostView(post)}
-                className="bg-surface rounded-2xl border border-brand/20 hover:border-brand/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden group p-4 sm:p-6"
+              className="group relative bg-surface rounded-lg border border-gray-200 hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full p-4 sm:p-6"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">{post.jobTitle}</h3>
                   {post.positionLevel && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand/10 text-brand border border-brand/20 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200 whitespace-nowrap">
                       {post.positionLevel}
                     </span>
                   )}
                 </div>
                 {post.department && (
-                  <div className="flex items-center text-xs sm:text-sm text-brand font-medium mb-2">
-                    <Briefcase className="w-3.5 h-3.5 mr-1.5 text-brand" />
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                    <Briefcase className="w-3.5 h-3.5 mr-1.5" />
                     {post.department}
                   </div>
                 )}
                 {post.location && (
-                  <div className="flex items-center text-xs sm:text-sm text-brand font-medium mb-3">
-                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-brand" />
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5" />
                     {post.location}
                   </div>
                 )}
-                <div className="mt-3 pt-3 border-t border-brand/10 flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand">
+                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-700">
                     {post.shortlistedCount} Shortlisted
                   </span>
                 </div>

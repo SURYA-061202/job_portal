@@ -34,7 +34,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
   };
 
   return (
-    <div className="bg-surface rounded-lg shadow p-6 w-full h-full flex flex-col">
+    <div className="bg-surface rounded-lg p-6 w-full h-full flex flex-col">
 
 
       <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">

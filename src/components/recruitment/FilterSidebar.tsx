@@ -72,7 +72,7 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
                                                 type="checkbox"
                                                 checked={selectedFilters[section.key]?.includes(optionValue)}
                                                 onChange={() => onToggleFilter(section.key, optionValue)}
-                                                className="peer h-4 w-4 md:h-5 md:w-5 cursor-pointer appearance-none rounded border-2 border-gray-200 transition-all checked:border-orange-500 checked:bg-orange-500 group-hover:border-orange-200"
+                                                className="peer h-4 w-4 md:h-5 md:w-5 cursor-pointer appearance-none rounded border-2 border-gray-200 transition-all checked:border-brand checked:bg-brand group-hover:border-brand/30"
                                             />
                                             <svg
                                                 className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 md:h-3.5 md:w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -99,7 +99,7 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
             </div>
 
             {/* Pro Tip Card */}
-            <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
+            <div className="bg-brand/5 border border-brand/20 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
                 <div className="relative z-10">
                     <h3 className="font-bold text-lg mb-2">Reminder!</h3>
                     <p className="text-gray-500 text-sm leading-relaxed mb-4">
@@ -107,12 +107,12 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
                     </p>
                     <button
                         onClick={onCompleteProfile}
-                        className="text-orange-600 font-bold text-sm hover:text-orange-700 transition-colors"
+                        className="text-brand font-bold text-sm hover:text-brand transition-colors"
                     >
                         Complete Profile →
                     </button>
                 </div>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-12 -mt-12" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-brand/10 rounded-full blur-2xl -mr-12 -mt-12" />
             </div>
         </div>
     );

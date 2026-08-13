@@ -182,7 +182,7 @@ export default function CandidateList({
       {/* Header with Search and Optional Filter — always shown, even while loading or empty,
           so filter/search controls (e.g. the Selected/Rejected toggle) never disappear. */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             {title || 'Candidates'}
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
@@ -222,7 +222,7 @@ export default function CandidateList({
       )}
 
       {loading ? (
-        <div className="bg-surface rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-surface rounded-xl border border-gray-100 overflow-hidden">
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center space-x-4 animate-pulse">
@@ -236,7 +236,7 @@ export default function CandidateList({
           </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="bg-surface rounded-xl border border-gray-100 p-12 text-center">
           <div className="mx-auto h-12 w-12 text-gray-300 mb-4">
             <User className="h-full w-full" />
           </div>
@@ -244,7 +244,7 @@ export default function CandidateList({
           <p className="mt-1 text-gray-500">{emptyMessage || 'Upload a resume to get started.'}</p>
         </div>
       ) : (
-      <div className="bg-surface rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-surface rounded-xl border border-gray-100 overflow-hidden">
         <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50 sticky top-0 z-10">

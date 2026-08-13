@@ -15,22 +15,28 @@ type PipelineColumn = {
 };
 
 const COLUMNS: PipelineColumn[] = [
-    { id: 'new', title: 'New Applicants', status: ['pending', 'new'], color: 'border-brand' },
+    { id: 'new', title: 'New Applicants', status: ['pending', 'new', 'applied'], color: 'border-brand' },
     { id: 'shortlisted', title: 'Shortlisted', status: ['shortlisted'], color: 'border-brand' },
-    { id: 'screening', title: 'Screening / Interview', status: ['round1', 'round2', 'round3', 'technical', 'hr'], color: 'border-brand' },
+    { id: 'round1', title: 'Interview Round 1', status: ['round1'], color: 'border-brand' },
+    { id: 'round2', title: 'Interview Round 2', status: ['round2'], color: 'border-brand' },
+    { id: 'round3', title: 'Interview Round 3', status: ['round3'], color: 'border-brand' },
+    { id: 'round4', title: 'Interview Round 4', status: ['round4', 'technical', 'hr'], color: 'border-brand' },
     { id: 'offer', title: 'Offer Sent', status: ['offer_sent', 'offer'], color: 'border-brand' },
-    { id: 'hired', title: 'Hired', status: ['hired', 'selected'], color: 'border-green-500' },
-    { id: 'rejected', title: 'Rejected', status: ['rejected', 'declined'], color: 'border-red-500' },
+    { id: 'hired', title: 'Hired', status: ['hired', 'selected'], color: 'border-brand' },
+    { id: 'rejected', title: 'Rejected', status: ['rejected', 'declined'], color: 'border-brand' },
 ];
 
 const getIconColor = (columnId: string) => {
     switch (columnId) {
         case 'new': return 'text-brand';
         case 'shortlisted': return 'text-brand';
-        case 'screening': return 'text-brand';
+        case 'round1': return 'text-brand';
+        case 'round2': return 'text-brand';
+        case 'round3': return 'text-brand';
+        case 'round4': return 'text-brand';
         case 'offer': return 'text-brand';
-        case 'hired': return 'text-green-500';
-        case 'rejected': return 'text-red-500';
+        case 'hired': return 'text-brand';
+        case 'rejected': return 'text-brand';
         default: return 'text-gray-500';
     }
 };
@@ -116,6 +122,8 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
             const manualById: Record<string, any> = {};
             candSnap.forEach(d => { manualById[d.id] = d.data(); });
 
+            console.log('[Pipeline] Uploaded candidates:', Object.keys(manualById).map(id => `${id} | ${manualById[id].name} | postId: ${manualById[id].postId || 'none'} | status: ${manualById[id].status}`));
+
             const nextItems: PipelineItem[] = [];
 
             // New Applicants (manual): uploaded but not yet shortlisted to any post
@@ -155,14 +163,22 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 }
             }
 
+            console.log('[Pipeline] Applications:', apps.map(app => `user_id: ${app.user_id} | post_id: ${app.post_id} | status: ${app.status}`));
+
             const appliedRegisteredIds = new Set<string>();
+            const processedCandidateIds = new Set<string>();
+
             apps.forEach(app => {
                 const registered = registeredById[app.user_id];
                 const manual = manualById[app.user_id];
                 const display = registered || manual;
-                if (!display) return; // orphaned application (e.g. candidate deleted)
+                if (!display) {
+                    console.log('[Pipeline] Skipping orphaned application:', app.user_id, app.post_id);
+                    return; // orphaned application (e.g. candidate deleted)
+                }
 
                 if (registered) appliedRegisteredIds.add(app.user_id);
+                processedCandidateIds.add(app.user_id);
 
                 nextItems.push({
                     key: `${app.user_id}::${app.post_id}`,
@@ -178,6 +194,26 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                     postTitle: postTitleById[app.post_id] || 'Untitled Post',
                     source: registered ? 'applicant' : 'manual',
                     createdAt: display.createdAt,
+                });
+            });
+
+            // Also add uploaded candidates with postId but no matching application
+            Object.entries(manualById).forEach(([id, data]) => {
+                if (!data.postId) return; // already handled above
+                if (processedCandidateIds.has(id)) return; // already added via application
+                nextItems.push({
+                    key: `${id}::${data.postId}`,
+                    id,
+                    name: data.name || 'Unnamed Candidate',
+                    role: data.role || 'Not specified',
+                    experience: data.experience || '',
+                    skills: normalizeSkills(data.skills),
+                    summary: data.extractedData?.summary,
+                    status: data.status || 'pending',
+                    postId: data.postId,
+                    postTitle: postTitleById[data.postId] || 'Untitled Post',
+                    source: 'manual',
+                    createdAt: data.createdAt,
                 });
             });
 
@@ -318,41 +354,50 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     };
 
     if (loading) {
-        return <div className="p-8 text-center text-gray-500">Loading pipeline...</div>;
+        return (
+            <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                        <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto mb-3" />
+                        <p>Loading pipeline...</p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Header Section */}
-            <div className="bg-surface p-4 rounded-xl border border-brand/20 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
+            <div className="bg-surface p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Recruitment Pipeline</h2>
-                        <p className="text-sm text-brand">Manage candidates through different stages of the hiring process.</p>
+                        <p className="text-sm text-gray-500">Manage candidates through different stages of the hiring process.</p>
                     </div>
                 </div>
 
                 {/* Search Input */}
                 <div className="relative w-full md:w-72">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-brand" />
+                        <Search className="h-4 w-4 text-gray-400" />
                     </div>
                     <input
                         type="text"
                         placeholder="Search by name, role, post..."
-                        className="block w-full pl-10 pr-3 py-2 border border-brand/30 rounded-lg leading-5 bg-white placeholder-brand/50 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-hidden hover-scrollbar pb-2">
-                <div className="flex space-x-4 min-w-[1200px] h-full">
+            <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden hover-scrollbar pb-2">
+                <div className="flex space-x-4 min-w-[1800px] h-full">
                     {COLUMNS.map(col => (
                         <div
                             key={col.id}
-                            className={`flex-[0_0_300px] w-[300px] bg-gray-50 rounded-lg flex flex-col h-full border-t-4 ${col.color}`}
+                            className={`flex-[0_0_300px] w-[300px] bg-gray-50 rounded-lg flex flex-col h-full border border-gray-200 border-t-4 ${col.color}`}
                             onDragOver={onDragOver}
                             onDrop={(e) => onDrop(e, col)}
                         >
@@ -373,7 +418,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                             key={item.key}
                                             draggable
                                             onDragStart={(e) => onDragStart(e, item.key)}
-                                            className="bg-surface p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group flex flex-col h-56 overflow-y-auto hover-scrollbar"
+                                            className="bg-surface p-3 rounded border border-gray-200 cursor-grab active:cursor-grabbing hover:border-brand/40 transition-colors group flex flex-col h-56 overflow-y-auto hover-scrollbar"
                                         >
                                             <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                                 <h4 className="font-medium text-gray-900 truncate pr-2" title={item.name}>{item.name}</h4>
@@ -469,7 +514,43 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                         <button
                                                             onClick={() => updateStatus(item, 'round1')}
                                                             className="p-1 hover:bg-brand/10 text-brand rounded"
-                                                            title="Move to Screening"
+                                                            title="Move to Round 1"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {col.id === 'round1' && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'round2')}
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
+                                                            title="Move to Round 2"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {col.id === 'round2' && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'round3')}
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
+                                                            title="Move to Round 3"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {col.id === 'round3' && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'round4')}
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
+                                                            title="Move to Round 4"
+                                                        >
+                                                            <ArrowRight className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                    {col.id === 'round4' && (
+                                                        <button
+                                                            onClick={() => updateStatus(item, 'offer_sent')}
+                                                            className="p-1 hover:bg-brand/10 text-brand rounded"
+                                                            title="Send Offer"
                                                         >
                                                             <ArrowRight className="h-3 w-3" />
                                                         </button>

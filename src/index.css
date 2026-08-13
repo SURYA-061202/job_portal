@@ -10,15 +10,14 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  color: rgb(var(--foreground-rgb, 0 0 0));
-  background: linear-gradient(to bottom,
-      transparent,
-      rgb(var(--background-end-rgb, 255 255 255))) rgb(var(--background-start-rgb, 255 255 255));
+  /* Theme tokens from styles/theme.css - the app sits on flat white. */
+  color: var(--color-foreground);
+  background: var(--color-surface);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #94a3b8 transparent;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -31,29 +30,19 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #94a3b8 !important;
+  background: var(--color-border) !important;
   border-radius: 10px !important;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #64748b !important;
+  background: var(--color-muted-foreground) !important;
 }
 
-/* --- Custom colour variables originally from globals.css --- */
-
+/* The theme is light-only by design - orange on white. Pin the colour scheme
+   so the browser does not restyle form controls, scrollbars or autofill to a
+   dark palette when the OS is in dark mode. */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Keep foreground text black to ensure readability on white components even in dark mode */
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  color-scheme: light;
 }
 
 @layer utilities {

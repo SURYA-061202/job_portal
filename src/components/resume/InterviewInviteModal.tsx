@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { sendInterviewInvite } from '@/lib/emailFunctions';
 import { upsertApplication, setApplicationStatus } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
 
 interface Props {
@@ -25,8 +25,9 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [selectedPostId, setSelectedPostId] = useState('');
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [recruiters, setRecruiters] = useState<{ id: string; name: string }[]>([]);
+  const [loadingRecruiters, setLoadingRecruiters] = useState(false);
   const interviewurl = `${window.location.origin}`;
-  const interviewerOptions = ['Dhinesh Kumar', 'Naresh Kumar', 'Manthra'];
 
   const handleCheckbox = (name: string) => {
     setInterviewers((prev) =>
@@ -37,6 +38,29 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   const handleDateChange = (idx: number, value: string) => {
     setDates((prev) => prev.map((d, i) => (i === idx ? value : d)));
   };
+
+  useEffect(() => {
+    // Fetch recruiters from Firestore
+    const fetchRecruiters = async () => {
+      try {
+        setLoadingRecruiters(true);
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('role', 'in', ['recruiter', 'admin', 'manager']));
+        const snapshot = await getDocs(q);
+        const recruiterList = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const name = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed';
+          return { id: doc.id, name };
+        });
+        setRecruiters(recruiterList);
+      } catch (error) {
+        console.error('Error fetching recruiters:', error);
+      } finally {
+        setLoadingRecruiters(false);
+      }
+    };
+    fetchRecruiters();
+  }, []);
 
   useEffect(() => {
     // Only fetch job posts if this candidate doesn't have a postId (manual candidate)
@@ -98,50 +122,45 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
       // isJobApplicant (declared above): job applicants have postId (set when fetching
       // from job_applications); manual candidates are in the 'candidates' collection without postId
 
-      if (!isJobApplicant) {
-        try {
-          const candidateRef = doc(db, 'candidates', candidate.id);
-          const snap = await getDoc(candidateRef);
-          const todayStr = new Date().toISOString().split('T')[0];
+      // Always update the candidate's document with postId and status
+      try {
+        const candidateRef = doc(db, 'candidates', candidate.id);
+        const snap = await getDoc(candidateRef);
+        const todayStr = new Date().toISOString().split('T')[0];
 
-          if (snap.exists()) {
-            await updateDoc(candidateRef, {
-              status: 'shortlisted',
-              postId: selectedPostId, // Link to selected post
-              interviewDetails: {
-                role,
-                dates,
-                roundType,
-                interviewers,
-                currentSalary: 30000,
-                expectedSalary: 30000,
-                joiningDate: todayStr,
-                feedback: 'Good',
-                sentAt: new Date().toISOString(),
-              },
-              updatedAt: new Date(),
-            });
-          }
-
-          // Also create a job_application to make it show up in the specific post view
-          try {
-            await upsertApplication(selectedPostId, candidate.id, 'shortlisted');
-          } catch (appError: any) {
-            console.error('Error creating job application:', appError);
-            toast.error(`Sync Error: ${appError.message}`);
-          }
-
-        } catch (err) {
-          console.error('Failed to update candidate after sending invite', err);
+        if (snap.exists()) {
+          await updateDoc(candidateRef, {
+            status: 'shortlisted',
+            postId: effectivePostId,
+            interviewDetails: {
+              role,
+              dates,
+              roundType,
+              interviewers,
+              currentSalary: 30000,
+              expectedSalary: 30000,
+              joiningDate: todayStr,
+              feedback: 'Good',
+              sentAt: new Date().toISOString(),
+            },
+            updatedAt: new Date(),
+          });
+          console.log('[InterviewInvite] Updated candidate document:', candidate.id);
+        } else {
+          console.log('[InterviewInvite] Candidate document not found:', candidate.id);
         }
-      } else {
-        // Update job application status for job applicants
-        try {
-          console.log('[InterviewInvite] Updating application:', { user_id: candidate.id, post_id: (candidate as any).postId });
-          await setApplicationStatus((candidate as any).postId, candidate.id, 'shortlisted');
-        } catch (err) {
-          console.error('Failed to update job application after sending invite', err);
-        }
+      } catch (err) {
+        console.error('Failed to update candidate document:', err);
+      }
+
+      // Always create/upsert the job application
+      try {
+        console.log('[InterviewInvite] Creating/updating application:', { user_id: candidate.id, post_id: effectivePostId });
+        await upsertApplication(effectivePostId, candidate.id, 'shortlisted');
+        console.log('[InterviewInvite] Application created/updated successfully');
+      } catch (appError: any) {
+        console.error('Error creating job application:', appError);
+        toast.error(`Sync Error: ${appError.message}`);
       }
 
       // Store interview details in interviews collection for both types
@@ -149,7 +168,6 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         const { setDoc } = await import('firebase/firestore');
         const interviewRef = doc(db, 'interviews', candidate.id);
         const todayStr = new Date().toISOString().split('T')[0];
-        const effectivePostId = isJobApplicant ? (candidate as any).postId : selectedPostId;
         await setDoc(interviewRef, {
           postId: effectivePostId,
           role,
@@ -258,19 +276,26 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
           {/* Interviewers */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Interviewers</label>
-            <div className="grid grid-cols-1 gap-2">
-              {interviewerOptions.map((name) => (
-                <label key={name} className="inline-flex items-center text-sm rounded hover:bg-brand/10 px-2 py-1 transition-colors">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4 text-brand mr-2"
-                    checked={interviewers.includes(name)}
-                    onChange={() => handleCheckbox(name)}
-                  />
-                  {name}
-                </label>
-              ))}
-            </div>
+            {loadingRecruiters ? (
+              <p className="text-xs text-gray-400">Loading interviewers...</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-2">
+                {recruiters.map((recruiter) => (
+                  <label key={recruiter.id} className="inline-flex items-center text-sm rounded hover:bg-brand/10 px-2 py-1 transition-colors">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-brand mr-2"
+                      checked={interviewers.includes(recruiter.name)}
+                      onChange={() => handleCheckbox(recruiter.name)}
+                    />
+                    {recruiter.name}
+                  </label>
+                ))}
+                {recruiters.length === 0 && (
+                  <p className="text-xs text-gray-400">No interviewers found</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

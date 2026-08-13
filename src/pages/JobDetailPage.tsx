@@ -55,7 +55,7 @@ export default function JobDetailPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-orange-600 mx-auto mb-4" />
+                    <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto mb-4" />
                     <p className="text-gray-600">Loading job details...</p>
                 </div>
             </div>
@@ -72,7 +72,7 @@ export default function JobDetailPage() {
                         <p className="text-gray-600 mb-4">{error || 'The job you are looking for does not exist.'}</p>
                         <button
                             onClick={() => navigate('/jobs')}
-                            className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                            className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
                         >
                             Browse All Jobs
                         </button>

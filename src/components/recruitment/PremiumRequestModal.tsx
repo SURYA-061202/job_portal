@@ -84,7 +84,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 rounded-t-2xl flex justify-between items-center">
+                <div className="bg-brand px-6 py-5 rounded-t-2xl flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                             <Crown className="w-5 h-5 text-white" />
@@ -144,7 +144,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                             <button
                                 onClick={handleRequestPremium}
                                 disabled={loading || fetchingAdmin}
-                                className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:shadow-lg hover:shadow-brand/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
@@ -173,7 +173,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
                                     <p className="text-xs text-gray-400 uppercase font-bold mb-2">Your Admin</p>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-orange-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-sm">
+                                        <div className="w-10 h-10 bg-brand/20 rounded-full flex items-center justify-center text-brand font-bold text-sm">
                                             {admin.firstName?.[0]}{admin.lastName?.[0]}
                                         </div>
                                         <div>
@@ -191,7 +191,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                             <button
                                 onClick={handleRequestPremium}
                                 disabled={loading || fetchingAdmin || !admin}
-                                className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:shadow-lg hover:shadow-brand/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Sending Request...</>

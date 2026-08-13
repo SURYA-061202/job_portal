@@ -36,9 +36,9 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
   ];
 
   return (
-    <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-gray-950 shadow-lg flex flex-col h-full max-h-screen border-r border-gray-800 transition-all duration-300 ease-in-out relative overflow-hidden`}>
+    <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-ink shadow-lg flex flex-col h-full max-h-screen border-r border-brand/20 transition-all duration-300 ease-in-out relative overflow-hidden`}>
       {/* Header with Logo and Branding */}
-      <div className="px-6 py-4 bg-gray-950 border-b border-gray-800 flex-shrink-0">
+      <div className="px-6 py-4 bg-ink border-b border-brand/20 flex-shrink-0">
         <div className="flex items-center gap-3 group">
           <div className="relative">
             <img
@@ -57,7 +57,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
       </div>
 
       {/* Controls Section - Dark Background with Gradient Border */}
-      <div className="relative px-4 py-2 bg-gray-950 flex-shrink-0">
+      <div className="relative px-4 py-2 bg-ink flex-shrink-0">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} gap-1`}>
           {/* Toggle Button */}
           <button
@@ -84,14 +84,14 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
           )}
         </div>
         {/* Gradient Border - Fades at both ends */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent"></div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-gray-950 pb-4">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden hover-scrollbar bg-ink pb-4">
         {/* Job Posts Section */}
         <div className="px-3 pt-6 mb-6">
           {!isCollapsed && (
-            <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
+            <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 text-brand">
               Job Posts
             </h2>
           )}
@@ -104,27 +104,27 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                  ? 'bg-gray-800/60 shadow-md border border-orange-800/50'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-orange-400 hover:shadow-sm'
+                  ? 'bg-gray-800/60 shadow-md border border-brand/30'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-brand hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
-                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
-                <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-500' : ''}`} />
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-full" />}
+                <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-brand' : ''}`} />
                 {!isCollapsed && (
-                  <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                  <span className={isActive ? 'text-brand font-semibold' : ''}>
                     {tab.label}
                   </span>
                 )}
               </button>
             );
           })}
-          {isCollapsed && <div className="border-t border-gray-800 mt-2 pt-2" />}
+          {isCollapsed && <div className="border-t border-brand/20 mt-2 pt-2" />}
         </div>
 
         <div className="px-3 mb-6">
           {!isCollapsed && (
-            <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 pt-2 bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent">
+            <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 pt-2 text-brand">
               Screenings
             </h2>
           )}
@@ -137,34 +137,34 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                 key={tab.id}
                 onClick={() => onTabChange(tab.id as any)}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                  ? 'bg-gray-800/60 shadow-md border border-orange-800/50'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-orange-400 hover:shadow-sm'
+                  ? 'bg-gray-800/60 shadow-md border border-brand/30'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-brand hover:shadow-sm'
                   }`}
                 title={isCollapsed ? tab.label : undefined}
               >
-                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
-                <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-orange-500' : ''}`} />
+                {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-full" />}
+                <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-brand' : ''}`} />
                 {!isCollapsed && (
-                  <span className={isActive ? 'bg-gradient-to-r from-primary-600 to-orange-500 bg-clip-text text-transparent font-semibold' : ''}>
+                  <span className={isActive ? 'text-brand font-semibold' : ''}>
                     {tab.label}
                   </span>
                 )}
               </button>
             );
           })}
-          {isCollapsed && <div className="border-t border-gray-800 mt-2 pt-2" />}
+          {isCollapsed && <div className="border-t border-brand/20 mt-2 pt-2" />}
         </div>
       </nav>
 
       {/* Account Section - Fixed at Bottom */}
-      <div className="px-3 py-4 border-t border-gray-800 bg-gray-950 flex-shrink-0">
+      <div className="px-3 py-4 border-t border-brand/20 bg-ink flex-shrink-0">
         {/* Expand/Collapse button for collapsed sidebar */}
         {isCollapsed && (
           <button
             onClick={() => setIsAccountOpen(!isAccountOpen)}
             className="w-full flex items-center justify-center mb-2"
           >
-            {!isAccountOpen ? <ChevronUp className="w-5 h-5 text-orange-500" /> : <ChevronDown className="w-5 h-5 text-orange-500" />}
+            {!isAccountOpen ? <ChevronUp className="w-5 h-5 text-brand" /> : <ChevronDown className="w-5 h-5 text-brand" />}
           </button>
         )}
 
@@ -173,10 +173,10 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
             onClick={() => setIsAccountOpen(!isAccountOpen)}
             className="w-full flex items-center justify-between group px-3 mb-2"
           >
-            <h2 className="text-xs font-bold uppercase tracking-wider transition-colors text-orange-500">
+            <h2 className="text-xs font-bold uppercase tracking-wider transition-colors text-brand">
               Account
             </h2>
-            {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-orange-500" /> : <ChevronDown className="w-4 h-4 text-orange-500" />}
+            {!isAccountOpen ? <ChevronUp className="w-4 h-4 text-brand" /> : <ChevronDown className="w-4 h-4 text-brand" />}
           </button>
         )}
 
@@ -201,12 +201,12 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
                       className={`w-full flex items-center justify-center px-2 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                        ? 'bg-orange-950/50 text-orange-400 shadow-md border border-orange-800/50'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-orange-400'
+                        ? 'bg-brand/15 text-brand shadow-md border border-brand/30'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand'
                         }`}
                       title={tab.label}
                     >
-                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-full" />}
                       <Icon className="h-5 w-5" />
                     </button>
                   );
@@ -235,11 +235,11 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
                       key={tab.id}
                       onClick={() => onTabChange(tab.id as any)}
                       className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
-                        ? 'bg-orange-950/50 text-orange-400 shadow-md border border-orange-800/50'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-orange-400'
+                        ? 'bg-brand/15 text-brand shadow-md border border-brand/30'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand'
                         }`}
                     >
-                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />}
+                      {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-full" />}
                       <Icon className="mr-3 h-5 w-5" />
                       <span className={isActive ? 'font-semibold' : ''}>
                         {tab.label}

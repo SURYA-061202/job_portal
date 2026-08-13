@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2, Monitor, Share2 } from 'lucide-react';
+import { Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2, Share2 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { hasUserApplied, applyForJob } from '@/lib/jobApplications';
@@ -130,59 +130,40 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     // Skill chips used to rotate through six accent colours. The theme is a
     // single orange, so they are all one chip style now. Kept as a function
     // so call sites are unchanged.
-    const getSkillColor = (_index: number) => 'bg-brand/10 text-brand border-brand/20';
+    const getSkillColor = (_index: number) => 'bg-gray-100 text-gray-700 border-gray-200';
 
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
             {/* Header */}
-            <div className="bg-surface shrink-0 rounded-xl border border-gray-200">
-                <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-start gap-3 sm:gap-4 md:gap-5">
+            <div className="bg-surface shrink-0 rounded-xl border border-gray-200 mb-4 z-10">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
                     {/* Back Button */}
                     <button
                         onClick={onBack}
-                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-surface border border-gray-200 text-gray-500 hover:text-brand hover:border-brand/30 hover:bg-brand/10 rounded-xl transition-all group flex-shrink-0 mt-1"
+                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-surface border border-gray-200 text-gray-500 hover:text-brand hover:border-brand/30 hover:bg-brand/10 rounded-xl transition-all group flex-shrink-0"
                         title="Go Back"
                     >
                         <ChevronLeft className="w-4.5 h-4.5 group-hover:-translate-x-0.5 transition-transform" />
                     </button>
 
-                    <div className="flex-1 min-w-0">
-                        {/* Title Row */}
-                        <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
-                            <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight leading-none">
-                                {recruitment.jobTitle}
-                            </h1>
-                            <button
-                                onClick={() => setShowShareModal(true)}
-                                className="p-1.5 rounded-full transition-all bg-brand text-white hover:shadow-lg hover:shadow-brand/30 hover:scale-110 active:scale-95 flex-shrink-0"
-                                title="Share job"
-                            >
-                                <Share2 className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-
-                        {/* Metadata Row */}
-                        <div className="flex items-center gap-3 sm:gap-5 text-[11px] sm:text-sm text-brand font-bold tracking-tight flex-wrap">
-                            <span className="flex items-center gap-1.5 line-clamp-1">
-                                <MapPin className="w-3.5 h-3.5 text-brand" />
-                                <span>{recruitment.location || 'Location not specified'}</span>
-                            </span>
-                            {recruitment.modeOfWork && (
-                                <span className="flex items-center gap-1.5 line-clamp-1">
-                                    <Monitor className="w-3.5 h-3.5 text-brand" />
-                                    <span>{recruitment.modeOfWork}</span>
-                                </span>
-                            )}
-                            <span className="flex items-center gap-1.5 line-clamp-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
-                                <span>{recruitment.urgencyLevel} Priority</span>
-                            </span>
-                        </div>
+                    {/* Title + Share */}
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight leading-none truncate">
+                            {recruitment.jobTitle}
+                        </h1>
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className="p-1.5 rounded-full transition-all bg-brand text-white hover:shadow-lg hover:shadow-brand/30 hover:scale-110 active:scale-95 flex-shrink-0"
+                            title="Share job"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                        </button>
                     </div>
 
-                    <div className="flex-shrink-0">
+                    {/* Actions */}
+                    <div className="flex-shrink-0 flex items-center gap-2">
                         {isManager ? (
-                            <div className="flex items-center gap-2">
+                            <>
                                 <button
                                     onClick={() => onEdit?.(recruitment)}
                                     className="p-2 text-brand hover:bg-brand/10 rounded-lg transition-all"
@@ -205,8 +186,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     <Users className="w-4 h-4" />
                                     <span>Candidates</span>
                                 </button>
-                            </div>
-                        ) : !hasApplied && !checkingProfile && (
+                            </>
+                        ) : !hasApplied && !checkingProfile ? (
                             <button
                                 onClick={handleApply}
                                 disabled={actionLoading}
@@ -214,29 +195,31 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             >
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Apply Now <Send className="w-3.5 h-3.5" /></>}
                             </button>
-                        )}
-                        {!isManager && hasApplied && (
+                        ) : !isManager && hasApplied ? (
                             <div className="px-4 py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4" />
                                 Applied
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto w-full">
-                <div className="px-4 sm:px-6 py-8 sm:py-10 space-y-8 sm:space-y-10 bg-surface rounded-xl shadow-sm border border-gray-200 mt-4">
+            <div className="flex-1 overflow-y-auto w-full pb-4">
+                <div className="px-4 sm:px-6 py-8 sm:py-10 space-y-8 sm:space-y-10 bg-surface rounded-xl shadow-sm border border-gray-200 min-h-full">
 
                     {/* Key Info Row */}
-                    <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
-                        <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="bg-brand/5 border-brand/30 text-brand" labelColor="text-brand" />
-                        <InfoItem label="Salary" value={recruitment.budgetPay} color="bg-brand/5 border-brand/30 text-brand" labelColor="text-brand" />
-                        <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="bg-brand/5 border-brand/30 text-brand" labelColor="text-brand" />
-                        <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="bg-emerald-50/50 border-emerald-200 text-emerald-900" labelColor="text-emerald-500" />
+                    <div className={`grid gap-3 sm:gap-4 ${isManager && (recruitment as any).applicantCount !== undefined ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
+                        <InfoItem label="Location" value={recruitment.location || 'Not specified'} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
+                        {recruitment.modeOfWork && <InfoItem label="Mode of Work" value={recruitment.modeOfWork} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />}
+                        <InfoItem label="Priority" value={`${recruitment.urgencyLevel} Priority`} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
+                        <InfoItem label="Experience" value={`${recruitment.yearsExperience} Years`} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
+                        <InfoItem label="Salary" value={recruitment.budgetPay} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
+                        <InfoItem label="Job Type" value={recruitment.candidateType || 'Full Time'} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
+                        <InfoItem label="Openings" value={recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified'} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
                         {isManager && (recruitment as any).applicantCount !== undefined && (
-                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="bg-brand/5 border-brand/30 text-brand" labelColor="text-brand" />
+                            <InfoItem label="Applicants" value={`${(recruitment as any).applicantCount}`} color="border-gray-200 text-gray-900" labelColor="text-gray-500" />
                         )}
                     </div>
 
@@ -262,7 +245,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                         </div>
                                     ))
                             ) : (
-                                <p className="text-gray-500 italic">No detailed description provided.</p>
+                                <p className="text-gray-500">No detailed description provided.</p>
                             )}
 
                             {recruitment.jdUrl && (
@@ -288,7 +271,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             {recruitment.skills ? recruitment.skills.split(',').map((skill, i) => (
                                 <span
                                     key={i}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold border shadow-sm transition-all hover:scale-105 cursor-default ${getSkillColor(i)}`}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 transition-all hover:scale-105 cursor-default"
                                 >
                                     {skill.trim()}
                                 </span>
@@ -313,10 +296,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
 function InfoItem({ label, value, color, labelColor }: { label: string, value: string, color?: string, labelColor?: string }) {
     return (
-        <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${color || 'bg-surface border-gray-200'}`}>
-            <span className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 text-center ${labelColor || 'text-gray-400'}`}>{label}</span>
-            <span className="font-bold break-words text-sm text-gray-900 text-center">{value}</span>
+        <div className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg border transition-all ${color || 'bg-surface border-gray-200'}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 text-center ${labelColor || 'text-gray-400'}`}>{label}</span>
+            <span className="font-bold break-words text-xs text-gray-900 text-center">{value}</span>
         </div>
     );
 }
+
 

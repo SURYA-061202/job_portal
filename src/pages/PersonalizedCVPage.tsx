@@ -105,7 +105,7 @@ export default function PersonalizedCVPage() {
             <div className="min-h-screen bg-gray-50 flex flex-col">
                 <UserHeader />
                 <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-brand animate-spin" />
                 </div>
             </div>
         );
@@ -127,7 +127,7 @@ export default function PersonalizedCVPage() {
                     {userData && !isProfileIncomplete && (
                         <button
                             onClick={() => handleViewPDF(false)}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-orange-50 border-2 border-orange-200 text-orange-600 font-bold rounded-2xl shadow-lg shadow-orange-500/5 hover:bg-orange-100 hover:border-orange-300 hover:scale-[1.02] active:scale-95 transition-all"
+                            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-brand/10 border-2 border-brand/30 text-brand font-bold rounded-2xl shadow-lg shadow-brand/5 hover:bg-brand/20 hover:border-brand/40 hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <FileDown className="w-5 h-5" />
                             Download Resume
@@ -140,14 +140,14 @@ export default function PersonalizedCVPage() {
                     <div className="lg:col-span-1 flex flex-col gap-6">
                         <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
                             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-orange-500" />
+                                <Sparkles className="w-5 h-5 text-brand" />
                                 Resume Data
                             </h3>
                             
                             <div className="space-y-6">
                                 <div>
                                     <div className="flex items-center gap-3 mt-2">
-                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand font-bold">
                                             {userData?.firstName?.[0]}{userData?.lastName?.[0]}
                                         </div>
                                         <div>
@@ -200,7 +200,7 @@ export default function PersonalizedCVPage() {
                                 {userData && (
                                     <button 
                                         onClick={() => handleViewPDF(true)}
-                                        className="px-4 py-1.5 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:bg-gray-50 hover:text-orange-600 hover:border-orange-200 transition-all"
+                                        className="px-4 py-1.5 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:bg-gray-50 hover:text-brand hover:border-brand/30 transition-all"
                                     >
                                         View Resume
                                     </button>

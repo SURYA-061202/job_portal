@@ -212,11 +212,6 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 <span>{member.mobile || 'N/A'}</span>
                             </div>
                         </div>
-                            <div className="flex items-center justify-center text-sm text-gray-900 bg-brand/5 px-3 py-2 rounded-lg border border-brand/20 group-hover:bg-brand/10 transition-colors">
-                                <Phone className="w-4 h-4 text-brand flex-shrink-0 mr-2" />
-                                <span>{member.mobile || 'N/A'}</span>
-                            </div>
-                        </div>
                     </div>
                 ))}
             </div>

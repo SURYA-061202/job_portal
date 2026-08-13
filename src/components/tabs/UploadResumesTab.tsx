@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import type { Candidate, RecruitmentRequest } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
+import CustomDropdown from '@/components/CustomDropdown';
 import toast from 'react-hot-toast';
 import openai, { isOpenAIConfigured } from '@/lib/openai';
 import { analyzeCandidateScores } from '@/lib/aiService';
@@ -305,32 +306,29 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
     };
 
     return (
-        <div className="space-y-6 flex-1 flex flex-col h-full">
+        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 flex flex-col h-full">
             {/* Header Section */}
-            <div className="bg-surface p-4 rounded-xl border border-brand/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-surface p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900">Upload Resumes</h2>
-                    <p className="text-sm text-brand mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
+                    <p className="text-sm text-gray-500 mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
                 </div>
 
                 {/* Job Selector */}
                 <div className="flex items-center gap-2">
-                    <select
+                    <CustomDropdown
                         value={selectedJobId}
-                        onChange={(e) => setSelectedJobId(e.target.value)}
-                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-brand/30 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm rounded-md bg-surface border shadow-sm"
-                    >
-                        <option value="">Select Post</option>
-                        {jobPosts.map((job) => (
-                            <option key={job.id} value={job.id}>
-                                {job.jobTitle}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={setSelectedJobId}
+                        options={[
+                            { value: '', label: 'Select Post' },
+                            ...jobPosts.map((job) => ({ value: job.id!, label: job.jobTitle }))
+                        ]}
+                        className="w-72"
+                    />
                 </div>
             </div>
 
-            <div className="h-full flex items-center justify-center">
+            <div className="h-full flex items-center justify-center border border-gray-200 rounded-xl p-6">
                 <div className="max-w-2xl w-full">
                     <ResumeUpload key={uploadKey} onUpload={handleResumeUpload} loading={loading} />
                 </div>

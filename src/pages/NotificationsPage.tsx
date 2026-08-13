@@ -108,7 +108,7 @@ export default function NotificationsPage() {
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
-                        <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                         <p className="text-gray-500 font-medium">Loading notifications...</p>
                     </div>
                 ) : notifications.length === 0 ? (
@@ -127,18 +127,18 @@ export default function NotificationsPage() {
                             <div
                                 key={notification.id}
                                 onClick={() => !notification.read && markAsRead(notification.id)}
-                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-primary-500' : ''
+                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-brand' : ''
                                     }`}
                             >
                                 <div className="flex items-start gap-4">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === 'success' ? 'bg-green-100' :
-                                        notification.type === 'warning' ? 'bg-orange-100' :
+                                        notification.type === 'warning' ? 'bg-brand/20' :
                                             'bg-blue-100'
                                         }`}>
                                         {notification.type === 'success' ? (
                                             <CheckCircle2 className="w-5 h-5 text-green-600" />
                                         ) : notification.type === 'warning' ? (
-                                            <AlertCircle className="w-5 h-5 text-orange-600" />
+                                            <AlertCircle className="w-5 h-5 text-brand" />
                                         ) : (
                                             <Info className="w-5 h-5 text-blue-600" />
                                         )}
@@ -147,7 +147,7 @@ export default function NotificationsPage() {
                                         <div className="flex items-start justify-between gap-2">
                                             <h4 className="font-bold text-gray-900 mb-1">{notification.title}</h4>
                                             {!notification.read && (
-                                                <span className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2"></span>
+                                                <span className="w-2 h-2 bg-brand rounded-full flex-shrink-0 mt-2"></span>
                                             )}
                                         </div>
                                         <p className="text-gray-600 text-sm mb-2">{notification.message}</p>

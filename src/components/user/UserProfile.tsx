@@ -287,7 +287,7 @@ export default function UserProfile() {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                <Loader2 className="w-12 h-12 text-brand animate-spin" />
             </div>
         );
     }
@@ -333,30 +333,30 @@ export default function UserProfile() {
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div>
                                                         <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">First Name</label>
-                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Last Name</label>
-                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Role</label>
-                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Mobile</label>
-                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Years of Experience</label>
-                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none" />
+                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Address</label>
-                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none resize-none h-12" />
+                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none resize-none h-12" />
                                                 </div>
-                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 bg-brand text-white text-xs font-bold rounded-lg hover:bg-brand/90 transition-colors disabled:opacity-50">
                                                     {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
                                                 </button>
                                             </div>
@@ -364,9 +364,9 @@ export default function UserProfile() {
                                             <div className="text-center">
                                                 <h1 className="text-lg font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
                                                 {formData.department ? (
-                                                    <p className="text-xs text-orange-600 font-bold mt-1 mb-3 bg-orange-50 inline-block px-3 py-1 rounded-full border border-orange-100">{formData.department}</p>
+                                                    <p className="text-xs text-brand font-bold mt-1 mb-3 bg-brand/10 inline-block px-3 py-1 rounded-full border border-brand/20">{formData.department}</p>
                                                 ) : (
-                                                    <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-orange-600 font-bold mt-1 mb-3 bg-orange-50 hover:bg-orange-100 transition-colors inline-block px-3 py-1 rounded-full border border-orange-100">+ Add your role</button>
+                                                    <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-full border border-brand/20">+ Add your role</button>
                                                 )}
 
                                                 <div className="space-y-3 text-left border-t border-gray-100 pt-5 pb-2">
@@ -400,10 +400,10 @@ export default function UserProfile() {
                                                             <button
                                                                 onClick={calculateProfileScore}
                                                                 disabled={calculatingScore}
-                                                                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-500 transition-all disabled:opacity-50"
+                                                                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-brand transition-all disabled:opacity-50"
                                                                 title="Refresh Score"
                                                             >
-                                                                <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-orange-500' : ''}`} />
+                                                                <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-brand' : ''}`} />
                                                             </button>
                                                         </div>
                                                         <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -434,7 +434,7 @@ export default function UserProfile() {
                                                                 <button 
                                                                     onClick={handleVerifyEmail}
                                                                     disabled={verifyingEmail}
-                                                                    className="text-[10px] font-bold text-orange-500 hover:text-orange-400 disabled:opacity-50 transition-all active:scale-95"
+                                                                    className="text-[10px] font-bold text-brand hover:text-brand disabled:opacity-50 transition-all active:scale-95"
                                                                 >
                                                                     {verifyingEmail ? 'Sending...' : 'Verify Now'}
                                                                 </button>

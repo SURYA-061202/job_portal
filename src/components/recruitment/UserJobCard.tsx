@@ -13,11 +13,11 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
     const isNew = !hideNewBadge && currentUserId && !recruitment.viewedBy?.includes(currentUserId);
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 hover:border-orange-200 transition-all duration-300 relative group">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 hover:border-brand/30 transition-all duration-300 relative group">
             {/* New Badge */}
             {isNew && (
                 <div className="absolute -top-2 -left-2 z-10">
-                    <span className="flex h-6 items-center px-2.5 rounded-full bg-orange-600 text-white text-[10px] font-bold shadow-lg shadow-orange-600/20 animate-bounce cursor-default">
+                    <span className="flex h-6 items-center px-2.5 rounded-full bg-brand text-white text-[10px] font-bold shadow-lg shadow-brand/20 animate-bounce cursor-default">
                         New
                     </span>
                 </div>
@@ -33,7 +33,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 md:gap-3 mb-4">
-                    <div className="flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 bg-orange-50 text-orange-700 rounded-full text-[9px] md:text-xs font-bold border border-orange-100/50">
+                    <div className="flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 bg-brand/10 text-brand rounded-full text-[9px] md:text-xs font-bold border border-brand/10">
                         <MapPin className="w-2.5 h-2.5 md:w-3 md:h-3" />
                         {recruitment.location}
                     </div>
@@ -68,7 +68,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
                     <button
                         onClick={() => onViewDetails?.(recruitment)}
-                        className="w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-orange-50 text-orange-600 border border-orange-200 font-bold rounded-xl hover:bg-orange-100 hover:border-orange-300 active:scale-95 transition-all text-[10px] md:text-xs"
+                        className="w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-brand/10 text-brand border border-brand/30 font-bold rounded-xl hover:bg-brand/20 hover:border-brand/40 active:scale-95 transition-all text-[10px] md:text-xs"
                     >
                         View
                     </button>

@@ -192,9 +192,9 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
         <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
             {/* Search Bar */}
             <div className="flex justify-center mb-10">
-                <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 shadow-lg shadow-gray-200/50 transition-all duration-300 focus-within:shadow-orange-500/10 focus-within:border-orange-300">
+                <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 shadow-lg shadow-gray-200/50 transition-all duration-300 focus-within:shadow-brand/10 focus-within:border-brand/40">
                     <div className="relative flex-1 w-full group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-brand transition-colors" />
                         <input
                             type="text"
                             placeholder="Job title, keywords, or company"
@@ -205,7 +205,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                     </div>
                     <div className="hidden md:block h-10 w-px bg-gray-200" />
                     <div className="relative flex-[0.7] w-full group">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-brand transition-colors" />
                         <input
                             type="text"
                             placeholder="City or state"
@@ -215,7 +215,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                         />
                     </div>
                     <button 
-                        className="w-full md:w-auto px-8 py-3 bg-orange-gradient text-white rounded-xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-orange-500/20"
+                        className="w-full md:w-auto px-8 py-3 bg-orange-gradient text-white rounded-xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand/20"
                     >
                         Search
                     </button>
@@ -238,7 +238,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div className="flex items-center justify-between w-full sm:w-auto">
                             <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-orange-600">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
+                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-brand">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                             </h2>
                             <button
                                 onClick={() => setIsFilterDrawerOpen(true)}
@@ -255,8 +255,8 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                                     <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                 </button>
                                 <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl shadow-gray-200/50">
-                                    <button onClick={() => setSortBy('recent')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-orange-600 bg-orange-50' : 'text-gray-500 hover:bg-gray-100'}`}>Most Recent</button>
-                                    <button onClick={() => setSortBy('oldest')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-orange-600 bg-orange-50' : 'text-gray-500 hover:bg-gray-100'}`}>Oldest First</button>
+                                    <button onClick={() => setSortBy('recent')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-brand bg-brand/10' : 'text-gray-500 hover:bg-gray-100'}`}>Most Recent</button>
+                                    <button onClick={() => setSortBy('oldest')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-brand bg-brand/10' : 'text-gray-500 hover:bg-gray-100'}`}>Oldest First</button>
                                 </div>
                             </div>
                         </div>
@@ -265,7 +265,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                     <div className="overflow-y-auto pr-2" style={{ maxHeight: '800px' }}>
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-20">
-                                <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+                                <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                             </div>
                         ) : activeTab === 'jobs' ? (
                             filteredPosts.length === 0 ? (
@@ -286,8 +286,8 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                         ) : (
                             applications.length === 0 ? (
                                 <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                                    <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <History className="w-8 h-8 text-orange-500" />
+                                    <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <History className="w-8 h-8 text-brand" />
                                     </div>
                                     <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
                                     <p className="text-gray-500 max-w-sm mx-auto mb-6">You haven't applied for any jobs yet.</p>

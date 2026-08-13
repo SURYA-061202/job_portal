@@ -1,43 +1,81 @@
 /* ============================================================================
-   Application theme.
+   Application theme - the single source of truth for colour.
 
-   THREE colours, and only three. Everything in the UI is built from these:
+   The palette is the orange-and-white theme taken from the stark-essence-iiies
+   site, translated from its HSL shadcn tokens into Tailwind v4 theme tokens:
 
-     brand    #FE6700   the one orange - every accent, every CTA
-     surface  #FFFFFF   the page/card background
-     ink      #030712   dark - reserved for the sidebar only
+     accent      hsl(24 100% 50%)  ->  #FF6600   the one orange
+     background  hsl(0 0% 100%)    ->  #FFFFFF   the white
+     foreground  hsl(0 0% 3.9%)    ->  #0A0A0A   neutral near-black
+     muted       hsl(0 0% 96.1%)   ->  #F5F5F5
+     muted-fg    hsl(0 0% 45.1%)   ->  #737373
+     border      hsl(0 0% 89.8%)   ->  #E5E5E5
+     destructive hsl(0 84.2% 60.2%)->  #EF4444
 
-   There is deliberately NO orange ramp (no brand-400/500/600). A ramp means
-   several different oranges, which is exactly what this theme exists to
-   avoid. Where a lighter or darker shade is needed, use an opacity modifier
-   on the same token so it stays one colour:
+   Two rules carried over from that theme:
 
-     bg-brand          solid #FE6700
-     bg-brand/10       the old "orange-50" tint
-     border-brand/20   the old "orange-100" hairline
-     bg-surface/5      elevation on top of ink (sidebar)
+   1. ONE orange. There is deliberately no orange ramp (no brand-400/500/600).
+      A ramp means several different oranges, which is exactly what this theme
+      exists to avoid. Where a lighter or darker shade is needed, use an
+      opacity modifier on the same token so it stays one colour:
 
-   Neutral greys for body text and hairlines are left to Tailwind's stock
-   gray-* scale - they are neutrals, not part of the colour palette.
+        bg-brand          solid #FF6600
+        bg-brand/10       the old "orange-50" tint
+        bg-brand/20       the old "orange-100" fill
+        border-brand/20   the old "orange-100" hairline
+        border-brand/30   the old "orange-200" hairline
+        hover:bg-brand/90 the old "orange-700" pressed state
+        bg-surface/5      elevation on top of ink (sidebar)
 
-   This is a Tailwind v4 @theme block, so each token below is automatically a
-   utility: bg-brand, text-brand, border-brand, ring-brand, from-brand,
-   decoration-brand, shadow-brand, bg-surface, bg-ink, ...
+   2. NEUTRALS ARE NEUTRAL. The greys below are pure grey - no blue tint -
+      so nothing competes with the orange. Tailwind's stock gray-* scale is
+      still fine for incidental body text and hairlines.
+
+   This is a Tailwind v4 @theme block, so each --color-* token below is
+   automatically a utility: bg-brand, text-brand, border-brand, ring-brand,
+   from-brand, decoration-brand, shadow-brand, bg-surface, bg-ink,
+   text-muted-foreground, border-border, ...
 
    Imported from src/index.css (must sit with the other @import, above
    @config - CSS requires @import to precede all other statements).
-   To retheme the app, change the three values here and nothing else.
+   To retheme the app, change the values here and nothing else.
    ============================================================================ */
 
 @theme {
-  /* The single brand orange. */
-  --color-brand: #fe6700;
+  /* --- The two colours the theme is named after ------------------------- */
+
+  /* The single brand orange. Every accent, every CTA, every focus ring. */
+  --color-brand: #ff6600;
+  /* What sits legibly on top of solid brand. */
+  --color-brand-foreground: #fafafa;
 
   /* The white the app sits on. */
   --color-surface: #ffffff;
 
-  /* The dark. Sidebar only - do not use it for page content. */
-  --color-ink: #030712;
+  /* --- Neutrals --------------------------------------------------------- */
+
+  /* The dark. Sidebar and inverted panels only - not for page content. */
+  --color-ink: #0a0a0a;
+  /* What sits legibly on top of ink. */
+  --color-ink-foreground: #fafafa;
+
+  /* Default body text. */
+  --color-foreground: #0a0a0a;
+  /* Quiet fills: section backgrounds, disabled states, table stripes. */
+  --color-muted: #f5f5f5;
+  /* Secondary text: captions, helper copy, placeholders. */
+  --color-muted-foreground: #737373;
+  /* Hairlines, dividers, input outlines. */
+  --color-border: #e5e5e5;
+
+  /* --- Status ----------------------------------------------------------- */
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+
+  /* --- Shape ------------------------------------------------------------ */
+
+  --radius: 0.5rem;
 }
 
 @layer utilities {
@@ -55,4 +93,10 @@
     -webkit-text-fill-color: currentcolor;
     color: var(--color-brand);
   }
+}
+
+/* Text selection picks up the brand, same as the source theme. */
+::selection {
+  background: color-mix(in srgb, var(--color-brand) 20%, transparent);
+  color: var(--color-foreground);
 }

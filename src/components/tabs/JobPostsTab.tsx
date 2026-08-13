@@ -139,17 +139,17 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Header Section - static, does not scroll */}
-                    <div className="bg-surface p-4 rounded-lg border border-brand/20 mb-6 flex-shrink-0">
+                    <div className="bg-surface p-4 rounded-lg border border-gray-200 mb-6 flex-shrink-0">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             {/* Title and Count */}
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
                                     <h2 className="text-xl font-bold text-gray-900">Job Posts</h2>
-                                    <span className="px-2.5 py-0.5 rounded-full bg-brand/10 text-brand text-xs font-bold border border-brand/20">
+                                    <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
                                         {recruitmentRequests.length}
                                     </span>
                                 </div>
-                                <p className="text-sm text-brand">Manage and track all recruitment requests and job postings</p>
+                                <p className="text-sm text-gray-500">Manage and track all recruitment requests and job postings</p>
                             </div>
 
                             {/* Search and Button Controls */}
@@ -161,7 +161,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     <input
                                         type="text"
                                         placeholder="Search posts..."
-                                        className="block w-full pl-10 pr-3 py-2 border border-brand/30 rounded-lg leading-5 bg-white placeholder-brand/50 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
+                                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />

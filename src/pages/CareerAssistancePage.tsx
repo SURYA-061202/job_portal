@@ -50,12 +50,12 @@ export default function CareerAssistancePage() {
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                         placeholder="Type your career question..."
                         rows={1}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all resize-none overflow-y-auto"
+                        className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all resize-none overflow-y-auto"
                     />
                     <div className="flex justify-end mt-3">
                         <button
                             onClick={handleSend}
-                            className="bg-gradient-to-r from-primary-600 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+                            className="bg-brand text-white px-6 py-3 rounded-xl font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
                         >
                             <Send className="w-4 h-4" />
                             Send

@@ -320,7 +320,7 @@ export default function UserDashboard() {
                 {/* Header Title Section */}
                 <div className="text-center mb-6 md:mb-8 relative z-10">
                     <h1 className="text-2xl md:text-4xl font-outfit font-bold text-gray-900 mb-2 tracking-tight">
-                        Find Your Dream Job at <span className="bg-gradient-to-r from-orange-600 to-rose-500 bg-clip-text text-transparent">Indian Infra</span>
+                        Find Your Dream Job at <span className="text-brand">Indian Infra</span>
                     </h1>
                     <p className="text-gray-500 text-xs md:text-base font-medium max-w-2xl mx-auto opacity-80 px-4">
                         Explore core infrastructure and technology roles across India's top companies
@@ -332,7 +332,7 @@ export default function UserDashboard() {
                     <div className="w-full max-w-4xl bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-1 shadow-[0_15px_35px_rgba(0,0,0,0.03)] flex flex-col md:flex-row items-center gap-2">
                         {/* Job Search Field */}
                         <div className="relative flex-1 w-full group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Job title, keywords, or company"
@@ -347,7 +347,7 @@ export default function UserDashboard() {
 
                         {/* Location Field */}
                         <div className="relative flex-[0.7] w-full group ">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand transition-colors" />
                             <input
                                 type="text"
                                 placeholder="City or state"
@@ -359,7 +359,7 @@ export default function UserDashboard() {
 
                         {/* Search Button */}
                         <button
-                            className="w-full md:w-auto px-7 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold rounded-xl hover:shadow-[0_8px_16px_rgba(234,88,12,0.15)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm md:text-base whitespace-nowrap"
+                            className="w-full md:w-auto px-7 py-2 bg-brand text-white font-bold rounded-xl hover:shadow-lg hover:shadow-brand/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm md:text-base whitespace-nowrap"
                         >
                             Search Jobs
                         </button>
@@ -383,7 +383,7 @@ export default function UserDashboard() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-2 sticky top-0 bg-gray-50 py-4 z-10">
                             <div className="flex items-center justify-between w-full sm:w-auto">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-orange-600">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
+                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-brand">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                                 </h2>
                                 {/* Mobile Filter Toggle */}
                                 <button
@@ -423,7 +423,7 @@ export default function UserDashboard() {
                                                         <label
                                                             key={dept}
                                                             className={`flex items-center px-4 py-2 cursor-pointer transition-colors ${selectedFilters.department.includes(dept)
-                                                                ? 'text-orange-600 bg-orange-50'
+                                                                ? 'text-brand bg-brand/10'
                                                                 : 'text-gray-600 hover:bg-gray-50'
                                                                 }`}
                                                         >
@@ -431,7 +431,7 @@ export default function UserDashboard() {
                                                                 type="checkbox"
                                                                 checked={selectedFilters.department.includes(dept)}
                                                                 onChange={() => toggleFilter('department', dept)}
-                                                                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                                                                className="w-4 h-4 text-brand border-gray-300 rounded focus:ring-brand"
                                                             />
                                                             <span className="ml-2 text-xs font-bold">{dept}</span>
                                                         </label>
@@ -453,13 +453,13 @@ export default function UserDashboard() {
                                     <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                                         <button
                                             onClick={() => setSortBy('recent')}
-                                            className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:bg-gray-50'}`}
+                                            className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-brand bg-brand/10' : 'text-gray-600 hover:bg-gray-50'}`}
                                         >
                                             Most Recent
                                         </button>
                                         <button
                                             onClick={() => setSortBy('oldest')}
-                                            className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:bg-gray-50'}`}
+                                            className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-brand bg-brand/10' : 'text-gray-600 hover:bg-gray-50'}`}
                                         >
                                             Oldest First
                                         </button>
@@ -472,7 +472,7 @@ export default function UserDashboard() {
                         <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20">
-                                    <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
+                                    <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                                     <p className="text-gray-500 font-medium">Loading content...</p>
                                 </div>
                             ) : activeTab === 'jobs' ? (
@@ -501,8 +501,8 @@ export default function UserDashboard() {
                             ) : (
                                 applications.length === 0 ? (
                                     <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                                        <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <History className="w-8 h-8 text-orange-500" />
+                                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <History className="w-8 h-8 text-brand" />
                                         </div>
                                         <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
                                         <p className="text-gray-500 max-w-sm mx-auto mb-6">
@@ -510,7 +510,7 @@ export default function UserDashboard() {
                                         </p>
                                         <button
                                             onClick={() => navigate('/jobs')}
-                                            className="inline-flex items-center px-6 py-2.5 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-all"
+                                            className="inline-flex items-center px-6 py-2.5 bg-brand text-white font-bold rounded-xl hover:bg-brand/90 transition-all"
                                         >
                                             Browse Jobs
                                         </button>

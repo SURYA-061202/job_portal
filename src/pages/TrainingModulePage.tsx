@@ -99,7 +99,7 @@ export default function TrainingModulePage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-                <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+                <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                 <p className="text-gray-500 font-bold">Loading training modules...</p>
             </div>
         );
@@ -113,7 +113,7 @@ export default function TrainingModulePage() {
                 {/* Hero Section */}
                 <div className="mb-12 text-center sm:text-left">
                     <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-none mb-4">
-                        Skill <span className="text-orange-600">Training</span> Module
+                        Skill <span className="text-brand">Training</span> Module
                     </h1>
                     <p className="text-gray-500 text-lg max-w-2xl leading-relaxed">
                         Enhance your professional standing with our verified skill assessments. Get scores and showcase your expertise to employers.
@@ -140,7 +140,7 @@ export default function TrainingModulePage() {
                                     className="bg-white rounded-[2rem] p-6 border border-gray-100 transition-all duration-500 flex flex-col group relative overflow-hidden"
                                 >
                                     {/* Glassy Background Accent */}
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-orange-100/50 transition-colors duration-500" />
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-brand/10 transition-colors duration-500" />
 
                                     <div className="relative z-10 flex flex-col items-center text-center h-full">
                                         <div className="w-full mb-4">
@@ -152,7 +152,7 @@ export default function TrainingModulePage() {
                                             )}
                                         </div>
 
-                                        <h3 className="text-xl font-black text-gray-900 leading-tight mb-2 group-hover:text-orange-600 transition-colors duration-300">{section.title}</h3>
+                                        <h3 className="text-xl font-black text-gray-900 leading-tight mb-2 group-hover:text-brand transition-colors duration-300">{section.title}</h3>
                                         <p className="text-gray-500 text-xs font-medium leading-relaxed mb-4 flex-1 line-clamp-3">
                                             {section.description || "Master these technical skills with our comprehensive assessment designed by industry experts."}
                                         </p>
@@ -175,7 +175,7 @@ export default function TrainingModulePage() {
                                             className={`mx-auto w-fit px-6 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 border ${
                                                 isAttempted 
                                                 ? 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100' 
-                                                : 'bg-orange-50 text-orange-600 border-orange-600 hover:bg-orange-100'
+                                                : 'bg-brand/10 text-brand border-brand hover:bg-brand/20'
                                             }`}
                                         >
                                             {isAttempted ? (
@@ -241,7 +241,7 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
     if (questions.length === 0) {
         return (
             <div className="h-full flex flex-col items-center justify-center p-12 text-center">
-                <AlertCircle className="w-16 h-16 text-orange-500 mb-4" />
+                <AlertCircle className="w-16 h-16 text-brand mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">No Questions Found</h3>
                 <p className="text-gray-500 mb-8">This assessment doesn't have any questions yet. Please contact support.</p>
                 <button onClick={onCancel} className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold">Go Back</button>
@@ -293,12 +293,12 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
                                 onClick={() => handleSelectOption(currentQ.id, idx)}
                                 className={`flex items-center p-6 rounded-3xl border-2 transition-all duration-300 text-left ${
                                     answers[currentQ.id] === idx 
-                                    ? 'bg-white border-orange-500 shadow-xl shadow-orange-500/10 -translate-y-1' 
+                                    ? 'bg-white border-brand shadow-xl shadow-brand/10 -translate-y-1' 
                                     : 'bg-white border-transparent hover:border-gray-200'
                                 }`}
                             >
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 flex-shrink-0 font-black text-sm transition-colors ${
-                                    answers[currentQ.id] === idx ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-400'
+                                    answers[currentQ.id] === idx ? 'bg-brand text-white' : 'bg-gray-100 text-gray-400'
                                 }`}>
                                     {String.fromCharCode(65 + idx)}
                                 </div>
@@ -332,7 +332,7 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
                 ) : (
                     <button
                         onClick={handleFinish}
-                        className="px-10 py-4 bg-orange-gradient text-white rounded-2xl font-extrabold shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all hover:-translate-y-0.5"
+                        className="px-10 py-4 bg-orange-gradient text-white rounded-2xl font-extrabold shadow-lg shadow-brand/20 hover:shadow-brand/30 transition-all hover:-translate-y-0.5"
                     >
                         Finish Assessment
                     </button>
@@ -357,7 +357,7 @@ function AssessmentResult({ test, result, onClose }: { test: AssessmentSection, 
 
             <div className="flex-1 overflow-y-auto p-8 md:p-12 thin-scrollbar">
                 <div className="max-w-2xl mx-auto text-center mb-16">
-                    <div className={`w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 border-4 ${percentage >= 70 ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-orange-50 border-orange-500 text-orange-600'}`}>
+                    <div className={`w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 border-4 ${percentage >= 70 ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-brand/10 border-brand text-brand'}`}>
                         <span className="text-4xl font-black">{percentage}%</span>
                     </div>
                     <h3 className="text-3xl font-black text-gray-900 mb-2">{percentage >= 70 ? 'Excellent Work!' : 'Keep Practicing!'}</h3>

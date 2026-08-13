@@ -10,6 +10,13 @@ import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab
 import { ArrowLeft, Users, Briefcase, MapPin, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
+const normalizeSkills = (skills: any): string[] => {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills.filter(Boolean);
+  if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+};
+
 const ROUND_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
   round1: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
   round2: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
@@ -88,30 +95,43 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       if (applications && applications.length > 0) {
         for (const app of applications) {
           try {
+            let userData: any = null;
+            let intData: any = {};
+
+            // First try users collection (registered users)
             const userDoc = await getDoc(doc(db, 'users', app.user_id));
             if (userDoc.exists()) {
-              const userData = userDoc.data();
+              userData = userDoc.data();
+            } else {
+              // Fallback: try candidates collection (uploaded candidates)
+              const candDoc = await getDoc(doc(db, 'candidates', app.user_id));
+              if (candDoc.exists()) {
+                userData = candDoc.data();
+              }
+            }
+
+            if (userData) {
               const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-              const intData = intDoc.exists() ? intDoc.data() : {};
+              intData = intDoc.exists() ? intDoc.data() : {};
 
               allCandidates.push({
                 id: app.user_id,
-                name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
+                name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
                 email: userData.email || '',
-                phone: userData.mobile || '',
-                role: userData.department || 'Applicant',
-                experience: userData.yearsOfExperience || '',
-                skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                phone: userData.phone || userData.mobile || '',
+                role: userData.role || userData.department || 'Applicant',
+                experience: userData.experience || userData.yearsOfExperience || '',
+                skills: normalizeSkills(userData.skills),
                 resumeUrl: userData.resumeUrl || '',
                 extractedData: {
-                  summary: '',
-                  workExperience: [],
-                  education: [],
-                  skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
-                  certifications: [],
-                  projects: []
+                  summary: userData.extractedData?.summary || '',
+                  workExperience: userData.extractedData?.workExperience || [],
+                  education: userData.extractedData?.education || [],
+                  skills: normalizeSkills(userData.skills),
+                  certifications: userData.extractedData?.certifications || [],
+                  projects: userData.extractedData?.projects || []
                 },
-                education: [],
+                education: userData.education || [],
                 createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                 updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
                 status: app.status as any,
@@ -328,35 +348,37 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
 
   // View 1: Post cards
   return (
-    <div className="space-y-6">
-      <div className="bg-surface p-4 rounded-xl border border-brand/20">
+    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
+      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0">
         <h3 className="text-lg font-bold text-gray-900">Interview Posts</h3>
-        <p className="text-sm text-brand mt-1">Select a post to view interview rounds</p>
+        <p className="text-sm text-gray-500 mt-1">Select a post to view interview rounds</p>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-surface rounded-xl border border-brand/20 p-6 space-y-3">
-              <div className="h-5 bg-brand/10 rounded w-2/3"></div>
-              <div className="h-4 bg-brand/10 rounded w-1/3"></div>
-              <div className="h-3 bg-brand/10 rounded w-1/2"></div>
+            <div key={i} className="animate-pulse bg-surface rounded-xl border border-gray-200 p-6 space-y-3">
+              <div className="h-5 bg-gray-100 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-100 rounded w-1/2"></div>
             </div>
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-surface rounded-xl shadow-sm border border-brand/20 p-12 text-center">
-          <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">No interview posts</h3>
-          <p className="mt-1 text-brand">Posts will appear here once candidates enter the interview pipeline.</p>
+        <div className="bg-surface rounded-xl border border-gray-200 p-12 text-center flex-1 flex items-center justify-center">
+          <div>
+            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No interview posts</h3>
+            <p className="mt-1 text-gray-500">Posts will appear here once candidates enter the interview pipeline.</p>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 content-start">
           {posts.map((post) => (
             <button
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="bg-surface border border-brand/20 rounded-xl p-6 text-left hover:shadow-md hover:border-brand/30 transition-all duration-200 group"
+              className="bg-surface border border-gray-200 rounded-xl p-6 text-left hover:shadow-md hover:border-gray-300 transition-all duration-200 group"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1 min-w-0">
@@ -364,10 +386,10 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                     {post.jobTitle}
                   </h4>
                   {post.department && (
-                    <p className="text-sm text-brand truncate">{post.department}</p>
+                    <p className="text-sm text-gray-500 truncate">{post.department}</p>
                   )}
                 </div>
-                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand/20 text-brand">
+                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                   {post.interviewCount}
                 </span>
               </div>

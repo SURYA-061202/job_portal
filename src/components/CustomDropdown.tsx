@@ -31,14 +31,14 @@ export default function CustomDropdown({ value, onChange, options, placeholder, 
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer text-left flex items-center justify-between"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand hover:border-brand/40 cursor-pointer text-left flex items-center justify-between"
             >
                 <span className="truncate">{selectedOption?.label || placeholder}</span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl max-h-60 overflow-y-auto">
                     {options.map((option) => (
                         <button
                             key={option.value}
@@ -47,7 +47,7 @@ export default function CustomDropdown({ value, onChange, options, placeholder, 
                                 onChange(option.value);
                                 setIsOpen(false);
                             }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-orange-50 transition-colors ${option.value === value ? 'bg-orange-100 text-orange-700 font-medium' : 'text-gray-700'
+                            className={`w-full px-4 py-2 text-left text-sm hover:bg-brand/10 transition-colors ${option.value === value ? 'bg-brand/20 text-brand font-medium' : 'text-gray-700'
                                 }`}
                             style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}
                         >

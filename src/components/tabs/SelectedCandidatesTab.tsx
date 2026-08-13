@@ -9,6 +9,13 @@ import { sendCongratulationsMail } from "@/lib/emailFunctions";
 import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
 
+const normalizeSkills = (skills: any): string[] => {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills.filter(Boolean);
+  if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+};
+
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<boolean>(false);
@@ -224,28 +231,43 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
             if (!isTarget) continue;
 
             try {
+              let userData: any = null;
+              let intData: any = {};
+
+              // First try users collection (registered users)
               const userDoc = await getDoc(doc(db, 'users', app.user_id));
               if (userDoc.exists()) {
-                const userData = userDoc.data();
-                
+                userData = userDoc.data();
+              } else {
+                // Fallback: try candidates collection (uploaded candidates)
+                const candDoc = await getDoc(doc(db, 'candidates', app.user_id));
+                if (candDoc.exists()) {
+                  userData = candDoc.data();
+                }
+              }
+
+              if (userData) {
                 const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-                const intData = intDoc.exists() ? intDoc.data() : {};
+                intData = intDoc.exists() ? intDoc.data() : {};
 
                 allCandidates.push({
                   id: app.user_id,
-                  name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
+                  name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
                   email: userData.email || '',
-                  phone: userData.mobile || '',
-                  role: userData.department || 'Applicant',
-                  experience: userData.yearsOfExperience || '',
-                  skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
+                  phone: userData.phone || userData.mobile || '',
+                  role: userData.role || userData.department || 'Applicant',
+                  experience: userData.experience || userData.yearsOfExperience || '',
+                  skills: normalizeSkills(userData.skills),
                   resumeUrl: userData.resumeUrl || '',
                   extractedData: {
-                    summary: '', workExperience: [], education: [],
-                    skills: userData.skills ? (typeof userData.skills === 'string' ? userData.skills.split(',').map((s: string) => s.trim()) : userData.skills) : [],
-                    certifications: [], projects: []
+                    summary: userData.extractedData?.summary || '',
+                    workExperience: userData.extractedData?.workExperience || [],
+                    education: userData.extractedData?.education || [],
+                    skills: normalizeSkills(userData.skills),
+                    certifications: userData.extractedData?.certifications || [],
+                    projects: userData.extractedData?.projects || []
                   },
-                  education: [],
+                  education: userData.education || [],
                   createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                   updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
                   status: app.status as any,
@@ -288,7 +310,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   }
 
   return (
-    <div className="space-y-6">
+    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
       <CandidateList
         candidates={filtered}
         onSelectCandidate={setSelected}

@@ -98,7 +98,7 @@ export default function MatchingJobs() {
                 <div className="mb-8">
                     <button 
                         onClick={() => navigate('/home?tab=profile')}
-                        className="inline-flex items-center gap-2.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50/30 transition-all group shadow-sm"
+                        className="inline-flex items-center gap-2.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:border-brand/30 hover:text-brand hover:bg-brand/5 transition-all group shadow-sm"
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                         Back to Profile
@@ -108,7 +108,7 @@ export default function MatchingJobs() {
                 {/* Page Title */}
                 <div className="mb-10 text-center sm:text-left">
                     <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
-                        Your <span className="text-orange-600">Matching</span> Jobs
+                        Your <span className="text-brand">Matching</span> Jobs
                     </h1>
                     <p className="text-gray-500 mt-2 max-w-2xl">
                         We've analyzed your profile and found these roles that perfectly align with your skills and experience.
@@ -117,7 +117,7 @@ export default function MatchingJobs() {
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-                        <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                         <p className="text-gray-500 font-bold">Analyzing matches...</p>
                     </div>
                 ) : posts.length === 0 ? (
@@ -131,7 +131,7 @@ export default function MatchingJobs() {
                         </p>
                         <button 
                             onClick={() => navigate('/home?tab=profile')}
-                            className="inline-flex items-center px-8 py-3 bg-orange-600 text-white font-bold rounded-2xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-200"
+                            className="inline-flex items-center px-8 py-3 bg-brand text-white font-bold rounded-2xl hover:bg-brand/90 transition-all shadow-lg shadow-brand/30"
                         >
                             Update Profile
                         </button>

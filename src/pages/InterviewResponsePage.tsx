@@ -131,7 +131,7 @@ export default function InterviewResponsePage() {
         <div className="flex justify-center gap-4 mb-6">
           {[{ value: 'interested', label: 'Interested' }, { value: 'not_interested', label: 'Not Interested' }].map(opt => (
             <button key={opt.value} onClick={() => setInterest(opt.value as any)}
-              className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${interest === opt.value ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-primary-600 border-primary-600 hover:bg-primary-50'}`}>{opt.label}</button>
+              className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${interest === opt.value ? 'bg-brand text-white border-brand' : 'bg-white text-brand border-brand hover:bg-brand/10'}`}>{opt.label}</button>
           ))}
         </div>
 
@@ -144,14 +144,14 @@ export default function InterviewResponsePage() {
                 <label className="flex items-center gap-2 cursor-pointer font-medium">
                   <input type="radio" name="date" value={d} checked={selectedDate === d}
                     onChange={() => { setSelectedDate(d); setSelectedTime(''); }}
-                    className="form-radio text-primary-600" disabled={interest !== 'interested'} />
+                    className="form-radio text-brand" disabled={interest !== 'interested'} />
                   {d}
                 </label>
                 {selectedDate === d && (
                   <div className="mt-2 ml-6 flex flex-wrap gap-4">
                     {["10:00 - 12:00 PM", "12:00 - 02:00 PM", "02:00 - 04:00 PM"].map(t => (
                       <label key={t} className="inline-flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="radio" name="time" value={t} checked={selectedTime === t} onChange={() => setSelectedTime(t)} className="form-radio text-primary-600" />
+                        <input type="radio" name="time" value={t} checked={selectedTime === t} onChange={() => setSelectedTime(t)} className="form-radio text-brand" />
                         {t}
                       </label>
                     ))}
@@ -164,7 +164,7 @@ export default function InterviewResponsePage() {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50"
+          className="w-full bg-brand text-white px-4 py-2 rounded-md hover:bg-brand/90 disabled:opacity-50"
           disabled={!interest || (interest === 'interested' && (!selectedDate || !selectedTime))}
         >
           Submit
