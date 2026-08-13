@@ -1,9 +1,10 @@
 'use client';
 
 import type { Candidate, RecruitmentRequest } from '@/types';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, Award, Edit2, MailPlus, FolderKanban, ArrowRightCircle, UserCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, MailPlus, ArrowRightCircle, Edit2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import CustomDropdown from '@/components/CustomDropdown';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { setApplicationStatus, upsertApplication } from '@/lib/jobApplications';
 import InterviewInviteModal from './InterviewInviteModal';
@@ -30,6 +31,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [shortlistPostId, setShortlistPostId] = useState('');
   const [shortlisting, setShortlisting] = useState(false);
+  const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
   const { showSuccess, showError } = usePopup();
 
   useEffect(() => {
@@ -44,6 +47,63 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
     };
     fetchJobs();
   }, []);
+
+  // Fetch applied posts for this candidate
+  useEffect(() => {
+    const fetchAppliedPosts = async () => {
+      if (!candidate.id) return;
+
+      // If userApplications prop is provided, use it directly
+      if (userApplications && userApplications.length > 0) {
+        const postsWithDetails = await Promise.all(
+          userApplications.map(async (app: any) => {
+            try {
+              const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
+              if (postDoc.exists()) {
+                return { ...app, postDetails: { id: postDoc.id, ...postDoc.data() } };
+              }
+              return app;
+            } catch {
+              return app;
+            }
+          })
+        );
+        setAppliedPosts(postsWithDetails);
+        return;
+      }
+
+      setLoadingPosts(true);
+      try {
+        // Fetch ALL applications and filter client-side (avoids missing index issues)
+        const allSnapshot = await getDocs(collection(db, 'job_applications'));
+        const applications = allSnapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter((app: any) => app.user_id === candidate.id);
+        
+        const postsWithDetails = await Promise.all(
+          applications.map(async (app: any) => {
+            try {
+              const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
+              if (postDoc.exists()) {
+                return { ...app, postDetails: { id: postDoc.id, ...postDoc.data() } };
+              }
+              return app;
+            } catch {
+              return app;
+            }
+          })
+        );
+        
+        setAppliedPosts(postsWithDetails);
+      } catch (error: any) {
+        console.error('Error fetching applied posts:', error?.message || error);
+        setAppliedPosts([]);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+    fetchAppliedPosts();
+  }, [candidate.id, userApplications]);
 
   // If initialCandidate changes, update local state
   if (initialCandidate.id !== candidate.id) {
@@ -111,9 +171,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-surface p-4 rounded-xl border border-gray-200">
+    <div className="flex flex-col h-full">
+      {/* Header - Fixed */}
+      <div className="bg-surface p-4 rounded-xl border border-gray-200 sticky top-0 z-10 mb-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Left: Back + Name/Role */}
           <div className="flex items-center gap-3">
@@ -141,7 +201,6 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               </div>
               {(candidate as any).selectedInterviewDate && (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <Calendar className="h-4 w-4 text-brand" />
                   <span>Interview on {(candidate as any).selectedInterviewDate}</span>
                 </div>
               )}
@@ -150,22 +209,18 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Shortlist to Post */}
             <div className="flex items-center gap-2">
-              <select
+              <CustomDropdown
                 value={shortlistPostId}
-                onChange={(e) => setShortlistPostId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-gray-50 max-w-[180px]"
-              >
-                <option value="">Select Post</option>
-                {jobPosts.map((job) => (
-                  <option key={job.id} value={job.id}>{job.jobTitle}</option>
-                ))}
-              </select>
+                onChange={setShortlistPostId}
+                options={jobPosts.map((job) => ({ value: job.id, label: job.jobTitle || 'Untitled Post' }))}
+                placeholder="Select Post"
+                className="max-w-[180px]"
+              />
               <button
                 onClick={handleShortlistToPost}
                 disabled={!shortlistPostId || shortlisting}
-                className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-lg hover:bg-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-2 bg-surface border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
                 <ArrowRightCircle className="w-4 h-4" />
                 {shortlisting ? 'Moving...' : 'Move'}
@@ -194,18 +249,24 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-surface rounded-lg shadow px-6 py-6">
-        <div className="space-y-6">
-            {/* Application History */}
-            {userApplications && userApplications.length > 0 && (
-              <div className="bg-surface border rounded-lg shadow p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-brand" />
-                  Applied Posts
-                </h3>
+      {/* Content - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="bg-surface border border-gray-200 rounded-xl p-6 space-y-6">
+            {/* Applied Posts */}
+            <div className="bg-surface border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Applied Posts
+              </h3>
+              {loadingPosts ? (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading applied posts...</span>
+                </div>
+              ) : appliedPosts.length === 0 ? (
+                <p className="text-gray-500 text-sm">No applications found</p>
+              ) : (
                 <div className="space-y-3">
-                  {userApplications.map((app, index) => (
+                  {appliedPosts.map((app, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       {app.postDetails ? (
                         <div>
@@ -213,7 +274,6 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                             <div>
                               <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                                 {app.postDetails.jobTitle || 'Job Post'}
-                                {/* AI Score for this specific job */}
                                 {candidate.rankings && candidate.rankings[app.post_id] && (
                                   <span className={`text-xs px-2 py-0.5 rounded border ${candidate.rankings[app.post_id].score >= 70 ? 'bg-green-50 text-green-700 border-green-200' :
                                     candidate.rankings[app.post_id].score >= 40 ? 'bg-brand/10 text-brand border-brand/30' :
@@ -225,15 +285,21 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                               </h4>
                               <p className="text-sm text-gray-600 mt-1">{app.postDetails.department || 'Department not specified'}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Applied: {new Date(app.created_at).toLocaleDateString()}
+                                Applied: {app.created_at?.toDate?.() ? new Date(app.created_at.toDate()).toLocaleDateString() : (app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A')}
                               </p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.status === 'shortlisted' ? 'bg-brand/20 text-brand' :
                               app.status === 'selected' ? 'bg-green-100 text-green-700' :
                                 app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                  'bg-gray-100 text-gray-700'
+                                  app.status === 'interviewed' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-gray-100 text-gray-700'
                               }`}>
-                              {app.status || 'Pending'}
+                              {app.status === 'shortlisted' ? 'Shortlisted' :
+                               app.status === 'selected' ? 'Selected' :
+                               app.status === 'rejected' ? 'Rejected' :
+                               app.status === 'interviewed' ? 'Interviewed' :
+                               app.status === 'applied' ? 'Applied' :
+                               app.status || 'Pending'}
                             </span>
                           </div>
                         </div>
@@ -243,25 +309,24 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Contact Info */}
-            <div className="bg-surface border rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <UserCircle className="h-5 w-5 mr-2 text-brand" />
+            <div className="bg-surface border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">
                 Contact Information
               </h3>
               <div className="space-y-3">
                 {candidate.email && (
                   <div className="flex items-center gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-brand flex-shrink-0" />
+                    <span className="text-gray-500 font-medium w-16">Email:</span>
                     <span className="text-gray-700">{candidate.email}</span>
                   </div>
                 )}
                 {candidate.phone && (
                   <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span className="text-gray-500 font-medium w-16">Phone:</span>
                     <span className="text-gray-700">{candidate.phone}</span>
                   </div>
                 )}
@@ -270,16 +335,15 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div className="bg-surface border rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-brand" />
+              <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {candidate.skills.map((skill, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm border border-gray-200 text-gray-700"
                     >
                       {skill}
                     </span>
@@ -290,12 +354,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div className="bg-surface border rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2 text-brand" />
+              <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
                   Education
                   {(() => {
-                    // Find first CGPA value if present
                     const eduWithCgpa: any = (candidate.education || []).find((e: any) => (e.cgpa ?? e.CGPA) !== undefined && (e.cgpa ?? e.CGPA) !== null);
                     if (!eduWithCgpa) return null;
                     const raw = (eduWithCgpa.cgpa ?? eduWithCgpa.CGPA) as string;
@@ -325,12 +387,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div className="bg-surface border rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <Briefcase className="h-5 w-5 mr-2 text-brand" />
+            <div className="bg-surface border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">
                 Experience
               </h3>
-              {/* Overall Experience */}
               {candidate.experience && (
                 <div className="mb-4 pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-2">
@@ -339,7 +399,6 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                   </div>
                 </div>
               )}
-              {/* Work Experience */}
               {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (
                 <div className="space-y-4">
                   {candidate.extractedData.workExperience.map((exp, index) => (
@@ -359,14 +418,12 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {(() => {
               const projectsRaw = (candidate as any).keyProjects ?? (candidate as any).projects ?? (candidate as any).extractedData?.projects;
 
-              // Handle string format (from user profile textarea)
               if (typeof projectsRaw === 'string' && projectsRaw.trim().length > 0) {
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div className="bg-surface border rounded-lg shadow p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <FolderKanban className="h-5 w-5 mr-2 text-brand" />
+                    <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">
                         Key Projects
                       </h3>
                       <div className="space-y-3">
@@ -381,12 +438,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 }
               }
 
-              // Handle array format (from resume parsing)
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div className="bg-surface border rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                      <FolderKanban className="h-5 w-5 mr-2 text-brand" />
+                  <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">
                       Projects
                     </h3>
                     <div className="space-y-4">
@@ -410,14 +465,12 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {(() => {
               const certificationsRaw = (candidate as any).certifications ?? (candidate as any).extractedData?.certifications;
 
-              // Handle string format (from user profile textarea)
               if (typeof certificationsRaw === 'string' && certificationsRaw.trim().length > 0) {
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div className="bg-surface border rounded-lg shadow p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <Award className="h-5 w-5 mr-2 text-emerald-600" />
+                    <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">
                         Certifications
                       </h3>
                       <div className="space-y-2">
@@ -432,12 +485,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 }
               }
 
-              // Handle array format (from resume parsing)
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div className="bg-surface border rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                      <Award className="h-5 w-5 mr-2 text-emerald-600" />
+                  <div className="bg-surface border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">
                       Certifications
                     </h3>
                     <div className="space-y-2">
@@ -461,7 +512,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               return null;
             })()}
           </div>
-        </div>
+      </div>
 
       {showInviteModal && (
         <InterviewInviteModal
@@ -473,9 +524,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       )}
 
       {/* Remove Candidate Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end flex-shrink-0 mt-4">
         <button
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
           onClick={handleRemove}
           disabled={removing}
         >
