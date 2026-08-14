@@ -91,7 +91,7 @@ export default function ProfileTab() {
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 sm:p-6">
-            <div className="w-full max-w-[60rem] bg-surface rounded-2xl sm:rounded-3xl border border-brand/20 p-4 sm:p-6">
+            <div className="w-full max-w-[60rem] bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6">
 
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 border-b border-brand/10 pb-5">
@@ -121,10 +121,10 @@ export default function ProfileTab() {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-brand/30 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-brand/5 border border-brand/20 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
                                     {userData.firstName}
                                 </div>
                             )}
@@ -139,10 +139,10 @@ export default function ProfileTab() {
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-brand/30 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-brand/5 border border-brand/20 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
                                     {userData.lastName}
                                 </div>
                             )}
@@ -153,7 +153,7 @@ export default function ProfileTab() {
                             <label className="block text-sm font-bold text-gray-700 mb-1.5">
                                 Email <span className="text-brand font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-brand/20 rounded-xl text-gray-500 font-medium text-sm sm:text-base ${isEditing ? 'bg-brand/10 cursor-not-allowed' : 'bg-brand/5'}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-gray-500 font-medium text-sm sm:text-base ${isEditing ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}>
                                 {userData.email}
                             </div>
                         </div>
@@ -168,10 +168,10 @@ export default function ProfileTab() {
                                     value={formData.mobile || ''}
                                     onChange={handleInputChange}
                                     placeholder="+91..."
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-brand/30 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-brand/5 border border-brand/20 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
                                     {userData.mobile || '+919087654321'}
                                 </div>
                             )}
@@ -186,10 +186,10 @@ export default function ProfileTab() {
                                     name="department"
                                     value={formData.department || ''}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-brand/30 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-brand/5 border border-brand/20 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
                                     {userData.department || 'None'}
                                 </div>
                             )}
@@ -204,10 +204,10 @@ export default function ProfileTab() {
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-brand/30 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all capitalize text-sm sm:text-base"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all capitalize text-sm sm:text-base"
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-brand/5 border border-brand/20 rounded-xl text-gray-900 font-medium capitalize text-sm sm:text-base">
+                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium capitalize text-sm sm:text-base">
                                     {userData.role}
                                 </div>
                             )}

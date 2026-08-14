@@ -184,7 +184,7 @@ export default function Dashboard() {
   const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected';
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
+    <div className="flex h-screen bg-white relative">
       {/* Mobile Hamburger Menu Button */}
       <button
         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
@@ -223,47 +223,6 @@ export default function Dashboard() {
       </div>
 
       <main className={`flex-1 ${isSelfScrollingTab ? 'overflow-hidden' : 'overflow-auto'} thin-scrollbar flex flex-col relative w-full md:w-auto pl-0 md:pl-0`}>
-        {/* Gradient Background with Dotted Patterns */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Soft gradient overlay - top to bottom */}
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{
-              background: 'linear-gradient(135deg, rgba(249, 250, 251, 0.5) 0%, rgba(229, 231, 235, 0.3) 50%, rgba(249, 250, 251, 0.5) 100%)',
-            }}
-          />
-
-          {/* Dotted halftone pattern - top right */}
-          <div
-            className="absolute top-0 right-0 w-80 h-80 opacity-50"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
-              backgroundSize: '10px 10px',
-              maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
-              WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
-            }}
-          />
-
-          {/* Dotted halftone pattern - bottom left */}
-          <div
-            className="absolute bottom-0 left-0 w-80 h-80 opacity-50"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
-              backgroundSize: '10px 10px',
-              maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
-              WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
-            }}
-          />
-
-          {/* Subtle wave accent */}
-          <div
-            className="absolute top-1/4 left-0 w-full h-64 opacity-20"
-            style={{
-              background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(229, 231, 235, 0.6) 0%, transparent 70%)',
-            }}
-          />
-        </div>
-
         <div className={`p-4 md:p-6 flex-1 flex flex-col relative z-10 pt-16 md:pt-6 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
       </main>
     </div>

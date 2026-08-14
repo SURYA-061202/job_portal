@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase";
 import type { Candidate, RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
-import { ArrowLeft, Calendar, Briefcase, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Briefcase, MapPin, Search } from "lucide-react";
 import { sendVerifyDetails, sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
@@ -23,6 +23,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [search, setSearch] = useState("");
+  const [postSearch, setPostSearch] = useState("");
 
   const loadCandidates = async () => {
     try {
@@ -187,14 +188,37 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   const postsWithCounts = posts
     .map(p => ({ ...p, shortlistedCount: candidates.filter(c => (c as any).postId === p.id).length }))
-    .filter(p => p.shortlistedCount > 0);
+    .filter(p => p.shortlistedCount > 0)
+    .filter(p => {
+      if (!postSearch.trim()) return true;
+      const term = postSearch.toLowerCase();
+      return (
+        p.jobTitle?.toLowerCase().includes(term) ||
+        p.department?.toLowerCase().includes(term) ||
+        p.location?.toLowerCase().includes(term)
+      );
+    });
 
   if (!selectedPostView) {
     return (
     <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
-      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0">
-        <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
-        <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
+      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
+          <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
+        </div>
+        <div className="relative w-48 sm:w-56">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-brand" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search posts..."
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
+            value={postSearch}
+            onChange={(e) => setPostSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {loading ? (
