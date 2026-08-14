@@ -192,7 +192,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
         <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
             {/* Search Bar */}
             <div className="flex justify-center mb-10">
-                <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 shadow-lg shadow-gray-200/50 transition-all duration-300 focus-within:shadow-brand/10 focus-within:border-brand/40">
+                <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-brand/40">
                     <div className="relative flex-1 w-full group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-brand transition-colors" />
                         <input
@@ -215,7 +215,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                         />
                     </div>
                     <button 
-                        className="w-full md:w-auto px-8 py-3 bg-orange-gradient text-white rounded-xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand/20"
+                        className="w-full md:w-auto px-8 py-3 bg-orange-gradient text-white rounded-xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
                     >
                         Search
                     </button>
@@ -238,7 +238,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div className="flex items-center justify-between w-full sm:w-auto">
                             <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-brand">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
+                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                             </h2>
                             <button
                                 onClick={() => setIsFilterDrawerOpen(true)}
@@ -286,7 +286,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                         ) : (
                             applications.length === 0 ? (
                                 <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                                    <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <History className="w-8 h-8 text-brand" />
                                     </div>
                                     <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
@@ -318,6 +318,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                                                 createdAt: app.recruitment_requests.createdAt,
                                                 applicantCount: applicantCounts[app.recruitment_requests.id] || 0
                                             } as any}
+                                            applicationStatus={app.status}
                                             onViewDetails={(j) => setSelectedJob(j)}
                                         />
                                     ))}

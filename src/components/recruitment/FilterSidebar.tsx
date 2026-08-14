@@ -99,7 +99,7 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
             </div>
 
             {/* Pro Tip Card */}
-            <div className="bg-brand/5 border border-brand/20 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
                 <div className="relative z-10">
                     <h3 className="font-bold text-lg mb-2">Reminder!</h3>
                     <p className="text-gray-500 text-sm leading-relaxed mb-4">
@@ -112,7 +112,6 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
                         Complete Profile →
                     </button>
                 </div>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-brand/10 rounded-full blur-2xl -mr-12 -mt-12" />
             </div>
         </div>
     );

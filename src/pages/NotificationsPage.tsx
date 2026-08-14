@@ -96,7 +96,7 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             <UserHeader />
 
             <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8">

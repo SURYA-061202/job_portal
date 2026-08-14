@@ -102,7 +102,7 @@ export default function PersonalizedCVPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen bg-white flex flex-col">
                 <UserHeader />
                 <div className="flex-1 flex items-center justify-center">
                     <Loader2 className="w-8 h-8 text-brand animate-spin" />
@@ -114,7 +114,7 @@ export default function PersonalizedCVPage() {
     const isProfileIncomplete = !userData?.firstName || !userData?.skillItems?.length;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
             <UserHeader />
             
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
@@ -138,7 +138,7 @@ export default function PersonalizedCVPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Panel - Data Summary */}
                     <div className="lg:col-span-1 flex flex-col gap-6">
-                        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                        <div className="bg-white rounded-3xl border border-gray-100 p-6">
                             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-brand" />
                                 Resume Data
@@ -147,7 +147,7 @@ export default function PersonalizedCVPage() {
                             <div className="space-y-6">
                                 <div>
                                     <div className="flex items-center gap-3 mt-2">
-                                        <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 font-bold">
                                             {userData?.firstName?.[0]}{userData?.lastName?.[0]}
                                         </div>
                                         <div>
@@ -192,8 +192,8 @@ export default function PersonalizedCVPage() {
 
                     {/* Right Panel - Template Preview */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[700px]">
-                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden flex flex-col h-[700px]">
+                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">Resume Preview</h3>
                                 </div>
@@ -207,7 +207,7 @@ export default function PersonalizedCVPage() {
                                 )}
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-8 bg-gray-100/50 flex justify-center">
+                            <div className="flex-1 overflow-y-auto p-8 bg-gray-50/50 flex justify-center">
                                     <div ref={resumeRef} className="w-full max-w-[600px] min-h-[800px] flex flex-col gap-1 text-black" style={{ fontFamily: 'sans-serif', backgroundColor: '#ffffff', color: '#000000', padding: '40px', border: '1px solid #f3f4f6' }}>
                                         <div className="text-center mb-4">
                                             <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'sans-serif', color: '#000000' }}>{userData?.firstName} {userData?.lastName}</h2>
@@ -320,15 +320,15 @@ export default function PersonalizedCVPage() {
                 <div className="mt-8 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">Resume Tips & Guidelines</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
                             <h4 className="text-sm font-bold text-gray-900 mb-2">Quantify Achievements</h4>
                             <p className="text-xs text-gray-500 leading-relaxed">Use numbers (e.g. "Increased efficiency by 20%") to make your experience stand out to recruiters.</p>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
                             <h4 className="text-sm font-bold text-gray-900 mb-2">Keyword Optimization</h4>
                             <p className="text-xs text-gray-500 leading-relaxed">Include relevant industry keywords from job descriptions to pass Applicant Tracking Systems (ATS).</p>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
                             <h4 className="text-sm font-bold text-gray-900 mb-2">Professional Formatting</h4>
                             <p className="text-xs text-gray-500 leading-relaxed">Our templates follow standard academic and professional formats recognized by top infrastructure companies.</p>
                         </div>

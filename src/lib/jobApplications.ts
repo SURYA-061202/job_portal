@@ -33,6 +33,17 @@ export async function hasUserApplied(
   return snap.exists();
 }
 
+// Get the current pipeline status ('shortlisted', 'round2', 'selected', ...) of a
+// user's application to a post, or null if they haven't applied.
+export async function getApplicationStatus(
+  postId: string,
+  userId: string
+): Promise<string | null> {
+  const snap = await getDoc(doc(db, 'job_applications', applicationId(postId, userId)));
+  if (!snap.exists()) return null;
+  return (snap.data().status as string) ?? null;
+}
+
 // Apply for a job
 export async function applyForJob(
   postId: string,

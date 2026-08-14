@@ -37,7 +37,7 @@ export default function CareerAssistancePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             <UserHeader />
             <div className="flex-1 w-full px-6 lg:px-12 py-8">
                 <div className="bg-white p-8 sm:p-12 rounded-2xl border border-gray-200 w-full max-w-4xl mx-auto">

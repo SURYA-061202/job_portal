@@ -259,7 +259,7 @@ export default function UserDashboard() {
 
     if (selectedJob) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen bg-white flex flex-col">
                 <UserHeader />
                 <div className="flex-1 w-full px-6 lg:px-12 py-8 h-full">
                     <RecruitmentDetailView
@@ -272,51 +272,10 @@ export default function UserDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             <UserHeader />
 
             <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 relative overflow-hidden">
-                {/* Gradient Background with Dotted Patterns */}
-                <div className="absolute inset-0 pointer-events-none">
-                    {/* Soft gradient overlay - top to bottom */}
-                    <div
-                        className="absolute inset-0 opacity-30"
-                        style={{
-                            background: 'linear-gradient(135deg, rgba(249, 250, 251, 0.5) 0%, rgba(229, 231, 235, 0.3) 50%, rgba(249, 250, 251, 0.5) 100%)',
-                        }}
-                    />
-
-                    {/* Dotted halftone pattern - top right */}
-                    <div
-                        className="absolute top-0 right-0 w-80 h-80 opacity-50"
-                        style={{
-                            backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
-                            backgroundSize: '10px 10px',
-                            maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
-                            WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 70%)',
-                        }}
-                    />
-
-                    {/* Dotted halftone pattern - bottom left */}
-                    <div
-                        className="absolute bottom-0 left-0 w-80 h-80 opacity-50"
-                        style={{
-                            backgroundImage: `radial-gradient(circle, rgba(209, 213, 219, 0.8) 1.5px, transparent 1.5px)`,
-                            backgroundSize: '10px 10px',
-                            maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
-                            WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 70%)',
-                        }}
-                    />
-
-                    {/* Subtle wave accent */}
-                    <div
-                        className="absolute top-1/4 left-0 w-full h-64 opacity-20"
-                        style={{
-                            background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(229, 231, 235, 0.6) 0%, transparent 70%)',
-                        }}
-                    />
-                </div>
-
                 {/* Header Title Section */}
                 <div className="text-center mb-6 md:mb-8 relative z-10">
                     <h1 className="text-2xl md:text-4xl font-outfit font-bold text-gray-900 mb-2 tracking-tight">
@@ -329,7 +288,7 @@ export default function UserDashboard() {
 
                 {/* Search Bar - Premium Centered Version */}
                 <div className="flex justify-center mb-12 relative z-10 px-4">
-                    <div className="w-full max-w-4xl bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-1 shadow-[0_15px_35px_rgba(0,0,0,0.03)] flex flex-col md:flex-row items-center gap-2">
+                    <div className="w-full max-w-4xl bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-1 flex flex-col md:flex-row items-center gap-2">
                         {/* Job Search Field */}
                         <div className="relative flex-1 w-full group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand transition-colors" />
@@ -359,7 +318,7 @@ export default function UserDashboard() {
 
                         {/* Search Button */}
                         <button
-                            className="w-full md:w-auto px-7 py-2 bg-brand text-white font-bold rounded-xl hover:shadow-lg hover:shadow-brand/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm md:text-base whitespace-nowrap"
+                            className="w-full md:w-auto px-7 py-2 bg-brand text-white font-bold rounded-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm md:text-base whitespace-nowrap"
                         >
                             Search Jobs
                         </button>
@@ -380,10 +339,10 @@ export default function UserDashboard() {
                     {/* Right Content - Job List */}
                     <div className="lg:col-span-3 flex flex-col">
                         {/* Sticky Header with Title and Sort */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-2 sticky top-0 bg-gray-50 py-4 z-10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-2 sticky top-0 bg-white py-4 z-10">
                             <div className="flex items-center justify-between w-full sm:w-auto">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-brand">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
+                                    {activeTab === 'jobs' ? 'Latest Jobs' : 'Applied Jobs'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
                                 </h2>
                                 {/* Mobile Filter Toggle */}
                                 <button
@@ -501,7 +460,7 @@ export default function UserDashboard() {
                             ) : (
                                 applications.length === 0 ? (
                                     <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <History className="w-8 h-8 text-brand" />
                                         </div>
                                         <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
@@ -541,6 +500,7 @@ export default function UserDashboard() {
                                                     createdAt: app.recruitment_requests.createdAt,
                                                     applicantCount: applicantCounts[app.recruitment_requests.id] || 0
                                                 } as any}
+                                                applicationStatus={app.status}
                                                 onViewDetails={handleViewJobDetails}
                                             />
                                         ))}

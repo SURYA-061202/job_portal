@@ -98,7 +98,7 @@ export default function TrainingModulePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center">
                 <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
                 <p className="text-gray-500 font-bold">Loading training modules...</p>
             </div>
@@ -106,7 +106,7 @@ export default function TrainingModulePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
             <UserHeader />
             
             <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -139,9 +139,6 @@ export default function TrainingModulePage() {
                                     key={section.id} 
                                     className="bg-white rounded-[2rem] p-6 border border-gray-100 transition-all duration-500 flex flex-col group relative overflow-hidden"
                                 >
-                                    {/* Glassy Background Accent */}
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-brand/10 transition-colors duration-500" />
-
                                     <div className="relative z-10 flex flex-col items-center text-center h-full">
                                         <div className="w-full mb-4">
                                             {isAttempted && (
@@ -252,7 +249,7 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
     const progress = ((currentIdx + 1) / questions.length) * 100;
 
     return (
-        <div className="h-full flex flex-col bg-gray-50">
+        <div className="h-full flex flex-col bg-white">
             {/* Quiz Header */}
             <div className="px-8 py-6 bg-white border-b border-gray-100 sticky top-0 z-10">
                 <div className="flex items-center justify-between mb-6">

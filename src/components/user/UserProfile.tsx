@@ -286,14 +286,14 @@ export default function UserProfile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-white flex items-center justify-center">
                 <Loader2 className="w-12 h-12 text-brand animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
             <UserHeader />
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
@@ -303,7 +303,7 @@ export default function UserProfile() {
                     {activeTab === 'profile' && (
                         <div className="w-full lg:w-[350px] flex-shrink-0">
                             <div className="sticky top-24">
-                                <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden group">
+                                <div className="bg-white rounded-[2rem] border border-gray-200 overflow-hidden group">
                                     <div className="h-24 bg-orange-gradient relative">
                                         <button
                                             onClick={() => setIsEditingProfile(!isEditingProfile)}
@@ -315,7 +315,7 @@ export default function UserProfile() {
                                     </div>
 
                                     <div className="px-5 pb-5 relative">
-                                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border-4 border-white mx-auto -mt-10 mb-3 relative z-10 shadow-sm">
+                                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border-4 border-white mx-auto -mt-10 mb-3 relative z-10">
                                             <div
                                                 className={`w-full h-full rounded-full flex items-center justify-center p-1 transition-all duration-500`}
                                                 style={{
@@ -364,7 +364,7 @@ export default function UserProfile() {
                                             <div className="text-center">
                                                 <h1 className="text-lg font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
                                                 {formData.department ? (
-                                                    <p className="text-xs text-brand font-bold mt-1 mb-3 bg-brand/10 inline-block px-3 py-1 rounded-full border border-brand/20">{formData.department}</p>
+                                                    <p className="text-xs text-gray-600 font-bold mt-1 mb-3 bg-gray-100 inline-block px-3 py-1 rounded-full border border-gray-200">{formData.department}</p>
                                                 ) : (
                                                     <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-full border border-brand/20">+ Add your role</button>
                                                 )}

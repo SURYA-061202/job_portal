@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Users, CheckCircle2, Loader2, Send, FileText, ChevronLeft, Edit, Trash2, Share2 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { hasUserApplied, applyForJob } from '@/lib/jobApplications';
+import { hasUserApplied, applyForJob, getApplicationStatus } from '@/lib/jobApplications';
+import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
 import ShareJobModal from './ShareJobModal';
@@ -22,6 +23,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     const [deleting, setDeleting] = useState(false);
     const [checkingProfile, setCheckingProfile] = useState(true);
     const [hasApplied, setHasApplied] = useState(false);
+    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -56,7 +58,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
             // Check if already applied (only for candidates)
             const applied = await hasUserApplied(recruitment.id!, user.uid);
-            if (applied) setHasApplied(true);
+            if (applied) {
+                setHasApplied(true);
+                const status = await getApplicationStatus(recruitment.id!, user.uid);
+                setApplicationStatus(status);
+            }
 
         } catch (err) {
             console.error('Error checking status:', err);
@@ -115,9 +121,12 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             if (!result.success) {
                 toast.error(result.error || 'You have already applied for this position.');
                 setHasApplied(true);
+                const status = await getApplicationStatus(recruitment.id, user.uid);
+                setApplicationStatus(status);
             } else {
                 toast.success('Successfully applied!');
                 setHasApplied(true);
+                setApplicationStatus('applied');
             }
         } catch (err: any) {
             console.error('Apply error:', err);
@@ -131,6 +140,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     // single orange, so they are all one chip style now. Kept as a function
     // so call sites are unchanged.
     const getSkillColor = (_index: number) => 'bg-gray-100 text-gray-700 border-gray-200';
+
+    const statusInfo = getApplicationStatusInfo(applicationStatus) ?? { label: 'Applied', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
 
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
@@ -196,9 +207,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Apply Now <Send className="w-3.5 h-3.5" /></>}
                             </button>
                         ) : !isManager && hasApplied ? (
-                            <div className="px-4 py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 flex items-center gap-2">
+                            <div className={`px-4 py-2 text-xs font-bold rounded-xl border flex items-center gap-2 ${statusInfo.className}`}>
                                 <CheckCircle2 className="w-4 h-4" />
-                                Applied
+                                {statusInfo.label}
                             </div>
                         ) : null}
                     </div>
