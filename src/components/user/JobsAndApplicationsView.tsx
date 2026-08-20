@@ -266,7 +266,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div className="flex items-center justify-between w-full sm:w-auto">
                             <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : filteredApplications.length})</span>
+                                {activeTab === 'jobs' ? 'Available Jobs' : 'Applied Jobs'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : filteredApplications.length})</span>
                             </h2>
                             <button
                                 onClick={() => setIsFilterDrawerOpen(true)}

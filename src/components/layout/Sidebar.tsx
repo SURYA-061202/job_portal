@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, CheckCircle, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award, ClipboardCheck } from 'lucide-react';
+import { Users, CheckCircle, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
@@ -27,7 +27,6 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
     { id: 'shortlisted', label: 'ShortListed', icon: CheckCircle },
     { id: 'interviews', label: 'Interviews', icon: MessageSquare },
     { id: 'selected', label: 'Selected Candidates', icon: Award },
-    { id: 'assessments', label: 'Assessments', icon: ClipboardCheck, adminOnly: true },
   ];
 
   const recruiterTabs = [
@@ -132,7 +131,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
               Screenings
             </h2>
           )}
-          {screeningTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
+          {screeningTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
