@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { Briefcase, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 // import { formatDistanceToNow } from 'date-fns'; // Removed dependency
 
 // Simple helper for time ago

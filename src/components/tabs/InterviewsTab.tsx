@@ -111,8 +111,11 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
             }
 
             if (userData) {
+              // One interview doc per candidate, so it may belong to a different
+              // post they were invited for — ignore it unless it's for this one.
               const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-              intData = intDoc.exists() ? intDoc.data() : {};
+              const rawInt = intDoc.exists() ? intDoc.data() : {};
+              intData = (!rawInt.postId || rawInt.postId === app.post_id) ? rawInt : {};
 
               allCandidates.push({
                 id: app.user_id,
@@ -378,11 +381,11 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
             <button
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="bg-surface border border-gray-200 rounded-xl p-6 text-left hover:shadow-md hover:border-gray-300 transition-all duration-200 group"
+              className="bg-surface border border-gray-200 rounded-xl p-6 text-left hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300 group"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1 min-w-0">
-                  <h4 className="text-base font-semibold text-gray-900 group-hover:text-brand transition-colors truncate">
+                  <h4 className="text-base font-semibold text-gray-900 truncate">
                     {post.jobTitle}
                   </h4>
                   {post.department && (
@@ -394,7 +397,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-brand">
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 font-medium">
                 {post.location && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> {post.location}
@@ -423,19 +426,19 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               {post.skills && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-brand/10 text-brand border border-brand/20">
+                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
                       {skill.trim()}
                     </span>
                   ))}
                   {post.skills.split(',').length > 3 && (
-                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-brand/10 text-brand">
+                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
                       +{post.skills.split(',').length - 3}
                     </span>
                   )}
                 </div>
               )}
 
-              <div className="mt-4 text-sm text-brand group-hover:text-brand transition-colors">
+              <div className="mt-4 pt-3 border-t border-gray-200 text-xs font-bold text-gray-700">
                 View rounds →
               </div>
             </button>

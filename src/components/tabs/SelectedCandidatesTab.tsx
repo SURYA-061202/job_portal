@@ -247,8 +247,11 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
               }
 
               if (userData) {
+                // One interview doc per candidate, so it may belong to a different
+                // post they were invited for — ignore it unless it's for this one.
                 const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-                intData = intDoc.exists() ? intDoc.data() : {};
+                const rawInt = intDoc.exists() ? intDoc.data() : {};
+                intData = (!rawInt.postId || rawInt.postId === app.post_id) ? rawInt : {};
 
                 allCandidates.push({
                   id: app.user_id,

@@ -4,6 +4,7 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { setApplicationStatus } from "@/lib/jobApplications";
+import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 
@@ -133,6 +134,13 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         console.error('Failed to send round email:', emailErr);
       }
 
+      void notifyCandidateOfStatusChange({
+        candidateId: candidate.id,
+        postId: applicantPostId || interview.postId,
+        status: nextRound,
+        roundLabel: effectiveRoundName,
+      });
+
       toast.success(`Moved to Round ${nextRoundNum} (${effectiveRoundName})`);
       onStatusUpdated?.();
       onBack();
@@ -176,6 +184,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: (candidate as any).postId || interview.postId, createdAt: new Date() });
       }
 
+      void notifyCandidateOfStatusChange({
+        candidateId: candidate.id,
+        postId: applicantPostId || interview.postId,
+        status: 'selected',
+      });
+
       toast.success("Candidate selected!");
       onStatusUpdated?.();
       onBack();
@@ -204,6 +218,12 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
       if (intSnap.exists()) {
         await updateDoc(interviewRef, { status: newStatus, updatedAt: new Date() });
       }
+
+      void notifyCandidateOfStatusChange({
+        candidateId: candidate.id,
+        postId: applicantPostId || interview.postId,
+        status: newStatus,
+      });
 
       toast.success("Candidate rejected");
       onStatusUpdated?.();

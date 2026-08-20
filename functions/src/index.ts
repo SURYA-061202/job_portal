@@ -72,9 +72,10 @@ export const sendInterviewInvite = onCall(async (request) => {
           <ul style="padding-left:20px;color:#0f172a;font-size:14px;">
             ${dateItems}
           </ul>
+          <p>On the same page you can also verify a few details (joining date, salary expectations, relocation and laptop availability) so we don't have to follow up separately.</p>
           <p style="margin-top:16px;">
             <a href="${actionUrl}" style="background:#1d4ed8;color:#ffffff;padding:10px 24px;border-radius:4px;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;">
-              Click here to confirm your availability
+              Confirm availability &amp; verify details
             </a>
           </p>
           <p>The interview panel will include: <strong>${interviewDetails.interviewers.join(", ")}</strong>.</p>

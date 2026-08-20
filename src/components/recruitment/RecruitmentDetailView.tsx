@@ -6,6 +6,7 @@ import { hasUserApplied, applyForJob, getApplicationStatus } from '@/lib/jobAppl
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import toast from 'react-hot-toast';
 import type { RecruitmentRequest } from '@/types';
+import { getPostRounds } from '@/lib/interviewRounds';
 import ShareJobModal from './ShareJobModal';
 import { usePopup } from '@/components/ui/Popup';
 
@@ -136,12 +137,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         }
     };
 
-    // Skill chips used to rotate through six accent colours. The theme is a
-    // single orange, so they are all one chip style now. Kept as a function
-    // so call sites are unchanged.
-    const getSkillColor = (_index: number) => 'bg-gray-100 text-gray-700 border-gray-200';
-
     const statusInfo = getApplicationStatusInfo(applicationStatus) ?? { label: 'Applied', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+
+    const rounds = getPostRounds(recruitment);
 
     return (
         <div className="flex flex-col h-full bg-gray-50/20">
@@ -273,6 +271,28 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Interview Rounds Section */}
+                    <div className="p-6 sm:p-8 border border-gray-100 rounded-2xl space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">Interview Rounds</h3>
+                        {rounds.length === 0 ? (
+                            <p className="text-gray-500 italic">No interview rounds for this post.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {rounds.map(round => (
+                                    <div key={round.roundNumber} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
+                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand border border-brand/20 flex items-center justify-center text-xs font-bold">
+                                            {round.roundNumber}
+                                        </span>
+                                        <div className="min-w-0">
+                                            <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400">Round {round.roundNumber}</span>
+                                            <span className="block text-sm font-bold text-gray-900 break-words">{round.name || 'Not named'}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Skills Section */}

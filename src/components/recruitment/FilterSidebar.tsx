@@ -1,11 +1,10 @@
 interface FilterSidebarProps {
     selectedFilters: Record<string, string[]>;
     onToggleFilter: (section: string, option: string) => void;
-    onCompleteProfile?: () => void;
     onClearFilters?: () => void;
 }
 
-export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompleteProfile, onClearFilters }: FilterSidebarProps) {
+export default function FilterSidebar({ selectedFilters, onToggleFilter, onClearFilters }: FilterSidebarProps) {
     const filterSections = [
         {
             title: "Job Type",
@@ -42,11 +41,10 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
     const hasActiveFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-base md:text-lg font-bold text-gray-900">Filters</h3>
-                    {hasActiveFilters && onClearFilters && (
+        <div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-5">
+                {hasActiveFilters && onClearFilters && (
+                    <div className="flex justify-end mb-3">
                         <button
                             onClick={onClearFilters}
                             className="px-3 py-1.5 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
@@ -54,13 +52,13 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
                         >
                             Clear
                         </button>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {filterSections.map((section, idx) => (
-                    <div key={idx} className={`${idx !== filterSections.length - 1 ? 'mb-8' : ''}`}>
-                        <h4 className="text-[10px] md:text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">{section.title}</h4>
-                        <div className="space-y-3">
+                    <div key={idx} className={`${idx !== filterSections.length - 1 ? 'mb-5' : ''}`}>
+                        <h4 className="text-[10px] md:text-xs font-bold text-gray-900 mb-2.5 uppercase tracking-wider">{section.title}</h4>
+                        <div className="space-y-2.5">
                             {section.options.map((option, optIdx) => {
                                 const optionValue = typeof option === 'string' ? option : option.value;
                                 const optionLabel = typeof option === 'string' ? option : option.label;
@@ -96,22 +94,6 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onCompl
                         </div>
                     </div>
                 ))}
-            </div>
-
-            {/* Pro Tip Card */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 text-gray-900 overflow-hidden relative">
-                <div className="relative z-10">
-                    <h3 className="font-bold text-lg mb-2">Reminder!</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                        Keep your profile updated to get 3x more visibility from recruiters.
-                    </p>
-                    <button
-                        onClick={onCompleteProfile}
-                        className="text-brand font-bold text-sm hover:text-brand transition-colors"
-                    >
-                        Complete Profile →
-                    </button>
-                </div>
             </div>
         </div>
     );

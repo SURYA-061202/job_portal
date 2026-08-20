@@ -1,8 +1,20 @@
 [
   {
-    "origin": ["http://localhost:5173", "https://recruitment-portal-7b629.web.app", "https://recruitment-portal-7b629.firebaseapp.com"],
-    "method": ["GET"],
+    "origin": [
+      "http://localhost:5173",
+      "https://recruitment-portal-7b629.web.app",
+      "https://recruitment-portal-7b629.firebaseapp.com",
+      "https://jobs-indianinfra.web.app",
+      "https://jobs-indianinfra.firebaseapp.com"
+    ],
+    "method": [
+      "GET"
+    ],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"]
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Content-Disposition"
+    ]
   }
 ]

@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, CheckCircle, BarChart, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award, ClipboardCheck } from 'lucide-react';
+import { Users, CheckCircle, LogOut, UserPlus, Briefcase, Upload, Trello, BarChart3, User, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, MessageSquare, Award, ClipboardCheck } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useState } from 'react';
 
@@ -30,10 +30,15 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
     { id: 'assessments', label: 'Assessments', icon: ClipboardCheck, adminOnly: true },
   ];
 
+  const recruiterTabs = [
+    { id: 'add-members', label: 'Add Recruiters', icon: UserPlus, adminOnly: true },
+  ];
+
   const accountTabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'add-members', label: 'Add Members', icon: UserPlus, adminOnly: true },
   ];
+
+  const visibleRecruiterTabs = recruiterTabs.filter(tab => !tab.adminOnly || userRole === 'admin');
 
   return (
     <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-ink shadow-lg flex flex-col h-full max-h-screen border-r border-brand/20 transition-all duration-300 ease-in-out relative overflow-hidden`}>
@@ -58,7 +63,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
 
       {/* Controls Section - Dark Background with Gradient Border */}
       <div className="relative px-4 py-2 bg-ink flex-shrink-0">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} gap-1`}>
+        <div className="flex items-center justify-between gap-1">
           {/* Toggle Button */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -72,16 +77,15 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
             )}
           </button>
 
-          {/* Notification Icon - Only show when expanded */}
-          {!isCollapsed && (
-            <button
-              onClick={() => onTabChange('notifications')}
-              className="relative p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
-              title="Notifications"
-            >
-              <NotificationBell simpleMode={true} />
-            </button>
-          )}
+          {/* Notifications — shown in both states; the bell inherits its colour,
+              so it needs an explicit one to be visible on the dark sidebar. */}
+          <button
+            onClick={() => onTabChange('notifications')}
+            className="relative p-1.5 rounded-lg text-gray-400 hover:text-brand hover:bg-gray-800 transition-colors"
+            title="Notifications"
+          >
+            <NotificationBell simpleMode={true} />
+          </button>
         </div>
         {/* Gradient Border - Fades at both ends */}
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent"></div>
@@ -154,6 +158,42 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
           })}
           {isCollapsed && <div className="border-t border-brand/20 mt-2 pt-2" />}
         </div>
+
+        {/* Recruiter Section — hidden entirely when the user can't see any of its tabs */}
+        {visibleRecruiterTabs.length > 0 && (
+          <div className="px-3 mb-6">
+            {!isCollapsed && (
+              <h2 className="text-xs font-bold uppercase tracking-wider px-3 mb-2 pt-2 text-brand">
+                Recruiter
+              </h2>
+            )}
+            {visibleRecruiterTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id as any)}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 text-sm font-medium rounded-lg mb-1 transition-all duration-200 relative ${isActive
+                    ? 'bg-gray-800/60 shadow-md border border-brand/30'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-brand hover:shadow-sm'
+                    }`}
+                  title={isCollapsed ? tab.label : undefined}
+                >
+                  {isActive && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-full" />}
+                  <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 ${isActive ? 'text-brand' : ''}`} />
+                  {!isCollapsed && (
+                    <span className={isActive ? 'text-brand font-semibold' : ''}>
+                      {tab.label}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            {isCollapsed && <div className="border-t border-brand/20 mt-2 pt-2" />}
+          </div>
+        )}
       </nav>
 
       {/* Account Section - Fixed at Bottom */}
@@ -192,7 +232,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
               </button>
 
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
+                {accountTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -226,7 +266,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, userRole }: 
               </button>
 
               <div className={`transition-all duration-300 overflow-hidden ${isAccountOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {accountTabs.filter(tab => !tab.adminOnly || userRole === 'admin').map((tab) => {
+                {accountTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 

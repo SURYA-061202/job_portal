@@ -9,7 +9,7 @@ import CandidateList from '@/components/resume/CandidateList';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
-import { ArrowLeft, Search, LayoutGrid, Briefcase, MapPin, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';

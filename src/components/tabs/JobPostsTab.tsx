@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
-import { collection, getDocs, query as fsQuery, orderBy, where } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, getDocs, query as fsQuery, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
+import CustomDropdown from '@/components/CustomDropdown';
 import toast from 'react-hot-toast';
 import { Search, Plus } from 'lucide-react';
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userId }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+    const isAdmin = userRole === 'admin';
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
@@ -17,19 +19,21 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
+    const [recruiterFilter, setRecruiterFilter] = useState('');
+    const [recruiterNames, setRecruiterNames] = useState<Record<string, string>>({});
 
     const fetchRecruitmentRequests = async () => {
         try {
             setLoadingPosts(true);
 
             const recruitsRef = collection(db, 'recruits');
-            let q = fsQuery(recruitsRef, orderBy('createdAt', 'desc'));
-
-            if (userId) {
-                // Every user (recruiter or admin) only sees the posts they created.
-                // If filtering by recruiterId, remove orderBy to avoid index requirements
-                q = fsQuery(recruitsRef, where('recruiterId', '==', userId));
-            }
+            // Admins oversee every recruiter's posts; a recruiter only sees their own.
+            // Neither path uses orderBy — it would need a composite index when
+            // combined with the where, and drops posts whose timestamp is still
+            // resolving — so the sort happens below instead.
+            const q = (!isAdmin && userId)
+                ? fsQuery(recruitsRef, where('recruiterId', '==', userId))
+                : fsQuery(recruitsRef);
 
             const querySnapshot = await getDocs(q);
 
@@ -38,13 +42,27 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 ...doc.data()
             })) as any[];
 
-            // Sort manually if we didn't sort in the query
-            if (userId) {
-                recruits = recruits.sort((a, b) => {
-                    const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-                    const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-                    return Number(dateB) - Number(dateA);
-                });
+            recruits = recruits.sort((a, b) => {
+                const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
+                const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
+                return Number(dateB) - Number(dateA);
+            });
+
+            // Names for the recruiter filter. Posts store recruiterName as it was at
+            // creation time (sometimes blank), so resolve it from the user record.
+            if (isAdmin) {
+                try {
+                    const usersSnap = await getDocs(collection(db, 'users'));
+                    const names: Record<string, string> = {};
+                    usersSnap.forEach(userDoc => {
+                        const data = userDoc.data();
+                        if (data.role === 'user') return; // job seekers never own posts
+                        names[userDoc.id] = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed';
+                    });
+                    setRecruiterNames(names);
+                } catch (err) {
+                    console.error('Error fetching recruiter names:', err);
+                }
             }
 
             // 2. Fetch application counts (Firestore job_applications)
@@ -102,6 +120,21 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         }
     }, [loadingPosts, initialSelectedPostId, recruitmentRequests, isRestoring]);
 
+    // One entry per recruiter that actually owns a post, so the filter can never
+    // land on an empty result.
+    const recruiterOptions = useMemo(() => {
+        const byId = new Map<string, string>();
+        recruitmentRequests.forEach(post => {
+            const id = post.recruiterId;
+            if (!id || byId.has(id)) return;
+            byId.set(id, recruiterNames[id] || post.recruiterName?.trim() || post.companyName?.trim() || 'Unnamed recruiter');
+        });
+        const options = Array.from(byId.entries())
+            .map(([value, label]) => ({ value, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+        return [{ value: '', label: 'All recruiters' }, ...options];
+    }, [recruitmentRequests, recruiterNames]);
+
     if (isRestoring) {
         return (
             <div className="flex justify-center items-center h-full min-h-[500px]">
@@ -110,12 +143,18 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         );
     }
 
-    // Filter recruitment requests based on search term
-    const filteredRecruitmentRequests = recruitmentRequests.filter(post =>
-        post.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.location?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filter by the selected recruiter (admin only), then by the search term
+    const filteredRecruitmentRequests = recruitmentRequests.filter(post => {
+        if (isAdmin && recruiterFilter && post.recruiterId !== recruiterFilter) return false;
+
+        const term = searchTerm.trim().toLowerCase();
+        if (!term) return true;
+        return (
+            post.jobTitle?.toLowerCase().includes(term) ||
+            post.department?.toLowerCase().includes(term) ||
+            post.location?.toLowerCase().includes(term)
+        );
+    });
 
     return (
         <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -146,7 +185,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <div className="flex items-center gap-3 mb-1">
                                     <h2 className="text-xl font-bold text-gray-900">Job Posts</h2>
                                     <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
-                                        {recruitmentRequests.length}
+                                        {filteredRecruitmentRequests.length}
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-500">Manage and track all recruitment requests and job postings</p>
@@ -154,6 +193,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
 
                             {/* Search and Button Controls */}
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
+                                {isAdmin && recruiterOptions.length > 1 && (
+                                    <CustomDropdown
+                                        value={recruiterFilter}
+                                        onChange={setRecruiterFilter}
+                                        options={recruiterOptions}
+                                        placeholder="All recruiters"
+                                        className="w-full sm:w-52"
+                                    />
+                                )}
                                 <div className="relative flex-1 sm:w-64 md:w-72">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Search className="h-4 w-4 text-brand" />

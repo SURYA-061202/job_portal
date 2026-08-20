@@ -153,10 +153,6 @@ export default function UserDashboard() {
         });
     };
 
-    const handleCompleteProfile = () => {
-        navigate('/profile');
-    };
-
     const clearAllFilters = () => {
         setSelectedFilters({
             jobType: [],
@@ -331,7 +327,6 @@ export default function UserDashboard() {
                         <FilterSidebar
                             selectedFilters={selectedFilters}
                             onToggleFilter={toggleFilter}
-                            onCompleteProfile={handleCompleteProfile}
                             onClearFilters={clearAllFilters}
                         />
                     </aside>
@@ -534,8 +529,7 @@ export default function UserDashboard() {
                                 <FilterSidebar
                                     selectedFilters={selectedFilters}
                                     onToggleFilter={toggleFilter}
-                                    onCompleteProfile={handleCompleteProfile}
-                                    onClearFilters={clearAllFilters}
+                                            onClearFilters={clearAllFilters}
                                 />
                             </div>
                         </div>

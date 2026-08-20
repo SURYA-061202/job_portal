@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc, updateDoc, setDoc, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Candidate, RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import toast from "react-hot-toast";
 import { ArrowLeft, Calendar, Briefcase, MapPin, Search } from "lucide-react";
-import { sendVerifyDetails, sendRoundInvite } from "@/lib/emailFunctions";
+import { sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
-import { createVerifyDetailsNotification } from "@/lib/notificationHelper";
+import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
 
 const normalizeSkills = (skills: any): string[] => {
   if (!skills) return [];
@@ -69,7 +69,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         return;
       }
 
-      let applications: { user_id: string; post_id: string }[] = [];
+      let applications: { user_id: string; post_id: string; status: string }[] = [];
       try {
         const allApps = await getAllApplications();
         console.log('[Shortlisted] ALL applications:', allApps.map(a => `user: ${a.user_id} | post: ${a.post_id} | status: ${a.status}`));
@@ -103,8 +103,11 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
             }
 
             if (userData) {
+              // One interview doc per candidate, so it may belong to a different
+              // post they were invited for — ignore it unless it's for this one.
               const intDoc = await getDoc(doc(db, 'interviews', app.user_id));
-              intData = intDoc.exists() ? intDoc.data() : {};
+              const rawInt = intDoc.exists() ? intDoc.data() : {};
+              intData = (!rawInt.postId || rawInt.postId === app.post_id) ? rawInt : {};
               console.log('[Shortlisted] Found user for application:', app.user_id, userData.name || userData.firstName);
 
               allCandidates.push({
@@ -171,9 +174,11 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   };
 
   if (selected) {
+    const selectedCandidatePostId = (selected as Candidate & { postId?: string }).postId;
     return (
       <ShortlistedCandidateDetail
         candidate={selected}
+        postTitle={posts.find(p => p.id === selectedCandidatePostId)?.jobTitle}
         onBack={() => {
           setSelected(null);
           // If there's a parent onBack and we came from another tab, call it
@@ -274,13 +279,6 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={() => { setSelectedPostView(null); setSearch(''); }}
-        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Posts
-      </button>
       <CandidateList
         candidates={candidates.filter(c => (c as any).postId === selectedPostView.id)}
         onSelectCandidate={setSelected}
@@ -289,6 +287,8 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         onSearchTermChange={setSearch}
         emptyMessage="No shortlisted candidates found."
         title={`Shortlisted — ${selectedPostView.jobTitle}`}
+        onBack={() => { setSelectedPostView(null); setSearch(''); }}
+        hideRole
       />
     </div>
   );
@@ -298,70 +298,39 @@ interface DetailProps {
   candidate: Candidate;
   onBack: () => void;
   onStatusUpdated?: () => void;
+  /** Job post this candidate is shortlisted for, shown in the header. */
+  postTitle?: string;
 }
 
-function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: DetailProps) {
+function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTitle }: DetailProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
   const [details, setDetails] = useState<any>(null);
   const [moveLoading, setMoveLoading] = useState(false);
   const [roundName, setRoundName] = useState('Technical');
 
+  const candidateId = candidate.id;
+  const candidatePostId = (candidate as any).postId as string | undefined;
+
   useEffect(() => {
     const loadInterview = async () => {
       try {
-        const snap = await getDoc(doc(db, "interviews", candidate.id));
+        const snap = await getDoc(doc(db, "interviews", candidateId));
         if (snap.exists()) {
           const data: any = snap.data();
+          // The doc is keyed by candidate only; a response recorded for another
+          // post must not show up here.
+          if (data.postId && candidatePostId && data.postId !== candidatePostId) return;
           setSelectedDate(data.selectedDate ?? null);
           setResponse(data.response ?? null);
           setDetails(data);
-          if (data.verifyMailSentAt) setSent(true);
         }
       } catch (err) {
         console.error(err);
       }
     };
     loadInterview();
-  }, [candidate.id]);
-
-  const handleVerifyDetails = async () => {
-    if (sending || sent) return;
-    setSending(true);
-    try {
-      const interviewurl = `${window.location.origin}`;
-      await sendVerifyDetails({
-        candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
-        baseUrl: interviewurl,
-      });
-
-      // Mark that verify details mail sent in interview doc (create if needed)
-      const interviewRef = doc(db, "interviews", candidate.id);
-      const snap = await getDoc(interviewRef);
-      if (snap.exists()) {
-        await updateDoc(interviewRef, { verifyMailSentAt: new Date() });
-      } else {
-        await setDoc(interviewRef, { verifyMailSentAt: new Date() });
-      }
-
-      // Create notification for the candidate
-      try {
-        await createVerifyDetailsNotification(candidate.email);
-      } catch (err) {
-        console.error('Failed to create notification', err);
-      }
-
-      toast.success("Verification email sent and status moved to round1");
-      setSent(true);
-      onStatusUpdated?.();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send mail");
-    } finally {
-      setSending(false);
-    }
-  };
+  }, [candidateId, candidatePostId]);
 
   const moveToRound1 = async () => {
     if (moveLoading) return;
@@ -403,6 +372,13 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
         console.error('Failed to send round email:', emailErr);
       }
       
+      void notifyCandidateOfStatusChange({
+        candidateId: candidate.id,
+        postId: applicantPostId,
+        status: 'round1',
+        roundLabel: effectiveRoundName,
+      });
+
       toast.success("Moved to Round 1");
       onStatusUpdated?.();
     } catch (err: any) {
@@ -414,24 +390,37 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
 
   return (
     <div className="space-y-6">
-      <button onClick={onBack} className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-        <ArrowLeft className="h-5 w-5" />
-        <span>Back to List</span>
-      </button>
-
-      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-          <p className="text-gray-600 text-sm">
-            {candidate.email}
-            {candidate.phone && (
-              <>
-                <span className="mx-2 text-gray-400">•</span>
-                {candidate.phone}
-              </>
-            )}
-          </p>
+      <div className="bg-surface rounded-lg shadow overflow-x-auto">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-start gap-3">
+          <button
+            onClick={onBack}
+            className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors flex-shrink-0"
+            title="Back to list"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-gray-900">{candidate.name}</h2>
+              {postTitle && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
+                  {postTitle}
+                </span>
+              )}
+            </div>
+            <p className="text-gray-600 text-sm mt-0.5">
+              {candidate.email}
+              {candidate.phone && (
+                <>
+                  <span className="mx-2 text-gray-400">•</span>
+                  {candidate.phone}
+                </>
+              )}
+            </p>
+          </div>
         </div>
+
+        <div className="p-6 space-y-4">
         <div className="overflow-x-auto">
           <table className="table-fixed w-auto text-sm">
             <tbody className="divide-y divide-gray-100">
@@ -492,13 +481,13 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
             </table>
           </div>
         ) : (
-          sent && (
+          response === 'accept' && (
             <p className="mt-6 text-red-600">Awaiting candidate details</p>
           )
         )}
 
         <div className="flex justify-end pt-4 gap-4">
-          {sent && (
+          {response === 'accept' && (
             <div className="flex items-center gap-3">
               <input
                 type="text"
@@ -516,13 +505,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated }: Deta
               </button>
             </div>
           )}
-          <button
-            disabled={sending || sent}
-            onClick={handleVerifyDetails}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium shadow ${sent ? "bg-gray-300 text-gray-600" : "bg-brand text-white hover:bg-brand"} disabled:opacity-50`}
-          >
-            {sending ? "Sending…" : sent ? "Sent" : "Verify Details"}
-          </button>
+          </div>
         </div>
       </div>
     </div>

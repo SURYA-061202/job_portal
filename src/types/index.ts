@@ -137,6 +137,14 @@ export interface CandidateData {
 
 export type PremiumRequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
+/** One configurable interview round on a job post (Pipeline column). */
+export interface InterviewRound {
+  /** 1-based position of the round in the pipeline. */
+  roundNumber: number;
+  /** Recruiter-given name, e.g. "Technical Screen". May be blank. */
+  name: string;
+}
+
 export interface RecruitmentRequest {
   id?: string;
   jobTitle: string;
@@ -161,6 +169,10 @@ export interface RecruitmentRequest {
   createdAt: any;
   applicantCount?: number;
   viewedBy?: string[];
+  /** How many interview rounds this post runs. Absent on posts created before this was configurable. */
+  totalRounds?: number;
+  /** Names for each round; index-independent, keyed by roundNumber. */
+  rounds?: InterviewRound[];
 }
 
 // Ensure this file is treated as a module

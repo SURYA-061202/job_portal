@@ -127,7 +127,7 @@ export default function NotificationsPage() {
                             <div
                                 key={notification.id}
                                 onClick={() => !notification.read && markAsRead(notification.id)}
-                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-brand' : ''
+                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-brand' : ''
                                     }`}
                             >
                                 <div className="flex items-start gap-4">

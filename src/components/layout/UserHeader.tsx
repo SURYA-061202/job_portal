@@ -4,6 +4,7 @@ import { auth } from '@/lib/firebase';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import NotificationBell from './NotificationBell';
 
 
 export default function UserHeader() {
@@ -81,7 +82,8 @@ export default function UserHeader() {
                     </div>
 
                     {/* Right Side - Actions (Desktop) */}
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-2">
+                        <NotificationBell />
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
@@ -122,6 +124,10 @@ export default function UserHeader() {
                         </Link>
                     ))}
                     <div className="h-px bg-gray-200 my-2"></div>
+                    <div className="flex items-center gap-3 p-4 rounded-xl text-gray-500">
+                        <NotificationBell />
+                        <span className="text-base font-medium">Notifications</span>
+                    </div>
                     <button
                         onClick={() => {
                             setIsMenuOpen(false);

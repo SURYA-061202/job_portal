@@ -6,7 +6,11 @@ import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
+import { getPostRounds, MAX_TOTAL_ROUNDS } from '@/lib/interviewRounds';
 import { usePopup } from '@/components/ui/Popup';
+
+/** Hints only — a round's name is free text and may be left blank. */
+const ROUND_NAME_PLACEHOLDERS = ['Screening Call', 'Technical Round', 'Managerial Round', 'HR Round'];
 
 interface RecruitmentFormModalProps {
     isOpen: boolean;
@@ -28,12 +32,14 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         yearsExperience: '',
         modeOfWork: 'Office' as 'Office' | 'Hybrid' | 'Remote',
         location: '',
-        candidatesCount: 1,
+        candidatesCount: '',
         qualification: '',
         skills: '',
         description: '',
         budgetPay: '',
-        salaryBreakup: ''
+        salaryBreakup: '',
+        totalRounds: 1,
+        roundNames: [''] as string[]
     });
 
     useEffect(() => {
@@ -61,6 +67,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         }
 
         if (initialData) {
+            const rounds = getPostRounds(initialData);
             setFormData({
                 jobTitle: initialData.jobTitle,
                 urgencyLevel: initialData.urgencyLevel,
@@ -70,12 +77,14 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 yearsExperience: initialData.yearsExperience,
                 modeOfWork: initialData.modeOfWork,
                 location: initialData.location,
-                candidatesCount: initialData.candidatesCount,
+                candidatesCount: initialData.candidatesCount ? String(initialData.candidatesCount) : '',
                 qualification: initialData.qualification,
                 skills: initialData.skills,
                 description: initialData.description || '',
                 budgetPay: initialData.budgetPay,
                 salaryBreakup: initialData.salaryBreakup,
+                totalRounds: rounds.length,
+                roundNames: rounds.map(r => r.name),
             });
         } else if (isOpen) {
             // Reset to default values when opening modal without initialData
@@ -88,12 +97,14 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 yearsExperience: '',
                 modeOfWork: 'Office',
                 location: '',
-                candidatesCount: 1,
+                candidatesCount: '',
                 qualification: '',
                 skills: '',
                 description: '',
                 budgetPay: '',
                 salaryBreakup: '',
+                totalRounds: 1,
+                roundNames: [''],
             });
             setFile(null); // Also reset the file
         }
@@ -127,12 +138,16 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 yearsExperience: formData.yearsExperience,
                 modeOfWork: formData.modeOfWork,
                 location: formData.location,
-                candidatesCount: formData.candidatesCount,
+                candidatesCount: Number(formData.candidatesCount) || 0,
                 qualification: formData.qualification,
                 skills: formData.skills,
                 description: formData.description,
                 budgetPay: formData.budgetPay,
                 salaryBreakup: formData.salaryBreakup,
+                totalRounds: formData.totalRounds,
+                rounds: formData.roundNames
+                    .slice(0, formData.totalRounds)
+                    .map((name, i) => ({ roundNumber: i + 1, name: name.trim() })),
                 jdUrl: jdUrl,
                 updatedAt: serverTimestamp()
             };
@@ -174,7 +189,25 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'candidatesCount' ? parseInt(value) : value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Growing/shrinking the round count keeps the names already typed for the
+    // rounds that survive, so editing the count isn't destructive.
+    const handleTotalRoundsChange = (value: string) => {
+        const parsed = value === '' ? 0 : Math.max(0, Math.min(MAX_TOTAL_ROUNDS, parseInt(value, 10) || 0));
+        setFormData(prev => ({
+            ...prev,
+            totalRounds: parsed,
+            roundNames: Array.from({ length: parsed }, (_, i) => prev.roundNames[i] || ''),
+        }));
+    };
+
+    const handleRoundNameChange = (index: number, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            roundNames: prev.roundNames.map((n, i) => (i === index ? value : n)),
+        }));
     };
 
     return (
@@ -205,7 +238,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Urgency Level */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Urgency Level *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Urgency Level</label>
                             <select
                                 name="urgencyLevel"
                                 value={formData.urgencyLevel}
@@ -220,9 +253,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Department */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                             <input
-                                required
                                 type="text"
                                 name="department"
                                 value={formData.department}
@@ -236,6 +268,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Type of Candidates *</label>
                             <select
+                                required
                                 name="candidateType"
                                 value={formData.candidateType}
                                 onChange={handleChange}
@@ -250,7 +283,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Position Level */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Position Level *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Position Level</label>
                             <select
                                 name="positionLevel"
                                 value={formData.positionLevel}
@@ -267,9 +300,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Years of Experience */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience REQUIRED *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience REQUIRED</label>
                             <input
-                                required
                                 type="text"
                                 name="yearsExperience"
                                 value={formData.yearsExperience}
@@ -281,7 +313,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Mode of Work */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mode of Work *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mode of Work</label>
                             <select
                                 name="modeOfWork"
                                 value={formData.modeOfWork}
@@ -296,9 +328,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Location */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                             <input
-                                required
                                 type="text"
                                 name="location"
                                 value={formData.location}
@@ -310,9 +341,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* No of candidates */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">No. of Candidates Required *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">No. of Candidates Required</label>
                             <input
-                                required
                                 type="number"
                                 min="1"
                                 name="candidatesCount"
@@ -324,9 +354,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Qualification */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Qualification Required *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Qualification Required</label>
                             <input
-                                required
                                 type="text"
                                 name="qualification"
                                 value={formData.qualification}
@@ -338,9 +367,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Key Skills */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Key Skills Required *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Key Skills Required</label>
                             <input
-                                required
                                 type="text"
                                 name="skills"
                                 value={formData.skills}
@@ -349,6 +377,41 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 placeholder="e.g. React, Node.js, AWS"
                             />
                         </div>
+                    </div>
+
+                    {/* Interview Rounds — these become the pipeline stages for this post */}
+                    <div className="border border-gray-200 rounded-md p-4 space-y-4">
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900 mb-1">Interview Rounds</h3>
+                            <input
+                                type="number"
+                                min="0"
+                                max={MAX_TOTAL_ROUNDS}
+                                name="totalRounds"
+                                value={formData.totalRounds}
+                                onChange={(e) => handleTotalRoundsChange(e.target.value)}
+                                className="w-full sm:w-40 px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                            />
+                        </div>
+
+                        {formData.totalRounds > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {Array.from({ length: formData.totalRounds }, (_, i) => (
+                                    <div key={i}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Round {i + 1} Name</label>
+                                        <input
+                                            type="text"
+                                            value={formData.roundNames[i] || ''}
+                                            onChange={(e) => handleRoundNameChange(i, e.target.value)}
+                                            className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                            placeholder={ROUND_NAME_PLACEHOLDERS[i] || `e.g. Round ${i + 1}`}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-gray-500 italic">No interview rounds — the pipeline goes straight from Shortlisted to Selected.</p>
+                        )}
                     </div>
 
                     {/* Description */}
@@ -391,9 +454,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Budget Pay out */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Budget Pay out (Min – Max) *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Budget Pay out (Min – Max)</label>
                             <input
-                                required
                                 type="text"
                                 name="budgetPay"
                                 value={formData.budgetPay}
@@ -435,7 +497,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:opacity-50"
                     >
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {initialData?.id ? 'Update Request' : 'Submit Request'}
+                        {initialData?.id ? 'Update Request' : 'Add Post'}
                     </button>
                 </div>
             </div>

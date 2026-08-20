@@ -35,6 +35,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [loadingPosts, setLoadingPosts] = useState(false);
   const { showSuccess, showError } = usePopup();
 
+  // Set only when this detail view was reached through the Posts module, so the
+  // header can name the post the candidate is being reviewed for.
+  const activePost = activePostId ? jobPosts.find(p => p.id === activePostId) : null;
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -187,7 +191,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {candidate.name}{candidate.role && ` - ${candidate.role}`}
+                  {candidate.name}{activePost?.jobTitle && ` - ${activePost.jobTitle}`}
                 </h2>
                 {candidate.email && activePostId && (
                   <button
@@ -213,7 +217,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               <CustomDropdown
                 value={shortlistPostId}
                 onChange={setShortlistPostId}
-                options={jobPosts.map((job) => ({ value: job.id, label: job.jobTitle || 'Untitled Post' }))}
+                options={jobPosts.map((job) => ({ value: job.id || '', label: job.jobTitle || 'Untitled Post' }))}
                 placeholder="Select Post"
                 className="max-w-[180px]"
               />
@@ -391,12 +395,20 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               <h3 className="text-lg font-bold text-gray-900 mb-3">
                 Experience
               </h3>
-              {candidate.experience && (
-                <div className="mb-4 pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Overall:</span>
-                    <span className="text-sm font-semibold text-gray-900">{candidate.experience}</span>
-                  </div>
+              {(candidate.role || candidate.experience) && (
+                <div className="mb-4 pb-4 border-b border-gray-100 space-y-1.5">
+                  {candidate.role && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500">Role:</span>
+                      <span className="text-sm font-semibold text-gray-900">{candidate.role}</span>
+                    </div>
+                  )}
+                  {candidate.experience && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500">Overall:</span>
+                      <span className="text-sm font-semibold text-gray-900">{candidate.experience}</span>
+                    </div>
+                  )}
                 </div>
               )}
               {candidate.extractedData?.workExperience && candidate.extractedData.workExperience.length > 0 && (

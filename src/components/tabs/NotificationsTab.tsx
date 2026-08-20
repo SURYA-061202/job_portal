@@ -71,14 +71,17 @@ export default function NotificationsTab() {
       setNotifications(list);
       // Mark all as viewed
       list.forEach((n) => {
-        if (!n.viewed) updateDoc(n.ref, { viewed: true });
+        if (!n.viewed) {
+          updateDoc(n.ref, { viewed: true, read: true })
+            .catch(err => console.error('Failed to mark notification as viewed:', n.id, err));
+        }
       });
     });
     return () => unsub();
   }, [currentUserEmail]);
 
   return (
-    <div className="bg-surface rounded-lg shadow divide-y divide-gray-200">
+    <div className="bg-surface rounded-lg border border-gray-200 divide-y divide-gray-200">
       <div className="px-4 sm:px-6 py-4">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900">Notifications ({notifications.length})</h2>
       </div>

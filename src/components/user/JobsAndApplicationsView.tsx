@@ -11,10 +11,11 @@ import toast from 'react-hot-toast';
 
 interface JobsAndApplicationsViewProps {
     activeTab: 'jobs' | 'applications';
-    onCompleteProfile: () => void;
+    /** Kept for callers; the filter sidebar no longer shows a profile prompt. */
+    onCompleteProfile?: () => void;
 }
 
-export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }: JobsAndApplicationsViewProps) {
+export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicationsViewProps) {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -129,20 +130,27 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
         });
     };
 
-    const filteredPosts = posts.filter(post => {
-        const matchesSearch =
-            post.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+    /**
+     * Search box, location box and the sidebar filters, applied to one post.
+     * Shared by both tabs. Every field read here is optional on a post now, so
+     * nothing may be dereferenced directly — a blank department used to throw
+     * inside .filter() and take the whole list down with it.
+     */
+    const matchesFilters = (post?: Partial<RecruitmentRequest> | null) => {
+        if (!post) return false;
 
-        const matchesLocation = post.location.toLowerCase().includes(locationTerm.toLowerCase());
+        const term = searchTerm.trim().toLowerCase();
+        const matchesSearch = !term || [post.jobTitle, post.department, post.skills, post.companyName]
+            .some(field => String(field || '').toLowerCase().includes(term));
+
+        const location = locationTerm.trim().toLowerCase();
+        const matchesLocation = !location || String(post.location || '').toLowerCase().includes(location);
 
         const matchesJobType = selectedFilters.jobType.length === 0 ||
             selectedFilters.jobType.includes(post.candidateType || 'Permanent');
 
         const isInExpRange = (exp: string) => {
-            const years = parseInt(post.yearsExperience) || 0;
+            const years = parseInt(String(post.yearsExperience || '')) || 0;
             if (exp === "Entry Level") return years <= 2;
             if (exp === "Mid Level") return years > 2 && years <= 5;
             if (exp === "Senior Level") return years > 5 && years <= 10;
@@ -153,7 +161,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
 
         const matchesSalary = selectedFilters.salary.length === 0 ||
             selectedFilters.salary.some(sal => {
-                const budget = post.budgetPay?.toLowerCase() || '';
+                const budget = String(post.budgetPay || '').toLowerCase();
                 const budgetNumbers = budget.match(/\d+/g);
                 if (!budgetNumbers || budgetNumbers.length === 0) return false;
                 const budgetValue = parseInt(budgetNumbers[0]);
@@ -165,16 +173,37 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
             });
 
         const matchesDepartment = selectedFilters.department.length === 0 ||
-            selectedFilters.department.includes(post.department);
+            selectedFilters.department.includes(post.department || '');
 
-        const isApplied = applications.some(app => app.post_id === post.id);
+        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment;
+    };
 
-        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && !isApplied;
-    }).sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-        return sortBy === 'recent' ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
-    });
+    /** Firestore Timestamp, Date, or anything Date can parse. */
+    type SortableDate = { toDate?: () => Date; seconds?: number } | string | number | null | undefined;
+
+    const toMillis = (value: SortableDate) => {
+        if (!value) return 0;
+        if (typeof value === 'object') {
+            if (typeof value.toDate === 'function') return value.toDate().getTime();
+            if (typeof value.seconds === 'number') return value.seconds * 1000;
+            return 0;
+        }
+        const parsed = new Date(value).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const bySortOrder = (aDate: SortableDate, bDate: SortableDate) =>
+        sortBy === 'recent' ? toMillis(bDate) - toMillis(aDate) : toMillis(aDate) - toMillis(bDate);
+
+    const filteredPosts = posts
+        // Jobs already applied to live on the Applications tab instead.
+        .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
+        .sort((a, b) => bySortOrder(a.createdAt, b.createdAt));
+
+    // The Applications tab honours the same filters; it used to render the raw list.
+    const filteredApplications = applications
+        .filter(app => matchesFilters(app.recruitment_requests))
+        .sort((a, b) => bySortOrder(a.created_at || a.recruitment_requests?.createdAt, b.created_at || b.recruitment_requests?.createdAt));
 
 
     if (selectedJob) {
@@ -224,11 +253,10 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Left Sidebar - Filters */}
-                <aside className="hidden lg:block lg:col-span-1 border-r border-gray-200 pr-4">
+                <aside className="hidden lg:block lg:col-span-1 border-r border-gray-200 pr-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto hover-scrollbar">
                     <FilterSidebar
                         selectedFilters={selectedFilters}
                         onToggleFilter={toggleFilter}
-                        onCompleteProfile={onCompleteProfile}
                         onClearFilters={clearAllFilters}
                     />
                 </aside>
@@ -238,7 +266,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div className="flex items-center justify-between w-full sm:w-auto">
                             <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : applications.length})</span>
+                                {activeTab === 'jobs' ? 'Available Jobs' : 'Your Applications'} <span className="text-gray-500">({activeTab === 'jobs' ? filteredPosts.length : filteredApplications.length})</span>
                             </h2>
                             <button
                                 onClick={() => setIsFilterDrawerOpen(true)}
@@ -262,7 +290,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                         </div>
                     </div>
 
-                    <div className="overflow-y-auto pr-2" style={{ maxHeight: '800px' }}>
+                    <div className="overflow-y-auto hover-scrollbar pr-2 max-h-[calc(100vh-17rem)]">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-20">
                                 <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
@@ -284,17 +312,23 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                                 </div>
                             )
                         ) : (
-                            applications.length === 0 ? (
+                            filteredApplications.length === 0 ? (
                                 <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                                     <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <History className="w-8 h-8 text-brand" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No applications yet</h3>
-                                    <p className="text-gray-500 max-w-sm mx-auto mb-6">You haven't applied for any jobs yet.</p>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                        {applications.length === 0 ? 'No applications yet' : 'No matching applications'}
+                                    </h3>
+                                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                                        {applications.length === 0
+                                            ? "You haven't applied for any jobs yet."
+                                            : 'Try clearing a filter or two to see more of your applications.'}
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4">
-                                    {applications.map((app) => (
+                                    {filteredApplications.map((app) => (
                                         <UserJobCard
                                             key={app.id}
                                             recruitment={{
@@ -339,7 +373,7 @@ export default function JobsAndApplicationsView({ activeTab, onCompleteProfile }
                             <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-gray-100 rounded-full"><ChevronDown className="w-5 h-5 rotate-90 text-gray-500" /></button>
                         </div>
                         <div className="p-4">
-                            <FilterSidebar selectedFilters={selectedFilters} onToggleFilter={toggleFilter} onCompleteProfile={onCompleteProfile} onClearFilters={clearAllFilters} />
+                            <FilterSidebar selectedFilters={selectedFilters} onToggleFilter={toggleFilter} onClearFilters={clearAllFilters} />
                         </div>
                     </div>
                 </div>

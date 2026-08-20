@@ -15,7 +15,7 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-import { Loader2, Users, Briefcase, MapPin, Award } from 'lucide-react';
+import { Loader2, Users, Briefcase, MapPin } from 'lucide-react';
 import CustomDropdown from '@/components/CustomDropdown';
 import { BRAND, CHART_COLORS } from '@/constants/colors';
 
@@ -95,11 +95,6 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     // --- Candidate Analytics ---
 
     const totalCandidates = candidates.length;
-    const highMatchCandidates = candidates.filter(c => {
-        if (!c.rankings) return false;
-        return Object.values(c.rankings).some(r => r.score >= 80);
-    }).length;
-
     const getExpYears = (expStr: string = '') => {
         if (!expStr) return 0;
         const match = expStr.match(/(\d+\.?\d*)/);
@@ -145,23 +140,6 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
             .filter(item => item.name !== 'Other')
             .sort((a, b) => b.value - a.value)
             .slice(0, 7);
-    }, [candidates]);
-
-    const matchScoreData = useMemo(() => {
-        let high = 0, medium = 0, low = 0, unranked = 0;
-        candidates.forEach(c => {
-            if (!c.rankings || Object.keys(c.rankings).length === 0) { unranked++; return; }
-            const maxScore = Math.max(...Object.values(c.rankings).map(r => r.score));
-            if (maxScore >= 80) high++;
-            else if (maxScore >= 50) medium++;
-            else low++;
-        });
-        return [
-            { name: 'High Match (>80)', value: high, color: '#22c55e' },
-            { name: 'Medium (50-80)', value: medium, color: '#f59e0b' },
-            { name: 'Low (<50)', value: low, color: '#ef4444' },
-            { name: 'Unranked', value: unranked, color: '#94a3b8' }
-        ].filter(d => d.value > 0);
     }, [candidates]);
 
     // --- Job Post Analytics (from StatsTab) ---

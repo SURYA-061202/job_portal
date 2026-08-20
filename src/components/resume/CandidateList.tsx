@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
@@ -48,6 +48,10 @@ interface CandidateListProps {
   filterOptions?: { value: string; label: string }[];
   onFilterChange?: (value: string) => void;
   jobId?: string | null;  // For specific ranking display
+  /** When set, a back arrow is rendered inside the list header. */
+  onBack?: () => void;
+  /** Hides the role line under each name (and the "/ Role" column label). */
+  hideRole?: boolean;
 }
 
 export default function CandidateList({
@@ -63,7 +67,9 @@ export default function CandidateList({
   filterValue,
   filterOptions,
   onFilterChange,
-  jobId
+  jobId,
+  onBack,
+  hideRole = false
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
@@ -184,6 +190,15 @@ export default function CandidateList({
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                title="Back to posts"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
             {title || 'Candidates'}
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
               {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
@@ -249,7 +264,7 @@ export default function CandidateList({
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Name / Role</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">{hideRole ? 'Name' : 'Name / Role'}</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Contact Info</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Experience</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
@@ -289,9 +304,11 @@ export default function CandidateList({
                           <div className="text-sm font-semibold text-gray-900 group-hover:text-brand transition-colors">
                             {toTitleCase(candidate.name)}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={toTitleCase(candidate.role) || 'No Role'}>
-                            {toTitleCase(candidate.role) || 'No Role'}
-                          </div>
+                          {!hideRole && (
+                            <div className="text-xs text-gray-500 mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={toTitleCase(candidate.role) || 'No Role'}>
+                              {toTitleCase(candidate.role) || 'No Role'}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>

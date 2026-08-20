@@ -3,7 +3,7 @@ import type { Candidate, RecruitmentRequest } from '@/types';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendInterviewInvite } from '@/lib/emailFunctions';
-import { upsertApplication, setApplicationStatus } from '@/lib/jobApplications';
+import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
@@ -63,31 +63,33 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   }, []);
 
   useEffect(() => {
-    // Only fetch job posts if this candidate doesn't have a postId (manual candidate)
-    const isJobApplicant = !!(candidate as any).postId;
-    if (!isJobApplicant) {
-      const fetchJobs = async () => {
-        try {
-          setLoadingJobs(true);
-          const q = query(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
-          const snapshot = await getDocs(q);
-          const fetchedJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
-          setJobPosts(fetchedJobs);
+    // An invite is always raised against one post: the candidate's own application
+    // if they have one, otherwise the post whose candidate list this was opened from.
+    const applicantPostId = (candidate as any).postId as string | undefined;
+    const effectivePostId = applicantPostId || defaultPostId || '';
 
-          // Default to the post this invite was opened from, if any
-          if (defaultPostId) {
-            setSelectedPostId(defaultPostId);
-            const defaultJob = fetchedJobs.find(j => j.id === defaultPostId);
-            if (defaultJob) setRole(defaultJob.jobTitle);
-          }
-        } catch (error) {
-          console.error('Error fetching jobs:', error);
-        } finally {
-          setLoadingJobs(false);
+    const fetchJobs = async () => {
+      try {
+        setLoadingJobs(true);
+        const q = query(collection(db, 'recruits'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        const fetchedJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecruitmentRequest));
+        setJobPosts(fetchedJobs);
+
+        if (effectivePostId) {
+          // Manual candidates pick their post from the dropdown below; preselect it.
+          if (!applicantPostId) setSelectedPostId(effectivePostId);
+          // The interview is for the post's role, not whatever the resume listed.
+          const effectiveJob = fetchedJobs.find(j => j.id === effectivePostId);
+          if (effectiveJob?.jobTitle) setRole(effectiveJob.jobTitle);
         }
-      };
-      fetchJobs();
-    }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+    fetchJobs();
   }, [candidate, defaultPostId]);
 
   const handlePostChange = (postId: string) => {
@@ -167,18 +169,29 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
       try {
         const { setDoc } = await import('firebase/firestore');
         const interviewRef = doc(db, 'interviews', candidate.id);
-        const todayStr = new Date().toISOString().split('T')[0];
         await setDoc(interviewRef, {
           postId: effectivePostId,
           role,
           dates,
           roundType,
           interviewers,
-          currentSalary: 30000,
-          expectedSalary: 30000,
-          joiningDate: todayStr,
-          feedback: 'Good',
           sentAt: new Date().toISOString(),
+          // An interview doc is keyed by candidate alone, so this invite supersedes
+          // any earlier one — possibly for a different post. Clear the previous
+          // response and the details submitted with it, otherwise the old answers
+          // would show against this post while we're still awaiting a reply.
+          response: null,
+          selectedDate: null,
+          respondedAt: null,
+          detailsSubmitted: false,
+          dateOfJoining: '',
+          currentSalary: '',
+          expectedSalary: '',
+          expectedSalaryPeriod: '',
+          yearsExperience: '',
+          experienceIn: '',
+          readyToRelocate: '',
+          laptop: '',
         }, { merge: true });
       } catch (err) {
         console.error('Failed to store interview details', err);

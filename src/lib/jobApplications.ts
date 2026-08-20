@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { notifyRecruiterOfApplication } from './notificationHelper';
 
 export interface JobApplication {
   id: string;
@@ -60,6 +61,9 @@ export async function applyForJob(
     status: 'applied',
     created_at: serverTimestamp(),
   });
+
+  // Fire-and-forget: a failed notification must not fail the application.
+  void notifyRecruiterOfApplication(postId, userId);
 
   return { success: true };
 }
