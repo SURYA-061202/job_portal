@@ -5,6 +5,7 @@ import type { Candidate, RecruitmentRequest } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import CustomDropdown from '@/components/CustomDropdown';
 import { CHART_COLORS } from '@/constants/colors';
+import { useSkin } from '@/styles/skin';
 
 // Helpers ------------------------------------------------------------
 
@@ -19,6 +20,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   const [loading, setLoading] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [selectedSkill, setSelectedSkill] = useState<string>('all');
+  const skin = useSkin();
 
   // Load candidates and job posts
   useEffect(() => {
@@ -153,45 +155,45 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
   }
 
   return (
-    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 flex flex-col">
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col`}>
       {/* Header Section */}
-      <div className="bg-surface p-4 rounded-xl border border-gray-200">
+      <div className={`p-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-xl font-bold text-gray-900">Stats & Analytics</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold border border-gray-200">
+              <h2 className={skin.heading}>Stats & Analytics</h2>
+              <span className={skin.count}>
                 {jobPosts.length} Posts
               </span>
             </div>
-            <p className="text-sm text-gray-500">Department and skills distribution across job postings</p>
+            <p className="text-sm text-ink/60">Department and skills distribution across job postings</p>
           </div>
         </div>
       </div>
 
       {/* Summary Cards - Moved to Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 font-medium mb-1">Total Candidates</div>
-          <div className="text-3xl font-bold text-gray-900">{candidates.length}</div>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6`}>
+          <div className="text-sm text-ink/60 font-medium mb-1">Total Candidates</div>
+          <div className="text-3xl font-bold text-ink">{candidates.length}</div>
         </div>
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 font-medium mb-1">Total Job Posts</div>
-          <div className="text-3xl font-bold text-gray-900">{jobPosts.length}</div>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6`}>
+          <div className="text-sm text-ink/60 font-medium mb-1">Total Job Posts</div>
+          <div className="text-3xl font-bold text-ink">{jobPosts.length}</div>
         </div>
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 font-medium mb-1">Unique Departments</div>
-          <div className="text-3xl font-bold text-gray-900">{allDepartments.length}</div>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6`}>
+          <div className="text-sm text-ink/60 font-medium mb-1">Unique Departments</div>
+          <div className="text-3xl font-bold text-ink">{allDepartments.length}</div>
         </div>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Department Distribution - Donut Chart */}
-        <div className="bg-surface rounded-xl border border-brand/20 p-6">
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6`}>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Department Distribution</h3>
+              <h3 className={`${skin.cardTitle} mb-1`}>Department Distribution</h3>
               <p className="text-sm text-brand">Top 5 departments by job postings</p>
             </div>
 
@@ -216,7 +218,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
                   cy="50%"
                   innerRadius={60}
                   outerRadius={100}
-                  fill="#8884d8"
+                  fill={COLORS[0]}
                   paddingAngle={2}
                   dataKey="value"
                   label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''}
@@ -234,16 +236,16 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
             departmentStats && (
               <div className="space-y-4 mt-6">
                 <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">Total Job Posts</div>
-                  <div className="text-2xl font-bold text-brand">{departmentStats.totalPosts}</div>
+                  <div className="text-sm text-ink/70 mb-1">Total Job Posts</div>
+                  <div className="text-2xl font-bold text-ink">{departmentStats.totalPosts}</div>
                 </div>
                 <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">Total Openings</div>
-                  <div className="text-2xl font-bold text-brand">{departmentStats.totalOpenings}</div>
+                  <div className="text-sm text-ink/70 mb-1">Total Openings</div>
+                  <div className="text-2xl font-bold text-ink">{departmentStats.totalOpenings}</div>
                 </div>
                 <div className="bg-brand/5 border border-brand/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">Salary Ranges</div>
-                  <div className="text-sm font-medium text-gray-900">{departmentStats.avgSalary}</div>
+                  <div className="text-sm text-ink/70 mb-1">Salary Ranges</div>
+                  <div className="text-sm font-medium text-ink">{departmentStats.avgSalary}</div>
                 </div>
               </div>
             )
@@ -251,10 +253,10 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
         </div>
 
         {/* Skills Distribution - Pie Chart */}
-        <div className="bg-surface rounded-xl border border-brand/20 p-6">
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6`}>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Skills Distribution</h3>
+              <h3 className={`${skin.cardTitle} mb-1`}>Skills Distribution</h3>
               <p className="text-sm text-brand">Top 5 most demanded skills</p>
             </div>
 
@@ -278,7 +280,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  fill="#8884d8"
+                  fill={COLORS[0]}
                   dataKey="value"
                   label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''}
                   labelLine={false}
@@ -295,14 +297,14 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
             skillStats && (
               <div className="space-y-4 mt-6">
                 <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">Job Posts Requiring This Skill</div>
-                  <div className="text-2xl font-bold text-brand">{skillStats.totalPosts}</div>
+                  <div className="text-sm text-ink/70 mb-1">Job Posts Requiring This Skill</div>
+                  <div className="text-2xl font-bold text-ink">{skillStats.totalPosts}</div>
                 </div>
                 <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">Departments</div>
+                  <div className="text-sm text-ink/70 mb-1">Departments</div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {skillStats.departments.map((dept) => (
-                      <span key={dept} className="px-2 py-1 bg-surface border border-brand/30 text-brand text-xs font-medium rounded">
+                      <span key={dept} className={skin.tag}>
                         {dept}
                       </span>
                     ))}

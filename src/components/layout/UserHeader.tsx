@@ -5,6 +5,7 @@ import { LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import NotificationBell from './NotificationBell';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 
 export default function UserHeader() {
@@ -12,6 +13,7 @@ export default function UserHeader() {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const skin = useSkin();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -48,8 +50,8 @@ export default function UserHeader() {
         <header 
             className={`sticky top-0 z-50 transition-all duration-300 ${
                 scrolled
-                ? 'bg-surface/80 backdrop-blur-md border-b border-gray-200/70 shadow-sm py-1'
-                : 'bg-surface border-b border-gray-200 py-2'
+                ? `${skin.surface} backdrop-blur-md border-b ${skin.edge} shadow-sm py-1`
+                : `${skin.surface} border-b ${skin.edge} py-2`
             }`}
         >
             <div className="w-full px-6 lg:px-12">
@@ -58,8 +60,8 @@ export default function UserHeader() {
                     <div className="flex items-center gap-10">
                         <Link to="/home" className="flex items-center group">
                             <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
-                                <span className="text-gray-900">Indian Infra</span>
-                                <span className="text-gray-900">
+                                <span className="text-ink">IndianInfra</span>
+                                <span className="text-ink">
                                     Jobs
                                 </span>
                             </div>
@@ -71,7 +73,7 @@ export default function UserHeader() {
                                     <Link
                                         to={link.to}
                                         className={`flex items-center gap-2 text-sm font-semibold transition-all relative py-3 ${
-                                            isActive(link.to) ? 'text-brand' : 'text-gray-500 hover:text-brand'
+                                            isActive(link.to) ? 'text-brand' : 'text-ink/60 hover:text-brand'
                                         }`}
                                     >
                                         <span>{link.label}</span>
@@ -86,7 +88,7 @@ export default function UserHeader() {
                         <NotificationBell />
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-destructive bg-surface text-destructive ${skin.radius} transition-all hover:bg-destructive/10 ${FOCUS}`}
                         >
                             <LogOut className="w-4 h-4" />
                             <span>Logout</span>
@@ -97,7 +99,7 @@ export default function UserHeader() {
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-all focus:outline-none"
+                            className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} transition-all ${FOCUS}`}
                         >
                             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -106,7 +108,7 @@ export default function UserHeader() {
             </div>
 
             {/* Mobile Menu Overlay */}
-            <div className={`md:hidden absolute top-full left-0 w-full bg-surface border-b border-gray-200 shadow-xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
+            <div className={`md:hidden absolute top-full left-0 w-full ${skin.surface} border-b ${skin.edge} ${skin.shadow} transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 pointer-events-auto' : 'scale-y-0 opacity-0 pointer-events-none'
                 }`}>
                 <div className="px-6 py-4 flex flex-col gap-2">
                     {navLinks.map((link) => (
@@ -114,17 +116,17 @@ export default function UserHeader() {
                             key={link.to}
                             to={link.to}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`flex items-center p-4 rounded-xl transition-all ${
+                            className={`flex items-center p-4 ${skin.radius} transition-all ${
                                 isActive(link.to)
                                 ? 'bg-brand/10 text-brand font-bold'
-                                : 'text-gray-500 hover:bg-gray-100'
+                                : 'text-ink/60 hover:bg-ink/5'
                             }`}
                         >
                             <span className="text-base">{link.label}</span>
                         </Link>
                     ))}
-                    <div className="h-px bg-gray-200 my-2"></div>
-                    <div className="flex items-center gap-3 p-4 rounded-xl text-gray-500">
+                    <div className="h-px bg-border my-2"></div>
+                    <div className={`flex items-center gap-3 p-4 ${skin.radius} text-ink/60`}>
                         <NotificationBell />
                         <span className="text-base font-medium">Notifications</span>
                     </div>
@@ -133,7 +135,7 @@ export default function UserHeader() {
                             setIsMenuOpen(false);
                             handleLogout();
                         }}
-                        className="flex items-center gap-4 p-4 rounded-xl text-red-600 hover:bg-red-50 transition-all text-left w-full"
+                        className={`flex items-center gap-4 p-4 ${skin.radius} border border-destructive bg-surface text-destructive hover:bg-destructive/10 transition-all text-left w-full ${FOCUS}`}
                     >
                         <LogOut className="w-5 h-5" />
                         <span className="text-base font-medium">Logout</span>

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "M18mGHNFzcALbcZoUzNu",
+    "path": "candidates/ywkPkKkOPa77DSWEdlwx/notifications/M18mGHNFzcALbcZoUzNu",
+    "data": {
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-31T05:55:00.004Z"
+      }
+    }
+  },
+  {
+    "id": "PPiXmptxArslOq3iHZQ8",
+    "path": "candidates/ywkPkKkOPa77DSWEdlwx/notifications/PPiXmptxArslOq3iHZQ8",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2025-07-31T05:54:59.241Z"
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      },
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      }
+    }
+  },
+  {
+    "id": "sFYYQBiYfMCKZQcSaWhs",
+    "path": "candidates/ywkPkKkOPa77DSWEdlwx/notifications/sFYYQBiYfMCKZQcSaWhs",
+    "data": {
+      "message": {
+        "stringValue": "Accepted interview on 2025-08-02 02:00 - 04:00 PM"
+      },
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-30T04:43:49Z"
+      }
+    }
+  }
+]

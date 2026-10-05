@@ -87,67 +87,67 @@ export default function VerifyDetailsPage() {
   };
 
   if (loading) return <p className="p-6 text-center">Loading…</p>;
-  if (!candidateId) return <p className="p-6 text-center text-red-600">Invalid link</p>;
+  if (!candidateId) return <p className="p-6 text-center text-destructive">Invalid link</p>;
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white w-full max-w-md rounded-lg shadow p-8 text-center space-y-4">
-          <h1 className="text-2xl font-bold text-gray-900">Thank you!</h1>
-          <p className="text-gray-700">Your details have been recorded.</p>
+      <div className="min-h-screen flex items-center justify-center bg-muted p-4">
+        <div className="bg-surface w-full max-w-md rounded-2xl border border-border shadow-xl p-8 text-center space-y-4">
+          <h1 className="text-2xl font-black text-ink">Thank you!</h1>
+          <p className="text-ink/80">Your details have been recorded.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4">
-      <div className="bg-white w-full max-w-[95vw] sm:max-w-xl rounded-lg shadow p-6 sm:p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 text-center mb-4">Verify Your Details</h1>
+    <div className="min-h-screen flex items-center justify-center bg-muted p-3 sm:p-4">
+      <div className="bg-surface w-full max-w-[95vw] sm:max-w-xl rounded-2xl border border-border shadow-xl p-6 sm:p-8 space-y-6">
+        <h1 className="text-2xl font-black text-ink text-center mb-4">Verify Your Details</h1>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Joining</label>
-            <input type="date" name="dateOfJoining" value={form.dateOfJoining} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-ink/80 mb-1">Date of Joining</label>
+            <input type="date" name="dateOfJoining" value={form.dateOfJoining} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Salary (₹)</label>
-            <input type="number" name="currentSalary" value={form.currentSalary} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-ink/80 mb-1">Current Salary (₹)</label>
+            <input type="number" name="currentSalary" value={form.currentSalary} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary (₹)</label>
+            <label className="block text-sm font-medium text-ink/80 mb-1">Expected Salary (₹)</label>
             <div className="flex gap-2">
-              <input type="number" name="expectedSalary" value={form.expectedSalary} onChange={handleChange} className="flex-1 border rounded-md px-3 py-2 text-sm" />
-              <select name="expectedSalaryPeriod" value={form.expectedSalaryPeriod} onChange={handleChange} className="border rounded-md px-2 py-2 text-sm">
+              <input type="number" name="expectedSalary" value={form.expectedSalary} onChange={handleChange} className="flex-1 border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
+              <select name="expectedSalaryPeriod" value={form.expectedSalaryPeriod} onChange={handleChange} className="border border-border bg-surface rounded-xl px-2 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
                 <option value="month">Per Month</option>
                 <option value="year">Per Year</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-            <input type="number" name="yearsExperience" value={form.yearsExperience} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-ink/80 mb-1">Years of Experience</label>
+            <input type="number" name="yearsExperience" value={form.yearsExperience} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Experience In</label>
-            <input type="text" name="experienceIn" value={form.experienceIn} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-ink/80 mb-1">Experience In</label>
+            <input type="text" name="experienceIn" value={form.experienceIn} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ready to Relocate</label>
-            <select name="readyToRelocate" value={form.readyToRelocate} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm">
+            <label className="block text-sm font-medium text-ink/80 mb-1">Ready to Relocate</label>
+            <select name="readyToRelocate" value={form.readyToRelocate} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Do you have a Laptop?</label>
-            <select name="laptop" value={form.laptop} onChange={handleChange} className="w-full border rounded-md px-3 py-2 text-sm">
+            <label className="block text-sm font-medium text-ink/80 mb-1">Do you have a Laptop?</label>
+            <select name="laptop" value={form.laptop} onChange={handleChange} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>
           </div>
         </div>
 
-        <button onClick={handleSubmit} className="w-full bg-brand text-white px-4 py-2 rounded-md hover:bg-brand/90">
+        <button onClick={handleSubmit} className="w-full border border-ink bg-ink text-surface font-semibold px-4 py-2 rounded-xl hover:border-brand hover:bg-brand hover:text-ink">
           Submit
         </button>
       </div>

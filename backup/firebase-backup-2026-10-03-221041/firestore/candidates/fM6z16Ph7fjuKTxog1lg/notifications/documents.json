@@ -1,0 +1,23 @@
+[
+  {
+    "id": "plPC7tEPlscdj1HhjLl5",
+    "path": "candidates/fM6z16Ph7fjuKTxog1lg/notifications/plPC7tEPlscdj1HhjLl5",
+    "data": {
+      "viewed": {
+        "booleanValue": true
+      },
+      "message": {
+        "stringValue": "Accepted interview on 2025-08-08 10:00 - 12:00 PM"
+      },
+      "email": {
+        "stringValue": "karthicku824@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2025-08-06T15:51:26.222Z"
+      },
+      "name": {
+        "stringValue": "KARTHICK U"
+      }
+    }
+  }
+]

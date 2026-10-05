@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 import RecruitCandidateDropdown from '@/components/recruitment/RecruitCandidateDropdown';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -39,6 +40,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [userAppDates, setUserAppDates] = useState<Record<string, Date[]>>({});
     const [showPostView, setShowPostView] = useState(false);
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
+    const skin = useSkin();
 
     // Extract unique dates for filter
     const availableDates = useMemo(() => {
@@ -491,7 +493,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates, userRole, isPremium]);
 
     return (
-        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 flex flex-col">
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col`}>
             {selectedCandidate ? (
                 <CandidateDetail
                     candidate={selectedCandidate}
@@ -509,101 +511,51 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 <>
                     {activeView === 'list' && (
                         <>
-                            {/* Unified Header & Controls */}
-                            <div className="mb-6 space-y-4">
-                                {/* Top Bar: Title, Description & Controls */}
-                                <div className="bg-surface p-4 rounded-xl border border-gray-200">
-                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                        {/* Title, Count and Description */}
-                                        <div className="flex items-start gap-3">
+                            {/* Unified Header & Controls - the Posts masthead
+                                recipe: brand-washed title row (title left,
+                                view controls right), description row, then a
+                                tinted controls row for recruit and filters. */}
+                            <div className="mb-6">
+                                <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                                    <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                                             {(isFilteringApplicants || onBack) && (
                                                 <button
                                                     onClick={onBack}
-                                                    className="p-1.5 mt-0.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors flex-shrink-0"
+                                                    className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
                                                     title="Back"
+                                                    aria-label="Go back"
                                                 >
-                                                    <ArrowLeft className="w-5 h-5" />
+                                                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                                                 </button>
                                             )}
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-1">
-                                                    <h2 className="text-xl font-bold text-gray-900">
-                                                        {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
-                                                    </h2>
-                                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
-                                                        {displayCandidates.length}
-                                                    </span>
-                                                </div>
-                                                {postId && postTitle && (
-                                                    <p className="text-sm font-medium text-gray-700">{postTitle}</p>
-                                                )}
-                                                {!postId && (
-                                                    <p className="text-sm text-gray-500">Review and manage candidate applications and profiles</p>
-                                                )}
-                                            </div>
+                                            <h2 className={skin.heading}>
+                                                {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
+                                            </h2>
+                                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                                                />
+                                                {displayCandidates.length}
+                                            </span>
                                         </div>
 
-                                        {/* Search and AI Group Controls */}
-                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
-                                            {/* Post View Toggle */}
-                                            {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
-                                                <button
-                                                    onClick={() => setShowPostView(!showPostView)}
-                                                    className={`p-2 rounded-lg transition-all ${showPostView
-                                                        ? 'bg-brand text-white shadow-md'
-                                                        : 'bg-surface text-gray-500 border border-gray-200 hover:bg-gray-50'
-                                                        }`}
-                                                    title="Post-based view"
-                                                >
-                                                    <LayoutGrid className="w-5 h-5" />
-                                                </button>
-                                            )}
-
-                                            {/* Recruit Candidate (only when viewing a specific post's applicants) */}
-                                            {postId && (
-                                                <RecruitCandidateDropdown
-                                                    postId={postId}
-                                                    userRole={userRole}
-                                                    userId={userId}
-                                                    excludeIds={filteredCandidates.map(c => c.id)}
-                                                    onRecruited={() => fetchApplicantsForPost(postId)}
-                                                />
-                                            )}
-
-                                            {/* Search */}
-                                            <div className="relative flex-1 sm:w-64 md:w-72">
+                                        {/* Right end: search, registered-candidates
+                                            switch, post-based toggle. */}
+                                        <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
+                                            <div className="relative w-full sm:w-56">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <Search className="h-4 w-4 text-gray-400" />
+                                                    <Search className="h-4 w-4 text-ink/40" />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     placeholder="Search candidates..."
-                                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
+                                                    className={`block w-full h-9 pl-10 pr-3 sm:text-sm ${skin.field} ${FOCUS}`}
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                 />
                                             </div>
-
-                                            {/* Date Filter (Only for Registered Candidates) */}
-                                            {viewMode === 'registered-users' && (
-                                                <div className="relative">
-                                                    <select
-                                                        value={selectedDateFilter}
-                                                        onChange={(e) => setSelectedDateFilter(e.target.value)}
-                                                        className="appearance-none bg-surface border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-surface focus:border-brand text-sm h-full"
-                                                    >
-                                                        <option value="all">All Dates</option>
-                                                        {availableDates.map(date => (
-                                                            <option key={date} value={date}>{date}</option>
-                                                        ))}
-                                                    </select>
-                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Registered Candidates Button - When not viewing a specific post */}
                                             {!postId && (
                                                 <button
                                                     onClick={() => {
@@ -614,16 +566,68 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                             setUserApplications([]);
                                                         }
                                                     }}
-                                                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'registered-users'
-                                                        ? 'bg-brand text-white shadow-md'
-                                                        : 'bg-surface text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                                    className={`flex h-9 w-full sm:w-56 cursor-pointer items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'registered-users'
+                                                        ? `${skin.cta} ${FOCUS}`
+                                                        : `${skin.secondary} ${FOCUS}`
                                                         }`}
                                                 >
                                                     {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
                                                 </button>
                                             )}
+                                            {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
+                                                <button
+                                                    onClick={() => setShowPostView(!showPostView)}
+                                                    className={`p-2 border border-ink bg-ink text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/80 ${FOCUS}`}
+                                                    title="Post-based view"
+                                                >
+                                                    <LayoutGrid className="w-5 h-5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {/* Description row */}
+                                    {((postId && postTitle) || !postId) && (
+                                        <div className="px-4 py-2.5 sm:px-5">
+                                            <p className={skin.body}>
+                                                {postId ? postTitle : 'Review and manage candidate applications and profiles'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Controls row - recruit action and date filter */}
+                                    {(postId || viewMode === 'registered-users') && (
+                                        <div className={`flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
+                                            {postId && (
+                                                <RecruitCandidateDropdown
+                                                    postId={postId}
+                                                    userRole={userRole}
+                                                    userId={userId}
+                                                    excludeIds={filteredCandidates.map(c => c.id)}
+                                                    onRecruited={() => fetchApplicantsForPost(postId)}
+                                                />
+                                            )}
+
+                                            {/* Date Filter (Only for Registered Candidates) */}
+                                            {viewMode === 'registered-users' && (
+                                                <div className="relative">
+                                                    <select
+                                                        value={selectedDateFilter}
+                                                        onChange={(e) => setSelectedDateFilter(e.target.value)}
+                                                        className={`appearance-none py-2 pl-3 pr-8 leading-tight h-full ${skin.field} ${FOCUS}`}
+                                                    >
+                                                        <option value="all">All Dates</option>
+                                                        {availableDates.map(date => (
+                                                            <option key={date} value={date}>{date}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${skin.subtle}`}>
+                                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -631,10 +635,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 /* Post Card Grid View */
                                 <div className="space-y-4">
                                     {postCards.length === 0 ? (
-                                        <div className="bg-surface rounded-xl shadow-sm border border-brand/20 p-12 text-center">
+                                        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center`}>
                                             <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900">No posts found</h3>
-                                            <p className="mt-1 text-brand">Create a job post to get started.</p>
+                                            <h3 className={skin.emptyTitle}>No posts found</h3>
+                                            <p className={`mt-1 ${skin.body}`}>Create a job post to get started.</p>
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -648,7 +652,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         isFilteringRef.current = true;
                                                         fetchApplicantsForPost(post.id || '');
                                                     }}
-                                                    className="group relative bg-surface rounded-lg border border-gray-200 hover:border-brand/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+                                                    className={`group relative border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} cursor-pointer overflow-hidden flex flex-col h-full ${FOCUS}`}
                                                 >
                                                     {/* Top accent bar */}
                                                     <div className="h-1 w-full bg-brand transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
@@ -658,17 +662,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         <div className="flex justify-between items-start mb-3 sm:mb-4">
                                                             <div className="flex-1 pr-2">
                                                                 <div className="flex justify-between items-center gap-4">
-                                                                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight transition-colors line-clamp-2 flex-1">
+                                                                    <h3 className={`${skin.cardTitle} line-clamp-2 flex-1`}>
                                                                         {post.jobTitle}
                                                                     </h3>
                                                                     {post.positionLevel && (
-                                                                        <span className="flex-shrink-0 inline-flex items-center text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-200">
+                                                                        <span className={`flex-shrink-0 inline-flex items-center ${skin.chip}`}>
                                                                             {post.positionLevel}
                                                                         </span>
                                                                     )}
                                                                 </div>
 
-                                                                <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+                                                                <p className={`${skin.meta} mt-1`}>
                                                                     {post.department}
                                                                 </p>
                                                             </div>
@@ -677,17 +681,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         {/* Key Metrics Grid */}
                                                         <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
                                                             {post.yearsExperience && (
-                                                                <div className="flex flex-col p-2 rounded-lg border border-gray-200">
-                                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Experience</span>
-                                                                    <div className="flex items-center text-xs sm:text-sm font-bold text-gray-900">
+                                                                <div className={`flex flex-col p-2 border ${skin.edge} ${skin.canvas} ${skin.radius}`}>
+                                                                    <span className={`${skin.micro} mb-0.5`}>Experience</span>
+                                                                    <div className={`flex items-center ${skin.cardValue}`}>
                                                                         {post.yearsExperience}
                                                                     </div>
                                                                 </div>
                                                             )}
                                                             {post.location && (
-                                                                <div className="flex flex-col p-2 rounded-lg border border-gray-200">
-                                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Location</span>
-                                                                    <div className="flex items-center text-xs sm:text-sm font-bold text-gray-900">
+                                                                <div className={`flex flex-col p-2 border ${skin.edge} ${skin.canvas} ${skin.radius}`}>
+                                                                    <span className={`${skin.micro} mb-0.5`}>Location</span>
+                                                                    <div className={`flex items-center ${skin.cardValue}`}>
                                                                         {post.location}
                                                                     </div>
                                                                 </div>
@@ -697,10 +701,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         {/* Skills Chips */}
                                                         {post.skills && (
                                                             <div className="mb-4 sm:mb-6 flex-1">
-                                                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-2">Key Skills</span>
+                                                                <span className={`${skin.micro} block mb-2`}>Key Skills</span>
                                                                 <div className="flex flex-wrap gap-1.5">
                                                                     {post.skills.split(',').slice(0, 3).map((skill: string, i: number) => (
-                                                                        <span key={i} className="px-2 py-1 border border-gray-200 text-gray-700 text-[10px] font-bold rounded">
+                                                                        <span key={i} className={skin.tag}>
                                                                             {skill.trim()}
                                                                         </span>
                                                                     ))}
@@ -709,9 +713,9 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         )}
 
                                                         {/* Footer */}
-                                                        <div className="pt-3 sm:pt-4 mt-auto border-t border-gray-200 flex items-center justify-between">
+                                                        <div className={`pt-3 sm:pt-4 mt-auto border-t ${skin.edge} flex items-center justify-between`}>
                                                             {post.createdAt && (
-                                                                <div className="flex items-center text-xs font-medium text-gray-500">
+                                                                <div className={`flex items-center ${skin.meta}`}>
                                                                     <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-brand" />
                                                                     {(() => {
                                                                         const d = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date(post.createdAt);
@@ -724,7 +728,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                                     })()}
                                                                 </div>
                                                             )}
-                                                            <div className="text-xs font-bold text-gray-600">
+                                                            <div className={skin.count}>
                                                                 {post.applicantCount} Applicant{post.applicantCount !== 1 ? 's' : ''}
                                                             </div>
                                                         </div>
@@ -753,7 +757,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
                     {activeView === 'history' && (
                         <>
-                            <div className="flex items-center gap-2 mb-4 cursor-pointer text-brand hover:text-brand" onClick={() => setActiveView('list')}>
+                            <div className={`flex items-center gap-2 mb-4 cursor-pointer text-ink/70 hover:text-ink ${FOCUS}`} onClick={() => setActiveView('list')}>
                                 <ArrowLeft className="h-5 w-5" />
                                 <span>Back</span>
                             </div>

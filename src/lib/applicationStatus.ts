@@ -4,23 +4,23 @@ export function getApplicationStatusInfo(status?: string | null): { label: strin
     const s = status.toLowerCase();
 
     if (s.endsWith('rejected') || s === 'declined') {
-        return { label: 'Not Selected', className: 'bg-red-50 text-red-600 border-red-100' };
+        return { label: 'Not Selected', className: 'bg-destructive/10 text-destructive border-destructive/20' };
     }
     if (s === 'selected' || s === 'hired') {
-        return { label: 'Selected', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+        return { label: 'Selected', className: 'bg-brand/10 text-brand border-brand/20' };
     }
     if (s === 'offer' || s === 'offer_sent') {
-        return { label: 'Offer Sent', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+        return { label: 'Offer Sent', className: 'bg-brand/10 text-brand border-brand/20' };
     }
     const roundMatch = s.match(/^round(\d+)$/);
     if (roundMatch) {
-        return { label: `Interview Round ${roundMatch[1]}`, className: 'bg-violet-50 text-violet-700 border-violet-100' };
+        return { label: `Interview Round ${roundMatch[1]}`, className: 'bg-ink/5 text-ink/80 border-ink/20' };
     }
     if (s === 'technical' || s === 'hr') {
-        return { label: 'Interview Round', className: 'bg-violet-50 text-violet-700 border-violet-100' };
+        return { label: 'Interview Round', className: 'bg-ink/5 text-ink/80 border-ink/20' };
     }
     if (s === 'shortlisted') {
-        return { label: 'Shortlisted', className: 'bg-blue-50 text-blue-700 border-blue-100' };
+        return { label: 'Shortlisted', className: 'bg-ink/5 text-ink/80 border-ink/20' };
     }
-    return { label: 'Applied', className: 'bg-gray-100 text-gray-600 border-gray-200' };
+    return { label: 'Applied', className: 'bg-muted text-ink/70 border-border' };
 }

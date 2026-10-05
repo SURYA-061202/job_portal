@@ -9,10 +9,35 @@
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  /* Theme tokens from styles/theme.css - the app sits on flat white. */
+  /* --font-sans is the Fira Sans stack declared in styles/theme.css. The
+     literal fallback mirrors it so the page never falls back to Times if
+     Tailwind tree-shakes the unused variable. */
+  font-family: var(--font-sans, 'Fira Sans', ui-sans-serif, system-ui, sans-serif);
+  /* Theme tokens from styles/theme.css - the Dock canvas is flat #f5f5f5,
+     with white surface cards floating on top. */
   color: var(--color-foreground);
-  background: var(--color-surface);
+  background: var(--color-muted);
+}
+
+/* Keyboard focus is always visible and never the browser default. The ring is
+   two-tone on purpose: the ink outline is what reads against the white page
+   (19:1), the brand ring is what reads against the ink sidebar (6.7:1), so at
+   least one layer clears 3:1 on either surface. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-ink);
+}
+
+/* Dock fields (inputs, selects, textareas): focus tints the existing 1px
+   border orange only - no outline or added focus ring, so a focused field
+   never shows orange and black at the same time. Buttons and cards keep the
+   two-tone ring above. */
+input:not([type='checkbox']):not([type='radio']):focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 * {
@@ -114,5 +139,49 @@ body {
 
   .animate-slide-in {
     animation: slide-in 0.3s ease-out;
+  }
+
+  /* Dock card recipe, shared by every bento tile in the app: white surface,
+     hairline border, soft elevation; hover lifts the edge to ink. Matches the
+     `rounded-2xl border border-border shadow-xl` cards in postsSkins dock. */
+  .bento-tile {
+    border-radius: 1rem;
+    border: 1px solid var(--color-border);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .bento-tile-hover:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 40%, transparent);
+    box-shadow:
+      0 20px 25px -5px rgb(0 0 0 / 0.1),
+      0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* Respect the OS reduced-motion preference. Transitions and decorative
+   animations collapse to near-zero; spinners keep running because they carry
+   loading feedback rather than decoration. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  /* Bento tiles keep their shadow but never shift or scale. */
+  .bento-tile-hover:hover {
+    transform: none !important;
   }
 }

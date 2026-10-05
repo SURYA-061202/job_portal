@@ -9,6 +9,7 @@ import UserHeader from '@/components/layout/UserHeader';
 
 import ProfileDetailsView from './ProfileDetailsView';
 import JobsAndApplicationsView from './JobsAndApplicationsView';
+import { ProfileCardSkeleton, ContentCardSkeleton } from './SkeletonLoaders';
 
 export default function UserProfile() {
     const [loading, setLoading] = useState(true);
@@ -286,14 +287,27 @@ export default function UserProfile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <Loader2 className="w-12 h-12 text-brand animate-spin" />
+            <div className="min-h-screen bg-muted flex flex-col">
+                <UserHeader />
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+                    <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8`}>
+                        {activeTab === 'profile' && (
+                            <div className="w-full lg:w-[350px] flex-shrink-0">
+                                <ProfileCardSkeleton />
+                            </div>
+                        )}
+                        <div className="flex-1 space-y-6">
+                            <ContentCardSkeleton lines={4} />
+                            <ContentCardSkeleton lines={3} />
+                        </div>
+                    </div>
+                </main>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className="min-h-screen bg-muted flex flex-col">
             <UserHeader />
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
@@ -303,11 +317,11 @@ export default function UserProfile() {
                     {activeTab === 'profile' && (
                         <div className="w-full lg:w-[350px] flex-shrink-0">
                             <div className="sticky top-24">
-                                <div className="bg-white rounded-[2rem] border border-gray-200 overflow-hidden group">
-                                    <div className="h-24 bg-orange-gradient relative">
+                                <div className="bg-surface rounded-2xl border border-border shadow-xl overflow-hidden group">
+                                    <div className="h-24 bg-ink relative">
                                         <button
                                             onClick={() => setIsEditingProfile(!isEditingProfile)}
-                                            className="absolute top-3 right-3 p-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full text-white transition-colors border border-white/20"
+                                            className="absolute top-3 right-3 p-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full text-surface transition-colors border border-surface/20"
                                             title="Edit Profile Info"
                                         >
                                             {isEditingProfile ? <X className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
@@ -315,15 +329,15 @@ export default function UserProfile() {
                                     </div>
 
                                     <div className="px-5 pb-5 relative">
-                                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border-4 border-white mx-auto -mt-10 mb-3 relative z-10">
+                                        <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center border-4 border-surface mx-auto -mt-10 mb-3 relative z-10">
                                             <div
                                                 className={`w-full h-full rounded-full flex items-center justify-center p-1 transition-all duration-500`}
                                                 style={{
-                                                    background: `conic-gradient(${formData.profileScore >= 75 ? '#10b981' : formData.profileScore >= 40 ? '#f59e0b' : '#ef4444'} ${formData.profileScore * 3.6}deg, #e5e7eb 0deg)`
+                                                    background: `conic-gradient(${formData.profileScore >= 75 ? '#0a0a0a' : formData.profileScore >= 40 ? '#737373' : '#ff6600'} ${formData.profileScore * 3.6}deg, #e5e5e5 0deg)`
                                                 }}
                                             >
-                                                <div className="w-full h-full bg-white rounded-full flex items-center justify-center shadow-inner text-gray-400">
-                                                    <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-emerald-500' : formData.profileScore >= 40 ? 'text-amber-500' : 'text-rose-500'}`} />
+                                                <div className="w-full h-full bg-surface rounded-full flex items-center justify-center shadow-inner text-ink/40">
+                                                    <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-ink' : formData.profileScore >= 40 ? 'text-muted-foreground' : 'text-brand'}`} />
                                                 </div>
                                             </div>
                                         </div>
@@ -332,93 +346,93 @@ export default function UserProfile() {
                                             <div className="space-y-3">
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div>
-                                                        <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">First Name</label>
-                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
+                                                        <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">First Name</label>
+                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Last Name</label>
-                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
+                                                        <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Last Name</label>
+                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Role</label>
-                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
+                                                    <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Role</label>
+                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Mobile</label>
-                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
+                                                    <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Mobile</label>
+                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Years of Experience</label>
-                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none" />
+                                                    <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Years of Experience</label>
+                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-0.5">Address</label>
-                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none resize-none h-12" />
+                                                    <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Address</label>
+                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none resize-none h-12" />
                                                 </div>
-                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 bg-brand text-white text-xs font-bold rounded-lg hover:bg-brand/90 transition-colors disabled:opacity-50">
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
                                                     {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
                                                 </button>
                                             </div>
                                         ) : (
                                             <div className="text-center">
-                                                <h1 className="text-lg font-black text-gray-900 tracking-tight">{formData.firstName} {formData.lastName}</h1>
+                                                <h1 className="text-lg font-black text-ink tracking-tight">{formData.firstName} {formData.lastName}</h1>
                                                 {formData.department ? (
-                                                    <p className="text-xs text-gray-600 font-bold mt-1 mb-3 bg-gray-100 inline-block px-3 py-1 rounded-full border border-gray-200">{formData.department}</p>
+                                                    <p className="text-xs text-ink/70 font-bold mt-1 mb-3 bg-surface inline-block px-3 py-1 rounded-full border border-border">{formData.department}</p>
                                                 ) : (
                                                     <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-full border border-brand/20">+ Add your role</button>
                                                 )}
 
-                                                <div className="space-y-3 text-left border-t border-gray-100 pt-5 pb-2">
-                                                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                <div className="space-y-3 text-left border-t border-border pt-5 pb-2">
+                                                    <div className="flex items-center gap-3 text-sm text-ink/60">
+                                                        <Mail className="w-4 h-4 text-ink/40 flex-shrink-0" />
                                                         <span className="truncate leading-none">{formData.email}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                                        <span className="leading-none">{formData.mobile || <span className="text-gray-400 italic">No mobile added</span>}</span>
+                                                    <div className="flex items-center gap-3 text-sm text-ink/60">
+                                                        <Phone className="w-4 h-4 text-ink/40 flex-shrink-0" />
+                                                        <span className="leading-none">{formData.mobile || <span className="text-ink/40 italic">No mobile added</span>}</span>
                                                     </div>
                                                     {formData.yearsOfExperience && (
-                                                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                        <div className="flex items-center gap-3 text-sm text-ink/60">
+                                                            <Briefcase className="w-4 h-4 text-ink/40 flex-shrink-0" />
                                                             <span className="leading-none">{formData.yearsOfExperience} Years Experience</span>
                                                         </div>
                                                     )}
                                                     {formData.address && (
-                                                        <div className="flex items-start gap-3 text-sm text-gray-500">
-                                                            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                                        <div className="flex items-start gap-3 text-sm text-ink/60">
+                                                            <MapPin className="w-4 h-4 text-ink/40 flex-shrink-0 mt-0.5" />
                                                             <span className="whitespace-pre-wrap leading-tight">{formData.address}</span>
                                                         </div>
                                                     )}
 
-                                                    <div className="pt-3 border-t border-gray-100 mt-2">
+                                                    <div className="pt-3 border-t border-border mt-2">
                                                         <div className="flex items-center justify-between mb-2">
                                                             <div className="flex items-center gap-2">
-                                                                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                                                                <span className="text-[11px] font-bold text-gray-700 uppercase">Profile Score: {formData.profileScore || 0}%</span>
+                                                                <Star className="w-3.5 h-3.5 text-brand fill-brand" />
+                                                                <span className="text-[11px] font-bold text-ink/80 uppercase">Profile Score: {formData.profileScore || 0}%</span>
                                                             </div>
                                                             <button
                                                                 onClick={calculateProfileScore}
                                                                 disabled={calculatingScore}
-                                                                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-brand transition-all disabled:opacity-50"
+                                                                className="p-1 hover:bg-ink/5 rounded-xl text-ink/60 hover:text-ink transition-all disabled:opacity-50"
                                                                 title="Refresh Score"
                                                             >
                                                                 <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-brand' : ''}`} />
                                                             </button>
                                                         </div>
-                                                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className="h-2 w-full bg-border rounded-full overflow-hidden">
                                                             <div
-                                                                className={`h-full transition-all duration-1000 ${formData.profileScore >= 75 ? 'bg-emerald-500' : formData.profileScore >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                                                className={`h-full transition-all duration-1000 ${formData.profileScore >= 75 ? 'bg-ink' : formData.profileScore >= 40 ? 'bg-muted-foreground' : 'bg-brand'}`}
                                                                 style={{ width: `${formData.profileScore || 0}%` }}
                                                             />
                                                         </div>
-                                                        <p className="text-[10px] text-gray-400 mt-1.5 font-medium italic">
+                                                        <p className="text-[10px] text-ink/40 mt-1.5 font-medium italic">
                                                             Based on your profile completeness and content.
                                                         </p>
                                                     </div>
 
                                                     {/* Email Verification Status */}
-                                                    <div className="pt-3 border-t border-gray-100 mt-2">
+                                                    <div className="pt-3 border-t border-border mt-2">
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 {isEmailVerified ? (

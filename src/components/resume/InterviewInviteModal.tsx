@@ -7,6 +7,7 @@ import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface Props {
   candidate: Candidate;
@@ -27,6 +28,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [recruiters, setRecruiters] = useState<{ id: string; name: string }[]>([]);
   const [loadingRecruiters, setLoadingRecruiters] = useState(false);
+  const skin = useSkin();
   const interviewurl = `${window.location.origin}`;
 
   const handleCheckbox = (name: string) => {
@@ -216,23 +218,23 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface w-full max-w-lg rounded-lg shadow-lg p-6 relative">
+      <div className={`w-full max-w-lg p-6 relative border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+          className={`absolute top-3 right-3 text-ink/60 hover:text-ink hover:bg-ink/5 ${skin.radius} transition-colors ${FOCUS}`}
         >
           <X className="h-5 w-5" />
         </button>
 
-        <h2 className="text-xl font-semibold mb-4">Send Interview Invite</h2>
+        <h2 className={`${skin.heading} mb-4`}>Send Interview Invite</h2>
 
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
           {/* Job Selection for Manual Candidates */}
           {!((candidate as any).postId) && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Select Job Position</label>
+              <label className="block text-sm font-medium text-ink/80 mb-1">Select Job Position</label>
               <select
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand hover:border-gray-400 transition-colors bg-surface"
+                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                 value={selectedPostId}
                 onChange={(e) => handlePostChange(e.target.value)}
                 disabled={loadingJobs}
@@ -244,16 +246,16 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
                   </option>
                 ))}
               </select>
-              {loadingJobs && <p className="text-xs text-gray-400 mt-1">Loading jobs...</p>}
+              {loadingJobs && <p className={`mt-1 ${skin.meta}`}>Loading jobs...</p>}
             </div>
           )}
 
           {/* Interview Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Interview Role</label>
+            <label className="block text-sm font-medium text-ink/80 mb-1">Interview Role</label>
             <input
               type="text"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand hover:border-gray-400 transition-colors"
+              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
               value={role}
               onChange={(e) => setRole(e.target.value)}
             />
@@ -261,13 +263,13 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
           {/* Dates */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Choose Three Dates</label>
+            <label className="block text-sm font-medium text-ink/80 mb-1">Choose Three Dates</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {dates.map((d, idx) => (
                 <input
                   key={idx}
                   type="date"
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand hover:border-gray-400 transition-colors"
+                  className={`px-3 py-2 ${skin.field} ${FOCUS}`}
                   value={d}
                   onChange={(e) => handleDateChange(idx, e.target.value)}
                 />
@@ -277,10 +279,10 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
           {/* Round Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Round Type</label>
+            <label className="block text-sm font-medium text-ink/80 mb-1">Round Type</label>
             <input
               type="text"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand hover:border-gray-400 transition-colors"
+              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
               value={roundType}
               onChange={(e) => setRoundType(e.target.value)}
             />
@@ -288,13 +290,13 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
           {/* Interviewers */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Interviewers</label>
+            <label className="block text-sm font-medium text-ink/80 mb-1">Interviewers</label>
             {loadingRecruiters ? (
-              <p className="text-xs text-gray-400">Loading interviewers...</p>
+              <p className={skin.meta}>Loading interviewers...</p>
             ) : (
               <div className="grid grid-cols-1 gap-2">
                 {recruiters.map((recruiter) => (
-                  <label key={recruiter.id} className="inline-flex items-center text-sm rounded hover:bg-brand/10 px-2 py-1 transition-colors">
+                  <label key={recruiter.id} className="inline-flex items-center text-sm rounded-lg hover:bg-brand/10 px-2 py-1 transition-colors">
                     <input
                       type="checkbox"
                       className="form-checkbox h-4 w-4 text-brand mr-2"
@@ -305,7 +307,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
                   </label>
                 ))}
                 {recruiters.length === 0 && (
-                  <p className="text-xs text-gray-400">No interviewers found</p>
+                  <p className={skin.meta}>No interviewers found</p>
                 )}
               </div>
             )}
@@ -315,14 +317,14 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium border rounded-md text-gray-700 hover:bg-gray-50"
+            className={`cursor-pointer ${skin.secondary} ${FOCUS}`}
             disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handleSend}
-            className="px-4 py-2 text-sm font-medium rounded-md text-white bg-brand hover:bg-brand disabled:opacity-50"
+            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
             disabled={loading}
           >
             {loading ? 'Sending…' : 'Send'}

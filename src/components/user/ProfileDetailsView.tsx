@@ -207,30 +207,30 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         <div className="flex flex-col gap-6">
 
             {/* Education Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Education</h3>
+                    <h3 className="text-lg font-bold text-ink">Education</h3>
                     <button onClick={() => openModal('education')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.educationItems || formData.educationItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No education history added.</p>
+                    <p className="text-ink/60 italic text-sm">No education history added.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.educationItems.map((edu: any, idx: number) => (
-                            <div key={idx} className="group flex justify-between items-start border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                            <div key={idx} className="group flex justify-between items-start border-b border-border last:border-0 pb-4 last:pb-0">
                                 <div>
-                                    <h4 className="font-bold text-gray-900">{edu.collegeName}</h4>
-                                    <p className="text-sm font-semibold text-gray-600 mt-0.5">{edu.course} {edu.specialization && `- ${edu.specialization}`}</p>
-                                    <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                                    <h4 className="font-bold text-ink">{edu.collegeName}</h4>
+                                    <p className="text-sm font-semibold text-ink/70 mt-0.5">{edu.course} {edu.specialization && `- ${edu.specialization}`}</p>
+                                    <div className="flex items-center gap-4 mt-1 text-xs text-ink/60">
                                         {edu.graduatedYear && <span>Class of {edu.graduatedYear}</span>}
                                         {edu.grade && <span>Grade: {edu.grade}</span>}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('education', idx)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-900 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('educationItems', idx)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('education', idx)} className="p-1.5 hover:bg-ink/5 rounded-xl text-ink/60 hover:text-ink transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('educationItems', idx)} className="p-1.5 hover:bg-destructive/10 rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                             </div>
                         ))}
@@ -239,32 +239,32 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Skills Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 whitespace-nowrap">Skills</h3>
+                    <h3 className="text-lg font-bold text-ink whitespace-nowrap">Skills</h3>
                     <button onClick={() => openModal('skill')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.skillItems || formData.skillItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No skills added yet.</p>
+                    <p className="text-ink/60 italic text-sm">No skills added yet.</p>
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                         {formData.skillItems.map((skill: string, idx: number) => {
                             const colors = [
-                                'bg-blue-50 text-blue-700 border-blue-100',
-                                'bg-emerald-50 text-emerald-700 border-emerald-100',
-                                'bg-purple-50 text-purple-700 border-purple-100',
-                                'bg-rose-50 text-rose-700 border-rose-100',
-                                'bg-amber-50 text-amber-700 border-amber-100',
-                                'bg-indigo-50 text-indigo-700 border-indigo-100',
-                                'bg-cyan-50 text-cyan-700 border-cyan-100'
+                                'border-border bg-surface text-ink/70',
+                                'border-brand/20 bg-brand/10 text-brand',
+                                'border-border bg-muted text-ink/80',
+                                'border-ink bg-ink text-surface',
+                                'border-brand/20 bg-brand/10 text-brand',
+                                'border-border bg-surface text-ink/70',
+                                'border-border bg-muted text-ink/80'
                             ];
                             const colorClass = colors[idx % colors.length];
                             return (
-                                <div key={idx} className={`group flex items-center gap-1.5 px-2 py-1 ${colorClass} border rounded-lg text-[11px] font-bold transition-all hover:scale-105`}>
+                                <div key={idx} className={`group flex items-center gap-1.5 px-2 py-1 ${colorClass} border rounded-full text-[11px] font-bold transition-all hover:scale-105`}>
                                     <span>{skill}</span>
-                                    <button onClick={() => handleRemoveArrayItem('skillItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"><X className="w-3 h-3" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('skillItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"><X className="w-3 h-3" /></button>
                                 </div>
                             );
                         })}
@@ -273,21 +273,21 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Courses Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 whitespace-nowrap">Courses Completed</h3>
+                    <h3 className="text-lg font-bold text-ink whitespace-nowrap">Courses Completed</h3>
                     <button onClick={() => openModal('course')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.courseItems || formData.courseItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No courses added yet.</p>
+                    <p className="text-ink/60 italic text-sm">No courses added yet.</p>
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                         {formData.courseItems.map((course: string, idx: number) => (
-                            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg text-[11px] font-bold transition-all hover:scale-105">
+                            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 bg-surface text-ink/70 border border-border rounded-full text-[11px] font-bold transition-all hover:scale-105">
                                 <span>{course}</span>
-                                <button onClick={() => handleRemoveArrayItem('courseItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"><X className="w-3 h-3" /></button>
+                                <button onClick={() => handleRemoveArrayItem('courseItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"><X className="w-3 h-3" /></button>
                             </div>
                         ))}
                     </div>
@@ -295,56 +295,56 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Projects Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Projects</h3>
+                    <h3 className="text-lg font-bold text-ink">Projects</h3>
                     <button onClick={() => openModal('project')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.projectItems || formData.projectItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No projects added yet.</p>
+                    <p className="text-ink/60 italic text-sm">No projects added yet.</p>
                 ) : (
                     <div className="space-y-6">
                         {formData.projectItems.map((proj: any, idx: number) => (
-                            <div key={idx} className="group relative border border-gray-200 bg-gray-50 rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('project', idx)} className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('projectItems', idx)} className="p-1.5 bg-white hover:bg-red-50 border border-gray-200 rounded-lg text-gray-500 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('project', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('projectItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
-                                <h4 className="font-bold text-gray-900 pr-20">{proj.title}</h4>
+                                <h4 className="font-bold text-ink pr-20">{proj.title}</h4>
                                 {(proj.role || proj.duration) && (
-                                    <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-tight">{proj.role} {proj.role && proj.duration && '•'} {proj.duration}</p>
+                                    <p className="text-[10px] font-bold text-ink/60 mt-1 uppercase tracking-tight">{proj.role} {proj.role && proj.duration && '•'} {proj.duration}</p>
                                 )}
-                                {proj.description && <p className="text-xs text-gray-400 mt-2 whitespace-pre-wrap leading-relaxed">{proj.description}</p>}
-                                {proj.link && <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-gray-700 underline hover:text-gray-900 mt-3 inline-block">View Project Source</a>}
+                                {proj.description && <p className="text-xs text-ink/40 mt-2 whitespace-pre-wrap leading-relaxed">{proj.description}</p>}
+                                {proj.link && <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-ink/80 underline hover:text-ink mt-3 inline-block">View Project Source</a>}
                             </div>
                         ))}
                     </div>
                 )}
             </div>
             {/* Certificates Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Certificates</h3>
+                    <h3 className="text-lg font-bold text-ink">Certificates</h3>
                     <button onClick={() => openModal('certificate')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.certificateItems || formData.certificateItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No certifications added yet.</p>
+                    <p className="text-ink/60 italic text-sm">No certifications added yet.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.certificateItems.map((cert: any, idx: number) => (
-                            <div key={idx} className="group relative border border-gray-200 bg-gray-50 rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('certificate', idx)} className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('certificateItems', idx)} className="p-1.5 bg-white hover:bg-red-50 border border-gray-200 rounded-lg text-gray-500 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('certificate', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('certificateItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
-                                <h4 className="font-bold text-gray-900 pr-20">{cert.name}</h4>
-                                <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-tight">{cert.organization}</p>
-                                {cert.issueDate && <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase tracking-tight">{cert.issueDate}</p>}
-                                {cert.url && <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-gray-700 underline hover:text-gray-900 mt-3 inline-block">View Credential</a>}
+                                <h4 className="font-bold text-ink pr-20">{cert.name}</h4>
+                                <p className="text-[10px] font-bold text-ink/60 mt-1 uppercase tracking-tight">{cert.organization}</p>
+                                {cert.issueDate && <p className="text-[10px] font-bold text-ink/70 mt-1 uppercase tracking-tight">{cert.issueDate}</p>}
+                                {cert.url && <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-ink/80 underline hover:text-ink mt-3 inline-block">View Credential</a>}
                             </div>
                         ))}
                     </div>
@@ -352,26 +352,26 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Experience Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Experience</h3>
+                    <h3 className="text-lg font-bold text-ink">Experience</h3>
                     <button onClick={() => openModal('experience')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
                 </div>
                 {(!formData.experienceItems || formData.experienceItems.length === 0) ? (
-                    <p className="text-gray-500 italic text-sm">No work experience added yet.</p>
+                    <p className="text-ink/60 italic text-sm">No work experience added yet.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.experienceItems.map((exp: any, idx: number) => (
-                            <div key={idx} className="group relative border border-gray-200 bg-gray-50 rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('experience', idx)} className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('experienceItems', idx)} className="p-1.5 bg-white hover:bg-red-50 border border-gray-200 rounded-lg text-gray-500 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('experience', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('experienceItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
-                                <h4 className="font-bold text-gray-900 pr-20">{exp.company}</h4>
-                                <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase tracking-tight">{exp.role} {exp.duration && `• ${exp.duration}`}</p>
-                                {exp.description && <p className="text-xs text-gray-400 mt-2 whitespace-pre-wrap leading-relaxed">{exp.description}</p>}
+                                <h4 className="font-bold text-ink pr-20">{exp.company}</h4>
+                                <p className="text-[10px] font-bold text-ink/70 mt-1 uppercase tracking-tight">{exp.role} {exp.duration && `• ${exp.duration}`}</p>
+                                {exp.description && <p className="text-xs text-ink/40 mt-2 whitespace-pre-wrap leading-relaxed">{exp.description}</p>}
                             </div>
                         ))}
                     </div>
@@ -379,19 +379,19 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Resumes Upload Component */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Resume Upload</h3>
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+                <h3 className="text-lg font-bold text-ink mb-4">Resume Upload</h3>
                 {formData.resumeUrl && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 mb-4 gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted rounded-xl border border-border mb-4 gap-4">
                         <div className="flex items-center gap-3">
                             <div>
-                                <p className="text-sm font-bold text-gray-900">Current Resume</p>
+                                <p className="text-sm font-bold text-ink">Current Resume</p>
                                 <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5 font-semibold">
                                     <CheckCircle2 className="w-3.5 h-3.5" /> Uploaded successfully
                                 </p>
                             </div>
                         </div>
-                        <a href={formData.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-center text-brand hover:text-brand border border-brand/30 hover:bg-brand/10 px-6 py-2 rounded-lg transition-colors">
+                        <a href={formData.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-center border border-border bg-surface text-ink hover:border-ink px-6 py-2 rounded-xl transition-colors">
                             View PDF
                         </a>
                     </div>
@@ -399,16 +399,16 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
 
                 <div
                     {...getRootProps()}
-                    className={`cursor-pointer transition-all duration-300 ${isDragActive ? 'bg-gray-50 border-brand' : 'bg-gray-50 border-gray-200 hover:border-brand hover:bg-gray-100'}
+                    className={`cursor-pointer transition-all duration-300 ${isDragActive ? 'bg-muted border-brand' : 'bg-muted border-border hover:border-brand hover:bg-surface'}
                     border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3`}
                 >
                     <input {...getInputProps()} />
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-gray-200">
-                        {uploading ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-gray-500" />}
+                    <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center border border-border">
+                        {uploading ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-ink/60" />}
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-bold text-gray-900">{isDragActive ? 'Drop resume here' : 'Drop new resume or browse'}</p>
-                        <p className="text-xs text-gray-500 mt-1">PDF, DOCX up to 5MB</p>
+                        <p className="text-sm font-bold text-ink">{isDragActive ? 'Drop resume here' : 'Drop new resume or browse'}</p>
+                        <p className="text-xs text-ink/60 mt-1">PDF, DOCX up to 5MB</p>
                     </div>
                 </div>
             </div>
@@ -417,34 +417,34 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'experience' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">{editIndex !== null ? "Edit Experience" : "Add Experience"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Experience" : "Add Experience"}</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Company</label>
-                                    <input type="text" value={expForm.company} onChange={(e)=>setExpForm({...expForm, company: e.target.value})} placeholder="e.g. Google" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Company</label>
+                                    <input type="text" value={expForm.company} onChange={(e)=>setExpForm({...expForm, company: e.target.value})} placeholder="e.g. Google" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Role / Position</label>
-                                    <input type="text" value={expForm.role} onChange={(e)=>setExpForm({...expForm, role: e.target.value})} placeholder="e.g. Software Engineer" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Role / Position</label>
+                                    <input type="text" value={expForm.role} onChange={(e)=>setExpForm({...expForm, role: e.target.value})} placeholder="e.g. Software Engineer" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Duration</label>
-                                <input type="text" value={expForm.duration} onChange={(e)=>setExpForm({...expForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Present" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Duration</label>
+                                <input type="text" value={expForm.duration} onChange={(e)=>setExpForm({...expForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Present" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Description</label>
-                                <textarea value={expForm.description} onChange={(e)=>setExpForm({...expForm, description: e.target.value})} placeholder="Describe your roles and achievements..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 h-32 resize-none" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Description</label>
+                                <textarea value={expForm.description} onChange={(e)=>setExpForm({...expForm, description: e.target.value})} placeholder="Describe your roles and achievements..." className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-32 resize-none" />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -454,28 +454,28 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'course' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">Courses Completed</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">Courses Completed</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="mb-4">
                             <div className="flex gap-2">
-                                <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand" />
-                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 bg-brand text-white rounded-xl text-sm font-bold hover:bg-brand/90 transition-colors">Add</button>
+                                <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink" />
+                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-xl text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors">Add</button>
                             </div>
                         </div>
                         <div className="overflow-y-auto pr-2 flex flex-wrap gap-2 pb-2">
                             {tempCourses.map((course, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700">
+                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full text-xs font-bold text-ink/70">
                                     <span>{course}</span>
-                                    <button onClick={() => setTempCourses(tempCourses.filter((_, i) => i !== idx))}><X className="w-3.5 h-3.5 text-gray-500 hover:text-red-600"/></button>
+                                    <button onClick={() => setTempCourses(tempCourses.filter((_, i) => i !== idx))}><X className="w-3.5 h-3.5 text-ink/60 hover:text-destructive"/></button>
                                 </div>
                             ))}
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Courses'}
                             </button>
                         </div>
@@ -486,38 +486,38 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'education' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">{editIndex !== null ? "Edit Education" : "Add Education"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Education" : "Add Education"}</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">College / University Name</label>
-                                <input type="text" value={eduForm.collegeName} onChange={(e)=>setEduForm({...eduForm, collegeName: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">College / University Name</label>
+                                <input type="text" value={eduForm.collegeName} onChange={(e)=>setEduForm({...eduForm, collegeName: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Course / Degree</label>
-                                <input type="text" value={eduForm.course} onChange={(e)=>setEduForm({...eduForm, course: e.target.value})} placeholder="e.g. B.Tech, BSc" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Course / Degree</label>
+                                <input type="text" value={eduForm.course} onChange={(e)=>setEduForm({...eduForm, course: e.target.value})} placeholder="e.g. B.Tech, BSc" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Specialization</label>
-                                <input type="text" value={eduForm.specialization} onChange={(e)=>setEduForm({...eduForm, specialization: e.target.value})} placeholder="e.g. Computer Science" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Specialization</label>
+                                <input type="text" value={eduForm.specialization} onChange={(e)=>setEduForm({...eduForm, specialization: e.target.value})} placeholder="e.g. Computer Science" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Graduated Year</label>
-                                    <input type="text" value={eduForm.graduatedYear} onChange={(e)=>setEduForm({...eduForm, graduatedYear: e.target.value})} placeholder="e.g. 2024" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Graduated Year</label>
+                                    <input type="text" value={eduForm.graduatedYear} onChange={(e)=>setEduForm({...eduForm, graduatedYear: e.target.value})} placeholder="e.g. 2024" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Grade (CGPA / %)</label>
-                                    <input type="text" value={eduForm.grade} onChange={(e)=>setEduForm({...eduForm, grade: e.target.value})} placeholder="e.g. 8.5 CGPA" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Grade (CGPA / %)</label>
+                                    <input type="text" value={eduForm.grade} onChange={(e)=>setEduForm({...eduForm, grade: e.target.value})} placeholder="e.g. 8.5 CGPA" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -528,38 +528,38 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'project' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">{editIndex !== null ? "Edit Project" : "Add Project"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Project" : "Add Project"}</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Project Title</label>
-                                <input type="text" value={projForm.title} onChange={(e)=>setProjForm({...projForm, title: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Project Title</label>
+                                <input type="text" value={projForm.title} onChange={(e)=>setProjForm({...projForm, title: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Your Role</label>
-                                    <input type="text" value={projForm.role} onChange={(e)=>setProjForm({...projForm, role: e.target.value})} placeholder="e.g. Frontend Developer" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Your Role</label>
+                                    <input type="text" value={projForm.role} onChange={(e)=>setProjForm({...projForm, role: e.target.value})} placeholder="e.g. Frontend Developer" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Duration</label>
-                                    <input type="text" value={projForm.duration} onChange={(e)=>setProjForm({...projForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Mar 2023" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Duration</label>
+                                    <input type="text" value={projForm.duration} onChange={(e)=>setProjForm({...projForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Mar 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Description</label>
-                                <textarea value={projForm.description} onChange={(e)=>setProjForm({...projForm, description: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 h-28 resize-none" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Description</label>
+                                <textarea value={projForm.description} onChange={(e)=>setProjForm({...projForm, description: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-28 resize-none" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Project URL (Optional)</label>
-                                <input type="url" value={projForm.link} onChange={(e)=>setProjForm({...projForm, link: e.target.value})} placeholder="https://" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Project URL (Optional)</label>
+                                <input type="url" value={projForm.link} onChange={(e)=>setProjForm({...projForm, link: e.target.value})} placeholder="https://" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -570,48 +570,48 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'certificate' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">{editIndex !== null ? "Edit Certificate" : "Add Certificate"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Certificate" : "Add Certificate"}</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Certificate Name</label>
-                                <input type="text" value={certForm.name} onChange={(e)=>setCertForm({...certForm, name: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Certificate Name</label>
+                                <input type="text" value={certForm.name} onChange={(e)=>setCertForm({...certForm, name: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Issuing Organization</label>
-                                <input type="text" value={certForm.organization} onChange={(e)=>setCertForm({...certForm, organization: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Issuing Organization</label>
+                                <input type="text" value={certForm.organization} onChange={(e)=>setCertForm({...certForm, organization: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Issue Date</label>
-                                <input type="text" value={certForm.issueDate} onChange={(e)=>setCertForm({...certForm, issueDate: e.target.value})} placeholder="e.g. Aug 2023" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Issue Date</label>
+                                <input type="text" value={certForm.issueDate} onChange={(e)=>setCertForm({...certForm, issueDate: e.target.value})} placeholder="e.g. Aug 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Upload Certificate (Image / PDF)</label>
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Upload Certificate (Image / PDF)</label>
                                 {certForm.url ? (
                                     <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                                         <div className="flex items-center gap-2">
                                             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                             <span className="text-xs font-bold text-emerald-700">File attached</span>
                                         </div>
-                                        <button onClick={() => setCertForm({...certForm, url: ''})} className="text-xs font-bold text-red-600 hover:text-red-700">Remove</button>
+                                        <button onClick={() => setCertForm({...certForm, url: ''})} className="text-xs font-bold text-destructive hover:text-destructive">Remove</button>
                                     </div>
                                 ) : (
-                                    <label className="flex items-center justify-center w-full px-4 py-6 bg-gray-50 border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 hover:border-brand transition-all">
+                                    <label className="flex items-center justify-center w-full px-4 py-6 bg-muted border border-border border-dashed rounded-xl cursor-pointer hover:bg-ink/5 hover:border-brand transition-all">
                                         <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleCertFileUpload} />
                                         <div className="flex flex-col items-center gap-2 text-center mt-1">
-                                            {uploadingCert ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-gray-500" />}
-                                            <span className="text-xs font-bold text-gray-500">{uploadingCert ? 'Uploading...' : 'Click to upload certificate'}</span>
+                                            {uploadingCert ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-ink/60" />}
+                                            <span className="text-xs font-bold text-ink/60">{uploadingCert ? 'Uploading...' : 'Click to upload certificate'}</span>
                                         </div>
                                     </label>
                                 )}
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -622,14 +622,14 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'skill' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-gray-100">
+                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900">Manage Skills</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400"/></button>
+                            <h2 className="text-xl font-bold text-ink">Manage Skills</h2>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-1">Add New Skill</label>
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Add New Skill</label>
                                 <div className="flex items-center gap-2">
                                     <input 
                                         type="text" 
@@ -637,31 +637,31 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                         onChange={(e) => setSkillInput(e.target.value)} 
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddTempSkill()}
                                         placeholder="e.g. React, Python, UI Design" 
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                                        className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
                                     />
                                     <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-brand/10 text-brand text-sm font-bold rounded-xl hover:bg-brand/20 transition-colors disabled:opacity-50">Add</button>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100">
-                                <label className="block text-[11px] uppercase font-bold text-gray-500 mb-3">Current Skills ({tempSkills.length})</label>
+                            <div className="pt-4 border-t border-border">
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-3">Current Skills ({tempSkills.length})</label>
                                 {tempSkills.length === 0 ? (
-                                    <p className="text-gray-500 italic text-sm">No skills added yet.</p>
+                                    <p className="text-ink/60 italic text-sm">No skills added yet.</p>
                                 ) : (
                                     <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pb-2">
                                         {tempSkills.map((skill: string, idx: number) => (
-                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-sm font-semibold">
+                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface text-ink/70 border border-border rounded-full text-sm font-semibold">
                                                 <span>{skill}</span>
-                                                <button onClick={() => handleRemoveTempSkill(idx)} className="text-red-500 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleRemoveTempSkill(idx)} className="text-destructive hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 bg-brand text-white text-sm font-bold rounded-xl hover:bg-brand/90 transition-colors disabled:opacity-50 min-w-[120px]">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Skills'}
                             </button>
                         </div>

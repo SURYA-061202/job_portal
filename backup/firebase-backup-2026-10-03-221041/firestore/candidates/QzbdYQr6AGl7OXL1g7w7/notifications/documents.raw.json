@@ -1,0 +1,24 @@
+[
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/QzbdYQr6AGl7OXL1g7w7/notifications/7oprLkM5BwjyXwrLZWmh",
+    "fields": {
+      "name": {
+        "stringValue": "SRIDHARAN M"
+      },
+      "email": {
+        "stringValue": "Sridharmuthukumaravel19@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-29T12:36:25.920Z"
+      },
+      "message": {
+        "stringValue": "Accepted interview on 2025-07-22 12:00 - 02:00 PM"
+      }
+    },
+    "createTime": "2025-07-29T12:36:27.026872Z",
+    "updateTime": "2025-07-30T06:35:49.483774Z"
+  }
+]

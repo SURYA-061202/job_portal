@@ -1,0 +1,44 @@
+[
+  {
+    "id": "PPcJG5lFCjdKYDOdiO1V",
+    "path": "candidates/dvvpT9G54Tw5vL3HrtYX/notifications/PPcJG5lFCjdKYDOdiO1V",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2025-08-02T07:25:12.177Z"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "email": {
+        "stringValue": "cveeramani50@gmail.com"
+      },
+      "name": {
+        "stringValue": "C. VEERAMANI"
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      }
+    }
+  },
+  {
+    "id": "PiX7EExfG3d5upQNpq7N",
+    "path": "candidates/dvvpT9G54Tw5vL3HrtYX/notifications/PiX7EExfG3d5upQNpq7N",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2025-08-02T07:25:12.163Z"
+      },
+      "email": {
+        "stringValue": "cveeramani50@gmail.com"
+      },
+      "name": {
+        "stringValue": "C. VEERAMANI"
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      },
+      "viewed": {
+        "booleanValue": true
+      }
+    }
+  }
+]

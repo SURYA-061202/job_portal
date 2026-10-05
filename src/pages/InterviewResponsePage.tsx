@@ -148,14 +148,14 @@ export default function InterviewResponsePage() {
   };
 
   if (loading) return <p className="p-6 text-center">Loading…</p>;
-  if (!candidateId) return <p className="p-6 text-center text-red-600">Invalid link.</p>;
+  if (!candidateId) return <p className="p-6 text-center text-destructive">Invalid link.</p>;
 
   if (existingResponse || submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white w-full max-w-md rounded-lg shadow p-8 text-center space-y-4">
-          <h1 className="text-2xl font-bold text-gray-900">Thank you!</h1>
-          <p className="text-gray-700">Your response has been recorded.</p>
+      <div className="min-h-screen flex items-center justify-center bg-muted p-4">
+        <div className="bg-surface w-full max-w-md rounded-2xl border border-border shadow-xl p-8 text-center space-y-4">
+          <h1 className="text-2xl font-black text-ink">Thank you!</h1>
+          <p className="text-ink/80">Your response has been recorded.</p>
         </div>
       </div>
     );
@@ -164,24 +164,24 @@ export default function InterviewResponsePage() {
   const isInterested = interest === 'interested';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4">
-      <div className="bg-white w-full max-w-[95vw] sm:max-w-xl rounded-lg shadow p-6 sm:p-8 space-y-6 my-6">
-        <h1 className="text-2xl font-bold text-gray-900 text-center mb-4">Interview Confirmation</h1>
+    <div className="min-h-screen flex items-center justify-center bg-muted p-3 sm:p-4">
+      <div className="bg-surface w-full max-w-[95vw] sm:max-w-xl rounded-2xl border border-border shadow-xl p-6 sm:p-8 space-y-6 my-6">
+        <h1 className="text-2xl font-black text-ink text-center mb-4">Interview Confirmation</h1>
 
         {/* Interest toggle */}
         <div className="flex justify-center gap-4 mb-6">
           {[{ value: 'interested', label: 'Interested' }, { value: 'not_interested', label: 'Not Interested' }].map(opt => (
             <button key={opt.value} onClick={() => setInterest(opt.value as any)}
-              className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${interest === opt.value ? 'bg-brand text-white border-brand' : 'bg-white text-brand border-brand hover:bg-brand/10'}`}>{opt.label}</button>
+              className={`px-4 py-2 rounded-xl text-sm border transition-colors ${interest === opt.value ? 'border-ink bg-ink text-surface font-semibold hover:border-brand hover:bg-brand hover:text-ink' : 'border-border bg-surface text-ink font-semibold hover:border-ink'}`}>{opt.label}</button>
           ))}
         </div>
 
         {/* Date & time */}
         <div className={`${interest === 'not_interested' ? 'opacity-40 pointer-events-none' : ''}`}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Select a date &amp; time:</h2>
+          <h2 className="text-lg font-semibold text-ink mb-2">Select a date &amp; time:</h2>
           <div className="space-y-4">
             {dates.map(d => (
-              <div key={d} className="border rounded-md p-3">
+              <div key={d} className="border border-border bg-surface rounded-xl p-3">
                 <label className="flex items-center gap-2 cursor-pointer font-medium">
                   <input type="radio" name="date" value={d} checked={selectedDate === d}
                     onChange={() => { setSelectedDate(d); setSelectedTime(''); }}
@@ -204,47 +204,47 @@ export default function InterviewResponsePage() {
         </div>
 
         {/* Details — collected in the same step as the availability confirmation */}
-        <div className={`${!isInterested ? 'opacity-40 pointer-events-none' : ''} border-t pt-6`}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Verify your details</h2>
-          <p className="text-sm text-gray-500 mb-4">This saves us a follow-up email before your first round.</p>
+        <div className={`${!isInterested ? 'opacity-40 pointer-events-none' : ''} border-t border-border pt-6`}>
+          <h2 className="text-lg font-semibold text-ink mb-1">Verify your details</h2>
+          <p className="text-sm text-ink/60 mb-4">This saves us a follow-up email before your first round.</p>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Joining</label>
-              <input type="date" name="dateOfJoining" value={form.dateOfJoining} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-ink/80 mb-1">Date of Joining</label>
+              <input type="date" name="dateOfJoining" value={form.dateOfJoining} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Salary (₹)</label>
-              <input type="number" name="currentSalary" value={form.currentSalary} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-ink/80 mb-1">Current Salary (₹)</label>
+              <input type="number" name="currentSalary" value={form.currentSalary} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary (₹)</label>
+              <label className="block text-sm font-medium text-ink/80 mb-1">Expected Salary (₹)</label>
               <div className="flex gap-2">
-                <input type="number" name="expectedSalary" value={form.expectedSalary} onChange={handleFormChange} disabled={!isInterested} className="flex-1 border rounded-md px-3 py-2 text-sm" />
-                <select name="expectedSalaryPeriod" value={form.expectedSalaryPeriod} onChange={handleFormChange} disabled={!isInterested} className="border rounded-md px-2 py-2 text-sm">
+                <input type="number" name="expectedSalary" value={form.expectedSalary} onChange={handleFormChange} disabled={!isInterested} className="flex-1 border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
+                <select name="expectedSalaryPeriod" value={form.expectedSalaryPeriod} onChange={handleFormChange} disabled={!isInterested} className="border border-border bg-surface rounded-xl px-2 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
                   <option value="month">Per Month</option>
                   <option value="year">Per Year</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-              <input type="number" name="yearsExperience" value={form.yearsExperience} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-ink/80 mb-1">Years of Experience</label>
+              <input type="number" name="yearsExperience" value={form.yearsExperience} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Experience In</label>
-              <input type="text" name="experienceIn" value={form.experienceIn} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-ink/80 mb-1">Experience In</label>
+              <input type="text" name="experienceIn" value={form.experienceIn} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ready to Relocate</label>
-              <select name="readyToRelocate" value={form.readyToRelocate} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm">
+              <label className="block text-sm font-medium text-ink/80 mb-1">Ready to Relocate</label>
+              <select name="readyToRelocate" value={form.readyToRelocate} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Do you have a Laptop?</label>
-              <select name="laptop" value={form.laptop} onChange={handleFormChange} disabled={!isInterested} className="w-full border rounded-md px-3 py-2 text-sm">
+              <label className="block text-sm font-medium text-ink/80 mb-1">Do you have a Laptop?</label>
+              <select name="laptop" value={form.laptop} onChange={handleFormChange} disabled={!isInterested} className="w-full border border-border bg-surface rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink focus:ring-brand/20">
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
               </select>
@@ -254,7 +254,7 @@ export default function InterviewResponsePage() {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-brand text-white px-4 py-2 rounded-md hover:bg-brand/90 disabled:opacity-50"
+          className="w-full border border-ink bg-ink text-surface font-semibold px-4 py-2 rounded-xl hover:border-brand hover:bg-brand hover:text-ink disabled:opacity-50"
           disabled={saving || !interest || (isInterested && (!selectedDate || !selectedTime))}
         >
           {saving ? 'Submitting…' : 'Submit'}

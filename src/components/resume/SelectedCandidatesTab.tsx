@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import CandidateList from './CandidateList';
 import type { Candidate } from '@/types';
+import { useSkin, FOCUS } from '@/styles/skin';
 export default function CandidatesTab() {
   //eslint-disable-next-line
   const [candidates] = useState<Candidate[]>([]);
@@ -9,6 +10,7 @@ export default function CandidatesTab() {
   const [view, setView] = useState<'selected' | 'rejected' | 'not'>('selected');
   // add loading flag, currently static false but can be integrated later
   const [loading] = useState(false);
+  const skin = useSkin();
 
   // load list no change
 
@@ -24,12 +26,12 @@ export default function CandidatesTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">Candidates</h2>
+        <h2 className={skin.heading}>Candidates</h2>
         <div className="flex space-x-2">
           {['selected','rejected','not'].map(v => (
             <button key={v}
               onClick={()=>setView(v as any)}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${view===v?'bg-brand text-white':'border border-brand text-brand hover:bg-brand/10'}`}
+              className={`${view===v ? `cursor-pointer ${skin.cta} ${FOCUS}` : `${skin.secondary} ${FOCUS}`}`}
             >{v==='selected'?'Selected':v==='rejected'?'Rejected':'Not Interested'}</button>
           ))}
         </div>

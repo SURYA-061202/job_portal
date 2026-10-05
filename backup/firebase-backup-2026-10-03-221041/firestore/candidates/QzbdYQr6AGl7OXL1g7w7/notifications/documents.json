@@ -1,0 +1,23 @@
+[
+  {
+    "id": "7oprLkM5BwjyXwrLZWmh",
+    "path": "candidates/QzbdYQr6AGl7OXL1g7w7/notifications/7oprLkM5BwjyXwrLZWmh",
+    "data": {
+      "name": {
+        "stringValue": "SRIDHARAN M"
+      },
+      "email": {
+        "stringValue": "Sridharmuthukumaravel19@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-29T12:36:25.920Z"
+      },
+      "message": {
+        "stringValue": "Accepted interview on 2025-07-22 12:00 - 02:00 PM"
+      }
+    }
+  }
+]

@@ -1,5 +1,5 @@
 /* ============================================================================
-   Application theme - the single source of truth for colour.
+   Application theme - the single source of truth for colour, type and icons.
 
    The palette is the orange-and-white theme taken from the stark-essence-iiies
    site, translated from its HSL shadcn tokens into Tailwind v4 theme tokens:
@@ -76,6 +76,26 @@
   /* --- Shape ------------------------------------------------------------ */
 
   --radius: 0.5rem;
+
+  /* --- Type -------------------------------------------------------------
+     ui-ux-pro-max picked Fira Sans / Fira Code for this product: Fira Sans
+     for labels and body copy, Fira Code for anything numeric. Loading the
+     pair in index.html must stay in sync with these stacks.
+
+     --font-sans backs the `font-sans` utility; the body rule in index.css
+     mirrors it with a literal fallback so the page still sets correctly if
+     Tailwind ever tree-shakes the variable away. */
+  --font-sans: 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* --- Icon sizes ----------------------------------------------------------
+   One size per hierarchy level, so icon dimensions are tokens rather than
+   scattered arbitrary values. Use these instead of h-4/h-5/w-6. */
+:root {
+  --icon-sm: 1rem;       /* 16px  chevrons, badges, inline meta        */
+  --icon-md: 1.125rem;   /* 18px  nav rows, list items, toolbars       */
+  --icon-lg: 1.25rem;    /* 20px  icon-only buttons, empty states      */
 }
 
 @layer utilities {
@@ -92,6 +112,46 @@
     background-image: none;
     -webkit-text-fill-color: currentcolor;
     color: var(--color-brand);
+  }
+
+  .icon-sm {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+  }
+
+  .icon-md {
+    width: var(--icon-md);
+    height: var(--icon-md);
+  }
+
+  .icon-lg {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+  }
+
+  /* Thin, quiet scrollbar for horizontal strips (the at-a-glance facts band).
+     6px instead of the platform default, thumb derived from ink so it reads
+     on any light skin; transparent track lets the strip tint show through. */
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-ink) 35%, transparent) transparent;
+  }
+
+  .thin-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-ink) 35%, transparent);
+    border-radius: 9999px;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-ink) 55%, transparent);
   }
 }
 

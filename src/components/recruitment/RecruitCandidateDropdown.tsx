@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import { upsertApplication } from '@/lib/jobApplications';
 import { UserPlus, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface Option {
     id: string;
@@ -32,6 +33,7 @@ export default function RecruitCandidateDropdown({
     const [submitting, setSubmitting] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const loadedRef = useRef(false);
+    const skin = useSkin();
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -140,41 +142,41 @@ export default function RecruitCandidateDropdown({
         <div className="relative" ref={containerRef}>
             <button
                 onClick={toggleOpen}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-orange-gradient text-white hover:shadow-lg hover:shadow-brand/20 transition-all whitespace-nowrap"
+                className={`inline-flex items-center gap-2 cursor-pointer whitespace-nowrap ${skin.cta} ${FOCUS}`}
             >
                 <UserPlus className="w-4 h-4" />
                 Recruit Candidate
                 {selected.size > 0 && (
-                    <span className="bg-surface/25 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{selected.size}</span>
+                    <span className="bg-surface/25 text-surface text-xs font-bold px-1.5 py-0.5 rounded-full">{selected.size}</span>
                 )}
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
-                <div className="absolute z-20 mt-2 w-full bg-surface rounded-xl border border-gray-200 shadow-xl overflow-hidden">
+                <div className={`absolute z-20 mt-2 w-full border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden`}>
                     <div className="max-h-80 overflow-y-auto hover-scrollbar">
                         {loading ? (
-                            <div className="p-6 text-center text-sm text-gray-400">Loading…</div>
+                            <div className={`p-6 text-center ${skin.body}`}>Loading…</div>
                         ) : totalOptions === 0 ? (
-                            <div className="p-6 text-center text-sm text-gray-400">No candidates available to recruit.</div>
+                            <div className={`p-6 text-center ${skin.body}`}>No candidates available to recruit.</div>
                         ) : (
                             <>
                                 {registeredOptions.length > 0 && (
                                     <div>
-                                        <div className="px-3 py-2 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 sticky top-0">
+                                        <div className={`px-3 py-2 ${skin.canvas} sticky top-0 ${skin.micro}`}>
                                             Registered Candidates
                                         </div>
                                         {registeredOptions.map(opt => (
-                                            <label key={opt.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
+                                            <label key={opt.id} className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm ${skin.rowHover}`}>
                                                 <input
                                                     type="checkbox"
                                                     checked={selected.has(opt.id)}
                                                     onChange={() => toggleSelect(opt.id)}
-                                                    className="rounded border-gray-300 text-brand focus:ring-brand"
+                                                    className={`rounded ${skin.edge} text-brand ${FOCUS}`}
                                                 />
                                                 <span className="flex-1 min-w-0">
-                                                    <span className="block truncate text-gray-800">{opt.name}</span>
-                                                    {opt.sub && <span className="block truncate text-xs text-gray-400">{opt.sub}</span>}
+                                                    <span className="block truncate text-ink/80">{opt.name}</span>
+                                                    {opt.sub && <span className="block truncate text-xs text-ink/40">{opt.sub}</span>}
                                                 </span>
                                             </label>
                                         ))}
@@ -182,20 +184,20 @@ export default function RecruitCandidateDropdown({
                                 )}
                                 {uploadedOptions.length > 0 && (
                                     <div>
-                                        <div className="px-3 py-2 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 sticky top-0">
+                                        <div className={`px-3 py-2 ${skin.canvas} sticky top-0 ${skin.micro}`}>
                                             Uploaded Candidates
                                         </div>
                                         {uploadedOptions.map(opt => (
-                                            <label key={opt.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
+                                            <label key={opt.id} className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm ${skin.rowHover}`}>
                                                 <input
                                                     type="checkbox"
                                                     checked={selected.has(opt.id)}
                                                     onChange={() => toggleSelect(opt.id)}
-                                                    className="rounded border-gray-300 text-brand focus:ring-brand"
+                                                    className={`rounded ${skin.edge} text-brand ${FOCUS}`}
                                                 />
                                                 <span className="flex-1 min-w-0">
-                                                    <span className="block truncate text-gray-800">{opt.name}</span>
-                                                    {opt.sub && <span className="block truncate text-xs text-gray-400">{opt.sub}</span>}
+                                                    <span className="block truncate text-ink/80">{opt.name}</span>
+                                                    {opt.sub && <span className="block truncate text-xs text-ink/40">{opt.sub}</span>}
                                                 </span>
                                             </label>
                                         ))}
@@ -204,11 +206,11 @@ export default function RecruitCandidateDropdown({
                             </>
                         )}
                     </div>
-                    <div className="p-2 border-t border-gray-100 flex justify-end">
+                    <div className={`p-2 border-t ${skin.edge} flex justify-end`}>
                         <button
                             onClick={handleRecruit}
                             disabled={selected.size === 0 || submitting}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand text-white hover:bg-brand disabled:opacity-50"
+                            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                         >
                             {submitting ? 'Recruiting…' : `Recruit Selected (${selected.size})`}
                         </button>

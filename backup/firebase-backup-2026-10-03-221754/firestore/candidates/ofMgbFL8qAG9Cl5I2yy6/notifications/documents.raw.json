@@ -1,0 +1,24 @@
+[
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/ofMgbFL8qAG9Cl5I2yy6/notifications/RH7YPOaFA5VG9QQ7F4jy",
+    "fields": {
+      "message": {
+        "stringValue": "Accepted interview on 2025-07-26 12:00 - 02:00 PM"
+      },
+      "email": {
+        "stringValue": "vishnu.bim@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-23T06:58:03.286Z"
+      },
+      "name": {
+        "stringValue": "Vishnu KS"
+      },
+      "viewed": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2025-07-23T06:58:04.965700Z",
+    "updateTime": "2025-07-25T03:39:13.020740Z"
+  }
+]

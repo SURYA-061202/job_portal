@@ -35,8 +35,12 @@ module.exports = {
         },
       },
       fontFamily: {
-        outfit: ['Outfit', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'],
+        /* `font-sans` / `font-mono` come from --font-sans / --font-mono in
+           src/styles/theme.css. These two are legacy aliases from the previous
+           Outfit/Inter pairing, kept so existing `font-outfit` / `font-inter`
+           call sites keep rendering on the current type system. */
+        outfit: ['Fira Sans', 'sans-serif'],
+        inter: ['Fira Sans', 'sans-serif'],
       },
     },
   },

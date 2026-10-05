@@ -3,6 +3,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { User, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface UserData {
     firstName: string;
@@ -19,6 +20,7 @@ export default function ProfileTab() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const skin = useSkin();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -91,40 +93,40 @@ export default function ProfileTab() {
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 sm:p-6">
-            <div className="w-full max-w-[60rem] bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6">
+            <div className={`w-full max-w-[60rem] p-4 sm:p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
 
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 border-b border-brand/10 pb-5">
                     <div className="relative">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-brand flex items-center justify-center shadow-lg shadow-brand/20">
-                            <User className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                            <User className="w-7 h-7 sm:w-8 sm:h-8 text-ink" />
                         </div>
-                        <div className="absolute bottom-0 right-0 sm:bottom-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 border-2 sm:border-4 border-white rounded-full"></div>
+                        <div className="absolute bottom-0 right-0 sm:bottom-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-brand border-2 sm:border-4 border-white rounded-full"></div>
                     </div>
                     <div className="text-center sm:text-left">
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Personal Information</h1>
+                        <h1 className={skin.heading}>Personal Information</h1>
                         <p className="text-brand text-sm mt-1">Update your personal details</p>
                     </div>
                 </div>
 
                 {/* Form Section */}
                 <div>
-                    <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Profile Details</h2>
+                    <h2 className={`${skin.cardTitle} mb-4`}>Profile Details</h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4">
                         {/* First Name */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">First Name</label>
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">First Name</label>
                             {isEditing ? (
                                 <input
                                     type="text"
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                                     {userData.firstName}
                                 </div>
                             )}
@@ -132,17 +134,17 @@ export default function ProfileTab() {
 
                         {/* Last Name */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">Last Name</label>
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">Last Name</label>
                             {isEditing ? (
                                 <input
                                     type="text"
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                                     {userData.lastName}
                                 </div>
                             )}
@@ -150,17 +152,17 @@ export default function ProfileTab() {
 
                         {/* Email */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">
                                 Email <span className="text-brand font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-gray-500 font-medium text-sm sm:text-base ${isEditing ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.radius} ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
                                 {userData.email}
                             </div>
                         </div>
 
                         {/* Phone */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">Phone</label>
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">Phone</label>
                             {isEditing ? (
                                 <input
                                     type="tel"
@@ -168,10 +170,10 @@ export default function ProfileTab() {
                                     value={formData.mobile || ''}
                                     onChange={handleInputChange}
                                     placeholder="+91..."
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                                     {userData.mobile || '+919087654321'}
                                 </div>
                             )}
@@ -179,17 +181,17 @@ export default function ProfileTab() {
 
                         {/* Department */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">Department</label>
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">Department</label>
                             {isEditing ? (
                                 <input
                                     type="text"
                                     name="department"
                                     value={formData.department || ''}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all text-sm sm:text-base"
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium text-sm sm:text-base">
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                                     {userData.department || 'None'}
                                 </div>
                             )}
@@ -197,17 +199,17 @@ export default function ProfileTab() {
 
                         {/* Role */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1.5">Role</label>
+                            <label className="block text-sm font-bold text-ink/80 mb-1.5">Role</label>
                             {isEditing ? (
                                 <input
                                     type="text"
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all capitalize text-sm sm:text-base"
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 capitalize text-sm sm:text-base ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium capitalize text-sm sm:text-base">
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium capitalize text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                                     {userData.role}
                                 </div>
                             )}
@@ -220,7 +222,7 @@ export default function ProfileTab() {
                             <>
                                 <button
                                     onClick={handleCancel}
-                                    className="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-surface border border-brand/30 text-gray-700 font-bold rounded-xl hover:bg-brand/10 transition-all duration-200 text-sm"
+                                    className={`w-full sm:w-auto cursor-pointer ${skin.secondary} ${FOCUS}`}
                                     disabled={saving}
                                 >
                                     Cancel
@@ -228,7 +230,7 @@ export default function ProfileTab() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="w-full sm:w-auto px-8 py-2.5 sm:py-3 bg-brand text-white font-bold rounded-xl hover:shadow-lg hover:shadow-brand/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm flex items-center justify-center gap-2"
+                                    className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Save Changes
@@ -237,7 +239,7 @@ export default function ProfileTab() {
                         ) : (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="w-full sm:w-auto px-8 py-2.5 sm:py-3 bg-brand text-white font-bold rounded-xl hover:shadow-lg hover:shadow-brand/30 hover:scale-[1.02] transition-all duration-200 shadow-md text-sm"
+                                className={`w-full sm:w-auto cursor-pointer ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
                             >
                                 Edit Profile
                             </button>

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { FileDown, Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileDown, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import UserHeader from '@/components/layout/UserHeader';
+import { Skeleton, ContentCardSkeleton } from '@/components/user/SkeletonLoaders';
 import toast from 'react-hot-toast';
 
 export default function PersonalizedCVPage() {
@@ -102,11 +103,19 @@ export default function PersonalizedCVPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white flex flex-col">
+            <div className="min-h-screen bg-muted flex flex-col">
                 <UserHeader />
-                <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                </div>
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-3">
+                            <Skeleton className="h-8 w-64" />
+                            <Skeleton className="h-4 w-96 max-w-full" />
+                        </div>
+                        <Skeleton className="h-12 w-48" />
+                    </div>
+                    <ContentCardSkeleton lines={5} />
+                    <ContentCardSkeleton lines={4} />
+                </main>
             </div>
         );
     }
@@ -114,20 +123,20 @@ export default function PersonalizedCVPage() {
     const isProfileIncomplete = !userData?.firstName || !userData?.skillItems?.length;
 
     return (
-        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className="min-h-screen bg-muted flex flex-col">
             <UserHeader />
             
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Personalized CV</h1>
-                        <p className="text-gray-500 mt-2 text-sm md:text-base">Auto-generate a professional resume based on your latest profile details.</p>
+                        <h1 className="text-3xl font-extrabold text-ink tracking-tight">Personalized CV</h1>
+                        <p className="text-ink/60 mt-2 text-sm md:text-base">Auto-generate a professional resume based on your latest profile details.</p>
                     </div>
                     
                     {userData && !isProfileIncomplete && (
                         <button
                             onClick={() => handleViewPDF(false)}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-brand/10 border-2 border-brand/30 text-brand font-bold rounded-2xl shadow-lg shadow-brand/5 hover:bg-brand/20 hover:border-brand/40 hover:scale-[1.02] active:scale-95 transition-all"
+                            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 border border-ink bg-ink text-surface font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <FileDown className="w-5 h-5" />
                             Download Resume
@@ -138,8 +147,8 @@ export default function PersonalizedCVPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Panel - Data Summary */}
                     <div className="lg:col-span-1 flex flex-col gap-6">
-                        <div className="bg-white rounded-3xl border border-gray-100 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <div className="bg-surface rounded-2xl border border-border shadow-xl p-6">
+                            <h3 className="text-lg font-bold text-ink mb-6 flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-brand" />
                                 Resume Data
                             </h3>
@@ -147,18 +156,18 @@ export default function PersonalizedCVPage() {
                             <div className="space-y-6">
                                 <div>
                                     <div className="flex items-center gap-3 mt-2">
-                                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center text-ink/80 font-bold">
                                             {userData?.firstName?.[0]}{userData?.lastName?.[0]}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">{userData?.firstName} {userData?.lastName}</p>
-                                            <p className="text-xs text-gray-500">{userData?.email}</p>
+                                            <p className="text-sm font-bold text-ink">{userData?.firstName} {userData?.lastName}</p>
+                                            <p className="text-xs text-ink/60">{userData?.email}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Section Status</p>
+                                    <p className="text-[10px] font-bold text-ink/60 uppercase tracking-wider mb-2">Section Status</p>
                                     <div className="space-y-3">
                                         <StatusItem label="Education" count={userData?.educationItems?.length} />
                                         <StatusItem label="Experience" count={userData?.experienceItems?.length} />
@@ -171,15 +180,15 @@ export default function PersonalizedCVPage() {
                             </div>
 
                             {isProfileIncomplete && (
-                                <div className="mt-8 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                                <div className="mt-8 p-4 bg-brand/10 border border-brand/20 rounded-2xl">
                                     <div className="flex items-start gap-3">
-                                        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                                        <AlertCircle className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-sm font-bold text-amber-900">Incomplete Profile</p>
-                                            <p className="text-xs text-amber-700 mt-1 leading-relaxed">Add your personal details and skills in the Home tab to generate your CV.</p>
+                                            <p className="text-sm font-bold text-ink">Incomplete Profile</p>
+                                            <p className="text-xs text-ink/70 mt-1 leading-relaxed">Add your personal details and skills in the Home tab to generate your CV.</p>
                                             <button 
                                                 onClick={() => window.location.href = '/home?tab=profile'}
-                                                className="text-xs font-bold text-amber-900 underline mt-3 hover:text-amber-950"
+                                                className="text-xs font-bold text-ink underline mt-3 hover:text-brand"
                                             >
                                                 Go to Profile
                                             </button>
@@ -192,22 +201,22 @@ export default function PersonalizedCVPage() {
 
                     {/* Right Panel - Template Preview */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden flex flex-col h-[700px]">
-                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white">
+                        <div className="bg-surface rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col h-[700px]">
+                            <div className="p-6 border-b border-border flex items-center justify-between bg-surface">
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900">Resume Preview</h3>
+                                    <h3 className="text-lg font-bold text-ink">Resume Preview</h3>
                                 </div>
                                 {userData && (
                                     <button 
                                         onClick={() => handleViewPDF(true)}
-                                        className="px-4 py-1.5 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:bg-gray-50 hover:text-brand hover:border-brand/30 transition-all"
+                                        className="px-4 py-1.5 border border-border bg-surface rounded-full text-[10px] font-bold text-ink/70 uppercase tracking-wider hover:border-ink transition-all"
                                     >
                                         View Resume
                                     </button>
                                 )}
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-8 bg-gray-50/50 flex justify-center">
+                            <div className="flex-1 overflow-y-auto p-8 bg-muted flex justify-center">
                                     <div ref={resumeRef} className="w-full max-w-[600px] min-h-[800px] flex flex-col gap-1 text-black" style={{ fontFamily: 'sans-serif', backgroundColor: '#ffffff', color: '#000000', padding: '40px', border: '1px solid #f3f4f6' }}>
                                         <div className="text-center mb-4">
                                             <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'sans-serif', color: '#000000' }}>{userData?.firstName} {userData?.lastName}</h2>
@@ -317,20 +326,20 @@ export default function PersonalizedCVPage() {
                 </div>
 
                 {/* Additional Content below Resume Preview */}
-                <div className="mt-8 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Resume Tips & Guidelines</h3>
+                <div className="mt-8 bg-surface rounded-2xl border border-border p-6 shadow-xl">
+                    <h3 className="text-lg font-bold text-ink mb-4">Resume Tips & Guidelines</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                            <h4 className="text-sm font-bold text-gray-900 mb-2">Quantify Achievements</h4>
-                            <p className="text-xs text-gray-500 leading-relaxed">Use numbers (e.g. "Increased efficiency by 20%") to make your experience stand out to recruiters.</p>
+                        <div className="p-4 bg-muted rounded-2xl border border-border">
+                            <h4 className="text-sm font-bold text-ink mb-2">Quantify Achievements</h4>
+                            <p className="text-xs text-ink/60 leading-relaxed">Use numbers (e.g. "Increased efficiency by 20%") to make your experience stand out to recruiters.</p>
                         </div>
-                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                            <h4 className="text-sm font-bold text-gray-900 mb-2">Keyword Optimization</h4>
-                            <p className="text-xs text-gray-500 leading-relaxed">Include relevant industry keywords from job descriptions to pass Applicant Tracking Systems (ATS).</p>
+                        <div className="p-4 bg-muted rounded-2xl border border-border">
+                            <h4 className="text-sm font-bold text-ink mb-2">Keyword Optimization</h4>
+                            <p className="text-xs text-ink/60 leading-relaxed">Include relevant industry keywords from job descriptions to pass Applicant Tracking Systems (ATS).</p>
                         </div>
-                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                            <h4 className="text-sm font-bold text-gray-900 mb-2">Professional Formatting</h4>
-                            <p className="text-xs text-gray-500 leading-relaxed">Our templates follow standard academic and professional formats recognized by top infrastructure companies.</p>
+                        <div className="p-4 bg-muted rounded-2xl border border-border">
+                            <h4 className="text-sm font-bold text-ink mb-2">Professional Formatting</h4>
+                            <p className="text-xs text-ink/60 leading-relaxed">Our templates follow standard academic and professional formats recognized by top infrastructure companies.</p>
                         </div>
                     </div>
                 </div>
@@ -342,14 +351,14 @@ export default function PersonalizedCVPage() {
 function StatusItem({ label, count }: { label: string, count: number }) {
     const hasData = count > 0;
     return (
-        <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-            <span className="text-xs font-bold text-gray-700">{label}</span>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-xl border border-border">
+            <span className="text-xs font-bold text-ink/80">{label}</span>
             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-gray-400">{count || 0} items</span>
+                <span className="text-[10px] font-bold text-ink/60">{count || 0} items</span>
                 {hasData ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 text-brand" />
                 ) : (
-                    <div className="w-4 h-4 rounded-full border-2 border-gray-200" />
+                    <div className="w-4 h-4 rounded-full border-2 border-border" />
                 )}
             </div>
         </div>

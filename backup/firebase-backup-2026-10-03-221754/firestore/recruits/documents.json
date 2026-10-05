@@ -1,0 +1,602 @@
+[
+  {
+    "id": "45Si6sbFYCEJTEkxcuUF",
+    "path": "recruits/45Si6sbFYCEJTEkxcuUF",
+    "data": {
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "candidatesCount": {
+        "integerValue": "1"
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "rounds": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "name": {
+                    "stringValue": "Aptitude"
+                  },
+                  "roundNumber": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "2"
+                  },
+                  "name": {
+                    "stringValue": "Coding"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "3"
+                  },
+                  "name": {
+                    "stringValue": "Coding 2"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "4"
+                  },
+                  "name": {
+                    "stringValue": "HR"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "location": {
+        "stringValue": "Hyderabad"
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      },
+      "jobTitle": {
+        "stringValue": "Backend Developer"
+      },
+      "budgetPay": {
+        "stringValue": "12L – 18L"
+      },
+      "totalRounds": {
+        "integerValue": "4"
+      },
+      "department": {
+        "stringValue": "Engineering"
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T05:40:24.899Z"
+      },
+      "skills": {
+        "stringValue": "Python, Django, REST APIs, PostgreSQL"
+      },
+      "qualification": {
+        "stringValue": "B.E./B.Tech (CSE/IT)"
+      },
+      "yearsExperience": {
+        "stringValue": "5"
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-20T05:57:15.290Z"
+      }
+    }
+  },
+  {
+    "id": "4wZkt18xpZFnbBU6lRlf",
+    "path": "recruits/4wZkt18xpZFnbBU6lRlf",
+    "data": {
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "totalRounds": {
+        "integerValue": "3"
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-19T07:51:48.330Z"
+      },
+      "candidatesCount": {
+        "integerValue": "5"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "qualification": {
+        "stringValue": "BE"
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-19T07:51:48.330Z"
+      },
+      "rounds": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "name": {
+                    "stringValue": "Aptitude"
+                  },
+                  "roundNumber": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "2"
+                  },
+                  "name": {
+                    "stringValue": "Technical"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "3"
+                  },
+                  "name": {
+                    "stringValue": "F2F"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      },
+      "skills": {
+        "stringValue": "React Native, TypeScript, Tailwind"
+      },
+      "yearsExperience": {
+        "stringValue": "3"
+      },
+      "budgetPay": {
+        "stringValue": "8L – 12L"
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "jobTitle": {
+        "stringValue": "Web Developer"
+      },
+      "department": {
+        "stringValue": "Engineering"
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "location": {
+        "stringValue": "Chennai"
+      }
+    }
+  },
+  {
+    "id": "LWbfWNU9GwGk4jzSUN00",
+    "path": "recruits/LWbfWNU9GwGk4jzSUN00",
+    "data": {
+      "location": {
+        "stringValue": "Pune"
+      },
+      "budgetPay": {
+        "stringValue": "12L – 18L"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      },
+      "qualification": {
+        "stringValue": "B.E./B.Tech (CSE/IT/ECE)"
+      },
+      "jobTitle": {
+        "stringValue": "DevOps Engineer"
+      },
+      "candidatesCount": {
+        "integerValue": "6"
+      },
+      "department": {
+        "stringValue": "DevOps"
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "skills": {
+        "stringValue": "AWS, Docker, Kubernetes, Jenkins, Linux"
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-07T05:41:33.153Z"
+      },
+      "yearsExperience": {
+        "stringValue": "3"
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T05:41:33.153Z"
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      }
+    }
+  },
+  {
+    "id": "Qm0nrU05GfKLsTWCWm9I",
+    "path": "recruits/Qm0nrU05GfKLsTWCWm9I",
+    "data": {
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "location": {
+        "stringValue": "Chennai"
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-19T07:57:33.591Z"
+      },
+      "department": {
+        "stringValue": "Quality Assurance"
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "jobTitle": {
+        "stringValue": "QA Automation Engineer"
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "skills": {
+        "stringValue": "Selenium, Java, TestNG, API Testing"
+      },
+      "candidatesCount": {
+        "integerValue": "4"
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "qualification": {
+        "stringValue": "B.E./B.Tech (CSE/IT/ECE)"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T05:42:41.180Z"
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      },
+      "budgetPay": {
+        "stringValue": "12L – 18L"
+      },
+      "yearsExperience": {
+        "stringValue": "5"
+      },
+      "totalRounds": {
+        "integerValue": "3"
+      },
+      "rounds": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "1"
+                  },
+                  "name": {
+                    "stringValue": "General"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "name": {
+                    "stringValue": "Technical"
+                  },
+                  "roundNumber": {
+                    "integerValue": "2"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "3"
+                  },
+                  "name": {
+                    "stringValue": "F2F"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      },
+      "description": {
+        "stringValue": ""
+      }
+    }
+  },
+  {
+    "id": "bvD7gmW9jtzkgOZ5fiZf",
+    "path": "recruits/bvD7gmW9jtzkgOZ5fiZf",
+    "data": {
+      "yearsExperience": {
+        "stringValue": "7"
+      },
+      "jobTitle": {
+        "stringValue": "Frontend Developer"
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "location": {
+        "stringValue": "Bangalore"
+      },
+      "skills": {
+        "stringValue": "HTML, CSS, JavaScript, React.js"
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "budgetPay": {
+        "stringValue": "10 LPA"
+      },
+      "department": {
+        "stringValue": "Engineering"
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "totalRounds": {
+        "integerValue": "4"
+      },
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "rounds": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "1"
+                  },
+                  "name": {
+                    "stringValue": "Aptitude"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "2"
+                  },
+                  "name": {
+                    "stringValue": "Coding Level 1"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "3"
+                  },
+                  "name": {
+                    "stringValue": "Coding Level 2"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "roundNumber": {
+                    "integerValue": "4"
+                  },
+                  "name": {
+                    "stringValue": "HR"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T05:37:47.157Z"
+      },
+      "qualification": {
+        "stringValue": "B.E./B.Tech (CSE/IT)"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-19T07:58:15.910Z"
+      },
+      "candidatesCount": {
+        "integerValue": "1"
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      }
+    }
+  },
+  {
+    "id": "vbTxLO8MIlCk2XNenWnT",
+    "path": "recruits/vbTxLO8MIlCk2XNenWnT",
+    "data": {
+      "candidateType": {
+        "stringValue": "Permanent"
+      },
+      "salaryBreakup": {
+        "stringValue": ""
+      },
+      "department": {
+        "stringValue": "Engineering"
+      },
+      "urgencyLevel": {
+        "stringValue": "Moderate"
+      },
+      "modeOfWork": {
+        "stringValue": "Office"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-07T05:36:57.061Z"
+      },
+      "yearsExperience": {
+        "stringValue": "6"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T05:36:57.061Z"
+      },
+      "recruiterId": {
+        "stringValue": "42YEolJyXadUYBvgiNjjxUmHpih2"
+      },
+      "skills": {
+        "stringValue": "Java, Spring Boot, SQL, Git"
+      },
+      "qualification": {
+        "stringValue": "B.E./B.Tech (CSE/IT)"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "jdUrl": {
+        "stringValue": ""
+      },
+      "positionLevel": {
+        "stringValue": "Mid"
+      },
+      "budgetPay": {
+        "stringValue": "18L – 25L"
+      },
+      "recruiterName": {
+        "stringValue": "Surya Ravi"
+      },
+      "companyName": {
+        "stringValue": ""
+      },
+      "location": {
+        "stringValue": "Chennai"
+      },
+      "candidatesCount": {
+        "integerValue": "5"
+      },
+      "jobTitle": {
+        "stringValue": "Software Engineer"
+      }
+    }
+  }
+]

@@ -1,5 +1,6 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X, Loader2 } from 'lucide-react';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 type PopupType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
@@ -25,6 +26,7 @@ let globalPopupId = 0;
 
 export function PopupProvider({ children }: { children: React.ReactNode }) {
   const [popups, setPopups] = useState<PopupItem[]>([]);
+  const skin = useSkin();
 
   const addPopup = useCallback((type: PopupType, message: string, duration?: number) => {
     const id = `popup-${++globalPopupId}`;
@@ -55,10 +57,10 @@ export function PopupProvider({ children }: { children: React.ReactNode }) {
 
   const iconMap: Record<PopupType, React.ReactNode> = {
     success: <CheckCircle className="h-5 w-5 text-green-500" />,
-    error: <XCircle className="h-5 w-5 text-red-500" />,
-    warning: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-    info: <Info className="h-5 w-5 text-blue-500" />,
-    loading: <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />,
+    error: <XCircle className="h-5 w-5 text-destructive" />,
+    warning: <AlertTriangle className="h-5 w-5 text-ink/70" />,
+    info: <Info className="h-5 w-5 text-ink/70" />,
+    loading: <Loader2 className="h-5 w-5 text-ink/40 animate-spin" />,
   };
 
   return (
@@ -70,14 +72,14 @@ export function PopupProvider({ children }: { children: React.ReactNode }) {
         {popups.map((popup) => (
           <div
             key={popup.id}
-            className="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 bg-white min-w-[280px] max-w-[400px] animate-slide-in"
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} min-w-[280px] max-w-[400px] animate-slide-in`}
           >
             {iconMap[popup.type]}
-            <span className="text-sm text-gray-700 flex-1">{popup.message}</span>
+            <span className="text-sm text-ink/80 flex-1">{popup.message}</span>
             {popup.type !== 'loading' && (
               <button
                 onClick={() => hidePopup(popup.id)}
-                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                className={`text-ink/60 hover:text-ink hover:bg-ink/5 ${skin.radius} flex-shrink-0 ${FOCUS}`}
               >
                 <X className="h-4 w-4" />
               </button>

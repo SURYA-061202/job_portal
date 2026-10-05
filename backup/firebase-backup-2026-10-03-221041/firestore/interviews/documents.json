@@ -1,0 +1,992 @@
+[
+  {
+    "id": "34K2nyWjyf4CNsKxS38y",
+    "path": "interviews/34K2nyWjyf4CNsKxS38y",
+    "data": {
+      "currentSalary": {
+        "stringValue": "25000"
+      },
+      "candidateId": {
+        "stringValue": "34K2nyWjyf4CNsKxS38y"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-10-01"
+      },
+      "laptop": {
+        "stringValue": "no"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-27 10:00 - 12:00 PM"
+      },
+      "expectedSalary": {
+        "stringValue": "40000"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-26T06:51:10.982Z"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-07-29T08:54:17.567Z"
+      },
+      "experienceIn": {
+        "stringValue": "Modelling and detailing "
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-29T08:33:34.772Z"
+      },
+      "yearsExperience": {
+        "stringValue": "2.5"
+      }
+    }
+  },
+  {
+    "id": "58XfGP1PwIwuy8LDxqAJ",
+    "path": "interviews/58XfGP1PwIwuy8LDxqAJ",
+    "data": {
+      "role": {
+        "stringValue": "Software Developer"
+      },
+      "joiningDate": {
+        "stringValue": "2026-08-13"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "currentSalary": {
+        "integerValue": "30000"
+      },
+      "sentAt": {
+        "stringValue": "2026-08-13T11:08:42.919Z"
+      },
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-08-21"
+            },
+            {
+              "stringValue": "2026-08-22"
+            },
+            {
+              "stringValue": "2026-08-23"
+            }
+          ]
+        }
+      },
+      "postId": {
+        "stringValue": "vbTxLO8MIlCk2XNenWnT"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Surya R"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "5xSvQnhPsqkB7ZtlNjjn",
+    "path": "interviews/5xSvQnhPsqkB7ZtlNjjn",
+    "data": {
+      "verifyMailSentAt": {
+        "timestampValue": "2025-12-30T06:08:23.854Z"
+      }
+    }
+  },
+  {
+    "id": "GpgJaTSN8nDB5vQY8j9S",
+    "path": "interviews/GpgJaTSN8nDB5vQY8j9S",
+    "data": {
+      "verifyMailSentAt": {
+        "timestampValue": "2025-12-27T20:28:18.463Z"
+      }
+    }
+  },
+  {
+    "id": "NkvHTq9URGJUzmGzpQ8F",
+    "path": "interviews/NkvHTq9URGJUzmGzpQ8F",
+    "data": {
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-25T03:43:08.228Z"
+      },
+      "candidateId": {
+        "stringValue": "NkvHTq9URGJUzmGzpQ8F"
+      },
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-27 10:00 - 12:00 PM"
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "currentSalary": {
+        "stringValue": ""
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-23T07:29:26.348Z"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "readyToRelocate": {
+        "stringValue": ""
+      }
+    }
+  },
+  {
+    "id": "QzbdYQr6AGl7OXL1g7w7",
+    "path": "interviews/QzbdYQr6AGl7OXL1g7w7",
+    "data": {
+      "readyToRelocate": {
+        "stringValue": ""
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "candidateId": {
+        "stringValue": "QzbdYQr6AGl7OXL1g7w7"
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-29T12:36:24.692Z"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-22 12:00 - 02:00 PM"
+      },
+      "currentSalary": {
+        "stringValue": ""
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-30T06:36:23.823Z"
+      },
+      "response": {
+        "stringValue": "accept"
+      }
+    }
+  },
+  {
+    "id": "XwApjR3FUr9MINHwYVaY",
+    "path": "interviews/XwApjR3FUr9MINHwYVaY",
+    "data": {
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "role": {
+        "stringValue": "Front End Developer"
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-03-20"
+            },
+            {
+              "stringValue": "2026-03-21"
+            },
+            {
+              "stringValue": "2026-03-22"
+            }
+          ]
+        }
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Naresh Kumar"
+            }
+          ]
+        }
+      },
+      "sentAt": {
+        "stringValue": "2026-03-20T09:03:01.464Z"
+      },
+      "joiningDate": {
+        "stringValue": "2026-03-20"
+      },
+      "currentSalary": {
+        "integerValue": "30000"
+      },
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      }
+    }
+  },
+  {
+    "id": "cPsAcJYZ1A6u2C7wkCcc",
+    "path": "interviews/cPsAcJYZ1A6u2C7wkCcc",
+    "data": {
+      "candidateId": {
+        "stringValue": "cPsAcJYZ1A6u2C7wkCcc"
+      },
+      "laptop": {
+        "stringValue": "yes"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "currentSalary": {
+        "stringValue": "20000"
+      },
+      "expectedSalary": {
+        "stringValue": "20000"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-17 12:00 - 02:00 PM"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-07-10"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-07-18T09:16:07.473Z"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-18T09:13:41.348Z"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-18T09:14:20.034Z"
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "experienceIn": {
+        "stringValue": "Full Stack"
+      },
+      "yearsExperience": {
+        "stringValue": "4"
+      }
+    }
+  },
+  {
+    "id": "dvvpT9G54Tw5vL3HrtYX",
+    "path": "interviews/dvvpT9G54Tw5vL3HrtYX",
+    "data": {
+      "verifyMailSentAt": {
+        "timestampValue": "2025-08-02T07:19:41.472Z"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-08-02T07:25:11.269Z"
+      },
+      "experienceIn": {
+        "stringValue": "3"
+      },
+      "expectedSalary": {
+        "stringValue": "45000"
+      },
+      "currentSalary": {
+        "stringValue": "30000"
+      },
+      "laptop": {
+        "stringValue": "no"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-10-01"
+      },
+      "yearsExperience": {
+        "stringValue": "3"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      }
+    }
+  },
+  {
+    "id": "fM6z16Ph7fjuKTxog1lg",
+    "path": "interviews/fM6z16Ph7fjuKTxog1lg",
+    "data": {
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "readyToRelocate": {
+        "stringValue": ""
+      },
+      "currentSalary": {
+        "stringValue": ""
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      },
+      "respondedAt": {
+        "timestampValue": "2025-08-06T15:51:24.988Z"
+      },
+      "selectedDate": {
+        "stringValue": "2025-08-08 10:00 - 12:00 PM"
+      },
+      "candidateId": {
+        "stringValue": "fM6z16Ph7fjuKTxog1lg"
+      }
+    }
+  },
+  {
+    "id": "i7rsIhVGTPTCRDtDUMTO",
+    "path": "interviews/i7rsIhVGTPTCRDtDUMTO",
+    "data": {
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "currentSalary": {
+        "stringValue": ""
+      },
+      "selectedDate": {
+        "stringValue": "2025-08-08 12:00 - 02:00 PM"
+      },
+      "readyToRelocate": {
+        "stringValue": ""
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      },
+      "respondedAt": {
+        "timestampValue": "2025-08-07T09:24:49.048Z"
+      },
+      "candidateId": {
+        "stringValue": "i7rsIhVGTPTCRDtDUMTO"
+      }
+    }
+  },
+  {
+    "id": "j1riY3bgIHburgy9iiDsiIaHXqI3",
+    "path": "interviews/j1riY3bgIHburgy9iiDsiIaHXqI3",
+    "data": {
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "currentSalary": {
+        "integerValue": "30000"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Naresh Kumar"
+            }
+          ]
+        }
+      },
+      "joiningDate": {
+        "stringValue": "2026-01-08"
+      },
+      "sentAt": {
+        "stringValue": "2026-01-08T08:16:14.199Z"
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-01-08"
+            },
+            {
+              "stringValue": "2026-01-09"
+            },
+            {
+              "stringValue": "2026-01-10"
+            }
+          ]
+        }
+      },
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "role": {
+        "stringValue": "Analytics"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      }
+    }
+  },
+  {
+    "id": "ksVQMjYw7AIZulNWNBIZ",
+    "path": "interviews/ksVQMjYw7AIZulNWNBIZ",
+    "data": {
+      "currentSalary": {
+        "integerValue": "30000"
+      },
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Dhinesh Kumar"
+            }
+          ]
+        }
+      },
+      "role": {
+        "stringValue": "Software Engineer"
+      },
+      "sentAt": {
+        "stringValue": "2026-03-07T11:30:15.799Z"
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-03-07"
+            },
+            {
+              "stringValue": "2026-03-08"
+            },
+            {
+              "stringValue": "2026-03-09"
+            }
+          ]
+        }
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "joiningDate": {
+        "stringValue": "2026-03-07"
+      }
+    }
+  },
+  {
+    "id": "oBlUVgi4XuPSAzMaVY4mgauLGOT2",
+    "path": "interviews/oBlUVgi4XuPSAzMaVY4mgauLGOT2",
+    "data": {
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "sentAt": {
+        "stringValue": "2026-01-10T08:40:05.582Z"
+      },
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-01-10"
+            },
+            {
+              "stringValue": "2026-01-11"
+            },
+            {
+              "stringValue": "2026-01-12"
+            }
+          ]
+        }
+      },
+      "role": {
+        "stringValue": "Engineering"
+      },
+      "joiningDate": {
+        "stringValue": "2026-01-10"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Naresh Kumar"
+            }
+          ]
+        }
+      },
+      "currentSalary": {
+        "integerValue": "30000"
+      }
+    }
+  },
+  {
+    "id": "ofMgbFL8qAG9Cl5I2yy6",
+    "path": "interviews/ofMgbFL8qAG9Cl5I2yy6",
+    "data": {
+      "candidateId": {
+        "stringValue": "ofMgbFL8qAG9Cl5I2yy6"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-25T03:41:28.618Z"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-23T06:58:02.007Z"
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "readyToRelocate": {
+        "stringValue": ""
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-26 12:00 - 02:00 PM"
+      },
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "currentSalary": {
+        "stringValue": ""
+      }
+    }
+  },
+  {
+    "id": "raMH1RZz7PN4ppWc6gQ8eFqH2nL2",
+    "path": "interviews/raMH1RZz7PN4ppWc6gQ8eFqH2nL2",
+    "data": {
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "expectedSalary": {
+        "integerValue": "30000"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Naresh Kumar"
+            }
+          ]
+        }
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-03-28"
+            },
+            {
+              "stringValue": "2026-03-29"
+            },
+            {
+              "stringValue": "2026-03-30"
+            }
+          ]
+        }
+      },
+      "sentAt": {
+        "stringValue": "2026-03-20T09:40:31.047Z"
+      },
+      "currentSalary": {
+        "integerValue": "30000"
+      },
+      "joiningDate": {
+        "stringValue": "2026-03-20"
+      },
+      "role": {
+        "stringValue": "Front End Developer"
+      }
+    }
+  },
+  {
+    "id": "urVFlssSg9xcNBSxyTLA",
+    "path": "interviews/urVFlssSg9xcNBSxyTLA",
+    "data": {
+      "yearsExperience": {
+        "stringValue": "3"
+      },
+      "updatedAt": {
+        "timestampValue": "2025-07-18T09:54:50.800Z"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-24 12:00 - 02:00 PM"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-07-19"
+      },
+      "currentSalary": {
+        "stringValue": "20000"
+      },
+      "laptop": {
+        "stringValue": "yes"
+      },
+      "candidateId": {
+        "stringValue": "urVFlssSg9xcNBSxyTLA"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "experienceIn": {
+        "stringValue": "Full Stack"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "successmail": {
+        "booleanValue": true
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-18T09:52:44.210Z"
+      },
+      "expectedSalary": {
+        "stringValue": "20000"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-18T09:52:13.405Z"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-07-18T09:53:33.092Z"
+      }
+    }
+  },
+  {
+    "id": "xHrbqFIfY6h6b6gbSoukNwp93Oc2",
+    "path": "interviews/xHrbqFIfY6h6b6gbSoukNwp93Oc2",
+    "data": {
+      "candidateId": {
+        "stringValue": "xHrbqFIfY6h6b6gbSoukNwp93Oc2"
+      },
+      "joiningDate": {
+        "stringValue": "2026-03-20"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-03-20T10:34:49.955Z"
+      },
+      "expectedSalary": {
+        "stringValue": "20000"
+      },
+      "yearsExperience": {
+        "stringValue": "3"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "feedback": {
+        "stringValue": "Good Performance"
+      },
+      "experienceIn": {
+        "stringValue": "Front End Developer"
+      },
+      "laptop": {
+        "stringValue": "yes"
+      },
+      "currentSalary": {
+        "stringValue": "20000"
+      },
+      "submittedAt": {
+        "timestampValue": "2026-03-20T10:03:15.220Z"
+      },
+      "dateOfJoining": {
+        "stringValue": "2026-03-25"
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "respondedAt": {
+        "timestampValue": "2026-03-20T09:57:57.014Z"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2026-03-20T10:02:08.183Z"
+      },
+      "selectedDate": {
+        "stringValue": "2026-03-21 12:00 - 02:00 PM"
+      },
+      "roundType": {
+        "stringValue": "HR"
+      },
+      "successmail": {
+        "booleanValue": true
+      }
+    }
+  },
+  {
+    "id": "xZyT7D0vUIPZK4FJdMG0Q2Fpygn1",
+    "path": "interviews/xZyT7D0vUIPZK4FJdMG0Q2Fpygn1",
+    "data": {
+      "currentSalary": {
+        "stringValue": ""
+      },
+      "experienceIn": {
+        "stringValue": ""
+      },
+      "expectedSalary": {
+        "stringValue": ""
+      },
+      "readyToRelocate": {
+        "stringValue": ""
+      },
+      "postId": {
+        "stringValue": "45Si6sbFYCEJTEkxcuUF"
+      },
+      "submittedAt": {
+        "timestampValue": "2026-08-19T10:47:15.867Z"
+      },
+      "role": {
+        "stringValue": "Backend Developer"
+      },
+      "respondedAt": {
+        "nullValue": null
+      },
+      "status": {
+        "stringValue": "round1"
+      },
+      "sentAt": {
+        "stringValue": "2026-08-20T05:59:49.775Z"
+      },
+      "yearsExperience": {
+        "stringValue": ""
+      },
+      "updatedAt": {
+        "timestampValue": "2026-08-18T09:57:01.040Z"
+      },
+      "candidateId": {
+        "stringValue": "xZyT7D0vUIPZK4FJdMG0Q2Fpygn1"
+      },
+      "joiningDate": {
+        "stringValue": "2026-08-19"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "dateOfJoining": {
+        "stringValue": ""
+      },
+      "detailsSubmitted": {
+        "booleanValue": false
+      },
+      "feedback": {
+        "stringValue": "Good"
+      },
+      "laptop": {
+        "stringValue": ""
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2026-08-18T09:52:04.817Z"
+      },
+      "interviewers": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "Surya Ravi"
+            },
+            {
+              "stringValue": "Surya R"
+            }
+          ]
+        }
+      },
+      "selectedDate": {
+        "nullValue": null
+      },
+      "response": {
+        "nullValue": null
+      },
+      "dates": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "2026-08-21"
+            },
+            {
+              "stringValue": "2026-08-22"
+            },
+            {
+              "stringValue": "2026-08-23"
+            }
+          ]
+        }
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": ""
+      }
+    }
+  },
+  {
+    "id": "ypb56YlPQedc29Mdq80x",
+    "path": "interviews/ypb56YlPQedc29Mdq80x",
+    "data": {
+      "yearsExperience": {
+        "stringValue": "2"
+      },
+      "currentSalary": {
+        "stringValue": "20000"
+      },
+      "successmail": {
+        "booleanValue": true
+      },
+      "response": {
+        "stringValue": "accept"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-07-10"
+      },
+      "experienceIn": {
+        "stringValue": "Full Stack"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-08T08:58:17.762Z"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-07-08T09:00:11.091Z"
+      },
+      "readyToRelocate": {
+        "stringValue": "yes"
+      },
+      "updatedAt": {
+        "timestampValue": "2025-07-16T04:52:10.319Z"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-08T08:58:49.081Z"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "expectedSalary": {
+        "stringValue": "20000"
+      },
+      "candidateId": {
+        "stringValue": "ypb56YlPQedc29Mdq80x"
+      },
+      "selectedDate": {
+        "stringValue": "2025-07-09 10:00 - 12:00 PM"
+      }
+    }
+  },
+  {
+    "id": "ywkPkKkOPa77DSWEdlwx",
+    "path": "interviews/ywkPkKkOPa77DSWEdlwx",
+    "data": {
+      "response": {
+        "stringValue": "accept"
+      },
+      "experienceIn": {
+        "stringValue": "Cad design engineer & Site supervision "
+      },
+      "readyToRelocate": {
+        "stringValue": "no"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-07-10T15:28:03.487Z"
+      },
+      "dateOfJoining": {
+        "stringValue": "2025-02-24"
+      },
+      "respondedAt": {
+        "timestampValue": "2025-07-30T04:43:47.816Z"
+      },
+      "status": {
+        "stringValue": "round1"
+      },
+      "expectedSalaryPeriod": {
+        "stringValue": "month"
+      },
+      "currentSalary": {
+        "stringValue": "34981"
+      },
+      "submittedAt": {
+        "timestampValue": "2025-07-31T05:54:59.217Z"
+      },
+      "expectedSalary": {
+        "stringValue": "50000"
+      },
+      "selectedDate": {
+        "stringValue": "2025-08-02 02:00 - 04:00 PM"
+      },
+      "yearsExperience": {
+        "stringValue": "2.6"
+      },
+      "roundType": {
+        "stringValue": "Technical"
+      },
+      "verifyMailSentAt": {
+        "timestampValue": "2025-07-30T06:37:25.747Z"
+      },
+      "candidateId": {
+        "stringValue": "ywkPkKkOPa77DSWEdlwx"
+      },
+      "laptop": {
+        "stringValue": "no"
+      }
+    }
+  }
+]

@@ -1,0 +1,1070 @@
+[
+  {
+    "id": "0wrU6oVmbxw7PKfuefmv",
+    "path": "notifications/0wrU6oVmbxw7PKfuefmv",
+    "data": {
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Full Stack Developer. Please check your email for available dates."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-08-21"
+                  },
+                  {
+                    "stringValue": "2026-08-22"
+                  },
+                  {
+                    "stringValue": "2026-08-23"
+                  }
+                ]
+              }
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Full Stack Developer"
+            }
+          }
+        }
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-13T12:06:41.468Z"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      }
+    }
+  },
+  {
+    "id": "1Q5ThDErxElLzOGBG118",
+    "path": "notifications/1Q5ThDErxElLzOGBG118",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2026-08-07T06:06:42.651Z"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "recruiterName": {
+              "stringValue": "Surya Ravi"
+            },
+            "recruiterEmail": {
+              "stringValue": "meenukutti.msd7@gmail.com"
+            }
+          }
+        }
+      },
+      "message": {
+        "stringValue": "Surya Ravi (meenukutti.msd7@gmail.com) has requested premium access to post more than 5 jobs. Please review in Add Members."
+      },
+      "userId": {
+        "stringValue": "surya.r061202@gmail.com"
+      },
+      "title": {
+        "stringValue": "Premium Access Request"
+      },
+      "type": {
+        "stringValue": "premium_request"
+      }
+    }
+  },
+  {
+    "id": "47lAmHPddr3aHYGAx07W",
+    "path": "notifications/47lAmHPddr3aHYGAx07W",
+    "data": {
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Software Developer"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-08-21"
+                  },
+                  {
+                    "stringValue": "2026-08-22"
+                  },
+                  {
+                    "stringValue": "2026-08-23"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Software Developer. Please check your email for available dates."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "userId": {
+        "stringValue": "jaddu6861@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-13T11:08:44.869Z"
+      }
+    }
+  },
+  {
+    "id": "4eurlVDdRjHuUIGE8kNu",
+    "path": "notifications/4eurlVDdRjHuUIGE8kNu",
+    "data": {
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Software Engineer"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-03-07"
+                  },
+                  {
+                    "stringValue": "2026-03-08"
+                  },
+                  {
+                    "stringValue": "2026-03-09"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Software Engineer. Please check your email for available dates."
+      },
+      "userId": {
+        "stringValue": "surya.r061202@gmail.com"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-07T11:30:16.190Z"
+      }
+    }
+  },
+  {
+    "id": "8STkx926RCmu1195lhpU",
+    "path": "notifications/8STkx926RCmu1195lhpU",
+    "data": {
+      "type": {
+        "stringValue": "verify_details"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "title": {
+        "stringValue": "Verify Your Details"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "message": {
+        "stringValue": "Please verify your details before proceeding to the next round. Check your email for the verification link."
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-20T10:02:09.222Z"
+      }
+    }
+  },
+  {
+    "id": "CR68TGwWZg52CBuuGoGi",
+    "path": "notifications/CR68TGwWZg52CBuuGoGi",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2026-03-28T16:17:10.135Z"
+      },
+      "userId": {
+        "stringValue": "indianinfra@gmail.com"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "title": {
+        "stringValue": "Welcome to the Team!"
+      },
+      "message": {
+        "stringValue": "Welcome Indian! Your manager account has been created. Please check your email for login credentials."
+      },
+      "type": {
+        "stringValue": "manager_invite"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "name": {
+              "stringValue": "Indian"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "DHdeI5bMJXSUV2YEzudE",
+    "path": "notifications/DHdeI5bMJXSUV2YEzudE",
+    "data": {
+      "read": {
+        "booleanValue": false
+      },
+      "message": {
+        "stringValue": "Welcome Mc! Your manager account has been created. Please check your email for login credentials."
+      },
+      "userId": {
+        "stringValue": "meenukutti.msd7@gmail.com"
+      },
+      "title": {
+        "stringValue": "Welcome to the Team!"
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-30T07:55:26.037Z"
+      },
+      "type": {
+        "stringValue": "manager_invite"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "name": {
+              "stringValue": "Mc"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "F8hKCNSulEACV44JNQ1I",
+    "path": "notifications/F8hKCNSulEACV44JNQ1I",
+    "data": {
+      "userId": {
+        "stringValue": "surya.r061202@gmail.com"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Front End Developer. Please check your email for available dates."
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-03-20"
+                  },
+                  {
+                    "stringValue": "2026-03-21"
+                  },
+                  {
+                    "stringValue": "2026-03-22"
+                  }
+                ]
+              }
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Front End Developer"
+            }
+          }
+        }
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-20T09:03:02.032Z"
+      }
+    }
+  },
+  {
+    "id": "HW1EYgCueIOPbyKdRAzV",
+    "path": "notifications/HW1EYgCueIOPbyKdRAzV",
+    "data": {
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  },
+                  {
+                    "stringValue": "2026-01-10"
+                  }
+                ]
+              }
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Analytics"
+            }
+          }
+        }
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-08T05:55:30.529Z"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Analytics. Please check your email for available dates."
+      }
+    }
+  },
+  {
+    "id": "ITVbFwXQQdrWm0vz15A1",
+    "path": "notifications/ITVbFwXQQdrWm0vz15A1",
+    "data": {
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-19T08:51:14.592Z"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Web Developer. Please check your email for available dates."
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-08-20"
+                  },
+                  {
+                    "stringValue": "2026-08-21"
+                  },
+                  {
+                    "stringValue": "2026-08-22"
+                  }
+                ]
+              }
+            },
+            "role": {
+              "stringValue": "Web Developer"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "Ja4kfbH6nG8ELX6WPkX4",
+    "path": "notifications/Ja4kfbH6nG8ELX6WPkX4",
+    "data": {
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-08T07:27:42.368Z"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  },
+                  {
+                    "stringValue": "2026-01-10"
+                  }
+                ]
+              }
+            },
+            "role": {
+              "stringValue": "Analytics"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            }
+          }
+        }
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Analytics. Please check your email for available dates."
+      }
+    }
+  },
+  {
+    "id": "P0i0vidhyFxwfFDEtkYN",
+    "path": "notifications/P0i0vidhyFxwfFDEtkYN",
+    "data": {
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of DevOps Engineer. Please check your email for available dates."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "role": {
+              "stringValue": "DevOps Engineer"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-08-28"
+                  },
+                  {
+                    "stringValue": "2026-08-29"
+                  },
+                  {
+                    "stringValue": "2026-08-30"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-19T10:45:02.647Z"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      }
+    }
+  },
+  {
+    "id": "QGzqgA5YlbfPHCrNCtg9",
+    "path": "notifications/QGzqgA5YlbfPHCrNCtg9",
+    "data": {
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-10"
+                  },
+                  {
+                    "stringValue": "2026-01-11"
+                  },
+                  {
+                    "stringValue": "2026-01-12"
+                  }
+                ]
+              }
+            },
+            "candidateEmail": {
+              "stringValue": "jaddur.7338@gmail.com"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Engineering"
+            }
+          }
+        }
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "userId": {
+        "stringValue": "oBlUVgi4XuPSAzMaVY4mgauLGOT2"
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-10T08:40:07.649Z"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Engineering. Please check your email for available dates."
+      }
+    }
+  },
+  {
+    "id": "U9ut7Sskjl98AhhKR3fX",
+    "path": "notifications/U9ut7Sskjl98AhhKR3fX",
+    "data": {
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "role": {
+              "stringValue": "Analytics"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  },
+                  {
+                    "stringValue": "2026-01-10"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Analytics. Please check your email for available dates."
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-08T08:13:04.593Z"
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      }
+    }
+  },
+  {
+    "id": "Wy4WWiDlMJ8RFfFM4job",
+    "path": "notifications/Wy4WWiDlMJ8RFfFM4job",
+    "data": {
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "role": {
+              "stringValue": "Web Developer"
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-07"
+                  },
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Web Developer. Please check your email for available dates."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-07T18:28:15.160Z"
+      }
+    }
+  },
+  {
+    "id": "dLCiB6Lt4ZtmFev6bQqo",
+    "path": "notifications/dLCiB6Lt4ZtmFev6bQqo",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2026-08-20T05:59:50.217Z"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Backend Developer. Please check your email for available dates."
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Backend Developer"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-08-21"
+                  },
+                  {
+                    "stringValue": "2026-08-22"
+                  },
+                  {
+                    "stringValue": "2026-08-23"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "read": {
+        "booleanValue": false
+      }
+    }
+  },
+  {
+    "id": "iPMmrdRYPFtgxcEyUM0y",
+    "path": "notifications/iPMmrdRYPFtgxcEyUM0y",
+    "data": {
+      "read": {
+        "booleanValue": false
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "message": {
+        "stringValue": "Congratulations! You have been selected for the position of Engineering. Welcome to the team!"
+      },
+      "title": {
+        "stringValue": "Congratulations! 🎉"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "role": {
+              "stringValue": "Engineering"
+            }
+          }
+        }
+      },
+      "type": {
+        "stringValue": "congratulations"
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-20T10:34:51.368Z"
+      }
+    }
+  },
+  {
+    "id": "lXS24NpWQYAna5vpdTWD",
+    "path": "notifications/lXS24NpWQYAna5vpdTWD",
+    "data": {
+      "read": {
+        "booleanValue": false
+      },
+      "userId": {
+        "stringValue": "meenukutti.msd7@gmail.com"
+      },
+      "message": {
+        "stringValue": "Congratulations Surya! Your premium access request has been approved. You can now post unlimited jobs."
+      },
+      "type": {
+        "stringValue": "premium_approved"
+      },
+      "title": {
+        "stringValue": "Premium Access Approved"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-07T06:57:55.796Z"
+      }
+    }
+  },
+  {
+    "id": "nz6NvHmmNlYp9sflRF1O",
+    "path": "notifications/nz6NvHmmNlYp9sflRF1O",
+    "data": {
+      "userId": {
+        "stringValue": "john2025@gmail.com"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-07T11:51:49.858Z"
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Engineering Services. Please check your email for available dates."
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-07"
+                  },
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  }
+                ]
+              }
+            },
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "role": {
+              "stringValue": "Engineering Services"
+            }
+          }
+        }
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      }
+    }
+  },
+  {
+    "id": "rYxzNSPwYyi41h5IT5xD",
+    "path": "notifications/rYxzNSPwYyi41h5IT5xD",
+    "data": {
+      "message": {
+        "stringValue": "Please verify your details before proceeding to the next round. Check your email for the verification link."
+      },
+      "title": {
+        "stringValue": "Verify Your Details"
+      },
+      "type": {
+        "stringValue": "verify_details"
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2026-08-18T09:52:07.640Z"
+      },
+      "read": {
+        "booleanValue": false
+      }
+    }
+  },
+  {
+    "id": "tGBEY7vc0RMtAGkVdcVl",
+    "path": "notifications/tGBEY7vc0RMtAGkVdcVl",
+    "data": {
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Analytics. Please check your email for available dates."
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  },
+                  {
+                    "stringValue": "2026-01-10"
+                  }
+                ]
+              }
+            },
+            "role": {
+              "stringValue": "Analytics"
+            }
+          }
+        }
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2026-01-08T08:16:15.588Z"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      }
+    }
+  },
+  {
+    "id": "v9ZJu8YpjZo1uxfEQC4v",
+    "path": "notifications/v9ZJu8YpjZo1uxfEQC4v",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2026-01-08T08:10:36.465Z"
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Analytics. Please check your email for available dates."
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-01-08"
+                  },
+                  {
+                    "stringValue": "2026-01-09"
+                  },
+                  {
+                    "stringValue": "2026-01-10"
+                  }
+                ]
+              }
+            },
+            "role": {
+              "stringValue": "Analytics"
+            }
+          }
+        }
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "userId": {
+        "stringValue": "suryar.3778@gmail.com"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      }
+    }
+  },
+  {
+    "id": "vLkditzzyORl8iluhSoT",
+    "path": "notifications/vLkditzzyORl8iluhSoT",
+    "data": {
+      "message": {
+        "stringValue": "You have been invited for Technical round interview for the position of Front End Developer. Please check your email for available dates."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "roundType": {
+              "stringValue": "Technical"
+            },
+            "dates": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "2026-03-21"
+                  },
+                  {
+                    "stringValue": "2026-03-22"
+                  },
+                  {
+                    "stringValue": "2026-03-23"
+                  }
+                ]
+              }
+            },
+            "role": {
+              "stringValue": "Front End Developer"
+            }
+          }
+        }
+      },
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "type": {
+        "stringValue": "interview_invite"
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-20T09:57:01.700Z"
+      },
+      "title": {
+        "stringValue": "Interview Invitation"
+      }
+    }
+  },
+  {
+    "id": "yrXPJN4elOPMNRL9U3Me",
+    "path": "notifications/yrXPJN4elOPMNRL9U3Me",
+    "data": {
+      "userId": {
+        "stringValue": "jaddusuryar.738@gmail.com"
+      },
+      "metadata": {
+        "mapValue": {
+          "fields": {
+            "name": {
+              "stringValue": "Robin"
+            }
+          }
+        }
+      },
+      "createdAt": {
+        "timestampValue": "2026-03-30T07:52:55.158Z"
+      },
+      "message": {
+        "stringValue": "Welcome Robin! Your manager account has been created. Please check your email for login credentials."
+      },
+      "read": {
+        "booleanValue": false
+      },
+      "title": {
+        "stringValue": "Welcome to the Team!"
+      },
+      "type": {
+        "stringValue": "manager_invite"
+      }
+    }
+  }
+]

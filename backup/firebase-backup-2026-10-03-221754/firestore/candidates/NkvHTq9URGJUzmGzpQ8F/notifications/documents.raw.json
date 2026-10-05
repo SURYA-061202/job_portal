@@ -1,0 +1,24 @@
+[
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/NkvHTq9URGJUzmGzpQ8F/notifications/jTlCBTeyBEVuFO0xPzvT",
+    "fields": {
+      "viewed": {
+        "booleanValue": true
+      },
+      "email": {
+        "stringValue": "sarasrianand@gmail.com"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-23T07:29:27.619Z"
+      },
+      "message": {
+        "stringValue": "Accepted interview on 2025-07-27 10:00 - 12:00 PM"
+      },
+      "name": {
+        "stringValue": "Yuvasri A"
+      }
+    },
+    "createTime": "2025-07-23T07:29:27.995529Z",
+    "updateTime": "2025-07-25T03:39:12.992508Z"
+  }
+]

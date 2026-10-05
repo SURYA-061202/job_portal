@@ -3,6 +3,7 @@ import { ArrowLeft, Mail, Phone, Building2, Shield, Loader2, Briefcase } from 'l
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface MemberData {
     id: string;
@@ -33,6 +34,7 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingPosts, setLoadingPosts] = useState(true);
+    const skin = useSkin();
 
     useEffect(() => {
         if (!memberId) return;
@@ -89,8 +91,8 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     if (!member) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500">Member not found.</p>
-                <button onClick={onBack} className="mt-4 text-brand font-medium hover:underline">Go back</button>
+                <p className={skin.body}>Member not found.</p>
+                <button onClick={onBack} className={`mt-4 text-brand font-medium hover:underline ${FOCUS}`}>Go back</button>
             </div>
         );
     }
@@ -98,10 +100,10 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     return (
         <div className="space-y-6 flex-1 flex flex-col">
             {/* Back Button */}
-            <div className="bg-surface p-4 rounded-xl border border-gray-200">
+            <div className={`p-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
                 <button
                     onClick={onBack}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                    className={`flex items-center gap-2 text-sm font-medium text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} transition-colors ${FOCUS}`}
                 >
                     <ArrowLeft className="w-5 h-5" />
                     Back to Members
@@ -109,15 +111,15 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
             </div>
 
             {/* Profile Card */}
-            <div className="bg-surface rounded-xl border border-gray-200 overflow-hidden">
-                <div className="bg-brand px-6 py-8">
+            <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+                <div className="bg-ink px-6 py-8">
                     <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 bg-surface/20 rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                        <div className="w-20 h-20 bg-surface/20 rounded-full flex items-center justify-center text-surface font-bold text-3xl">
                             {member.firstName?.[0]}{member.lastName?.[0]}
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white">{member.firstName} {member.lastName}</h2>
-                            <span className="inline-block text-xs bg-surface/20 text-white px-3 py-1 rounded-full font-medium mt-1">
+                            <h2 className="text-2xl font-bold text-surface">{member.firstName} {member.lastName}</h2>
+                            <span className="inline-block text-xs bg-brand text-ink px-3 py-1 rounded-full font-medium mt-1">
                                 {member.role?.toUpperCase()}
                             </span>
                         </div>
@@ -129,28 +131,28 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                             <Mail className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
                                 <p className="text-xs text-brand font-bold">Email</p>
-                                <p className="text-sm text-gray-900 truncate">{member.email}</p>
+                                <p className="text-sm text-ink truncate">{member.email}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
                             <Phone className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
                                 <p className="text-xs text-brand font-bold">Phone</p>
-                                <p className="text-sm text-gray-900">{member.mobile || 'N/A'}</p>
+                                <p className="text-sm text-ink">{member.mobile || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
                             <Building2 className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
                                 <p className="text-xs text-brand font-bold">Department</p>
-                                <p className="text-sm text-gray-900">{member.department || 'N/A'}</p>
+                                <p className="text-sm text-ink">{member.department || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
                             <Shield className="w-5 h-5 text-brand flex-shrink-0" />
                             <div>
                                 <p className="text-xs text-brand font-bold">Role</p>
-                                <p className="text-sm text-gray-900 capitalize">{member.role}</p>
+                                <p className="text-sm text-ink capitalize">{member.role}</p>
                             </div>
                         </div>
                     </div>
@@ -158,13 +160,13 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
             </div>
 
             {/* Posts Section */}
-            <div className="bg-surface rounded-xl border border-brand/20 p-6">
+            <div className={`p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Briefcase className="w-5 h-5 text-brand" />
-                        <h3 className="text-lg font-bold text-gray-900">Posted Jobs</h3>
+                        <h3 className={skin.cardTitle}>Posted Jobs</h3>
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-brand/20 text-brand text-sm font-bold">
+                    <span className={skin.count}>
                         {posts.length} posts
                     </span>
                 </div>
@@ -174,24 +176,24 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                         <Loader2 className="w-8 h-8 animate-spin text-brand" />
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="bg-brand/5 border border-dashed border-brand/30 rounded-xl p-8 text-center">
+                    <div className={`bg-brand/5 border border-dashed ${skin.edge} ${skin.radius} p-8 text-center`}>
                         <Briefcase className="w-10 h-10 text-brand mx-auto mb-3" />
-                        <p className="text-brand">No posts yet</p>
+                        <p className={skin.emptyTitle}>No posts yet</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {posts.map(post => (
-                            <div key={post.id} className="bg-brand/5 border border-brand/20 rounded-xl p-4 hover:bg-brand/10 transition-colors">
+                            <div key={post.id} className={`bg-brand/5 border border-brand/20 ${skin.radius} p-4 hover:bg-brand/10 transition-colors duration-200 ${skin.cardHover}`}>
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-base font-bold text-gray-900">{post.jobTitle}</p>
+                                        <p className="text-base font-bold text-ink">{post.jobTitle}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-sm text-brand">{post.department}</span>
                                             <span className="text-brand/30">|</span>
                                             <span className="text-sm text-brand">{post.location}</span>
                                         </div>
                                     </div>
-                                    <span className="text-sm text-brand flex-shrink-0 ml-4">
+                                    <span className={`flex-shrink-0 ml-4 ${skin.meta}`}>
                                         {post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>

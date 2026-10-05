@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, get
 import { createPremiumRequestNotification } from '@/lib/notificationHelper';
 import toast from 'react-hot-toast';
 import type { PremiumRequestStatus } from '@/types';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface PremiumRequestModalProps {
     isOpen: boolean;
@@ -24,6 +25,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
     const [loading, setLoading] = useState(false);
     const [admin, setAdmin] = useState<AdminUser | null>(null);
     const [fetchingAdmin, setFetchingAdmin] = useState(true);
+    const skin = useSkin();
 
     useEffect(() => {
         if (!isOpen) return;
@@ -82,7 +84,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-md`}>
                 {/* Header */}
                 <div className="bg-brand px-6 py-5 rounded-t-2xl flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -91,7 +93,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                         </div>
                         <h3 className="text-xl font-bold text-white">Premium Access</h3>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                    <button onClick={onClose} className={`p-1 hover:bg-white/20 ${skin.radius} cursor-pointer transition-colors ${FOCUS}`}>
                         <X className="w-5 h-5 text-white" />
                     </button>
                 </div>
@@ -100,51 +102,51 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                 <div className="p-6">
                     {currentStatus === 'pending' ? (
                         <div className="text-center py-4">
-                            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Clock className="w-8 h-8 text-amber-600" />
+                            <div className={`w-16 h-16 ${skin.canvas} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                                <Clock className="w-8 h-8 text-ink/60" />
                             </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">Request Pending</h4>
-                            <p className="text-sm text-gray-500 mb-4">
+                            <h4 className={`${skin.cardTitle} mb-2`}>Request Pending</h4>
+                            <p className={`${skin.body} mb-4`}>
                                 Your premium access request is already submitted and waiting for admin approval.
                             </p>
                             {admin && (
-                                <div className="bg-gray-50 rounded-lg p-4 mt-4">
-                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Sent to</p>
-                                    <p className="text-sm font-medium text-gray-900">{admin.firstName} {admin.lastName}</p>
-                                    <p className="text-xs text-gray-500">{admin.email}</p>
+                                <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 mt-4`}>
+                                    <p className={`mb-1 ${skin.micro}`}>Sent to</p>
+                                    <p className="text-sm font-medium text-ink">{admin.firstName} {admin.lastName}</p>
+                                    <p className={skin.meta}>{admin.email}</p>
                                 </div>
                             )}
                         </div>
                     ) : currentStatus === 'approved' ? (
                         <div className="text-center py-4">
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CheckCircle className="w-8 h-8 text-green-600" />
+                            <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle className="w-8 h-8 text-brand" />
                             </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">Premium Active</h4>
-                            <p className="text-sm text-gray-500">
+                            <h4 className={`${skin.cardTitle} mb-2`}>Premium Active</h4>
+                            <p className={skin.body}>
                                 You have premium access. You can post unlimited jobs.
                             </p>
                         </div>
                     ) : currentStatus === 'rejected' ? (
                         <div className="text-center py-4">
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <XCircle className="w-8 h-8 text-red-600" />
+                            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <XCircle className="w-8 h-8 text-destructive" />
                             </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">Request Declined</h4>
-                            <p className="text-sm text-gray-500 mb-4">
+                            <h4 className={`${skin.cardTitle} mb-2`}>Request Declined</h4>
+                            <p className={`${skin.body} mb-4`}>
                                 Your previous premium request was declined. You can submit a new request.
                             </p>
                             {admin && (
-                                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Contact Admin</p>
-                                    <p className="text-sm font-medium text-gray-900">{admin.firstName} {admin.lastName}</p>
-                                    <p className="text-xs text-gray-500">{admin.email}</p>
+                                <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 mb-4`}>
+                                    <p className={`mb-1 ${skin.micro}`}>Contact Admin</p>
+                                    <p className="text-sm font-medium text-ink">{admin.firstName} {admin.lastName}</p>
+                                    <p className={skin.meta}>{admin.email}</p>
                                 </div>
                             )}
                             <button
                                 onClick={handleRequestPremium}
                                 disabled={loading || fetchingAdmin}
-                                className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:shadow-lg hover:shadow-brand/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className={`w-full inline-flex items-center justify-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                             >
                                 {loading ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
@@ -156,42 +158,42 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                     ) : (
                         <>
                             <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Crown className="w-8 h-8 text-amber-600" />
+                                <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Crown className="w-8 h-8 text-brand" />
                                 </div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">Post Limit Reached</h4>
-                                <p className="text-sm text-gray-500">
+                                <h4 className={`${skin.cardTitle} mb-2`}>Post Limit Reached</h4>
+                                <p className={skin.body}>
                                     You've reached the free limit of 5 posts. Request premium access from admin to post more jobs.
                                 </p>
                             </div>
 
                             {fetchingAdmin ? (
                                 <div className="flex justify-center py-4">
-                                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                                    <Loader2 className="w-6 h-6 animate-spin text-ink/40" />
                                 </div>
                             ) : admin ? (
-                                <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                                    <p className="text-xs text-gray-400 uppercase font-bold mb-2">Your Admin</p>
+                                <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 mb-6`}>
+                                    <p className={`mb-2 ${skin.micro}`}>Your Admin</p>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-brand/20 rounded-full flex items-center justify-center text-brand font-bold text-sm">
                                             {admin.firstName?.[0]}{admin.lastName?.[0]}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">{admin.firstName} {admin.lastName}</p>
-                                            <p className="text-xs text-gray-500">{admin.email}</p>
+                                            <p className="text-sm font-bold text-ink">{admin.firstName} {admin.lastName}</p>
+                                            <p className={skin.meta}>{admin.email}</p>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-center">
-                                    <p className="text-sm text-gray-500">No admin found. Contact support.</p>
+                                <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 mb-6 text-center`}>
+                                    <p className={skin.body}>No admin found. Contact support.</p>
                                 </div>
                             )}
 
                             <button
                                 onClick={handleRequestPremium}
                                 disabled={loading || fetchingAdmin || !admin}
-                                className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:shadow-lg hover:shadow-brand/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className={`w-full inline-flex items-center justify-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                             >
                                 {loading ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Sending Request...</>
@@ -207,7 +209,7 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
                 <div className="px-6 pb-6">
                     <button
                         onClick={onClose}
-                        className="w-full py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all"
+                        className={`w-full cursor-pointer ${skin.secondary} ${FOCUS}`}
                     >
                         {currentStatus === 'pending' || currentStatus === 'approved' ? 'Close' : 'Maybe Later'}
                     </button>

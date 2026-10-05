@@ -2,6 +2,7 @@ import UserHeader from '@/components/layout/UserHeader';
 import { useState, useRef } from 'react';
 import { Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 const WHATSAPP_NUMBER = '8778326518';
 const MAX_HEIGHT = 3;
@@ -9,6 +10,7 @@ const MAX_HEIGHT = 3;
 export default function CareerAssistancePage() {
     const [message, setMessage] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const skin = useSkin();
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setMessage(e.target.value);
@@ -37,12 +39,12 @@ export default function CareerAssistancePage() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className={`min-h-screen ${skin.canvas} flex flex-col`}>
             <UserHeader />
             <div className="flex-1 w-full px-6 lg:px-12 py-8">
-                <div className="bg-white p-8 sm:p-12 rounded-2xl border border-gray-200 w-full max-w-4xl mx-auto">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">End-to-End Career Assistance</h2>
-                    <p className="text-gray-500 mb-8 text-lg">Ask us anything about your career and we'll get back to you on WhatsApp.</p>
+                <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-8 sm:p-12 w-full max-w-4xl mx-auto`}>
+                    <h2 className={`${skin.heading} mb-3`}>End-to-End Career Assistance</h2>
+                    <p className="text-ink/60 mb-8 text-lg">Ask us anything about your career and we'll get back to you on WhatsApp.</p>
                     <textarea
                         ref={textareaRef}
                         value={message}
@@ -50,12 +52,12 @@ export default function CareerAssistancePage() {
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                         placeholder="Type your career question..."
                         rows={1}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all resize-none overflow-y-auto"
+                        className={`w-full px-4 py-3 resize-none overflow-y-auto ${skin.field} ${FOCUS}`}
                     />
                     <div className="flex justify-end mt-3">
                         <button
                             onClick={handleSend}
-                            className="bg-brand text-white px-6 py-3 rounded-xl font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+                            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS}`}
                         >
                             <Send className="w-4 h-4" />
                             Send

@@ -3,7 +3,9 @@ import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'fire
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import UserHeader from '@/components/layout/UserHeader';
-import { Bell, CheckCircle2, AlertCircle, Info, Loader2 } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useSkin, FOCUS } from '@/styles/skin';
+import { NotificationListSkeleton } from '@/components/user/SkeletonLoaders';
 
 interface Notification {
     id: string;
@@ -18,6 +20,7 @@ interface Notification {
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
+    const skin = useSkin();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -96,28 +99,25 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className={`min-h-screen ${skin.canvas} flex flex-col`}>
             <UserHeader />
 
             <main className="flex-1 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8">
                 {/* Page Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
-                    <p className="text-gray-600">Stay updated with your application status and new opportunities</p>
+                    <h1 className={`${skin.heading} mb-2`}>Notifications</h1>
+                    <p className="text-ink/70">Stay updated with your application status and new opportunities</p>
                 </div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
-                        <p className="text-gray-500 font-medium">Loading notifications...</p>
-                    </div>
+                    <NotificationListSkeleton count={4} />
                 ) : notifications.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-                        <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Bell className="w-10 h-10 text-gray-400" />
+                    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center`}>
+                        <div className={`${skin.stateIcon} w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                            <Bell className="w-10 h-10" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No Notifications</h3>
-                        <p className="text-gray-500 max-w-md mx-auto">
+                        <h3 className={`${skin.emptyTitle} mb-2`}>No Notifications</h3>
+                        <p className={`${skin.body} max-w-md mx-auto`}>
                             You're all caught up! We'll notify you when there are updates on your applications or new job opportunities.
                         </p>
                     </div>
@@ -127,31 +127,31 @@ export default function NotificationsPage() {
                             <div
                                 key={notification.id}
                                 onClick={() => !notification.read && markAsRead(notification.id)}
-                                className={`bg-white rounded-xl border border-gray-200 p-4 sm:p-6 transition-all cursor-pointer ${!notification.read ? 'border-l-4 border-l-brand' : ''
+                                className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-4 sm:p-6 transition-all cursor-pointer ${FOCUS} ${!notification.read ? 'border-l-4 border-l-brand' : ''
                                     }`}
                             >
                                 <div className="flex items-start gap-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === 'success' ? 'bg-green-100' :
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === 'success' ? 'bg-brand/10' :
                                         notification.type === 'warning' ? 'bg-brand/20' :
-                                            'bg-blue-100'
+                                            'bg-brand/10'
                                         }`}>
                                         {notification.type === 'success' ? (
-                                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                            <CheckCircle2 className="w-5 h-5 text-brand" />
                                         ) : notification.type === 'warning' ? (
                                             <AlertCircle className="w-5 h-5 text-brand" />
                                         ) : (
-                                            <Info className="w-5 h-5 text-blue-600" />
+                                            <Info className="w-5 h-5 text-brand" />
                                         )}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-start justify-between gap-2">
-                                            <h4 className="font-bold text-gray-900 mb-1">{notification.title}</h4>
+                                            <h4 className="font-bold text-ink mb-1">{notification.title}</h4>
                                             {!notification.read && (
                                                 <span className="w-2 h-2 bg-brand rounded-full flex-shrink-0 mt-2"></span>
                                             )}
                                         </div>
-                                        <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
-                                        <span className="text-xs text-gray-400">{notification.time}</span>
+                                        <p className="text-ink/70 text-sm mb-2">{notification.message}</p>
+                                        <span className={skin.meta}>{notification.time}</span>
                                     </div>
                                 </div>
                             </div>

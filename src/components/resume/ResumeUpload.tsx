@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText } from 'lucide-react';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface ResumeUploadProps {
   onUpload: (file: File) => void;
@@ -11,6 +12,7 @@ interface ResumeUploadProps {
 
 export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
   const [file, setFile] = useState<File | null>(null);
+  const skin = useSkin();
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -34,7 +36,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
   };
 
   return (
-    <div className="bg-surface rounded-lg p-6 w-full h-full flex flex-col">
+    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6 w-full h-full flex flex-col`}>
 
 
       <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
@@ -42,9 +44,9 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
 
           <div
             {...getRootProps()}
-            className={`flex-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${isDragActive
+            className={`flex-1 border-2 border-dashed ${skin.radius} p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${isDragActive
                 ? 'border-brand bg-brand/10'
-                : 'border-gray-300 hover:border-brand'
+                : `${skin.edge} hover:border-brand`
               }`}
           >
             <input {...getInputProps()} />
@@ -58,17 +60,17 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
             ) : file ? (
               <div className="flex items-center justify-center space-x-2">
                 <FileText className="h-6 w-6 text-brand" />
-                <span className="text-sm text-gray-600">{file.name}</span>
+                <span className="text-sm text-ink/70">{file.name}</span>
               </div>
             ) : (
               <div>
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
+                <Upload className="mx-auto h-12 w-12 text-ink/60" />
+                <p className="mt-2 text-sm text-ink/70">
                   {isDragActive
                     ? 'Drop the resume here...'
                     : 'Drag and drop a resume file here, or click to select'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className={`mt-1 ${skin.meta}`}>
                   Supports PDF, DOC, DOCX files
                 </p>
               </div>
@@ -79,7 +81,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
         <button
           type="submit"
           disabled={loading || !file}
-          className="w-full bg-brand text-white py-2 px-4 rounded-md hover:bg-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`w-full inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {loading ? 'Uploading & Extracting…' : 'Upload Resume'}
         </button>

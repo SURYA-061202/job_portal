@@ -8,6 +8,7 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'fir
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds, MAX_TOTAL_ROUNDS } from '@/lib/interviewRounds';
 import { usePopup } from '@/components/ui/Popup';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 /** Hints only — a round's name is free text and may be left blank. */
 const ROUND_NAME_PLACEHOLDERS = ['Screening Call', 'Technical Round', 'Managerial Round', 'HR Round'];
@@ -23,6 +24,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
     const [file, setFile] = useState<File | null>(null);
     const [userProfile, setUserProfile] = useState<{ firstName?: string; lastName?: string; companyName?: string } | null>(null);
     const { showSuccess, showError } = usePopup();
+    const skin = useSkin();
     const [formData, setFormData] = useState({
         jobTitle: '',
         urgencyLevel: 'Moderate' as 'Immediate' | 'Moderate' | 'Flexible',
@@ -211,12 +213,12 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/30 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-surface rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-                <div className="bg-surface px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0 rounded-t-md">
-                    <h2 className="text-xl font-bold text-gray-900 font-outfit">{initialData?.id ? 'Edit Recruitment Request' : 'Add Recruitment Request'}</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-500" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm overflow-y-auto">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-4xl max-h-[90vh] flex flex-col`}>
+                <div className={`px-6 py-4 border-b ${skin.edge} ${skin.surface} flex justify-between items-center flex-shrink-0 rounded-t-2xl`}>
+                    <h2 className={`${skin.heading} font-outfit`}>{initialData?.id ? 'Edit Recruitment Request' : 'Add Recruitment Request'}</h2>
+                    <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} cursor-pointer transition-colors ${FOCUS}`}>
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
@@ -224,26 +226,26 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Job Title */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Job Title *</label>
                             <input
                                 required
                                 type="text"
                                 name="jobTitle"
                                 value={formData.jobTitle}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. Senior Frontend Developer"
                             />
                         </div>
 
                         {/* Urgency Level */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Urgency Level</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Urgency Level</label>
                             <select
                                 name="urgencyLevel"
                                 value={formData.urgencyLevel}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                             >
                                 <option value="Immediate">Immediate</option>
                                 <option value="Moderate">Moderate</option>
@@ -253,26 +255,26 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Department */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Department</label>
                             <input
                                 type="text"
                                 name="department"
                                 value={formData.department}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. Engineering"
                             />
                         </div>
 
                         {/* Type of candidates */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Type of Candidates *</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Type of Candidates *</label>
                             <select
                                 required
                                 name="candidateType"
                                 value={formData.candidateType}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                             >
                                 <option value="Permanent">Permanent</option>
                                 <option value="Contract">Contract</option>
@@ -283,12 +285,12 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Position Level */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Position Level</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Position Level</label>
                             <select
                                 name="positionLevel"
                                 value={formData.positionLevel}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                             >
                                 <option value="Entry">Entry</option>
                                 <option value="Junior">Junior</option>
@@ -300,25 +302,25 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Years of Experience */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience REQUIRED</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Years of Experience REQUIRED</label>
                             <input
                                 type="text"
                                 name="yearsExperience"
                                 value={formData.yearsExperience}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. 5+ years"
                             />
                         </div>
 
                         {/* Mode of Work */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mode of Work</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Mode of Work</label>
                             <select
                                 name="modeOfWork"
                                 value={formData.modeOfWork}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                             >
                                 <option value="Office">Office</option>
                                 <option value="Hybrid">Hybrid</option>
@@ -328,61 +330,61 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                         {/* Location */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Location</label>
                             <input
                                 type="text"
                                 name="location"
                                 value={formData.location}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. Bangalore, Karnataka"
                             />
                         </div>
 
                         {/* No of candidates */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">No. of Candidates Required</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">No. of Candidates Required</label>
                             <input
                                 type="number"
                                 min="1"
                                 name="candidatesCount"
                                 value={formData.candidatesCount}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                             />
                         </div>
 
                         {/* Qualification */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Qualification Required</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Qualification Required</label>
                             <input
                                 type="text"
                                 name="qualification"
                                 value={formData.qualification}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. B.Tech / MCA"
                             />
                         </div>
 
                         {/* Key Skills */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Key Skills Required</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Key Skills Required</label>
                             <input
                                 type="text"
                                 name="skills"
                                 value={formData.skills}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. React, Node.js, AWS"
                             />
                         </div>
                     </div>
 
                     {/* Interview Rounds — these become the pipeline stages for this post */}
-                    <div className="border border-gray-200 rounded-md p-4 space-y-4">
+                    <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 space-y-4`}>
                         <div>
-                            <h3 className="text-sm font-bold text-gray-900 mb-1">Interview Rounds</h3>
+                            <h3 className="text-sm font-bold text-ink mb-1">Interview Rounds</h3>
                             <input
                                 type="number"
                                 min="0"
@@ -390,7 +392,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="totalRounds"
                                 value={formData.totalRounds}
                                 onChange={(e) => handleTotalRoundsChange(e.target.value)}
-                                className="w-full sm:w-40 px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full sm:w-40 px-3 py-2 ${skin.field} ${FOCUS}`}
                             />
                         </div>
 
@@ -398,43 +400,43 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Array.from({ length: formData.totalRounds }, (_, i) => (
                                     <div key={i}>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Round {i + 1} Name</label>
+                                        <label className="block text-sm font-medium text-ink/80 mb-1">Round {i + 1} Name</label>
                                         <input
                                             type="text"
                                             value={formData.roundNames[i] || ''}
                                             onChange={(e) => handleRoundNameChange(i, e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                            className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                             placeholder={ROUND_NAME_PLACEHOLDERS[i] || `e.g. Round ${i + 1}`}
                                         />
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-gray-500 italic">No interview rounds — the pipeline goes straight from Shortlisted to Selected.</p>
+                            <p className="text-xs text-ink/60 italic">No interview rounds — the pipeline goes straight from Shortlisted to Selected.</p>
                         )}
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Detailed Job Description</label>
+                        <label className="block text-sm font-medium text-ink/80 mb-1">Detailed Job Description</label>
                         <textarea
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             rows={6}
-                            className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand font-mono text-sm"
+                            className={`w-full px-3 py-2 ${skin.field} font-mono ${FOCUS}`}
                             placeholder="Paste the full job description here (Roles, Responsibilities, Requirements)..."
                         />
                     </div>
 
                     {/* Attachment of JD */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Attachment of JD</label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <label className="block text-sm font-medium text-ink/80 mb-1">Attachment of JD</label>
+                        <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed ${skin.edge} ${skin.radius}`}>
                             <div className="space-y-1 text-center">
-                                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                                <div className="flex text-sm text-gray-600">
-                                    <label className="relative cursor-pointer bg-surface rounded-md font-medium text-brand hover:text-brand focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand">
+                                <Upload className="mx-auto h-12 w-12 text-ink/40" />
+                                <div className="flex text-sm text-ink/70">
+                                    <label className={`relative cursor-pointer ${skin.surface} ${skin.radius} font-medium text-brand hover:text-brand focus-within:outline-none focus-within:ring-2 focus-within:ring-brand`}>
                                         <span>Upload a file</span>
                                         <input
                                             type="file"
@@ -445,7 +447,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                     </label>
                                     <p className="pl-1">or drag and drop</p>
                                 </div>
-                                <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</p>
+                                <p className="text-xs text-ink/60">PDF, DOC, DOCX up to 10MB</p>
                                 {file && <p className="text-sm text-brand font-medium">{file.name}</p>}
                             </div>
                         </div>
@@ -454,26 +456,26 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Budget Pay out */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Budget Pay out (Min – Max)</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Budget Pay out (Min – Max)</label>
                             <input
                                 type="text"
                                 name="budgetPay"
                                 value={formData.budgetPay}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. 10L - 15L"
                             />
                         </div>
 
                         {/* Salary Breakup */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Salary Breakup Guidelines</label>
+                            <label className="block text-sm font-medium text-ink/80 mb-1">Salary Breakup Guidelines</label>
                             <input
                                 type="text"
                                 name="salaryBreakup"
                                 value={formData.salaryBreakup}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
+                                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
                                 placeholder="e.g. Fixed + Performance Bonus"
                             />
                         </div>
@@ -482,11 +484,11 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 </form>
 
                 {/* Button Container - Static at Bottom */}
-                <div className="bg-surface px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 flex-shrink-0 rounded-b-md">
+                <div className={`${skin.surface} px-6 py-4 border-t ${skin.edge} flex justify-end space-x-3 flex-shrink-0 rounded-b-2xl`}>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
+                        className={`cursor-pointer ${skin.secondary} ${FOCUS}`}
                     >
                         Cancel
                     </button>
@@ -494,7 +496,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                         type="submit"
                         form="recruitment-form"
                         disabled={loading}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:opacity-50"
+                        className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                     >
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         {initialData?.id ? 'Update Request' : 'Add Post'}

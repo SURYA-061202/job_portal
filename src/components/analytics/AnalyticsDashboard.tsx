@@ -18,6 +18,7 @@ import {
 import { Loader2, Users, Briefcase, MapPin } from 'lucide-react';
 import CustomDropdown from '@/components/CustomDropdown';
 import { BRAND, CHART_COLORS } from '@/constants/colors';
+import { useSkin } from '@/styles/skin';
 
 // Lightness steps of the one brand orange (see constants/colors.ts)
 const COLORS = CHART_COLORS;
@@ -28,6 +29,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     const [loading, setLoading] = useState(true);
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedSkill, setSelectedSkill] = useState<string>('all');
+    const skin = useSkin();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -208,107 +210,121 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
 
     if (loading) {
         return (
-            <div className="flex h-96 items-center justify-center bg-surface">
+            <div className="flex h-96 items-center justify-center bg-muted">
                 <Loader2 className="w-8 h-8 animate-spin text-brand" />
             </div>
         );
     }
 
     return (
-        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="flex-1 flex flex-col min-h-0">
-                {/* Header Section - static, does not scroll */}
-                <div className="bg-surface p-4 rounded-lg border border-gray-200 mb-6 flex-shrink-0">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <h2 className="text-xl font-bold text-gray-900">Analytics</h2>
-                                <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+            <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
+                <div className="flex-1 flex flex-col min-h-0">
+                    {/* Header Section - static, does not scroll. Posts tab
+                        masthead recipe: brand wash over the whole header,
+                        title row (heading, count badge, stat chip) above a
+                        description row. */}
+                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                        {/* Title row */}
+                        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <h2 className={skin.heading}>Analytics</h2>
+                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                    <span
+                                        aria-hidden="true"
+                                        className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                                    />
                                     {totalCandidates} Candidates · {jobPosts.length} Posts
                                 </span>
+                                <span className={`hidden shrink-0 items-center gap-1.5 sm:inline-flex ${skin.statChip}`}>
+                                    <BarChart className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
+                                    {allDepartments.length} Departments
+                                </span>
                             </div>
-                            <p className="text-sm text-gray-500">Insights about candidates, departments, and skills</p>
+                        </div>
+
+                        {/* Description row */}
+                        <div className="px-4 py-2.5 sm:px-5">
+                            <p className={skin.body}>Insights about candidates, departments, and skills</p>
                         </div>
                     </div>
-                </div>
 
                 {/* Content - the only scrollable region */}
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2 space-y-6">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Users className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium">Candidates</p>
-                                <h3 className="text-xl font-bold text-gray-900">{totalCandidates}</h3>
+                                <p className="text-xs text-ink/60 font-medium">Candidates</p>
+                                <h3 className="text-xl font-bold text-ink">{totalCandidates}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium">Avg Experience</p>
-                                <h3 className="text-xl font-bold text-gray-900">{avgExperience} Yrs</h3>
+                                <p className="text-xs text-ink/60 font-medium">Avg Experience</p>
+                                <h3 className="text-xl font-bold text-ink">{avgExperience} Yrs</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <MapPin className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium">Top Location</p>
-                                <h3 className="text-lg font-bold text-gray-900 truncate max-w-[100px]">{locationData[0]?.name || 'N/A'}</h3>
+                                <p className="text-xs text-ink/60 font-medium">Top Location</p>
+                                <h3 className="text-lg font-bold text-ink truncate max-w-[100px]">{locationData[0]?.name || 'N/A'}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium">Job Posts</p>
-                                <h3 className="text-xl font-bold text-gray-900">{jobPosts.length}</h3>
+                                <p className="text-xs text-ink/60 font-medium">Job Posts</p>
+                                <h3 className="text-xl font-bold text-ink">{jobPosts.length}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-gray-100 flex items-center">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium">Departments</p>
-                                <h3 className="text-xl font-bold text-gray-900">{allDepartments.length}</h3>
+                                <p className="text-xs text-ink/60 font-medium">Departments</p>
+                                <h3 className="text-xl font-bold text-ink">{allDepartments.length}</h3>
                             </div>
                         </div>
                     </div>
 
                     {/* Experience & Location Side by Side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-surface p-4 sm:p-6 rounded-xl border border-gray-100">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Experience Distribution</h3>
+                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-xl hover:border-ink/40">
+                            <h3 className="text-lg font-semibold text-ink mb-4">Experience Distribution</h3>
                             <div className="h-56 sm:h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={experienceData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} cursor={{ fill: '#f3f4f6' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid #e5e5e5', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} cursor={{ fill: '#f5f5f5' }} />
                                         <Bar dataKey="value" fill={BRAND} radius={[4, 4, 0, 0]} barSize={40} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 sm:p-6 rounded-xl border border-gray-100">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Candidates by Location (Top 7)</h3>
+                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-xl hover:border-ink/40">
+                            <h3 className="text-lg font-semibold text-ink mb-4">Candidates by Location (Top 7)</h3>
                             <div className="h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={locationData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                         <XAxis type="number" hide />
                                         <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                                        <Tooltip cursor={{ fill: '#f3f4f6' }} />
-                                        <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={30} />
+                                        <Tooltip cursor={{ fill: '#f5f5f5' }} />
+                                        <Bar dataKey="value" fill={BRAND} radius={[0, 4, 4, 0]} barSize={30} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -318,9 +334,9 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                     {/* Department & Skills Distribution */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* Department Distribution */}
-                        <div className="bg-surface rounded-xl border border-gray-100 p-6">
+                        <div className="bg-surface rounded-2xl border border-border shadow-xl p-6 hover:border-ink/40">
                             <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-900">Department Distribution</h3>
+                                <h3 className="text-lg font-semibold text-ink">Department Distribution</h3>
                                 <CustomDropdown
                                     value={selectedDepartment}
                                     onChange={setSelectedDepartment}
@@ -334,7 +350,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                             {selectedDepartment === 'all' ? (
                                 <ResponsiveContainer width="100%" height={300}>
                                     <PieChart>
-                                        <Pie data={departmentData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} fill="#8884d8" paddingAngle={2} dataKey="value" label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false}>
+                                        <Pie data={departmentData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} fill={BRAND} paddingAngle={2} dataKey="value" label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false}>
                                             {departmentData.map((_entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
@@ -347,16 +363,16 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 departmentStats && (
                                     <div className="space-y-4 mt-6">
                                         <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                                            <div className="text-sm text-gray-600 mb-1">Total Job Posts</div>
+                                            <div className="text-sm text-ink/70 mb-1">Total Job Posts</div>
                                             <div className="text-2xl font-bold text-brand">{departmentStats.totalPosts}</div>
                                         </div>
                                         <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                                            <div className="text-sm text-gray-600 mb-1">Total Openings</div>
+                                            <div className="text-sm text-ink/70 mb-1">Total Openings</div>
                                             <div className="text-2xl font-bold text-brand">{departmentStats.totalOpenings}</div>
                                         </div>
-                                        <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
-                                            <div className="text-sm text-gray-600 mb-1">Salary Ranges</div>
-                                            <div className="text-sm font-medium text-gray-700">{departmentStats.avgSalary}</div>
+                                        <div className="bg-muted border border-border rounded-lg p-4">
+                                            <div className="text-sm text-ink/70 mb-1">Salary Ranges</div>
+                                            <div className="text-sm font-medium text-ink/80">{departmentStats.avgSalary}</div>
                                         </div>
                                     </div>
                                 )
@@ -364,9 +380,9 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         </div>
 
                         {/* Skills Distribution */}
-                        <div className="bg-surface rounded-xl border border-gray-100 p-6">
+                        <div className="bg-surface rounded-2xl border border-border shadow-xl p-6 hover:border-ink/40">
                             <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-900">Skills Distribution</h3>
+                                <h3 className="text-lg font-semibold text-ink">Skills Distribution</h3>
                                 <CustomDropdown
                                     value={selectedSkill}
                                     onChange={setSelectedSkill}
@@ -380,7 +396,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                             {selectedSkill === 'all' ? (
                                 <ResponsiveContainer width="100%" height={300}>
                                     <PieChart>
-                                        <Pie data={skillsData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false}>
+                                        <Pie data={skillsData} cx="50%" cy="50%" outerRadius={100} fill={BRAND} dataKey="value" label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false}>
                                             {skillsData.map((_entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
@@ -393,14 +409,14 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 skillStats && (
                                     <div className="space-y-4 mt-6">
                                         <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                                            <div className="text-sm text-gray-600 mb-1">Job Posts Requiring This Skill</div>
+                                            <div className="text-sm text-ink/70 mb-1">Job Posts Requiring This Skill</div>
                                             <div className="text-2xl font-bold text-brand">{skillStats.totalPosts}</div>
                                         </div>
                                         <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
-                                            <div className="text-sm text-gray-600 mb-1">Departments</div>
+                                            <div className="text-sm text-ink/70 mb-1">Departments</div>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {skillStats.departments.map((dept) => (
-                                                    <span key={dept} className="px-2 py-1 bg-surface border border-brand/30 text-brand text-xs font-medium rounded">
+                                                    <span key={dept} className="px-2 py-1 bg-brand/10 border border-brand/20 text-brand text-xs font-medium rounded-full">
                                                         {dept}
                                                     </span>
                                                 ))}

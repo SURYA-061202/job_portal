@@ -6,14 +6,17 @@ import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion
 import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
 import UserJobCard from '@/components/recruitment/UserJobCard';
-import { Loader2, Award, ChevronLeft, Sparkles } from 'lucide-react';
+import { Award, ChevronLeft, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSkin, FOCUS } from '@/styles/skin';
+import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 
 export default function MatchingJobs() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
     const navigate = useNavigate();
+    const skin = useSkin();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -90,7 +93,7 @@ export default function MatchingJobs() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Poppins", sans-serif' }}>
+        <div className={`min-h-screen ${skin.canvas} flex flex-col`}>
             <UserHeader />
 
             <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -98,7 +101,7 @@ export default function MatchingJobs() {
                 <div className="mb-8">
                     <button 
                         onClick={() => navigate('/home?tab=profile')}
-                        className="inline-flex items-center gap-2.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:border-brand/30 hover:text-brand hover:bg-brand/5 transition-all group shadow-sm"
+                        className={`inline-flex items-center gap-2.5 ${skin.secondary} ${FOCUS} group`}
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                         Back to Profile
@@ -107,31 +110,28 @@ export default function MatchingJobs() {
 
                 {/* Page Title */}
                 <div className="mb-10 text-center sm:text-left">
-                    <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+                    <h1 className={skin.heading}>
                         Your <span className="text-brand">Matching</span> Jobs
                     </h1>
-                    <p className="text-gray-500 mt-2 max-w-2xl">
+                    <p className="text-ink/60 mt-2 max-w-2xl">
                         We've analyzed your profile and found these roles that perfectly align with your skills and experience.
                     </p>
                 </div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-                        <Loader2 className="w-12 h-12 text-brand animate-spin mb-4" />
-                        <p className="text-gray-500 font-bold">Analyzing matches...</p>
-                    </div>
+                    <JobListSkeleton count={3} />
                 ) : posts.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
-                        <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Award className="w-8 h-8 text-gray-400" />
+                    <div className={`text-center py-20 border border-dashed ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+                        <div className={`${skin.stateIcon} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                            <Award className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No strong matches yet</h3>
-                        <p className="text-gray-500 max-w-sm mx-auto mb-8">
+                        <h3 className={`${skin.emptyTitle} mb-2`}>No strong matches yet</h3>
+                        <p className={`${skin.body} max-w-sm mx-auto mb-8`}>
                             Complete your profile details or add more skills to find roles tailored to your expertise.
                         </p>
                         <button 
                             onClick={() => navigate('/home?tab=profile')}
-                            className="inline-flex items-center px-8 py-3 bg-brand text-white font-bold rounded-2xl hover:bg-brand/90 transition-all shadow-lg shadow-brand/30"
+                            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS}`}
                         >
                             Update Profile
                         </button>
@@ -144,9 +144,9 @@ export default function MatchingJobs() {
                                 <div key={post.id} className="relative group">
                                     {/* Score Indicator Overlay */}
                                     <div className="absolute top-4 right-4 z-10 hidden md:block">
-                                        <div className="bg-white/80 backdrop-blur-sm border border-emerald-100 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-xs font-bold text-emerald-700">{score}% Match</span>
+                                        <div className={`bg-white/80 backdrop-blur-sm border border-brand/20 px-3 py-1.5 ${skin.radius} flex items-center gap-2 shadow-sm`}>
+                                            <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                                            <span className="text-xs font-bold text-brand">{score}% Match</span>
                                         </div>
                                     </div>
 
@@ -158,7 +158,7 @@ export default function MatchingJobs() {
                                     />
                                     
                                     {/* Mobile Score Badge */}
-                                    <div className="md:hidden mt-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold border border-emerald-100 inline-flex items-center gap-1.5">
+                                    <div className={`md:hidden mt-2 px-4 py-1.5 bg-brand/10 text-brand ${skin.radius} text-[10px] font-bold border border-brand/20 inline-flex items-center gap-1.5`}>
                                         <Sparkles className="w-3 h-3" />
                                         Tailored Match: {score}%
                                     </div>

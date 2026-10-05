@@ -7,6 +7,7 @@ import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { sendManagerInvite } from '@/lib/emailFunctions';
 import toast from 'react-hot-toast';
 import { createManagerInviteNotification } from '@/lib/notificationHelper';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface UserData {
     id: string;
@@ -34,6 +35,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         companyName: ''
     });
     const [addingMember, setAddingMember] = useState(false);
+    const skin = useSkin();
 
     useEffect(() => {
         fetchMembers();
@@ -136,44 +138,49 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
     }
 
     return (
-        <div className="space-y-6 flex-1 flex flex-col">
-            {/* Header Section - Similar to Job Posts */}
-            <div className="bg-surface p-4 rounded-xl border border-gray-200">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    {/* Title and Description */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h2 className="text-xl font-bold text-gray-900">Team Members</h2>
-                            <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
-                                {members.length}
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-500">Manage your recruitment team and assign manager roles</p>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col`}>
+            {/* Header - Posts masthead recipe: brand-washed title row (heading +
+                count badge, search + Add Recruiters at the right end) over a
+                description row. */}
+            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h2 className={skin.heading}>Team Members</h2>
+                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                            <span
+                                aria-hidden="true"
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                            />
+                            {members.length}
+                        </span>
                     </div>
 
-                    {/* Search and Add Button Controls */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:flex-1 md:flex-initial md:w-auto">
-                        <div className="relative flex-1 sm:w-64 md:w-72">
+                    <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
+                        <div className="relative w-full sm:w-72">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400" />
+                                <Search className="h-4 w-4 text-ink/40" />
                             </div>
                             <input
                                 type="text"
                                 placeholder="Search members..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
+                                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
                             />
                         </div>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-gradient text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-brand/20 active:scale-95 transition-all whitespace-nowrap"
+                            className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${skin.cta} ${FOCUS}`}
                         >
                             <UserPlus className="w-4 h-4" />
                             <span className="hidden sm:inline">Add Recruiters</span>
                             <span className="sm:hidden">Add Member</span>
                         </button>
                     </div>
+                </div>
+
+                <div className="px-4 py-2.5 sm:px-5">
+                    <p className={skin.body}>Manage your recruitment team and assign manager roles</p>
                 </div>
             </div>
 
@@ -183,29 +190,29 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                     <div
                         key={member.id}
                         onClick={() => onViewMember?.(member.id)}
-                        className="bg-surface p-6 rounded-xl border border-gray-200 hover:border-brand transition-all duration-200 group cursor-pointer"
+                        className={`p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} group cursor-pointer ${FOCUS}`}
                     >
                         {/* Avatar */}
                         <div className="flex flex-col items-center mb-4">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
+                            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
                                 {member.firstName?.[0]}{member.lastName?.[0]}
                             </div>
                         </div>
 
                         {/* Name and Department */}
                         <div className="text-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">{member.firstName} {member.lastName}</h3>
-                            <p className="text-sm text-gray-500">{member.department || 'No Department'}</p>
+                            <h3 className={`${skin.cardTitle} mb-1`}>{member.firstName} {member.lastName}</h3>
+                            <p className="text-sm text-ink/60">{member.department || 'No Department'}</p>
                         </div>
 
                         {/* Contact Info */}
                         <div className="space-y-2">
-                            <div className="flex items-center justify-center text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 group-hover:bg-gray-100 transition-colors">
-                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0 mr-2" />
+                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border ${skin.edge} ${skin.canvas} ${skin.radius} group-hover:bg-ink/5`}>
+                                <Mail className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
                                 <span className="truncate" title={member.email}>{member.email}</span>
                             </div>
-                            <div className="flex items-center justify-center text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 group-hover:bg-gray-100 transition-colors">
-                                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0 mr-2" />
+                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border ${skin.edge} ${skin.canvas} ${skin.radius} group-hover:bg-ink/5`}>
+                                <Phone className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
                                 <span>{member.mobile || 'N/A'}</span>
                             </div>
                         </div>
@@ -215,62 +222,62 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-surface rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Member</h3>
+                    <div className={`w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+                        <h3 className={`${skin.heading} mb-6`}>Add New Member</h3>
 
                         <form onSubmit={handleAddMember} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">First Name</label>
+                                    <label className="block text-xs font-bold text-ink/80 mb-1">First Name</label>
                                     <input
                                         required
                                         type="text"
                                         value={formData.firstName}
                                         onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                        className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                        className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Last Name</label>
+                                    <label className="block text-xs font-bold text-ink/80 mb-1">Last Name</label>
                                     <input
                                         required
                                         type="text"
                                         value={formData.lastName}
                                         onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                        className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                        className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Email Address</label>
                                 <input
                                     required
                                     type="email"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Mobile Number</label>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Mobile Number</label>
                                 <input
                                     required
                                     type="tel"
                                     value={formData.mobile}
                                     onChange={e => setFormData({ ...formData, mobile: e.target.value })}
-                                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Department</label>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Department</label>
                                 <select
                                     required
                                     value={formData.department}
                                     onChange={e => setFormData({ ...formData, department: e.target.value })}
-                                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                 >
                                     <option value="">Select Department</option>
                                     <option value="IT">IT</option>
@@ -282,14 +289,14 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Company Name</label>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Company Name</label>
                                 <input
                                     required
                                     type="text"
                                     value={formData.companyName}
                                     placeholder="Enter company name"
                                     onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
                                 />
                             </div>
 
@@ -297,14 +304,14 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-2.5 text-gray-700 font-bold bg-surface border border-gray-300 hover:bg-gray-50 rounded-lg transition-all"
+                                    className={`flex-1 cursor-pointer ${skin.secondary} ${FOCUS}`}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={addingMember}
-                                    className="flex-1 py-2.5 text-white font-bold bg-orange-gradient hover:opacity-90 rounded-lg transition-all shadow-lg shadow-brand/20 disabled:opacity-50"
+                                    className={`flex-1 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                                 >
                                     {addingMember ? 'Adding...' : 'Add Member'}
                                 </button>

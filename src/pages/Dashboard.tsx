@@ -17,6 +17,7 @@ import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
 import AssessmentsTab from '@/components/tabs/AssessmentsTab';
 import { Menu, X } from 'lucide-react';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const skin = useSkin();
 
   useEffect(() => {
     if (location.state && (location.state as any).activeTab) {
@@ -184,17 +186,17 @@ export default function Dashboard() {
   const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected';
 
   return (
-    <div className="flex h-screen bg-white relative">
+    <div className={`flex h-screen ${skin.canvas} relative`}>
       {/* Mobile Hamburger Menu Button */}
       <button
         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-surface p-2.5 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        className={`md:hidden fixed top-4 left-4 z-50 ${skin.surface} p-2.5 ${skin.radius} ${skin.shadow} border ${skin.edge} hover:bg-ink/5 transition-colors ${FOCUS}`}
         aria-label="Toggle menu"
       >
         {isMobileSidebarOpen ? (
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-6 h-6 text-ink" />
         ) : (
-          <Menu className="w-6 h-6 text-gray-700" />
+          <Menu className="w-6 h-6 text-ink" />
         )}
       </button>
 

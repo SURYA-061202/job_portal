@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Briefcase, MapPin, Search } from "lucide-react";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
+import { useSkin, FOCUS } from "@/styles/skin";
 
 const normalizeSkills = (skills: any): string[] => {
   if (!skills) return [];
@@ -24,6 +25,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [search, setSearch] = useState("");
   const [postSearch, setPostSearch] = useState("");
+  const skin = useSkin();
 
   const loadCandidates = async () => {
     try {
@@ -206,34 +208,50 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   if (!selectedPostView) {
     return (
-    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
-      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-900">Shortlisted</h2>
-          <p className="text-sm text-gray-500">Select a job post to view its shortlisted candidates.</p>
-        </div>
-        <div className="relative w-48 sm:w-56">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-brand" />
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
+      {/* Header - Posts masthead recipe: brand-washed title row (heading +
+          count badge, search at the right end) over a description row. */}
+      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h2 className={skin.heading}>Shortlisted</h2>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+              />
+              {postsWithCounts.length}
+            </span>
           </div>
-          <input
-            type="text"
-            placeholder="Search posts..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
-            value={postSearch}
-            onChange={(e) => setPostSearch(e.target.value)}
-          />
+
+          <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
+            <div className="relative w-full sm:w-56">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-ink/40" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search posts..."
+                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
+                value={postSearch}
+                onChange={(e) => setPostSearch(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>Select a job post to view its shortlisted candidates.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500 flex-1 flex items-center justify-center">Loading…</div>
+        <div className="text-center py-12 text-ink/60 flex-1 flex items-center justify-center">Loading…</div>
       ) : postsWithCounts.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-dashed border-gray-300 p-12 text-center flex-1 flex items-center justify-center">
+        <div className={`border border-dashed ${skin.edge} ${skin.surface} ${skin.radius} p-12 text-center flex-1 flex items-center justify-center`}>
           <div>
-            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No shortlisted candidates yet</h3>
-            <p className="mt-1 text-gray-500">Candidates you shortlist for your posts will appear here.</p>
+            <h3 className={skin.emptyTitle}>No shortlisted candidates yet</h3>
+            <p className={`mt-1 ${skin.body}`}>Candidates you shortlist for your posts will appear here.</p>
           </div>
         </div>
         ) : (
@@ -242,30 +260,30 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
               <div
                 key={post.id}
                 onClick={() => setSelectedPostView(post)}
-              className="group relative bg-surface rounded-lg border border-gray-200 hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full p-4 sm:p-6"
+              className={`group relative border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} cursor-pointer overflow-hidden flex flex-col h-full p-4 sm:p-6 ${FOCUS}`}
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">{post.jobTitle}</h3>
+                  <h3 className={`${skin.cardTitle} line-clamp-2`}>{post.jobTitle}</h3>
                   {post.positionLevel && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200 whitespace-nowrap">
+                    <span className={`inline-flex items-center whitespace-nowrap ${skin.chip}`}>
                       {post.positionLevel}
                     </span>
                   )}
                 </div>
                 {post.department && (
-                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                  <div className={`flex items-center ${skin.meta} mb-3`}>
                     <Briefcase className="w-3.5 h-3.5 mr-1.5" />
                     {post.department}
                   </div>
                 )}
                 {post.location && (
-                  <div className="flex items-center text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                  <div className={`flex items-center ${skin.meta} mb-3`}>
                     <MapPin className="w-3.5 h-3.5 mr-1.5" />
                     {post.location}
                   </div>
                 )}
-                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-700">
+                <div className={`mt-3 pt-3 border-t ${skin.edge} flex items-center justify-between`}>
+                  <span className={skin.count}>
                     {post.shortlistedCount} Shortlisted
                   </span>
                 </div>
@@ -289,6 +307,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         title={`Shortlisted — ${selectedPostView.jobTitle}`}
         onBack={() => { setSelectedPostView(null); setSearch(''); }}
         hideRole
+        hideEmptyIcon
       />
     </div>
   );
@@ -311,6 +330,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
 
   const candidateId = candidate.id;
   const candidatePostId = (candidate as any).postId as string | undefined;
+  const skin = useSkin();
 
   useEffect(() => {
     const loadInterview = async () => {
@@ -390,29 +410,29 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
 
   return (
     <div className="space-y-6">
-      <div className="bg-surface rounded-lg shadow overflow-x-auto">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-start gap-3">
+      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto`}>
+        <div className={`px-6 py-4 border-b ${skin.edge} flex items-start gap-3`}>
           <button
             onClick={onBack}
-            className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors flex-shrink-0"
+            className={`p-1.5 -ml-1.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors flex-shrink-0 ${FOCUS}`}
             title="Back to list"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-bold text-gray-900">{candidate.name}</h2>
+              <h2 className={skin.heading}>{candidate.name}</h2>
               {postTitle && (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
                   {postTitle}
                 </span>
               )}
             </div>
-            <p className="text-gray-600 text-sm mt-0.5">
+            <p className={`${skin.meta} mt-0.5`}>
               {candidate.email}
               {candidate.phone && (
                 <>
-                  <span className="mx-2 text-gray-400">•</span>
+                  <span className="mx-2 text-ink/40">•</span>
                   {candidate.phone}
                 </>
               )}
@@ -423,20 +443,20 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
         <div className="p-6 space-y-4">
         <div className="overflow-x-auto">
           <table className="table-fixed w-auto text-sm">
-            <tbody className="divide-y divide-gray-100">
+            <tbody className={`divide-y ${skin.divide}`}>
               <tr>
-                <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Role</th>
-                <td className="px-4 py-3 text-gray-800">{candidate.role}</td>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Role</th>
+                <td className="px-4 py-3 text-ink/80">{candidate.role}</td>
               </tr>
               <tr>
-                <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Selected Date</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Selected Date</th>
                 <td className="px-4 py-3">
                   {selectedDate && response === 'accept' ? (
-                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
+                    <span className="flex items-center text-ink/80"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
                   ) : response && response !== 'accept' ? (
-                    <span className="text-red-600">Candidate responded "{response}"</span>
+                    <span className="text-destructive">Candidate responded "{response}"</span>
                   ) : (
-                    <span className="text-red-600">Awaiting candidate response</span>
+                    <span className="text-destructive">Awaiting candidate response</span>
                   )}
                 </td>
               </tr>
@@ -448,41 +468,41 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
         {details && details.dateOfJoining ? (
           <div className="overflow-x-auto mt-4">
             <table className="table-fixed w-auto text-sm">
-              <tbody className="divide-y divide-gray-100">
+              <tbody className={`divide-y ${skin.divide}`}>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Date of Joining</th>
-                  <td className="px-4 py-3 text-gray-800">{details.dateOfJoining}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Date of Joining</th>
+                  <td className="px-4 py-3 text-ink/80">{details.dateOfJoining}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Current Salary</th>
-                  <td className="px-4 py-3 text-gray-800">{details.currentSalary || '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Current Salary</th>
+                  <td className="px-4 py-3 text-ink/80">{details.currentSalary || '-'}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Expected Salary</th>
-                  <td className="px-4 py-3 text-gray-800">{details.expectedSalary ? `${details.expectedSalary} / ${details.expectedSalaryPeriod}` : '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Expected Salary</th>
+                  <td className="px-4 py-3 text-ink/80">{details.expectedSalary ? `${details.expectedSalary} / ${details.expectedSalaryPeriod}` : '-'}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Years of Experience</th>
-                  <td className="px-4 py-3 text-gray-800">{details.yearsExperience || '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Years of Experience</th>
+                  <td className="px-4 py-3 text-ink/80">{details.yearsExperience || '-'}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Experience In</th>
-                  <td className="px-4 py-3 text-gray-800">{details.experienceIn || '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Experience In</th>
+                  <td className="px-4 py-3 text-ink/80">{details.experienceIn || '-'}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Ready to Relocate</th>
-                  <td className="px-4 py-3 text-gray-800">{details.readyToRelocate || '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Ready to Relocate</th>
+                  <td className="px-4 py-3 text-ink/80">{details.readyToRelocate || '-'}</td>
                 </tr>
                 <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-gray-600">Laptop</th>
-                  <td className="px-4 py-3 text-gray-800">{details.laptop || '-'}</td>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Laptop</th>
+                  <td className="px-4 py-3 text-ink/80">{details.laptop || '-'}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         ) : (
           response === 'accept' && (
-            <p className="mt-6 text-red-600">Awaiting candidate details</p>
+            <p className="mt-6 text-destructive">Awaiting candidate details</p>
           )
         )}
 
@@ -494,12 +514,12 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
                 value={roundName}
                 onChange={(e) => setRoundName(e.target.value)}
                 placeholder="Round name (e.g. Technical)"
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className={`px-3 py-2 ${skin.field} ${FOCUS}`}
               />
               <button
                 disabled={moveLoading}
                 onClick={moveToRound1}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
               >
                 {moveLoading ? 'Moving…' : 'Move to Round1'}
               </button>

@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { sendCongratulationsMail } from "@/lib/emailFunctions";
 import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
+import { useSkin, FOCUS } from "@/styles/skin";
 
 const normalizeSkills = (skills: any): string[] => {
   if (!skills) return [];
@@ -19,6 +20,7 @@ const normalizeSkills = (skills: any): string[] => {
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<boolean>(false);
+  const skin = useSkin();
 
   useEffect(() => {
     const fetchInterviewDetails = async () => {
@@ -53,14 +55,14 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
   return (
     <div className="space-y-6">
-      <button onClick={onBack} className="flex items-center space-x-2 text-brand hover:text-gray-900">
+      <button onClick={onBack} className={`flex items-center space-x-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} ${FOCUS}`}>
         <ArrowLeft className="h-5 w-5" />
         <span>Back to List</span>
       </button>
 
-      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-        <table className="min-w-full divide-y divide-brand/20 text-sm">
+      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto p-6 space-y-4`}>
+        <h2 className={skin.heading}>{candidate.name}</h2>
+        <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
           <thead className="bg-brand/5">
             <tr>
               <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Email</th>
@@ -69,11 +71,11 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
               <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Action</th>
             </tr>
           </thead>
-          <tbody className="bg-surface divide-y divide-brand/20">
+          <tbody className={`${skin.surface} divide-y ${skin.divide}`}>
             <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.phone || '-'}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.role}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.email}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.phone || '-'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.role}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <button
                   disabled={sending || sent}
@@ -115,10 +117,10 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                       setSending(false);
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                  className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
                 >
                   {sending && (
-                    <svg className="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3 w-3 text-surface" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
@@ -136,6 +138,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
 export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
   const status: string = (candidate as any).status || '';
+  const skin = useSkin();
   let rejectedRound: string | null = null;
   const match = status.match(/round(\d+)rejected/);
   if (match) {
@@ -144,14 +147,14 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
   return (
     <div className="space-y-6">
-      <button onClick={onBack} className="flex items-center space-x-2 text-brand hover:text-gray-900">
+      <button onClick={onBack} className={`flex items-center space-x-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} ${FOCUS}`}>
         <ArrowLeft className="h-5 w-5" />
         <span>Back to List</span>
       </button>
 
-      <div className="bg-surface rounded-lg shadow overflow-x-auto p-6 space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-        <table className="min-w-full divide-y divide-brand/20 text-sm">
+      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto p-6 space-y-4`}>
+        <h2 className={skin.heading}>{candidate.name}</h2>
+        <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
           <thead className="bg-brand/5">
             <tr>
               <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Email</th>
@@ -160,12 +163,12 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
               <th className="px-6 py-3 text-left font-medium text-brand uppercase tracking-wider">Rejected In</th>
             </tr>
           </thead>
-          <tbody className="bg-surface divide-y divide-brand/20">
+          <tbody className={`${skin.surface} divide-y ${skin.divide}`}>
             <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.phone || '-'}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{candidate.role}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{rejectedRound || '-'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.email}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.phone || '-'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{candidate.role}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-ink/80">{rejectedRound || '-'}</td>
             </tr>
           </tbody>
         </table>
@@ -180,6 +183,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<'selected' | 'rejected'>('selected');
+  const skin = useSkin();
 
   useEffect(() => {
     const load = async () => {
@@ -313,7 +317,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   }
 
   return (
-    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
       <CandidateList
         candidates={filtered}
         onSelectCandidate={setSelected}
@@ -322,6 +326,12 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         onSearchTermChange={setSearch}
         emptyMessage="No candidates found."
         title={view === 'selected' ? 'Selected Candidates' : 'Rejected Candidates'}
+        description={
+          view === 'selected'
+            ? 'Candidates who cleared all interview rounds and were selected for the role.'
+            : 'Candidates who were rejected during the hiring process.'
+        }
+        hideEmptyIcon
         filterValue={view}
         filterOptions={[
           { value: 'selected', label: 'Selected Candidates' },

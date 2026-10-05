@@ -7,6 +7,7 @@ import { setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+import { useSkin, FOCUS } from '@/styles/skin';
 
 interface Props {
   candidate: Candidate;
@@ -33,6 +34,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const [editExpSal, setEditExpSal] = useState(false);
   const [editJoinDate, setEditJoinDate] = useState(false);
   const [editFeedback, setEditFeedback] = useState(false);
+  const skin = useSkin();
 
   useEffect(() => {
     const fetchInterview = async () => {
@@ -239,23 +241,23 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   return (
     <div className="space-y-6">
       <button
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+        className={`flex items-center space-x-2 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
         onClick={onBack}
       >
         <ArrowLeft className="h-5 w-5" />
         <span>Back to List</span>
       </button>
 
-      <div className="bg-surface rounded-lg shadow p-6 space-y-6">
+      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 space-y-6`}>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-            <p className="text-gray-600 text-sm">
+            <h2 className={skin.heading}>{candidate.name}</h2>
+            <p className="text-ink/70 text-sm">
               {candidate.email}
               {candidate.phone && (
                 <>
-                  <span className="mx-2 text-gray-400">•</span>
+                  <span className="mx-2 text-ink/60">•</span>
                   {candidate.phone}
                 </>
               )}
@@ -265,51 +267,51 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
 
         {/* Interview info table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <tbody className="divide-y divide-gray-100">
+          <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
+            <tbody className={`divide-y ${skin.divide}`}>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 w-48">Round</th>
-                <td className="px-4 py-3 text-gray-800 capitalize">{status || 'Not started'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60 w-48">Round</th>
+                <td className="px-4 py-3 text-ink/80 capitalize">{status || 'Not started'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Round Type</th>
-                <td className="px-4 py-3 text-gray-800">{displayedRoundType}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Round Type</th>
+                <td className="px-4 py-3 text-ink/80">{displayedRoundType}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Interview Role</th>
-                <td className="px-4 py-3 text-gray-800">{interview.role || '-'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Interview Role</th>
+                <td className="px-4 py-3 text-ink/80">{interview.role || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Interviewers</th>
-                <td className="px-4 py-3 text-gray-800">{Array.isArray(interview.interviewers) && interview.interviewers.length ? interview.interviewers.join(', ') : '-'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Interviewers</th>
+                <td className="px-4 py-3 text-ink/80">{Array.isArray(interview.interviewers) && interview.interviewers.length ? interview.interviewers.join(', ') : '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Proposed Dates</th>
-                <td className="px-4 py-3 text-gray-800">
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Proposed Dates</th>
+                <td className="px-4 py-3 text-ink/80">
                   {Array.isArray(interview.dates) && interview.dates.length ? interview.dates.join(', ') : '-'}
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Selected Date</th>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Selected Date</th>
                 <td className="px-4 py-3">
                   {selectedDate && response === 'accept' ? (
-                    <span className="flex items-center text-gray-800"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
+                    <span className="flex items-center text-ink/80"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
                   ) : response && response !== 'accept' ? (
-                    <span className="text-red-600">Candidate responded "{response}"</span>
+                    <span className="text-destructive">Candidate responded "{response}"</span>
                   ) : (
-                    <span className="text-red-600">Awaiting candidate response</span>
+                    <span className="text-destructive">Awaiting candidate response</span>
                   )}
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Current Salary</th>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Current Salary</th>
                 <td className="px-4 py-3">
                   {editCurSal ? (
                     <input type="number" value={currentSalary}
                       onChange={e => setCurrentSalary(parseInt(e.target.value) || 0)}
                       onBlur={() => setEditCurSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+                      className={`px-2 py-1 w-32 ${skin.field} ${FOCUS}`} />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditCurSal(true)}>
                       ₹ {currentSalary.toLocaleString()}
@@ -318,14 +320,14 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Expected Salary</th>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Expected Salary</th>
                 <td className="px-4 py-3">
                   {editExpSal ? (
                     <input type="number" value={expectedSalary}
                       onChange={e => setExpectedSalary(parseInt(e.target.value) || 0)}
                       onBlur={() => setEditExpSal(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 w-32 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+                      className={`px-2 py-1 w-32 ${skin.field} ${FOCUS}`} />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditExpSal(true)}>
                       ₹ {expectedSalary.toLocaleString()}
@@ -334,44 +336,44 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Date of Joining</th>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Date of Joining</th>
                 <td className="px-4 py-3">
                   {editJoinDate ? (
                     <input type="date" value={joiningDate}
                       onChange={e => setJoiningDate(e.target.value)}
                       onBlur={() => setEditJoinDate(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+                      className={`px-2 py-1 ${skin.field} ${FOCUS}`} />
                   ) : (
                     <span className="cursor-pointer" onClick={() => setEditJoinDate(true)}>{joiningDate}</span>
                   )}
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Years of Experience</th>
-                <td className="px-4 py-3 text-gray-800">{yearsExperience || '-'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Years of Experience</th>
+                <td className="px-4 py-3 text-ink/80">{yearsExperience || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Experience In</th>
-                <td className="px-4 py-3 text-gray-800">{experienceIn || '-'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Experience In</th>
+                <td className="px-4 py-3 text-ink/80">{experienceIn || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Ready to Relocate</th>
-                <td className="px-4 py-3 text-gray-800">{readyRelocate || '-'}</td>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Ready to Relocate</th>
+                <td className="px-4 py-3 text-ink/80">{readyRelocate || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Feedback</th>
+                <th className="px-4 py-3 text-left font-medium text-ink/60">Feedback</th>
                 <td className="px-4 py-3">
                   {editFeedback ? (
                     <input type="text" value={feedback}
                       onChange={e => setFeedback(e.target.value)}
                       onBlur={() => setEditFeedback(false)}
                       autoFocus
-                      className="border rounded px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-brand" />
+                      className={`px-2 py-1 w-full max-w-xs ${skin.field} ${FOCUS}`} />
                   ) : (
                     <span className="cursor-pointer inline-flex items-center space-x-1 hover:text-brand" onClick={() => setEditFeedback(true)}>
                       <span>{feedback}</span>
-                      <Pencil className="h-3.5 w-3.5 text-gray-400" />
+                      <Pencil className="h-3.5 w-3.5 text-ink/60" />
                     </span>
                   )}
                 </td>
@@ -382,21 +384,21 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
 
         {/* Round Name Input + Actions */}
         {isRound && !isSelected && (
-          <div className="border-t border-gray-200 pt-6">
+          <div className={`border-t ${skin.edge} pt-6`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Round Name:</label>
+              <label className="text-sm font-medium text-ink/80 whitespace-nowrap">Round Name:</label>
               <input
                 type="text"
                 value={roundName}
                 onChange={(e) => setRoundName(e.target.value)}
                 placeholder="e.g. Technical, HR, Manager Round"
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand w-full sm:w-56"
+                className={`px-3 py-2 w-full sm:w-56 ${skin.field} ${FOCUS}`}
               />
               {nextRound && (
                 <button
                   onClick={moveToNextRound}
                   disabled={moving || !roundName.trim()}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {moving ? 'Moving...' : `Move to ${nextRound.replace(/^round/, 'Round ')}`}
                   <ChevronRight className="h-4 w-4" />
@@ -405,7 +407,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
               <button
                 onClick={handleSelect}
                 disabled={moving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-brand hover:bg-brand shadow disabled:opacity-50"
+                className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
               >
                 <Check className="h-4 w-4" />
                 Select
@@ -414,7 +416,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 type="button"
                 onClick={handleReject}
                 disabled={moving}
-                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium shadow disabled:opacity-50"
+                className={`inline-flex items-center px-4 py-2 border border-destructive bg-destructive text-white ${skin.radius} hover:opacity-90 text-sm font-medium disabled:opacity-50 ${FOCUS}`}
               >
                 <XCircle className="h-5 w-5 mr-2" /> Reject
               </button>

@@ -88,7 +88,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-brand/10">
+    <div className="min-h-screen flex relative overflow-hidden bg-muted">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -120,8 +120,8 @@ export default function LoginPage() {
               }
             `}
           </style>
-          <h1 className="text-xl font-bold drop-shadow-lg text-white">
-            {'Indian Infra Jobs'.split('').map((char, i) => (
+          <h1 className="text-xl font-bold drop-shadow-lg text-surface">
+            {'IndianInfra Jobs'.split('').map((char, i) => (
               <span
                 key={i}
                 style={{
@@ -136,16 +136,16 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden bg-gray-50/50">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden bg-muted/50">
         {/* Rich Glow & Pattern Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
 
           {/* Top Right Vibrant Glow (Orange/Pink) */}
-          <div className="absolute -top-[30%] -right-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-br from-brand/30 to-brand/10 blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute -top-[30%] -right-[10%] w-[40%] h-[80%] rounded-full bg-brand/10 blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
           
           {/* Bottom Left Vibrant Glow (Blue/Primary) */}
-          <div className="absolute -bottom-[30%] -left-[10%] w-[40%] h-[80%] rounded-full bg-gradient-to-tr from-brand/10 to-brand/30 blur-3xl opacity-70"></div>
+          <div className="absolute -bottom-[30%] -left-[10%] w-[40%] h-[80%] rounded-full bg-brand/10 blur-3xl opacity-70"></div>
           
           {/* Middle Floating Accent */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-brand/10 blur-3xl opacity-50"></div>
@@ -157,10 +157,10 @@ export default function LoginPage() {
             <div className="flex items-center gap-2 font-outfit text-3xl font-black tracking-tighter pr-1">
               <img
                 src="/images/indianinfra.png"
-                alt="Indian Infra Logo"
+                alt="IndianInfra Logo"
                 className="h-10 w-auto object-contain"
               />
-              <span className="text-gray-800">Indian Infra</span>
+              <span className="text-ink">IndianInfra</span>
               <span className="text-brand">
                 Jobs
               </span>
@@ -168,16 +168,16 @@ export default function LoginPage() {
           </div>
 
           {/* Form Card */}
-          <div className="backdrop-blur-xl bg-white/95 rounded-3xl shadow-lg border border-gray-100 p-8 sm:p-10">
+          <div className="bg-surface rounded-2xl border border-border shadow-xl p-8 sm:p-10">
             <div className="text-center mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1.5 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-1.5 tracking-tight">
                 {isLogin ? (
                   <>Welcome <span className="text-brand">Back</span></>
                 ) : (
                   <>Join <span className="text-brand">Us</span></>
                 )}
               </h2>
-              <p className="text-gray-500 text-sm font-medium">
+              <p className="text-ink/60 text-sm font-medium">
                 {isLogin ? 'Sign in to continue' : 'Create your account to get started'}
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function LoginPage() {
                     <input
                       type="text"
                       id="firstName"
-                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                       placeholder=" "
                       required
                       value={firstName}
@@ -198,19 +198,19 @@ export default function LoginPage() {
                     />
                     <label
                       htmlFor="firstName"
-                      className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                      className="absolute left-3 -top-2.5 bg-surface px-1 text-xs text-ink/60 transition-colors duration-200 pointer-events-none
                                peer-focus:text-brand"
                     >
                       First Name
                     </label>
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40 peer-focus:text-brand transition-colors" />
                   </div>
                   {/* Last Name */}
                   <div className="relative group">
                     <input
                       type="text"
                       id="lastName"
-                      className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                      className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                       placeholder=" "
                       required
                       value={lastName}
@@ -218,12 +218,12 @@ export default function LoginPage() {
                     />
                     <label
                       htmlFor="lastName"
-                      className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                      className="absolute left-3 -top-2.5 bg-surface px-1 text-xs text-ink/60 transition-colors duration-200 pointer-events-none
                                peer-focus:text-brand"
                     >
                       Last Name
                     </label>
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
+                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40 peer-focus:text-brand transition-colors" />
                   </div>
                 </div>
               )}
@@ -234,7 +234,7 @@ export default function LoginPage() {
                   <input
                     type="tel"
                     id="mobile"
-                    className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                    className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                     placeholder=" "
                     required
                     value={mobile}
@@ -242,12 +242,12 @@ export default function LoginPage() {
                   />
                   <label
                     htmlFor="mobile"
-                    className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                    className="absolute left-3 -top-2.5 bg-surface px-1 text-xs text-ink/60 transition-colors duration-200 pointer-events-none
                              peer-focus:text-brand"
                   >
                     Mobile Number
                   </label>
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40 peer-focus:text-brand transition-colors" />
                 </div>
               )}
 
@@ -256,7 +256,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="email"
-                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                   placeholder=" "
                   required
                   value={email}
@@ -264,12 +264,12 @@ export default function LoginPage() {
                 />
                 <label
                   htmlFor="email"
-                  className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                  className="absolute left-3 -top-2.5 bg-surface px-1 text-xs text-ink/60 transition-colors duration-200 pointer-events-none
                            peer-focus:text-brand"
                 >
                   Email Address
                 </label>
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-brand transition-colors" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40 peer-focus:text-brand transition-colors" />
               </div>
 
               {/* Password */}
@@ -277,7 +277,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
-                  className="peer w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 bg-white/50 text-gray-900 placeholder-transparent text-sm"
+                  className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                   placeholder=" "
                   required
                   value={password}
@@ -285,7 +285,7 @@ export default function LoginPage() {
                 />
                 <label
                   htmlFor="password"
-                  className="absolute left-3 -top-2.5 bg-white px-1 text-xs text-gray-500 transition-colors duration-200 pointer-events-none
+                  className="absolute left-3 -top-2.5 bg-surface px-1 text-xs text-ink/60 transition-colors duration-200 pointer-events-none
                            peer-focus:text-brand"
                 >
                   Password
@@ -293,7 +293,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/60 hover:text-ink transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -304,7 +304,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-gray-500 hover:text-brand text-sm font-medium transition-colors duration-200"
+                    className="text-ink/60 hover:text-brand text-sm font-medium transition-colors duration-200"
                   >
                     Forgot Password?
                   </button>
@@ -315,11 +315,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand text-white rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-brand/25 hover:shadow-xl hover:shadow-brand/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
+                className="w-full border border-ink bg-ink text-surface rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-brand/25 hover:border-brand hover:bg-brand hover:text-ink hover:shadow-xl hover:shadow-brand/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin"></div>
                     Processing...
                   </div>
                 ) : (
@@ -328,7 +328,7 @@ export default function LoginPage() {
               </button>
 
               {/* Toggle Auth Mode */}
-              <p className="text-center text-sm text-gray-500 font-medium">
+              <p className="text-center text-sm text-ink/60 font-medium">
                 {isLogin ? (
                   <>
                     Don't have an account?{' '}
@@ -357,8 +357,8 @@ export default function LoginPage() {
           </div>
 
           {/* Footer Text for Mobile */}
-          <p className="text-center text-gray-500 text-sm mt-8 lg:hidden">
-            © 2025 Indian Infra Jobs. All rights reserved.
+          <p className="text-center text-ink/60 text-sm mt-8 lg:hidden">
+            © 2025 IndianInfra Jobs. All rights reserved.
           </p>
         </div>
       </div>

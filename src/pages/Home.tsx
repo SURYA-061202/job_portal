@@ -4,11 +4,13 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import LoginPage from '@/components/auth/LoginPage';
+import { useSkin } from '@/styles/skin';
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [checking, setChecking] = useState(true);
+  const skin = useSkin();
 
   useEffect(() => {
     const cid = searchParams.get('candidateId');
@@ -44,7 +46,7 @@ export default function Home() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${skin.canvas}`}>
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-brand" />
       </div>
     );

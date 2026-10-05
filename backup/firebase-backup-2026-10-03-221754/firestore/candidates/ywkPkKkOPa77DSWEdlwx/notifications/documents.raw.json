@@ -1,0 +1,68 @@
+[
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/ywkPkKkOPa77DSWEdlwx/notifications/M18mGHNFzcALbcZoUzNu",
+    "fields": {
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-31T05:55:00.004Z"
+      }
+    },
+    "createTime": "2025-07-31T05:55:01.417383Z",
+    "updateTime": "2025-07-31T14:37:24.740372Z"
+  },
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/ywkPkKkOPa77DSWEdlwx/notifications/PPiXmptxArslOq3iHZQ8",
+    "fields": {
+      "createdAt": {
+        "timestampValue": "2025-07-31T05:54:59.241Z"
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "message": {
+        "stringValue": "Submitted verify details form"
+      },
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2025-07-31T05:55:00.966155Z",
+    "updateTime": "2025-07-31T14:37:24.766258Z"
+  },
+  {
+    "name": "projects/recruitment-portal-7b629/databases/(default)/documents/candidates/ywkPkKkOPa77DSWEdlwx/notifications/sFYYQBiYfMCKZQcSaWhs",
+    "fields": {
+      "message": {
+        "stringValue": "Accepted interview on 2025-08-02 02:00 - 04:00 PM"
+      },
+      "email": {
+        "stringValue": "pheonixvarunraj@gmail.com"
+      },
+      "viewed": {
+        "booleanValue": true
+      },
+      "name": {
+        "stringValue": "M.VARUNRAJ"
+      },
+      "createdAt": {
+        "timestampValue": "2025-07-30T04:43:49Z"
+      }
+    },
+    "createTime": "2025-07-30T04:43:50.419701Z",
+    "updateTime": "2025-07-30T06:35:49.406668Z"
+  }
+]

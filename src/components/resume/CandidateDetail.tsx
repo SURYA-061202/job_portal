@@ -10,6 +10,7 @@ import { setApplicationStatus, upsertApplication } from '@/lib/jobApplications';
 import InterviewInviteModal from './InterviewInviteModal';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
+import { useSkin, FOCUS } from '@/styles/skin';
 import toast from 'react-hot-toast';
 
 interface CandidateDetailProps {
@@ -34,6 +35,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const { showSuccess, showError } = usePopup();
+  const skin = useSkin();
 
   // Set only when this detail view was reached through the Posts module, so the
   // header can name the post the candidate is being reviewed for.
@@ -177,26 +179,26 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   return (
     <div className="flex flex-col h-full">
       {/* Header - Fixed */}
-      <div className="bg-surface p-4 rounded-xl border border-gray-200 sticky top-0 z-10 mb-4">
+      <div className={`p-4 sticky top-0 z-10 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Left: Back + Name/Role */}
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="p-1.5 mt-0.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors flex-shrink-0"
+              className={`p-1.5 mt-0.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors flex-shrink-0 ${FOCUS}`}
               title="Back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className={skin.heading}>
                   {candidate.name}{activePost?.jobTitle && ` - ${activePost.jobTitle}`}
                 </h2>
                 {candidate.email && activePostId && (
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="p-1.5 rounded-lg bg-brand text-white hover:shadow-lg hover:shadow-brand/30 hover:scale-110 active:scale-95 transition-all"
+                    className={`p-1.5 ${skin.radius} border border-ink bg-ink text-surface hover:border-brand hover:bg-brand hover:text-ink hover:scale-110 active:scale-95 transition-all cursor-pointer ${FOCUS}`}
                     title="Send Interview Invite"
                   >
                     <MailPlus className="h-4 w-4" />
@@ -204,7 +206,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 )}
               </div>
               {(candidate as any).selectedInterviewDate && (
-                <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                <div className="flex items-center gap-1.5 text-sm text-ink/60">
                   <span>Interview on {(candidate as any).selectedInterviewDate}</span>
                 </div>
               )}
@@ -224,7 +226,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               <button
                 onClick={handleShortlistToPost}
                 disabled={!shortlistPostId || shortlisting}
-                className="flex items-center gap-1.5 px-3 py-2 bg-surface border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.secondary} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <ArrowRightCircle className="w-4 h-4" />
                 {shortlisting ? 'Moving...' : 'Move'}
@@ -234,7 +236,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {onEdit && (
               <button
                 onClick={() => onEdit(candidate)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-surface border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
+                className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.secondary} ${FOCUS}`}
               >
                 <Edit2 className="w-4 h-4" />
                 Edit
@@ -245,7 +247,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               href={candidate.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-lg hover:bg-brand transition-colors text-sm font-medium"
+              className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.cta} ${FOCUS}`}
             >
               Resume
             </a>
@@ -255,48 +257,48 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
       {/* Content - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="bg-surface border border-gray-200 rounded-xl p-6 space-y-6">
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 space-y-6`}>
             {/* Applied Posts */}
-            <div className="bg-surface border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+              <h3 className={`${skin.cardTitle} mb-4`}>
                 Applied Posts
               </h3>
               {loadingPosts ? (
-                <div className="flex items-center gap-2 text-gray-500">
+                <div className="flex items-center gap-2 text-ink/60">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Loading applied posts...</span>
                 </div>
               ) : appliedPosts.length === 0 ? (
-                <p className="text-gray-500 text-sm">No applications found</p>
+                <p className="text-ink/60 text-sm">No applications found</p>
               ) : (
                 <div className="space-y-3">
                   {appliedPosts.map((app, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div key={index} className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-4 transition-colors ${skin.rowHover} ${skin.cardHover}`}>
                       {app.postDetails ? (
                         <div>
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                              <h4 className="font-semibold text-ink flex items-center gap-2">
                                 {app.postDetails.jobTitle || 'Job Post'}
                                 {candidate.rankings && candidate.rankings[app.post_id] && (
-                                  <span className={`text-xs px-2 py-0.5 rounded border ${candidate.rankings[app.post_id].score >= 70 ? 'bg-green-50 text-green-700 border-green-200' :
-                                    candidate.rankings[app.post_id].score >= 40 ? 'bg-brand/10 text-brand border-brand/30' :
-                                      'bg-red-50 text-red-700 border-red-200'
+                                  <span className={`text-xs px-2 py-0.5 rounded border ${candidate.rankings[app.post_id].score >= 70 ? 'bg-ink/10 text-ink border-ink/20' :
+                                    candidate.rankings[app.post_id].score >= 40 ? 'bg-brand/10 text-brand border-brand/20' :
+                                      'bg-destructive/10 text-destructive border-destructive/20'
                                     }`}>
                                     {candidate.rankings[app.post_id].score}% Match
                                   </span>
                                 )}
                               </h4>
-                              <p className="text-sm text-gray-600 mt-1">{app.postDetails.department || 'Department not specified'}</p>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-sm text-ink/70 mt-1">{app.postDetails.department || 'Department not specified'}</p>
+                              <p className={`mt-1 ${skin.meta}`}>
                                 Applied: {app.created_at?.toDate?.() ? new Date(app.created_at.toDate()).toLocaleDateString() : (app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A')}
                               </p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.status === 'shortlisted' ? 'bg-brand/20 text-brand' :
-                              app.status === 'selected' ? 'bg-green-100 text-green-700' :
-                                app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                  app.status === 'interviewed' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-gray-100 text-gray-700'
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${app.status === 'shortlisted' ? 'bg-brand/10 text-brand border-brand/20' :
+                              app.status === 'selected' ? 'bg-ink/10 text-ink border-ink/20' :
+                                app.status === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                  app.status === 'interviewed' ? 'bg-muted text-ink/70 border-border' :
+                                    'border-border bg-surface text-ink/70'
                               }`}>
                               {app.status === 'shortlisted' ? 'Shortlisted' :
                                app.status === 'selected' ? 'Selected' :
@@ -308,7 +310,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                           </div>
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm">Post details not available</p>
+                        <p className="text-ink/60 text-sm">Post details not available</p>
                       )}
                     </div>
                   ))}
@@ -317,21 +319,21 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             </div>
 
             {/* Contact Info */}
-            <div className="bg-surface border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+              <h3 className={`${skin.cardTitle} mb-3`}>
                 Contact Information
               </h3>
               <div className="space-y-3">
                 {candidate.email && (
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="text-gray-500 font-medium w-16">Email:</span>
-                    <span className="text-gray-700">{candidate.email}</span>
+                    <span className="text-ink/60 font-medium w-16">Email:</span>
+                    <span className="text-ink/80">{candidate.email}</span>
                   </div>
                 )}
                 {candidate.phone && (
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="text-gray-500 font-medium w-16">Phone:</span>
-                    <span className="text-gray-700">{candidate.phone}</span>
+                    <span className="text-ink/60 font-medium w-16">Phone:</span>
+                    <span className="text-ink/80">{candidate.phone}</span>
                   </div>
                 )}
               </div>
@@ -339,16 +341,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+              <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                <h3 className={`${skin.cardTitle} mb-3`}>
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {candidate.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm border border-gray-200 text-gray-700"
-                    >
+                    <span key={index} className={skin.tag}>
                       {skill}
                     </span>
                   ))}
@@ -358,8 +357,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+              <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                <h3 className={`${skin.cardTitle} mb-3`}>
                   Education
                   {(() => {
                     const eduWithCgpa: any = (candidate.education || []).find((e: any) => (e.cgpa ?? e.CGPA) !== undefined && (e.cgpa ?? e.CGPA) !== null);
@@ -367,7 +366,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                     const raw = (eduWithCgpa.cgpa ?? eduWithCgpa.CGPA) as string;
                     const cgpa = parseFloat(raw);
                     const good = !isNaN(cgpa) && cgpa >= 7;
-                    const badgeClass = good ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                    const badgeClass = good ? 'border border-ink/20 bg-ink/10 text-ink' : 'border border-destructive/20 bg-destructive/10 text-destructive';
                     return (
                       <span className={`ml-3 inline-block px-2 py-0.5 text-xs font-semibold rounded ${badgeClass}`}>CGPA: {cgpa}</span>
                     );
@@ -377,13 +376,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                   {candidate.education.map((edu, index) => (
                     <div key={index} className="border-l-4 border-brand/30 pl-4">
                       {(edu.degree || edu.field) && (
-                        <p className="text-gray-800 font-medium">
+                        <p className="text-ink/80 font-medium">
                           {edu.degree}
                           {edu.field && ` in ${edu.field}`}
                         </p>
                       )}
-                      <p className="text-gray-600">{edu.institution}</p>
-                      {edu.year && <p className="text-sm text-gray-500">{edu.year}</p>}
+                      <p className="text-ink/70">{edu.institution}</p>
+                      {edu.year && <p className="text-sm text-ink/60">{edu.year}</p>}
                     </div>
                   ))}
                 </div>
@@ -391,22 +390,22 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div className="bg-surface border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+              <h3 className={`${skin.cardTitle} mb-3`}>
                 Experience
               </h3>
               {(candidate.role || candidate.experience) && (
-                <div className="mb-4 pb-4 border-b border-gray-100 space-y-1.5">
+                <div className={`mb-4 pb-4 border-b ${skin.edge} space-y-1.5`}>
                   {candidate.role && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Role:</span>
-                      <span className="text-sm font-semibold text-gray-900">{candidate.role}</span>
+                      <span className="text-sm font-medium text-ink/60">Role:</span>
+                      <span className="text-sm font-semibold text-ink">{candidate.role}</span>
                     </div>
                   )}
                   {candidate.experience && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Overall:</span>
-                      <span className="text-sm font-semibold text-gray-900">{candidate.experience}</span>
+                      <span className="text-sm font-medium text-ink/60">Overall:</span>
+                      <span className="text-sm font-semibold text-ink">{candidate.experience}</span>
                     </div>
                   )}
                 </div>
@@ -416,10 +415,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                   {candidate.extractedData.workExperience.map((exp, index) => (
                     <div key={index} className="border-l-4 border-brand/30 pl-4">
                       {(exp.position || exp.company) && (
-                        <p className="text-gray-700 font-medium">{`${exp.position || ''}${exp.position && exp.company ? ' @ ' : ''}${exp.company || ''}`}</p>
+                        <p className="text-ink/80 font-medium">{`${exp.position || ''}${exp.position && exp.company ? ' @ ' : ''}${exp.company || ''}`}</p>
                       )}
-                      <p className="text-gray-500 text-sm mb-1">{exp.duration}</p>
-                      {exp.description && <p className="text-gray-700 text-sm">{exp.description}</p>}
+                      <p className="text-ink/60 text-sm mb-1">{exp.duration}</p>
+                      {exp.description && <p className="text-ink/80 text-sm">{exp.description}</p>}
                     </div>
                   ))}
                 </div>
@@ -434,14 +433,14 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                      <h3 className={`${skin.cardTitle} mb-3`}>
                         Key Projects
                       </h3>
                       <div className="space-y-3">
                         {projectLines.map((line: string, index: number) => (
                           <div key={index} className="border-l-4 border-brand/30 pl-4">
-                            <p className="text-gray-700">{line.trim()}</p>
+                            <p className="text-ink/80">{line.trim()}</p>
                           </div>
                         ))}
                       </div>
@@ -452,17 +451,17 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                    <h3 className={`${skin.cardTitle} mb-3`}>
                       Projects
                     </h3>
                     <div className="space-y-4">
                       {projectsRaw.map((proj: any, index: number) => (
                         <div key={index} className="border-l-4 border-brand/30 pl-4">
                           {(proj.name || proj.title) && (
-                            <p className="text-gray-700 font-medium">{proj.name || proj.title}</p>
+                            <p className="text-ink/80 font-medium">{proj.name || proj.title}</p>
                           )}
-                          {proj.description && <p className="text-gray-500 text-sm">{proj.description}</p>}
+                          {proj.description && <p className="text-ink/60 text-sm">{proj.description}</p>}
                         </div>
                       ))}
                     </div>
@@ -481,13 +480,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                      <h3 className={`${skin.cardTitle} mb-3`}>
                         Certifications
                       </h3>
                       <div className="space-y-2">
                         {certLines.map((line: string, index: number) => (
-                          <div key={index} className="text-gray-700">
+                          <div key={index} className="text-ink/80">
                             {line.trim()}
                           </div>
                         ))}
@@ -499,8 +498,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div className="bg-surface border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                    <h3 className={`${skin.cardTitle} mb-3`}>
                       Certifications
                     </h3>
                     <div className="space-y-2">
@@ -508,10 +507,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                         const text = typeof cert === 'string' ? cert : (cert.certificate ?? cert.name ?? JSON.stringify(cert));
                         if (!text) return null;
                         return (
-                          <div key={index} className="text-gray-700">
+                          <div key={index} className="text-ink/80">
                             {text}
                             {cert.provider && (
-                              <span className="text-gray-500 text-xs ml-2">({cert.provider})</span>
+                              <span className="text-ink/60 text-xs ml-2">({cert.provider})</span>
                             )}
                           </div>
                         );
@@ -538,7 +537,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       {/* Remove Candidate Button */}
       <div className="flex justify-end flex-shrink-0 mt-4">
         <button
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          className={`inline-flex items-center gap-2 px-4 py-2 border border-destructive bg-destructive text-white ${skin.radius} hover:opacity-90 disabled:opacity-50 ${FOCUS}`}
           onClick={handleRemove}
           disabled={removing}
         >

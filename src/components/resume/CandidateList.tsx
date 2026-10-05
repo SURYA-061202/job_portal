@@ -5,6 +5,7 @@ import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
+import { useSkin, FOCUS } from '@/styles/skin';
 
 // Helper to convert to Title Case
 function toTitleCase(str?: string) {
@@ -44,6 +45,8 @@ interface CandidateListProps {
   onRefresh?: () => void;
   onEdit?: (candidate: Candidate) => void;
   title?: string;
+  /** Optional description line rendered under the header title row. */
+  description?: string;
   filterValue?: string;
   filterOptions?: { value: string; label: string }[];
   onFilterChange?: (value: string) => void;
@@ -52,6 +55,8 @@ interface CandidateListProps {
   onBack?: () => void;
   /** Hides the role line under each name (and the "/ Role" column label). */
   hideRole?: boolean;
+  /** Hides the illustration icon in the empty state message. */
+  hideEmptyIcon?: boolean;
 }
 
 export default function CandidateList({
@@ -64,15 +69,18 @@ export default function CandidateList({
   onRefresh,
   hideHeader = false,
   title,
+  description,
   filterValue,
   filterOptions,
   onFilterChange,
   jobId,
   onBack,
-  hideRole = false
+  hideRole = false,
+  hideEmptyIcon = false
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
+  const skin = useSkin();
 
   // State for sorting
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
@@ -186,111 +194,128 @@ export default function CandidateList({
   return (
     <div className="space-y-4">
       {/* Header with Search and Optional Filter — always shown, even while loading or empty,
-          so filter/search controls (e.g. the Selected/Rejected toggle) never disappear. */}
+          so filter/search controls (e.g. the Selected/Rejected toggle) never disappear.
+          Posts masthead recipe: brand-washed title row with heading, count badge,
+          filter and search at the right end. */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-                title="Back to posts"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-            )}
-            {title || 'Candidates'}
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
-              {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
-            </span>
-          </h3>
+        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+          <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5${description ? ` border-b ${skin.edge}` : ''}`}>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                  title="Back to posts"
+                  aria-label="Back to posts"
+                >
+                  <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+                </button>
+              )}
+              <h2 className={skin.heading}>{title || 'Candidates'}</h2>
+              <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                />
+                {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+              </span>
+            </div>
 
-          <div className="flex items-center gap-3 flex-1 justify-end">
-            {filterOptions && onFilterChange && (
-              <select
-                value={filterValue}
-                onChange={(e) => onFilterChange(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-gray-50 w-40"
-              >
-                {filterOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
+              {filterOptions && onFilterChange && (
+                <select
+                  value={filterValue}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  className={`px-3 py-2 w-40 ${skin.field} ${FOCUS}`}
+                >
+                  {filterOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
 
-            <div className="relative w-full sm:w-72">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+              <div className="relative w-full sm:w-72">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-ink/40" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search candidates..."
+                  className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
+                  value={searchTerm}
+                  onChange={(e) => onSearchTermChange?.(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search candidates..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand/20 focus:border-brand sm:text-sm transition-all duration-200"
-                value={searchTerm}
-                onChange={(e) => onSearchTermChange?.(e.target.value)}
-              />
             </div>
           </div>
+
+          {description && (
+            <div className="px-4 py-2.5 sm:px-5">
+              <p className={skin.body}>{description}</p>
+            </div>
+          )}
         </div>
       )}
 
       {loading ? (
-        <div className="bg-surface rounded-xl border border-gray-100 overflow-hidden">
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center space-x-4 animate-pulse">
-                <div className="h-10 w-10 bg-gray-100 rounded-full"></div>
+                <div className={`h-10 w-10 ${skin.skeleton} rounded-full`}></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-100 rounded w-1/4"></div>
-                  <div className="h-3 bg-gray-100 rounded w-1/3"></div>
+                  <div className={`h-4 ${skin.skeleton} rounded w-1/4`}></div>
+                  <div className={`h-3 ${skin.skeleton} rounded w-1/3`}></div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-gray-100 p-12 text-center">
-          <div className="mx-auto h-12 w-12 text-gray-300 mb-4">
-            <User className="h-full w-full" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900">No candidates found</h3>
-          <p className="mt-1 text-gray-500">{emptyMessage || 'Upload a resume to get started.'}</p>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
+          {!hideEmptyIcon && (
+            <div className="mx-auto h-12 w-12 text-ink/30 mb-4">
+              <User className="h-full w-full" />
+            </div>
+          )}
+          <h3 className={skin.emptyTitle}>No candidates found</h3>
+          <p className={`mt-1 ${skin.body}`}>{emptyMessage || 'Upload a resume to get started.'}</p>
         </div>
       ) : (
-      <div className="bg-surface rounded-xl border border-gray-100 overflow-hidden">
+      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
         <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
-          <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gray-50 sticky top-0 z-10">
+          <table className={`min-w-full divide-y ${skin.divide}`}>
+            <thead className={`${skin.canvas} sticky top-0 z-10`}>
               <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">{hideRole ? 'Name' : 'Name / Role'}</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Contact Info</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Experience</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>{hideRole ? 'Name' : 'Name / Role'}</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Contact Info</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Experience</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>
                   <div className="flex items-center gap-2">
                     <span>AI Score</span>
                     <button
                       onClick={toggleSort}
-                      className="flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none ring-offset-1 focus:ring-2 focus:ring-brand/50"
+                      className={`flex flex-col items-center justify-center p-1 ${skin.radius} text-ink/60 hover:bg-ink/5 hover:text-ink transition-colors cursor-pointer ${FOCUS}`}
                       title="Sort by AI Score"
                     >
-                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-brand stroke-[3px]' : 'text-gray-400'}`} />
-                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-brand stroke-[3px]' : 'text-gray-400'}`} />
+                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-brand stroke-[3px]' : 'text-ink/40'}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-brand stroke-[3px]' : 'text-ink/40'}`} />
                     </button>
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
+                <th scope="col" className={`px-6 py-4 text-center ${skin.micro} ${skin.canvas}`}>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-surface divide-y divide-gray-100">
+            <tbody className={`${skin.surface} divide-y ${skin.divide}`}>
               {filteredCandidates.map((candidate) => {
                 const aiScore = getCandidateScore(candidate, jobId);
 
                 return (
                   <tr
                     key={candidate.id}
-                    className="group hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer"
+                    className={`group ${skin.rowHover} transition-colors duration-150 cursor-pointer`}
                     onClick={() => onSelectCandidate(candidate)}
                   >
                     <td className="px-6 py-4">
@@ -301,11 +326,11 @@ export default function CandidateList({
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900 group-hover:text-brand transition-colors">
+                          <div className="text-sm font-semibold text-ink group-hover:text-brand transition-colors">
                             {toTitleCase(candidate.name)}
                           </div>
                           {!hideRole && (
-                            <div className="text-xs text-gray-500 mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={toTitleCase(candidate.role) || 'No Role'}>
+                            <div className={`mt-0.5 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap ${skin.meta}`} title={toTitleCase(candidate.role) || 'No Role'}>
                               {toTitleCase(candidate.role) || 'No Role'}
                             </div>
                           )}
@@ -314,18 +339,18 @@ export default function CandidateList({
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Mail className="w-3.5 h-3.5 mr-2 text-gray-400" />
+                        <div className="flex items-center text-sm text-ink/70">
+                          <Mail className="w-3.5 h-3.5 mr-2 text-ink/40" />
                           {candidate.email}
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Phone className="w-3.5 h-3.5 mr-2 text-gray-400" />
+                        <div className="flex items-center text-sm text-ink/70">
+                          <Phone className="w-3.5 h-3.5 mr-2 text-ink/40" />
                           {candidate.phone || 'N/A'}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 max-w-[150px] truncate" title={candidate.experience}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${skin.surface} text-ink/70 border ${skin.edge} max-w-[150px] truncate`} title={candidate.experience}>
                         {formatExperience(candidate.experience)}
                       </span>
                     </td>
@@ -340,7 +365,7 @@ export default function CandidateList({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs">-</span>
+                        <span className="text-ink/40 text-xs">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
@@ -348,11 +373,11 @@ export default function CandidateList({
                         <button
                           onClick={(e) => handleRemove(e, candidate)}
                           disabled={deletingId === candidate.id}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          className={`p-2 border border-destructive bg-surface text-destructive ${skin.radius} hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS}`}
                           title="Remove Candidate"
                         >
                           {deletingId === candidate.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                            <Loader2 className="w-4 h-4 animate-spin text-destructive" />
                           ) : (
                             <Trash2 className="w-4 h-4" />
                           )}
@@ -368,7 +393,7 @@ export default function CandidateList({
 
         {filteredCandidates.length === 0 && searchTerm && (
           <div className="p-12 text-center">
-            <p className="text-gray-500">No candidates match your search.</p>
+            <p className={skin.body}>No candidates match your search.</p>
           </div>
         )}
       </div>

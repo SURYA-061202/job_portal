@@ -11,6 +11,7 @@ import CustomDropdown from '@/components/CustomDropdown';
 import toast from 'react-hot-toast';
 import openai, { isOpenAIConfigured } from '@/lib/openai';
 import { analyzeCandidateScores } from '@/lib/aiService';
+import { useSkin } from '@/styles/skin';
 
 // PDF.js – load the worker dynamically so Vite can bundle it
 // @ts-ignore
@@ -39,6 +40,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
     const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
     const [selectedJobId, setSelectedJobId] = useState<string>('');
     const [uploadKey, setUploadKey] = useState(0); // Key to force re-render
+    const skin = useSkin();
 
     // Fetch active job posts
     useEffect(() => {
@@ -306,29 +308,46 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
     };
 
     return (
-        <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 flex flex-col h-full">
-            {/* Header Section */}
-            <div className="bg-surface p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">Upload Resumes</h2>
-                    <p className="text-sm text-gray-500 mt-1">Upload candidate resumes to parse details and add them to the pipeline.</p>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col h-full`}>
+            {/* Header Section - Posts masthead recipe: brand-washed title row
+                carrying the heading, count badge and job selector. */}
+            {/* No overflow-hidden: it would clip the job-selector menu. The
+                wash is on the panel itself, so the radius still rounds it. */}
+            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                {/* Title row */}
+                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h2 className={skin.heading}>Upload Resumes</h2>
+                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                            <span
+                                aria-hidden="true"
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                            />
+                            {jobPosts.length} {jobPosts.length === 1 ? 'Post' : 'Posts'}
+                        </span>
+                    </div>
+
+                    {/* Job selector at the right end */}
+                    <div className="flex w-full justify-end sm:w-auto">
+                        <CustomDropdown
+                            value={selectedJobId}
+                            onChange={setSelectedJobId}
+                            options={[
+                                { value: '', label: 'Select Post' },
+                                ...jobPosts.map((job) => ({ value: job.id!, label: job.jobTitle }))
+                            ]}
+                            className="w-full sm:w-72"
+                        />
+                    </div>
                 </div>
 
-                {/* Job Selector */}
-                <div className="flex items-center gap-2">
-                    <CustomDropdown
-                        value={selectedJobId}
-                        onChange={setSelectedJobId}
-                        options={[
-                            { value: '', label: 'Select Post' },
-                            ...jobPosts.map((job) => ({ value: job.id!, label: job.jobTitle }))
-                        ]}
-                        className="w-72"
-                    />
+                {/* Description row */}
+                <div className="px-4 py-2.5 sm:px-5">
+                    <p className={skin.body}>Upload candidate resumes to parse details and add them to the pipeline.</p>
                 </div>
             </div>
 
-            <div className="h-full flex items-center justify-center border border-gray-200 rounded-xl p-6">
+            <div className={`flex-1 min-h-0 flex items-center justify-center p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
                 <div className="max-w-2xl w-full">
                     <ResumeUpload key={uploadKey} onUpload={handleResumeUpload} loading={loading} />
                 </div>

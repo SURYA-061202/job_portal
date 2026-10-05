@@ -7,8 +7,9 @@ import type { RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import InterviewCandidateDetail from "@/components/interview/InterviewCandidateDetail";
 import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab";
-import { ArrowLeft, Users, Briefcase, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, Clock } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSkin, FOCUS } from "@/styles/skin";
 
 const normalizeSkills = (skills: any): string[] => {
   if (!skills) return [];
@@ -18,19 +19,19 @@ const normalizeSkills = (skills: any): string[] => {
 };
 
 const ROUND_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  round1: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round2: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round3: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
-  round4: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round5: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", badge: "bg-rose-100 text-rose-700" },
-  round6: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round7: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round8: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  round9: { bg: "bg-brand/10", border: "border-brand/30", text: "text-brand", badge: "bg-brand/20 text-brand" },
-  selected: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", badge: "bg-green-100 text-green-700" },
+  round1: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round2: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round3: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round4: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round5: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round6: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round7: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round8: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  round9: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
+  selected: { bg: "bg-muted", border: "border-border", text: "text-ink/70", badge: "bg-surface text-ink/70 border border-border" },
 };
 
-const DEFAULT_COLORS = { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-700", badge: "bg-gray-100 text-gray-700" };
+const DEFAULT_COLORS = { bg: "bg-surface", border: "border-border", text: "text-ink/70", badge: "bg-surface text-ink/70 border border-border" };
 
 interface PostWithCount extends RecruitmentRequest {
   interviewCount: number;
@@ -44,6 +45,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
   const [selectedPost, setSelectedPost] = useState<PostWithCount | null>(null);
   const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const skin = useSkin();
 
   useEffect(() => {
     fetchData();
@@ -256,14 +258,14 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            className="p-1 rounded-lg text-brand hover:text-gray-900 hover:bg-brand/10 transition-colors"
+            className={`p-1 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
             onClick={() => { setSelectedRound(null); setSearchTerm(''); }}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <p className="text-xs text-brand uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
-            <h2 className="text-lg font-bold text-gray-900">{displayName}</h2>
+            <p className={skin.micro}>{selectedPost.jobTitle}</p>
+            <h2 className={skin.heading}>{displayName}</h2>
           </div>
         </div>
 
@@ -275,6 +277,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
           onSearchTermChange={setSearchTerm}
           emptyMessage={`No candidates found in ${displayName}.`}
           title={`${displayName} Candidates`}
+          hideEmptyIcon
         />
       </div>
     );
@@ -286,22 +289,21 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            className="p-1 rounded-lg text-brand hover:text-gray-900 hover:bg-brand/10 transition-colors"
+            className={`p-1 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
             onClick={() => { setSelectedPost(null); setSelectedRound(null); }}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <p className="text-xs text-brand uppercase tracking-wider font-medium">{selectedPost.jobTitle}</p>
-            <h2 className="text-lg font-bold text-gray-900">Interview Rounds</h2>
+            <p className={skin.micro}>{selectedPost.jobTitle}</p>
+            <h2 className={skin.heading}>Interview Rounds</h2>
           </div>
         </div>
 
         {postRounds.length === 0 ? (
-          <div className="bg-surface rounded-xl shadow-sm border border-brand/20 p-12 text-center">
-            <Users className="h-12 w-12 text-brand mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No rounds yet</h3>
-            <p className="mt-1 text-brand">Candidates will appear here once they enter the interview pipeline.</p>
+          <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center`}>
+            <h3 className={skin.emptyTitle}>No rounds yet</h3>
+            <p className={`mt-1 ${skin.body}`}>Candidates will appear here once they enter the interview pipeline.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -314,30 +316,30 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                 <button
                   key={status}
                   onClick={() => setSelectedRound(status)}
-                  className={`${colors.bg} ${colors.border} border rounded-xl p-6 text-left hover:shadow-md transition-all duration-200 group`}
+                  className={`${colors.bg} ${colors.border} border ${skin.radius} p-6 text-left ${skin.shadow} transition-colors duration-200 ${skin.cardHover} group ${FOCUS}`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <p className={`text-sm font-semibold ${colors.text} uppercase tracking-wide`}>
                         {displayName}
                       </p>
-                      <p className="mt-3 text-3xl font-bold text-gray-900">{count}</p>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-3 text-3xl font-bold text-ink">{count}</p>
+                      <p className={`mt-1 ${skin.meta}`}>
                         candidate{count !== 1 ? 's' : ''}
                       </p>
                     </div>
                     {roundNum && (
-                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-lg`}>
+                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-full`}>
                         R{roundNum}
                       </span>
                     )}
                     {status === 'selected' && (
-                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-lg`}>
+                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-full`}>
                         ✓
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                  <div className="mt-4 text-sm text-ink/60 group-hover:text-ink/80 transition-colors">
                     View candidates →
                   </div>
                 </button>
@@ -351,28 +353,43 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
 
   // View 1: Post cards
   return (
-    <div className="-m-4 md:-m-6 p-4 md:p-6 bg-surface space-y-6 flex-1 min-h-0 flex flex-col">
-      <div className="bg-surface p-4 rounded-xl border border-gray-200 flex-shrink-0">
-        <h3 className="text-lg font-bold text-gray-900">Interview Posts</h3>
-        <p className="text-sm text-gray-500 mt-1">Select a post to view interview rounds</p>
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
+      {/* Header - Posts masthead recipe: brand-washed title row (heading +
+          count badge) over a description row. */}
+      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h2 className={skin.heading}>Interview Posts</h2>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+              />
+              {posts.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>Select a post to view interview rounds</p>
+        </div>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-surface rounded-xl border border-gray-200 p-6 space-y-3">
-              <div className="h-5 bg-gray-100 rounded w-2/3"></div>
-              <div className="h-4 bg-gray-100 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+            <div key={i} className={`animate-pulse border ${skin.edge} ${skin.surface} ${skin.radius} p-6 space-y-3`}>
+              <div className={`h-5 ${skin.skeleton} rounded w-2/3`}></div>
+              <div className={`h-4 ${skin.skeleton} rounded w-1/3`}></div>
+              <div className={`h-3 ${skin.skeleton} rounded w-1/2`}></div>
             </div>
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-gray-200 p-12 text-center flex-1 flex items-center justify-center">
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center flex-1 flex items-center justify-center`}>
           <div>
-            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No interview posts</h3>
-            <p className="mt-1 text-gray-500">Posts will appear here once candidates enter the interview pipeline.</p>
+            <h3 className={skin.emptyTitle}>No interview posts</h3>
+            <p className={`mt-1 ${skin.body}`}>Posts will appear here once candidates enter the interview pipeline.</p>
           </div>
         </div>
       ) : (
@@ -381,23 +398,23 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
             <button
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="bg-surface border border-gray-200 rounded-xl p-6 text-left hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300 group"
+              className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 text-left transition-colors duration-200 ${skin.cardHover} group ${FOCUS}`}
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1 min-w-0">
-                  <h4 className="text-base font-semibold text-gray-900 truncate">
+                  <h4 className={`${skin.cardTitle} truncate`}>
                     {post.jobTitle}
                   </h4>
                   {post.department && (
-                    <p className="text-sm text-gray-500 truncate">{post.department}</p>
+                    <p className={`${skin.meta} truncate`}>{post.department}</p>
                   )}
                 </div>
-                <span className="ml-3 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                <span className={`ml-3 flex-shrink-0 inline-flex items-center ${skin.count}`}>
                   {post.interviewCount}
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 font-medium">
+              <div className={`mt-3 flex flex-wrap gap-3 ${skin.meta}`}>
                 {post.location && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> {post.location}
@@ -426,19 +443,19 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               {post.skills && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                    <span key={i} className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                    <span key={i} className={skin.tag}>
                       {skill.trim()}
                     </span>
                   ))}
                   {post.skills.split(',').length > 3 && (
-                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                    <span className={skin.tag}>
                       +{post.skills.split(',').length - 3}
                     </span>
                   )}
                 </div>
               )}
 
-              <div className="mt-4 pt-3 border-t border-gray-200 text-xs font-bold text-gray-700">
+              <div className={`mt-4 pt-3 border-t ${skin.edge} text-xs font-bold text-ink/80`}>
                 View rounds →
               </div>
             </button>

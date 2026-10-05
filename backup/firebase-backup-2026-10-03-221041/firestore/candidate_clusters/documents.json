@@ -1,0 +1,863 @@
+[
+  {
+    "id": "vLcSRNiLnXNOYp6gbuCS",
+    "path": "candidate_clusters/vLcSRNiLnXNOYp6gbuCS",
+    "data": {
+      "createdAt": {
+        "timestampValue": "2026-03-07T12:11:40.703Z"
+      },
+      "data": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "id": {
+                    "integerValue": "0"
+                  },
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "ksVQMjYw7AIZulNWNBIZ"
+                        },
+                        {
+                          "stringValue": "rWSdFosVoP3hkQwzytZL"
+                        },
+                        {
+                          "stringValue": "WHhLgOX3uTDZZWNWjfLO"
+                        },
+                        {
+                          "stringValue": "GpgJaTSN8nDB5vQY8j9S"
+                        },
+                        {
+                          "stringValue": "QzbdYQr6AGl7OXL1g7w7"
+                        },
+                        {
+                          "stringValue": "bS7qECEziUHQ5hme3BEL"
+                        },
+                        {
+                          "stringValue": "N18RhiJDfSbmnUjpnOPt"
+                        },
+                        {
+                          "stringValue": "urVFlssSg9xcNBSxyTLA"
+                        },
+                        {
+                          "stringValue": "bnIAuUktlPXwJlmpTXM5"
+                        },
+                        {
+                          "stringValue": "EGnRsUprrEUFye71CTGH"
+                        },
+                        {
+                          "stringValue": "yX65KekLGHgnFUt16r39"
+                        },
+                        {
+                          "stringValue": "oDf91JkpkHFonIX3wwBc"
+                        }
+                      ]
+                    }
+                  },
+                  "label": {
+                    "stringValue": "Software Engineers"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "id": {
+                    "integerValue": "1"
+                  },
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "Wm3xW1g4j7xigz4WKqAV"
+                        },
+                        {
+                          "stringValue": "SYOOwez6tcd1c2BiDqYy"
+                        },
+                        {
+                          "stringValue": "iWUPQlYRYr5PL9lvZCKK"
+                        },
+                        {
+                          "stringValue": "kjqdvfoJDRamxFtKZvGL"
+                        },
+                        {
+                          "stringValue": "qlNXV3qq5iK1yLFTruj2"
+                        },
+                        {
+                          "stringValue": "Nb6buH8lGAdj6a4Cfpsk"
+                        },
+                        {
+                          "stringValue": "h16WoLlsad9J9gG1YLdR"
+                        }
+                      ]
+                    }
+                  },
+                  "label": {
+                    "stringValue": "Human Resources Professionals"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "DsnsHrjLNbN5TehnrsG3"
+                        },
+                        {
+                          "stringValue": "wsBK1Yct9dUcmVjq2BKQ"
+                        },
+                        {
+                          "stringValue": "T7E3PZdvPRT4jmCOB3en"
+                        },
+                        {
+                          "stringValue": "kZnGaT4bhEXGYXgMiKbF"
+                        },
+                        {
+                          "stringValue": "JPMdd8eDLuonyahKCTpN"
+                        },
+                        {
+                          "stringValue": "DtkvCzWmYFNGAyj757y7"
+                        },
+                        {
+                          "stringValue": "JjvhLAfwupcMNHbeRvwl"
+                        },
+                        {
+                          "stringValue": "c9fCbJogKs0qyZ8pkI46"
+                        },
+                        {
+                          "stringValue": "1Ty4Mj7IOzoxtE3WIKnl"
+                        },
+                        {
+                          "stringValue": "eQJnmTg4YLdvEcl0a4zu"
+                        },
+                        {
+                          "stringValue": "1wigaDS5wlthaSjUW5do"
+                        },
+                        {
+                          "stringValue": "v4C7eISkTOLg60NiEs6I"
+                        },
+                        {
+                          "stringValue": "GyUfnVycMTKV3qEJB0bD"
+                        },
+                        {
+                          "stringValue": "cDehnvdKuM51XqpGvaYA"
+                        },
+                        {
+                          "stringValue": "AbXBbHbVjHwsNWL85HfO"
+                        },
+                        {
+                          "stringValue": "PDaoAHmoBV4iEsYHu5nv"
+                        },
+                        {
+                          "stringValue": "fT3814mW6otGq06AGA76"
+                        },
+                        {
+                          "stringValue": "L2g2E2nHXaOpxtdBvCjf"
+                        },
+                        {
+                          "stringValue": "SjsxbTQku094yoXwlisc"
+                        },
+                        {
+                          "stringValue": "W2zaKINz1Tc3BbuJlNfC"
+                        },
+                        {
+                          "stringValue": "OkubCrlfrZq399v5dlzG"
+                        },
+                        {
+                          "stringValue": "2l9VduKjEgyRTxu0Hmev"
+                        },
+                        {
+                          "stringValue": "oLd7HllgwglITxLVnLMH"
+                        },
+                        {
+                          "stringValue": "MANR4NZ4JXt5jiDtOHnL"
+                        },
+                        {
+                          "stringValue": "xDBBTYE3AoLJ2B1kaA81"
+                        },
+                        {
+                          "stringValue": "diBmu8fHaaTT2IDX8GAQ"
+                        },
+                        {
+                          "stringValue": "A24KF2wJ1JxyS8hAQ3cr"
+                        },
+                        {
+                          "stringValue": "UEkzJTHrfMD3xTuqY3NA"
+                        },
+                        {
+                          "stringValue": "xbd0JIGkeYwilIb4cOAi"
+                        },
+                        {
+                          "stringValue": "LzGNLLfqnJjxCyW0E518"
+                        },
+                        {
+                          "stringValue": "lOJ5xVRdeH9DChlYZo5Z"
+                        },
+                        {
+                          "stringValue": "Tjuxy3jaa6U4C9k5qgte"
+                        },
+                        {
+                          "stringValue": "7wSit9a6NmiiNVpDscMi"
+                        }
+                      ]
+                    }
+                  },
+                  "label": {
+                    "stringValue": "HR Professionals"
+                  },
+                  "id": {
+                    "integerValue": "2"
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "id": {
+                    "integerValue": "3"
+                  },
+                  "label": {
+                    "stringValue": "BIM Professionals"
+                  },
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "6ebWqjqmMhVKRfdoiFcr"
+                        },
+                        {
+                          "stringValue": "IeTEqdCN3bY5i4k5I1yB"
+                        },
+                        {
+                          "stringValue": "34K2nyWjyf4CNsKxS38y"
+                        },
+                        {
+                          "stringValue": "NkvHTq9URGJUzmGzpQ8F"
+                        },
+                        {
+                          "stringValue": "ofMgbFL8qAG9Cl5I2yy6"
+                        },
+                        {
+                          "stringValue": "WLfHQLeN6KEj2TwfIyO6"
+                        },
+                        {
+                          "stringValue": "APWoK8vicj0HFK70RMSB"
+                        },
+                        {
+                          "stringValue": "4CEWXL5OAcfYlKhhK0cf"
+                        },
+                        {
+                          "stringValue": "Fi5brfA8ozc4ZieIFatk"
+                        },
+                        {
+                          "stringValue": "UJ637k48xyw9uz0wN4ft"
+                        },
+                        {
+                          "stringValue": "WKuBGQpTB05R97KM5cTR"
+                        },
+                        {
+                          "stringValue": "n5z2JseFfifqAw2tF1f5"
+                        },
+                        {
+                          "stringValue": "wUA9GoLZOpuCTF7C0gMd"
+                        },
+                        {
+                          "stringValue": "Pi5Z3rNol1PCMrybcUoX"
+                        },
+                        {
+                          "stringValue": "ZoHa5H97ePjvvn0Yw2GS"
+                        },
+                        {
+                          "stringValue": "lB5RkBhpRiHIz1ZT9Yj3"
+                        },
+                        {
+                          "stringValue": "dvvpT9G54Tw5vL3HrtYX"
+                        },
+                        {
+                          "stringValue": "7f6pDCkLnPM6iAnkls4y"
+                        },
+                        {
+                          "stringValue": "xwQctizLG5Jmd3QnyCJS"
+                        },
+                        {
+                          "stringValue": "JsofU7SUJ6cRwt5mKSpP"
+                        },
+                        {
+                          "stringValue": "8jJImego3rLSHbn3N8Kr"
+                        },
+                        {
+                          "stringValue": "aYgodYZydCsDMIv5WaYE"
+                        },
+                        {
+                          "stringValue": "tf54CyLakeCCUGjVQ99J"
+                        },
+                        {
+                          "stringValue": "FyYBQTYTh2fbU5Dytmfu"
+                        },
+                        {
+                          "stringValue": "LtN9pUxT9oWVvtq4eTNx"
+                        },
+                        {
+                          "stringValue": "zCCBb324Dw6nlftD2kH3"
+                        },
+                        {
+                          "stringValue": "WBizirPcnL4WeRg6yejA"
+                        },
+                        {
+                          "stringValue": "dMWosRlkYZqqHQI8yYtn"
+                        },
+                        {
+                          "stringValue": "ZmKIzLxoE6zP7x5MpxCc"
+                        },
+                        {
+                          "stringValue": "lCizAJVrfOLdDWtbX0OG"
+                        },
+                        {
+                          "stringValue": "a1X8c5o4NsVoCrpw1dMC"
+                        },
+                        {
+                          "stringValue": "KsAJ95HlsggXMxyMYgXJ"
+                        },
+                        {
+                          "stringValue": "xB1EFYQQKXMzBEZyKVvZ"
+                        },
+                        {
+                          "stringValue": "o2NboKxj9ppg5BrZw1zo"
+                        },
+                        {
+                          "stringValue": "yFUgZZhMVY5FyJmS0bzz"
+                        },
+                        {
+                          "stringValue": "ViCRIkqwnfkOdHWmnN3L"
+                        },
+                        {
+                          "stringValue": "s48fALo6xjEHrEW5g51p"
+                        },
+                        {
+                          "stringValue": "KNVF1Rp8doUlSQE6Mjly"
+                        },
+                        {
+                          "stringValue": "0Vhujym9bINcXfbnZl7d"
+                        },
+                        {
+                          "stringValue": "t2ZY9wksCLjUVGmMt38U"
+                        },
+                        {
+                          "stringValue": "3zqaiwZAyUja05Xyt1oD"
+                        },
+                        {
+                          "stringValue": "1zlR0HienMY8LHsiktEG"
+                        },
+                        {
+                          "stringValue": "3OnqFj6q5J70kzClssTj"
+                        },
+                        {
+                          "stringValue": "0znNYsoVIRY52zlSI9Id"
+                        },
+                        {
+                          "stringValue": "Njkpt1Yn8GCx7X7pftLO"
+                        },
+                        {
+                          "stringValue": "BHkNNhkEZqAu4FabRAH0"
+                        },
+                        {
+                          "stringValue": "FdN5QCiGwZmMNXp2KWLt"
+                        },
+                        {
+                          "stringValue": "A4fXvjpyukSwJOeIyw0J"
+                        },
+                        {
+                          "stringValue": "mItX4F8DBJmV6xy4Av7y"
+                        },
+                        {
+                          "stringValue": "KBS4lFdL8M84ayPdTjii"
+                        },
+                        {
+                          "stringValue": "K0tG5o3iOVhzdwfH0Jcg"
+                        },
+                        {
+                          "stringValue": "sthY2k76IpY7K5zj8ZtV"
+                        },
+                        {
+                          "stringValue": "2zT1gEOabMs6gLk01r5V"
+                        },
+                        {
+                          "stringValue": "3RLlCneE0lOtHCB6gYOn"
+                        },
+                        {
+                          "stringValue": "Q14dhzxXgOKtI2I2moDy"
+                        },
+                        {
+                          "stringValue": "1azMLIyHp8DuxjrsRgEF"
+                        },
+                        {
+                          "stringValue": "ANXi5xGEhDw9Q0LIrfNJ"
+                        },
+                        {
+                          "stringValue": "yEnKtwAUfzW3W8640Q6E"
+                        },
+                        {
+                          "stringValue": "CgYkipbBjyTTSTG3vN5y"
+                        },
+                        {
+                          "stringValue": "PBUTJIjHdrpvwJF0Qc7W"
+                        },
+                        {
+                          "stringValue": "t6jKUsYp8Cb8yILAW4DD"
+                        },
+                        {
+                          "stringValue": "6Wkx85IVHtfgaSzxTmYa"
+                        },
+                        {
+                          "stringValue": "tRBcJ6uJP3N4iLfHw2FS"
+                        },
+                        {
+                          "stringValue": "j6JHvADudCl05J3xKGOu"
+                        },
+                        {
+                          "stringValue": "SjKaNdwqweX2gctQNGmu"
+                        },
+                        {
+                          "stringValue": "1rLV4Z6DGYXrRl45HlkF"
+                        },
+                        {
+                          "stringValue": "QRSBYuWaEAdbJYqCALG9"
+                        },
+                        {
+                          "stringValue": "QTbaom8HQPPQxBsOwqtJ"
+                        },
+                        {
+                          "stringValue": "TifmoXOhsvI15zsQvXMf"
+                        },
+                        {
+                          "stringValue": "Bg56oGMMg4lxopiSFTfd"
+                        },
+                        {
+                          "stringValue": "jQZlZ9eoI8KM7DrTztWd"
+                        },
+                        {
+                          "stringValue": "paTbRCMp0meyUCQOyhk2"
+                        },
+                        {
+                          "stringValue": "rpbHi1qVSMzZKKAC4YBo"
+                        },
+                        {
+                          "stringValue": "qiPXSdWcqpZod6IGmNgQ"
+                        },
+                        {
+                          "stringValue": "oqGoVEJg1vi5L0EcdYp5"
+                        },
+                        {
+                          "stringValue": "XkpLcxcpqBtnKcVrU3k9"
+                        },
+                        {
+                          "stringValue": "XGbUP0mYlrtfD5vQaqMw"
+                        },
+                        {
+                          "stringValue": "IJyBdKciXxoz3PN2QlYP"
+                        },
+                        {
+                          "stringValue": "hYSHXqEg00uUHMhJ9BSk"
+                        },
+                        {
+                          "stringValue": "BivmpRHCoNdX2frOC6LY"
+                        },
+                        {
+                          "stringValue": "FSL3sF0T4swE0cT0zBQq"
+                        },
+                        {
+                          "stringValue": "QOgGHzFbCKWtAwVVLQGt"
+                        },
+                        {
+                          "stringValue": "evRwq7uYXBmObROoZiSD"
+                        },
+                        {
+                          "stringValue": "ts6FwBWMltGckva7zWpD"
+                        },
+                        {
+                          "stringValue": "iYBTPZ58nHz2gBbUEU9V"
+                        },
+                        {
+                          "stringValue": "1dMapeUhAKVa9GSL8vp4"
+                        },
+                        {
+                          "stringValue": "OJeGk2BDFxn9n4KIXlAe"
+                        },
+                        {
+                          "stringValue": "HhTc3EtnlMcSE0H7MPO0"
+                        },
+                        {
+                          "stringValue": "GYFmmnJOkZpkuDntLRZh"
+                        },
+                        {
+                          "stringValue": "vdnshEG12Mum8m2bsLms"
+                        },
+                        {
+                          "stringValue": "MYrKOd6GAwiCNNA4txrJ"
+                        },
+                        {
+                          "stringValue": "x8YCnGo7naZ0puuaJVH9"
+                        },
+                        {
+                          "stringValue": "SVcRYKpaBgTdJLU9DF7y"
+                        },
+                        {
+                          "stringValue": "WFQflLRMa9t0p41Zw1bl"
+                        },
+                        {
+                          "stringValue": "5xSvQnhPsqkB7ZtlNjjn"
+                        },
+                        {
+                          "stringValue": "kyEsJ5rTp62ZAowvRR2H"
+                        },
+                        {
+                          "stringValue": "vrO1Dgf7nFlyQWxesEsz"
+                        },
+                        {
+                          "stringValue": "MHVLESBMvGdP72o21ZKE"
+                        },
+                        {
+                          "stringValue": "T5WlkVVjwGFZgS1ZrMZp"
+                        },
+                        {
+                          "stringValue": "PqN2sxz4UCT39UVTPFxK"
+                        },
+                        {
+                          "stringValue": "1bMYEdi12m4Wf6ySIpbE"
+                        },
+                        {
+                          "stringValue": "Vcnn3XvGCtIizDlH5WW7"
+                        },
+                        {
+                          "stringValue": "q4RYEWFQPWvnss9H9aRG"
+                        },
+                        {
+                          "stringValue": "7TzljSdUpECDlyAADMsG"
+                        },
+                        {
+                          "stringValue": "wOOWwfcjDHPFXcvv11Ik"
+                        },
+                        {
+                          "stringValue": "ng0qse1loxbrArFo3MLO"
+                        },
+                        {
+                          "stringValue": "dF1b8UOGvFnv1b78xXnC"
+                        },
+                        {
+                          "stringValue": "4pqHOsKxIvDHkYszQaVV"
+                        },
+                        {
+                          "stringValue": "5Zb6duJFny7Zq4WjxCde"
+                        },
+                        {
+                          "stringValue": "whjTOIDyvLJGOcPxNzGq"
+                        },
+                        {
+                          "stringValue": "gq5Qvnwa8Z2GxfhOnIsP"
+                        },
+                        {
+                          "stringValue": "6TprFlH1O4NSUj4l90SJ"
+                        },
+                        {
+                          "stringValue": "GZT3zpKZl4jluFgbhpiZ"
+                        },
+                        {
+                          "stringValue": "87aJUsJHUeoIkOTKJsca"
+                        },
+                        {
+                          "stringValue": "nFJ2N88a9HJKlGsBuxTv"
+                        },
+                        {
+                          "stringValue": "fCvf6GjIxQTOv6gCTmcL"
+                        },
+                        {
+                          "stringValue": "s4OTok4TPVC51QfZRlh3"
+                        },
+                        {
+                          "stringValue": "qhKEpHAo6RQ6xVGYjUUq"
+                        },
+                        {
+                          "stringValue": "iZOF2MGWjwVv1FKbzsev"
+                        },
+                        {
+                          "stringValue": "jICPm1SIMBO98r51sovT"
+                        },
+                        {
+                          "stringValue": "RHywjiViwB8Xmhy03HhP"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "id": {
+                    "integerValue": "4"
+                  },
+                  "label": {
+                    "stringValue": "MEP Design Engineers"
+                  },
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "MeFYqa99xLFc3H7xXxet"
+                        },
+                        {
+                          "stringValue": "42ErZEtfYE0NzvP9sh7n"
+                        },
+                        {
+                          "stringValue": "i7rsIhVGTPTCRDtDUMTO"
+                        },
+                        {
+                          "stringValue": "bRbYr8sS4dRkXt4LJtme"
+                        },
+                        {
+                          "stringValue": "7rpT8kYUn3N4IUyRgLE0"
+                        },
+                        {
+                          "stringValue": "ywkPkKkOPa77DSWEdlwx"
+                        },
+                        {
+                          "stringValue": "HdgLNWMxBMC1NHAAZXIQ"
+                        },
+                        {
+                          "stringValue": "olGZiBdhQitCYTP4voGG"
+                        },
+                        {
+                          "stringValue": "coOz80IsYovvvMXd1367"
+                        },
+                        {
+                          "stringValue": "IEECsiqWKXYhG1Gk4Xvo"
+                        },
+                        {
+                          "stringValue": "cibQxbxljQckdddHR0eC"
+                        },
+                        {
+                          "stringValue": "MuXXlc7i5ndPIFu8mOiM"
+                        },
+                        {
+                          "stringValue": "yGzHoG52gv23Si6liPrm"
+                        },
+                        {
+                          "stringValue": "fg5L54ygu23Un13LmoZb"
+                        },
+                        {
+                          "stringValue": "nx6P8006gg7MgIz69YHw"
+                        },
+                        {
+                          "stringValue": "8INDW0N3heGh7ccxn1OW"
+                        },
+                        {
+                          "stringValue": "4Btndlc3Zrr3nLV3iKrX"
+                        },
+                        {
+                          "stringValue": "MplBSdRWLkYN7UHcGojx"
+                        },
+                        {
+                          "stringValue": "t9dR0ii27b2wQ5WYLHsZ"
+                        },
+                        {
+                          "stringValue": "gLFLyeqdFjunsZzC9kKE"
+                        },
+                        {
+                          "stringValue": "IcP1alXrEH4VhxgAKUFd"
+                        },
+                        {
+                          "stringValue": "8KI5rVyp3pj0GRATAijZ"
+                        },
+                        {
+                          "stringValue": "FqJQiPKXUx83ASwcYseO"
+                        },
+                        {
+                          "stringValue": "AjZlPmmfblzBWP81ffhL"
+                        },
+                        {
+                          "stringValue": "KYKhSrbIVZIjFhuE9kYn"
+                        },
+                        {
+                          "stringValue": "zTlbsHfUpnGVEhecd4Q0"
+                        },
+                        {
+                          "stringValue": "Lf29eTNUEbC1bwEOnqzi"
+                        },
+                        {
+                          "stringValue": "qMBoDMLEjLCmEoGGN1gE"
+                        },
+                        {
+                          "stringValue": "vwdEJkfRF3d81H2Up3TR"
+                        },
+                        {
+                          "stringValue": "fFnVP1OTI8dWCzj4YKmB"
+                        },
+                        {
+                          "stringValue": "UfjQB2zPLrZPGof1YcR9"
+                        },
+                        {
+                          "stringValue": "gNfgVVvSZTFAsHYwSRRr"
+                        },
+                        {
+                          "stringValue": "sQFkAHrqS5stxDugbLkz"
+                        },
+                        {
+                          "stringValue": "aPH3epQtb6SWjZ6lv82E"
+                        },
+                        {
+                          "stringValue": "O0fxRPRt4A2gaaEsRGGw"
+                        },
+                        {
+                          "stringValue": "jNk2O9O9ZCABaE3TkBYE"
+                        },
+                        {
+                          "stringValue": "XXW8y7Q0cygoD7u2aMIp"
+                        },
+                        {
+                          "stringValue": "ep6RVMU6VsMTow2j5cY3"
+                        },
+                        {
+                          "stringValue": "wmrdbVxHMILguLEelPo2"
+                        },
+                        {
+                          "stringValue": "5b212n5L6pyk7Do2Db86"
+                        },
+                        {
+                          "stringValue": "AkgQ3YsOS0RLPPi0jh1I"
+                        },
+                        {
+                          "stringValue": "UonWRjpHUoMstUHGy4rO"
+                        },
+                        {
+                          "stringValue": "TnUieOFvfhMSPJipFp6r"
+                        },
+                        {
+                          "stringValue": "tMxWR7lRR7jqJktk2cbn"
+                        },
+                        {
+                          "stringValue": "UzmqKLTaDQAOxU4Mw8Ea"
+                        },
+                        {
+                          "stringValue": "RmT60fk8FuxzqvGC4CAs"
+                        },
+                        {
+                          "stringValue": "XRYi2KL88YfAuzpco30h"
+                        },
+                        {
+                          "stringValue": "XUXhyBVD3xpP60JFBTig"
+                        },
+                        {
+                          "stringValue": "KgfkfXSPhBE8qdUgJaOu"
+                        },
+                        {
+                          "stringValue": "rYi56OH2bH0qqz3rcCcU"
+                        },
+                        {
+                          "stringValue": "otlp2peE0LkKyTRqVdEJ"
+                        },
+                        {
+                          "stringValue": "iEmKGKo1EkWNbpJIGdWt"
+                        },
+                        {
+                          "stringValue": "oYvnMwriybe7vpRDjHBZ"
+                        },
+                        {
+                          "stringValue": "QzeYqrfgAB6EzHnK1oot"
+                        },
+                        {
+                          "stringValue": "IqYeyN3ERz1TrKr8UOM5"
+                        },
+                        {
+                          "stringValue": "aXpFInncgdp0QWzca8Gn"
+                        },
+                        {
+                          "stringValue": "VdgEM7UKzuedLEFn6yVE"
+                        },
+                        {
+                          "stringValue": "UplyCdWwpRozUi2oWfTk"
+                        },
+                        {
+                          "stringValue": "TgAvmf2CUtTRsGixwwhD"
+                        },
+                        {
+                          "stringValue": "LBW8kNrNRTuGrf7sEQUB"
+                        },
+                        {
+                          "stringValue": "NxaEBQ8PCu6px1yejP0W"
+                        },
+                        {
+                          "stringValue": "ttC0znyZFZdhenWbavIq"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "mapValue": {
+                "fields": {
+                  "id": {
+                    "integerValue": "5"
+                  },
+                  "candidateIds": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "DWK6vkrkQ7SLRSgrCeh7"
+                        },
+                        {
+                          "stringValue": "JcrS01rYbTSAgVfWUzHs"
+                        },
+                        {
+                          "stringValue": "iqHKFtqiSNdOkfz2UU0p"
+                        },
+                        {
+                          "stringValue": "ipIp4xnY5aloPYZfPsqN"
+                        },
+                        {
+                          "stringValue": "ISyts9bOcVAXgjpWiyXA"
+                        },
+                        {
+                          "stringValue": "QFuQXGbpU8GakRM4Gxea"
+                        },
+                        {
+                          "stringValue": "SIr48YfhprWAi4jhRFGR"
+                        },
+                        {
+                          "stringValue": "cGMlD3w2cXoTvrWEXDJ3"
+                        },
+                        {
+                          "stringValue": "z9fjRXpEwTuEM2C3MbOA"
+                        },
+                        {
+                          "stringValue": "fM6z16Ph7fjuKTxog1lg"
+                        },
+                        {
+                          "stringValue": "PyZvhoI89EAHDZz8AHOm"
+                        }
+                      ]
+                    }
+                  },
+                  "label": {
+                    "stringValue": "Business Analysts"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+]
