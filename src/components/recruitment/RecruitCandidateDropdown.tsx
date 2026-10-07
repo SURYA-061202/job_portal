@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { upsertApplication } from '@/lib/jobApplications';
@@ -32,8 +33,45 @@ export default function RecruitCandidateDropdown({
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [submitting, setSubmitting] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [panelStyle, setPanelStyle] = useState<CSSProperties | null>(null);
     const loadedRef = useRef(false);
     const skin = useSkin();
+
+    /* The trigger now sits inside the masthead, which is `overflow-hidden` to
+       clip its gradient wash to the card radius - that would also clip an
+       absolutely positioned menu. Position the panel against the viewport with
+       `fixed` instead, and keep it pinned while the page scrolls. */
+    const positionPanel = useCallback(() => {
+        const rect = buttonRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        // Match the trigger's width exactly (clamped to the viewport).
+        const width = Math.min(rect.width, window.innerWidth - 24);
+        const left = Math.min(Math.max(rect.left, 12), window.innerWidth - width - 12);
+        const style: CSSProperties = { position: 'fixed', left, width, zIndex: 60 };
+        // Flip above the trigger when there is not enough room below.
+        if (window.innerHeight - rect.bottom < 280 && rect.top > 280) {
+            style.bottom = window.innerHeight - rect.top + 8;
+        } else {
+            style.top = rect.bottom + 8;
+        }
+        setPanelStyle(style);
+    }, []);
+
+    useEffect(() => {
+        if (!open) {
+            setPanelStyle(null);
+            return;
+        }
+        positionPanel();
+        const update = () => positionPanel();
+        window.addEventListener('scroll', update, true);
+        window.addEventListener('resize', update);
+        return () => {
+            window.removeEventListener('scroll', update, true);
+            window.removeEventListener('resize', update);
+        };
+    }, [open, positionPanel]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -90,7 +128,10 @@ export default function RecruitCandidateDropdown({
     };
 
     const toggleOpen = () => {
-        if (!open) loadOptions();
+        if (!open) {
+            positionPanel();
+            loadOptions();
+        }
         setOpen(prev => !prev);
     };
 
@@ -141,6 +182,7 @@ export default function RecruitCandidateDropdown({
     return (
         <div className="relative" ref={containerRef}>
             <button
+                ref={buttonRef}
                 onClick={toggleOpen}
                 className={`inline-flex items-center gap-2 cursor-pointer whitespace-nowrap ${skin.cta} ${FOCUS}`}
             >
@@ -153,7 +195,7 @@ export default function RecruitCandidateDropdown({
             </button>
 
             {open && (
-                <div className={`absolute z-20 mt-2 w-full border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden`}>
+                <div className={`z-50 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden`} style={panelStyle ?? undefined}>
                     <div className="max-h-80 overflow-y-auto hover-scrollbar">
                         {loading ? (
                             <div className={`p-6 text-center ${skin.body}`}>Loading…</div>

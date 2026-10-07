@@ -24,8 +24,12 @@ export default function UserHeader() {
     }, []);
 
     const isActive = (path: string) => {
-        const fullUrl = location.pathname + location.search;
-        return fullUrl === path;
+        const [pathName, query = ''] = path.split('?');
+        if (location.pathname !== pathName) return false;
+
+        const currentTab = new URLSearchParams(location.search).get('tab') || 'profile';
+        const targetTab = new URLSearchParams(query).get('tab') || 'profile';
+        return currentTab === targetTab;
     };
 
     const handleLogout = async () => {
@@ -58,9 +62,17 @@ export default function UserHeader() {
                 <div className="flex justify-between items-center">
                     {/* Left Side - Logo and Desktop Navigation */}
                     <div className="flex items-center gap-10">
-                        <Link to="/home" className="flex items-center group">
+                        <Link to="/home" className="flex items-center gap-2 group -ml-2">
+                            <img
+                                src="/images/indianinfra.png"
+                                alt=""
+                                aria-hidden="true"
+                                width={108}
+                                height={102}
+                                className="h-7 w-auto object-contain sm:h-8"
+                            />
                             <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
-                                <span className="text-ink">IndianInfra</span>
+                                <span className="text-ink">Indian Infra</span>
                                 <span className="text-ink">
                                     Jobs
                                 </span>

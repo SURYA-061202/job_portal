@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { sendPasswordResetMail } from '@/lib/emailFunctions';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Mail, Phone, User, Eye, EyeOff } from 'lucide-react';
@@ -73,14 +74,16 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetMail({ email, baseUrl: window.location.origin });
       toast.success('Password reset email sent! Check your inbox.');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending reset email:', error);
-      if (error.code === 'auth/user-not-found') {
+      const code = (error as { code?: string })?.code;
+      const message = (error as { message?: string })?.message;
+      if (code === 'functions/not-found' || code === 'auth/user-not-found') {
         toast.error('No account found with this email');
       } else {
-        toast.error(error.message || 'Failed to send reset email');
+        toast.error(message || 'Failed to send reset email');
       }
     } finally {
       setLoading(false);
@@ -98,11 +101,13 @@ export default function LoginPage() {
 
       {/* Left Panel - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background Image - fills entire panel */}
+        {/* Background Image - fills entire panel.
+            WebP: same 909x910 art at ~160 kB instead of the PNG's 1.4 MB, so the
+            preloaded hero arrives while the form is still rendering. */}
         <div
           className="absolute inset-0 w-full h-full bg-no-repeat"
           style={{
-            backgroundImage: 'url("/images/jobslogo.png")',
+            backgroundImage: 'url("/images/jobslogo.webp")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.8)'
@@ -120,17 +125,24 @@ export default function LoginPage() {
               }
             `}
           </style>
-          <h1 className="text-xl font-bold drop-shadow-lg text-surface">
-            {'IndianInfra Jobs'.split('').map((char, i) => (
-              <span
-                key={i}
-                style={{
-                  animation: `letter-glow 4s ease-in-out ${i * 0.12}s infinite`
-                }}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </span>
-            ))}
+          <h1 className="flex items-center gap-3 text-xl font-bold drop-shadow-lg text-surface">
+            <img
+              src="/images/indianinfra.png"
+              alt="IndianInfra Logo"
+              className="h-11 w-auto shrink-0 object-contain"
+            />
+            <span className="flex flex-wrap">
+              {'Indian Infra Jobs'.split('').map((char, i) => (
+                <span
+                  key={i}
+                  style={{
+                    animation: `letter-glow 4s ease-in-out ${i * 0.12}s infinite`
+                  }}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </span>
+              ))}
+            </span>
           </h1>
         </div>
       </div>
@@ -160,7 +172,7 @@ export default function LoginPage() {
                 alt="IndianInfra Logo"
                 className="h-10 w-auto object-contain"
               />
-              <span className="text-ink">IndianInfra</span>
+              <span className="text-ink">Indian Infra</span>
               <span className="text-brand">
                 Jobs
               </span>
@@ -317,14 +329,10 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full border border-ink bg-ink text-surface rounded-xl py-2.5 font-semibold text-base shadow-lg shadow-brand/25 hover:border-brand hover:bg-brand hover:text-ink hover:shadow-xl hover:shadow-brand/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-lg"
               >
-                {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin"></div>
-                    Processing...
-                  </div>
-                ) : (
-                  isLogin ? 'Sign In' : 'Create Account'
-                )}
+                <div className="flex items-center justify-center gap-2">
+                  {loading && <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin"></div>}
+                  {isLogin ? 'Sign In' : 'Create Account'}
+                </div>
               </button>
 
               {/* Toggle Auth Mode */}

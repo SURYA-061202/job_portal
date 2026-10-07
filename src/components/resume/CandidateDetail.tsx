@@ -1,22 +1,18 @@
 'use client';
 
 import type { Candidate, RecruitmentRequest } from '@/types';
-import { ArrowLeft, MailPlus, ArrowRightCircle, Edit2, Loader2 } from 'lucide-react';
+import { ArrowLeft, MailPlus, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import CustomDropdown from '@/components/CustomDropdown';
 import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
-import { setApplicationStatus, upsertApplication } from '@/lib/jobApplications';
 import InterviewInviteModal from './InterviewInviteModal';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
-import toast from 'react-hot-toast';
 
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
-  onEdit?: (candidate: Candidate) => void;
   onInviteSent?: () => void;
   onRemoveCandidate?: () => void;
   onUpdateCandidate?: (updatedCandidate: Candidate) => void;
@@ -25,13 +21,11 @@ interface CandidateDetailProps {
   activePostId?: string | null;
 }
 
-export default function CandidateDetail({ candidate: initialCandidate, onBack, onEdit, onInviteSent, onRemoveCandidate, onUpdateCandidate, userApplications, activePostId }: CandidateDetailProps) {
+export default function CandidateDetail({ candidate: initialCandidate, onBack, onInviteSent, onRemoveCandidate, userApplications, activePostId }: CandidateDetailProps) {
   const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
-  const [shortlistPostId, setShortlistPostId] = useState('');
-  const [shortlisting, setShortlisting] = useState(false);
   const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const { showSuccess, showError } = usePopup();
@@ -40,6 +34,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   // Set only when this detail view was reached through the Posts module, so the
   // header can name the post the candidate is being reviewed for.
   const activePost = activePostId ? jobPosts.find(p => p.id === activePostId) : null;
+
+  // Reached via Posts > Recruitment Detail > Candidates: the post context is
+  // already known, so the applied-posts list (and the module-only actions)
+  // belong to the Candidates-module path only.
+  const isPostContext = !!activePostId;
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -54,10 +53,36 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
     fetchJobs();
   }, []);
 
-  // Fetch applied posts for this candidate
+  // Interview status/round info (written by the invite modal and the Shortlisted module)
+  const [interviewInfo, setInterviewInfo] = useState<{ roundType?: string; status?: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchInterviewInfo = async () => {
+      if (!candidate.id) return;
+      try {
+        const snap = await getDoc(doc(db, 'interviews', candidate.id));
+        if (!cancelled) {
+          setInterviewInfo(snap.exists() ? (snap.data() as { roundType?: string; status?: string }) : null);
+        }
+      } catch (error) {
+        console.error('Error fetching interview info:', error);
+      }
+    };
+    fetchInterviewInfo();
+    return () => { cancelled = true; };
+  }, [candidate.id]);
+
+  // Fetch applied posts for this candidate (Candidates-module path only)
   useEffect(() => {
     const fetchAppliedPosts = async () => {
       if (!candidate.id) return;
+
+      if (isPostContext) {
+        setAppliedPosts([]);
+        setLoadingPosts(false);
+        return;
+      }
 
       // If userApplications prop is provided, use it directly
       if (userApplications && userApplications.length > 0) {
@@ -109,7 +134,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       }
     };
     fetchAppliedPosts();
-  }, [candidate.id, userApplications]);
+  }, [candidate.id, userApplications, isPostContext]);
 
   // If initialCandidate changes, update local state
   if (initialCandidate.id !== candidate.id) {
@@ -140,108 +165,76 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
     }
   };
 
-  const handleShortlistToPost = async () => {
-    if (!shortlistPostId) return;
-    setShortlisting(true);
-    try {
-      const isJobApplicant = !!(candidate as any).postId;
-
-      if (isJobApplicant) {
-        // Registered user / job applicant — update existing application
-        await setApplicationStatus(shortlistPostId, candidate.id, 'shortlisted');
-      } else {
-        // Manual candidate — update Firestore + create application
-        const candidateRef = doc(db, 'candidates', candidate.id);
-        await import('firebase/firestore').then(({ updateDoc }) =>
-          updateDoc(candidateRef, {
-            postId: shortlistPostId,
-            status: 'shortlisted',
-            updatedAt: new Date(),
-          })
-        );
-
-        await upsertApplication(shortlistPostId, candidate.id, 'shortlisted');
-      }
-
-      // Update local candidate state
-      setCandidate(prev => ({ ...prev, status: 'shortlisted', postId: shortlistPostId } as Candidate));
-      if (onUpdateCandidate) {
-        onUpdateCandidate({ ...candidate, status: 'shortlisted', postId: shortlistPostId } as Candidate);
-      }
-    } catch (err: any) {
-      console.error('Shortlist failed:', err);
-      toast.error(err.message || 'Failed to shortlist candidate');
-    } finally {
-      setShortlisting(false);
+  // Status to show in place of the invite action once the candidate has moved
+  // beyond "applied" (shortlisted, or in an interview round).
+  const statusLabel = (() => {
+    const statuses = [candidate.status, interviewInfo?.status].filter(Boolean) as string[];
+    const round = statuses.find((s) => /^round\d+$/.test(s));
+    if (round) {
+      const roundNumber = round.replace(/\D/g, '');
+      const roundName = interviewInfo?.roundType || candidate.interviewDetails?.roundType || '';
+      return roundName ? `Round ${roundNumber} - ${roundName}` : `Round ${roundNumber}`;
     }
-  };
+    const status = statuses.find((s) => ['shortlisted', 'selected', 'rejected'].includes(s));
+    if (status) return status.charAt(0).toUpperCase() + status.slice(1);
+    return null;
+  })();
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header - Fixed */}
-      <div className={`p-4 sticky top-0 z-10 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Left: Back + Name/Role */}
-          <div className="flex items-center gap-3">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Masthead - the Posts/Candidates recipe: hairline edge, surface, radius,
+          elevation and brand wash from the active skin. Title row carries the
+          back control, candidate identity and the page actions. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          {/* Left: Back + Name/Post */}
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={onBack}
-              className={`p-1.5 mt-0.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors flex-shrink-0 ${FOCUS}`}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
               title="Back"
+              aria-label="Go back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
             </button>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className={skin.heading}>
-                  {candidate.name}{activePost?.jobTitle && ` - ${activePost.jobTitle}`}
-                </h2>
-                {candidate.email && activePostId && (
-                  <button
-                    onClick={() => setShowInviteModal(true)}
-                    className={`p-1.5 ${skin.radius} border border-ink bg-ink text-surface hover:border-brand hover:bg-brand hover:text-ink hover:scale-110 active:scale-95 transition-all cursor-pointer ${FOCUS}`}
-                    title="Send Interview Invite"
-                  >
-                    <MailPlus className="h-4 w-4" />
-                  </button>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className={`${skin.heading} max-w-full truncate`}>
+                  {candidate.name}
+                </h1>
+                {activePostId && (
+                  statusLabel ? (
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink ${skin.radius}`}
+                      title="Interview status"
+                    >
+                      {statusLabel}
+                    </span>
+                  ) : candidate.email ? (
+                    <button
+                      onClick={() => setShowInviteModal(true)}
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand active:scale-95 ${FOCUS}`}
+                      title="Send Interview Invite"
+                      aria-label="Send interview invite"
+                    >
+                      <MailPlus className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  ) : null
                 )}
               </div>
-              {(candidate as any).selectedInterviewDate && (
-                <div className="flex items-center gap-1.5 text-sm text-ink/60">
-                  <span>Interview on {(candidate as any).selectedInterviewDate}</span>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <CustomDropdown
-                value={shortlistPostId}
-                onChange={setShortlistPostId}
-                options={jobPosts.map((job) => ({ value: job.id || '', label: job.jobTitle || 'Untitled Post' }))}
-                placeholder="Select Post"
-                className="max-w-[180px]"
-              />
-              <button
-                onClick={handleShortlistToPost}
-                disabled={!shortlistPostId || shortlisting}
-                className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.secondary} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                <ArrowRightCircle className="w-4 h-4" />
-                {shortlisting ? 'Moving...' : 'Move'}
-              </button>
-            </div>
-
-            {onEdit && (
-              <button
-                onClick={() => onEdit(candidate)}
-                className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.secondary} ${FOCUS}`}
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit
-              </button>
-            )}
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              onClick={handleRemove}
+              disabled={removing}
+              className={`inline-flex items-center gap-1.5 cursor-pointer border border-destructive bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-wider text-destructive transition-colors duration-200 hover:bg-destructive hover:text-white disabled:opacity-50 ${FOCUS}`}
+            >
+              {removing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+              {removing ? 'Deleting...' : 'Delete'}
+            </button>
 
             <a
               href={candidate.resumeUrl}
@@ -253,12 +246,25 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             </a>
           </div>
         </div>
+
+        {/* Description row - separated from the title row by the same hairline
+            used across the other mastheads. */}
+        {(activePost?.jobTitle || candidate.selectedInterviewDate) && (
+          <div className="px-4 py-2.5 sm:px-5">
+            {activePost?.jobTitle && <p className={skin.body}>{activePost.jobTitle}</p>}
+            {candidate.selectedInterviewDate && (
+              <p className={`${skin.meta} mt-1`}>Interview on {candidate.selectedInterviewDate}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 space-y-6`}>
-            {/* Applied Posts */}
+            {/* Applied Posts - Candidates-module path only; when the detail is
+                reached through a post the context is already known. */}
+            {!isPostContext && (
             <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
               <h3 className={`${skin.cardTitle} mb-4`}>
                 Applied Posts
@@ -317,6 +323,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 </div>
               )}
             </div>
+            )}
 
             {/* Contact Info */}
             <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
@@ -358,23 +365,17 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
               <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
-                <h3 className={`${skin.cardTitle} mb-3`}>
+                <h3 className={`${skin.cardTitle} mb-4 flex flex-wrap items-center gap-3`}>
                   Education
-                  {(() => {
-                    const eduWithCgpa: any = (candidate.education || []).find((e: any) => (e.cgpa ?? e.CGPA) !== undefined && (e.cgpa ?? e.CGPA) !== null);
-                    if (!eduWithCgpa) return null;
-                    const raw = (eduWithCgpa.cgpa ?? eduWithCgpa.CGPA) as string;
-                    const cgpa = parseFloat(raw);
-                    const good = !isNaN(cgpa) && cgpa >= 7;
-                    const badgeClass = good ? 'border border-ink/20 bg-ink/10 text-ink' : 'border border-destructive/20 bg-destructive/10 text-destructive';
-                    return (
-                      <span className={`ml-3 inline-block px-2 py-0.5 text-xs font-semibold rounded ${badgeClass}`}>CGPA: {cgpa}</span>
-                    );
-                  })()}
+                  {candidate.education.filter((edu) => edu.cgpa).map((edu, i) => (
+                    <span key={i} className="inline-block bg-ink px-2 py-0.5 text-xs font-semibold text-surface">
+                      {isNaN(parseFloat(String(edu.cgpa))) ? edu.cgpa : `CGPA: ${edu.cgpa}`}
+                    </span>
+                  ))}
                 </h3>
-                <div className="space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-6">
                   {candidate.education.map((edu, index) => (
-                    <div key={index} className="border-l-4 border-brand/30 pl-4">
+                    <div key={index} className="min-w-0 grow basis-60">
                       {(edu.degree || edu.field) && (
                         <p className="text-ink/80 font-medium">
                           {edu.degree}
@@ -382,7 +383,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                         </p>
                       )}
                       <p className="text-ink/70">{edu.institution}</p>
-                      {edu.year && <p className="text-sm text-ink/60">{edu.year}</p>}
+                      {edu.year && <p className="mt-2 text-sm text-ink/60">{edu.year}</p>}
                     </div>
                   ))}
                 </div>
@@ -533,18 +534,6 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
           defaultPostId={activePostId}
         />
       )}
-
-      {/* Remove Candidate Button */}
-      <div className="flex justify-end flex-shrink-0 mt-4">
-        <button
-          className={`inline-flex items-center gap-2 px-4 py-2 border border-destructive bg-destructive text-white ${skin.radius} hover:opacity-90 disabled:opacity-50 ${FOCUS}`}
-          onClick={handleRemove}
-          disabled={removing}
-        >
-          {removing && <Loader2 className="h-4 w-4 animate-spin" />}
-          {removing ? 'Removing...' : 'Remove Candidate'}
-        </button>
-      </div>
     </div>
   );
 }

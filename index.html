@@ -6,10 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Type system (ui-ux-pro-max): Fira Sans for UI/labels, Fira Code for data.
-         Fira Sans is loaded through 900 so every weight the app already uses
+    <!-- Sign-in hero: the panel art is a React inline background, so the browser
+         would only discover it after the JS bundle loads and renders. Preloading
+         it here starts the download alongside the HTML instead. -->
+    <link rel="preload" as="image" href="/images/jobslogo.webp" fetchpriority="high">
+    <!-- Type system: Inter for UI/labels (Supabase's stack), Fira Code for data.
+         Inter is loaded through 900 so every weight the app already uses
          (font-medium -> font-black) renders as a real weight, never faux-bold. -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <title>IndianInfra Jobs</title>
   </head>
   <body>

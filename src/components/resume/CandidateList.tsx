@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, User, ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User, ArrowLeft } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
@@ -73,7 +73,6 @@ export default function CandidateList({
   filterValue,
   filterOptions,
   onFilterChange,
-  jobId,
   onBack,
   hideRole = false,
   hideEmptyIcon = false
@@ -81,9 +80,6 @@ export default function CandidateList({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
   const skin = useSkin();
-
-  // State for sorting
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
 
   const handleRemove = async (e: React.MouseEvent, candidate: Candidate) => {
     e.stopPropagation();
@@ -110,23 +106,6 @@ export default function CandidateList({
     } finally {
       setDeletingId(null);
     }
-  };
-
-  // Helper to get score for sorting/display
-  const getCandidateScore = (candidate: Candidate, jobId?: string | null): number | null => {
-    if (!candidate.rankings) return null;
-
-    if (jobId && candidate.rankings[jobId]) {
-      return candidate.rankings[jobId].score;
-    }
-
-    // If no specific job, get max score
-    const rankings = Object.values(candidate.rankings);
-    if (rankings.length > 0) {
-      return rankings.reduce((max, current) => (current.score > max ? current.score : max), 0);
-    }
-
-    return null;
   };
 
   // Helper to decide if a candidate matches the current search term
@@ -158,38 +137,10 @@ export default function CandidateList({
     return tokens.some((t) => t?.toLowerCase().includes(q));
   };
 
-  // Memoised filtered and sorted list
+  // Memoised filtered list
   const filteredCandidates = useMemo(() => {
-    // 1. Filter
-    let result = candidates.filter((c) => candidateMatchesSearch(c, searchTerm));
-
-    // 2. Sort
-    if (sortOrder !== 'none') {
-      result = [...result].sort((a, b) => {
-        const scoreA = getCandidateScore(a, jobId);
-        const scoreB = getCandidateScore(b, jobId);
-
-        // Always put non-scored candidates at the bottom
-        if (scoreA === null && scoreB === null) return 0;
-        if (scoreA === null) return 1;
-        if (scoreB === null) return -1;
-
-        // Compare scores
-        return sortOrder === 'desc' ? scoreB - scoreA : scoreA - scoreB;
-      });
-    }
-
-    return result;
-  }, [candidates, searchTerm, sortOrder, jobId]);
-
-  // Handler for toggle sort
-  const toggleSort = () => {
-    setSortOrder(prev => {
-      if (prev === 'none') return 'desc'; // First click: Highest score first
-      if (prev === 'desc') return 'asc';  // Second click: Lowest score first
-      return 'none';                      // Third click: Reset
-    });
-  };
+    return candidates.filter((c) => candidateMatchesSearch(c, searchTerm));
+  }, [candidates, searchTerm]);
 
   return (
     <div className="space-y-4">
@@ -292,26 +243,11 @@ export default function CandidateList({
                 <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>{hideRole ? 'Name' : 'Name / Role'}</th>
                 <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Contact Info</th>
                 <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Experience</th>
-                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>
-                  <div className="flex items-center gap-2">
-                    <span>AI Score</span>
-                    <button
-                      onClick={toggleSort}
-                      className={`flex flex-col items-center justify-center p-1 ${skin.radius} text-ink/60 hover:bg-ink/5 hover:text-ink transition-colors cursor-pointer ${FOCUS}`}
-                      title="Sort by AI Score"
-                    >
-                      <ChevronUp className={`w-3.5 h-3.5 -mb-1 ${sortOrder === 'asc' ? 'text-brand stroke-[3px]' : 'text-ink/40'}`} />
-                      <ChevronDown className={`w-3.5 h-3.5 ${sortOrder === 'desc' ? 'text-brand stroke-[3px]' : 'text-ink/40'}`} />
-                    </button>
-                  </div>
-                </th>
                 <th scope="col" className={`px-6 py-4 text-center ${skin.micro} ${skin.canvas}`}>Actions</th>
               </tr>
             </thead>
             <tbody className={`${skin.surface} divide-y ${skin.divide}`}>
               {filteredCandidates.map((candidate) => {
-                const aiScore = getCandidateScore(candidate, jobId);
-
                 return (
                   <tr
                     key={candidate.id}
@@ -353,20 +289,6 @@ export default function CandidateList({
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${skin.surface} text-ink/70 border ${skin.edge} max-w-[150px] truncate`} title={candidate.experience}>
                         {formatExperience(candidate.experience)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {aiScore !== null ? (
-                        <div className="flex items-center">
-                          <div className={`flex-shrink-0 h-2 w-2 rounded-full mr-2 ${aiScore >= 80 ? 'bg-green-500' : aiScore >= 50 ? 'bg-brand' : 'bg-red-500'
-                            }`}></div>
-                          <span className={`text-sm font-semibold ${aiScore >= 80 ? 'text-green-700' : aiScore >= 50 ? 'text-brand' : 'text-red-700'
-                            }`}>
-                            {aiScore}%
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-ink/40 text-xs">-</span>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <div className="flex items-center justify-center gap-2 transition-opacity">

@@ -74,7 +74,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
                     <button
                         onClick={() => onViewDetails?.(recruitment)}
-                        className={`w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-brand/10 text-brand border border-brand/20 font-bold ${skin.radius} hover:bg-brand/20 hover:border-brand/40 active:scale-95 transition-all text-[10px] md:text-xs ${FOCUS}`}
+                        className={`w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-brand text-brand-foreground font-bold hover:bg-brand/90 active:scale-95 transition-all text-[10px] md:text-xs ${FOCUS}`}
                     >
                         View
                     </button>

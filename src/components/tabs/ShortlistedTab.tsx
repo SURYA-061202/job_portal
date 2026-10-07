@@ -304,7 +304,8 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         searchTerm={search}
         onSearchTermChange={setSearch}
         emptyMessage="No shortlisted candidates found."
-        title={`Shortlisted — ${selectedPostView.jobTitle}`}
+        title="Shortlisted"
+        description={selectedPostView.jobTitle}
         onBack={() => { setSelectedPostView(null); setSearch(''); }}
         hideRole
         hideEmptyIcon

@@ -183,7 +183,7 @@ export default function Dashboard() {
   // Tabs that manage their own internal scrolling (fixed header + scrollable body).
   // For these, <main> must not scroll, and the content wrapper needs min-h-0 so the
   // flex chain resolves to a bounded height instead of growing with its content.
-  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected';
+  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'candidates';
 
   return (
     <div className={`flex h-screen ${skin.canvas} relative`}>

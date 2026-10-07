@@ -12,6 +12,7 @@ const sendInterviewInviteFn = httpsCallable(functions, 'sendInterviewInvite');
 const sendRoundInviteFn = httpsCallable(functions, 'sendRoundInvite');
 const sendCongratulationsMailFn = httpsCallable(functions, 'sendCongratulationsMail');
 const sendVerifyDetailsFn = httpsCallable(functions, 'sendVerifyDetails');
+const sendPasswordResetMailFn = httpsCallable(functions, 'sendPasswordResetMail');
 
 export async function sendManagerInvite(data: { email: string; name?: string; password: string; baseUrl: string }) {
   await managerInviteFn(data);
@@ -41,4 +42,8 @@ export async function sendCongratulationsMail(data: { candidate: CandidateInput 
 
 export async function sendVerifyDetails(data: { candidate: CandidateInput; baseUrl: string }) {
   await sendVerifyDetailsFn(data);
+}
+
+export async function sendPasswordResetMail(data: { email: string; baseUrl: string }) {
+  await sendPasswordResetMailFn(data);
 }

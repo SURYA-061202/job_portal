@@ -208,6 +208,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 <RecruitmentDetailView
                     recruitment={selectedJob}
                     onBack={() => setSelectedJob(null)}
+                    isUserView
                 />
             </div>
         );

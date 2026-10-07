@@ -2,12 +2,21 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getAllApplications, setApplicationStatus } from '@/lib/jobApplications';
-import type { RecruitmentRequest } from '@/types';
+import type { Education, RecruitmentRequest } from '@/types';
+import {
+    getUserCertificates,
+    getUserCourses,
+    getUserEducation,
+    getUserExperience,
+    getUserProjects,
+    getUserSkills,
+    type ProfileLine,
+} from '@/lib/userToCandidate';
 import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
-import RecruitmentCard from '@/components/recruitment/RecruitmentCard';
+import PostCard from '@/components/recruitment/PostCard';
 import { toast } from 'react-hot-toast';
-import { User, X, ArrowRight, Search, Loader2, Briefcase as BriefcaseIcon, Tag, ChevronDown, ChevronUp, ChevronLeft, CalendarCheck, CalendarX, Clock } from 'lucide-react';
+import { X, ArrowRight, Search, Briefcase as BriefcaseIcon, SearchX, ChevronDown, ChevronUp, ChevronLeft, CalendarCheck, CalendarX, Clock } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 type PipelineColumn = {
@@ -81,6 +90,15 @@ type PipelineItem = {
     postTitle?: string;
     source: 'manual' | 'applicant';
     createdAt?: any;
+    /** Profile fields the user filled in on the user-side portal. */
+    email?: string;
+    phone?: string;
+    address?: string;
+    education?: Education[];
+    experienceItems?: ProfileLine[];
+    projects?: ProfileLine[];
+    certificates?: ProfileLine[];
+    courses?: string[];
 };
 
 /** Firestore Timestamp / Date / epoch value -> comparable milliseconds. */
@@ -110,13 +128,6 @@ type InterviewResponse = {
     experienceIn?: string;
     readyToRelocate?: string;
     laptop?: string;
-};
-
-const normalizeSkills = (skills: any): string[] => {
-    if (!skills) return [];
-    if (Array.isArray(skills)) return skills.filter(Boolean);
-    if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
-    return [];
 };
 
 export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
@@ -213,7 +224,16 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                         : (display.name || 'Unnamed Candidate'),
                     role: (registered ? registered.department : display.role) || 'Not specified',
                     experience: (registered ? registered.yearsOfExperience : display.experience) || '',
-                    skills: normalizeSkills(display.skills),
+                    skills: getUserSkills(display),
+                    email: display.email || '',
+                    phone: display.mobile || display.phone || '',
+                    address: display.address || '',
+                    education: getUserEducation(display),
+                    experienceItems: getUserExperience(display),
+                    projects: getUserProjects(display),
+                    certificates: getUserCertificates(display),
+                    courses: getUserCourses(display),
+                    summary: display.summary || display.extractedData?.summary,
                     status: app.status || 'shortlisted',
                     postId: app.post_id,
                     postTitle: postTitleById[app.post_id] || 'Untitled Post',
@@ -232,7 +252,15 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                     name: data.name || 'Unnamed Candidate',
                     role: data.role || 'Not specified',
                     experience: data.experience || '',
-                    skills: normalizeSkills(data.skills),
+                    skills: getUserSkills(data),
+                    email: data.email || '',
+                    phone: data.mobile || data.phone || '',
+                    address: data.address || '',
+                    education: getUserEducation(data),
+                    experienceItems: getUserExperience(data),
+                    projects: getUserProjects(data),
+                    certificates: getUserCertificates(data),
+                    courses: getUserCourses(data),
                     summary: data.extractedData?.summary,
                     status: data.status || 'shortlisted',
                     postId: data.postId,
@@ -357,10 +385,26 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     if (loading) {
         return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center text-ink/60">
-                        <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto mb-3" />
-                        <p>Loading pipeline...</p>
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
+                    {/* Same card-grid skeleton the Posts tab shows while loading. */}
+                    <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                        <span className="sr-only">Loading posts…</span>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.surface} ${skin.radius} p-4 sm:p-5`}>
+                                <div className={`h-5 w-2/3 ${skin.skeleton}`} />
+                                <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
+                                <div className="mt-6 grid grid-cols-2">
+                                    <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
+                                    <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
+                                </div>
+                                <div className="mt-6 flex gap-1.5">
+                                    <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
+                                    <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
+                                    <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
+                                </div>
+                                <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -418,22 +462,37 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
                     {filteredPosts.length === 0 ? (
-                        <div className={`text-center py-12 border border-dashed ${skin.edge} ${skin.surface} ${skin.radius}`}>
-                            <BriefcaseIcon className="h-10 w-10 text-brand mx-auto mb-3" />
-                            <p className={skin.body}>
+                        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} px-6 py-14 text-center`}>
+                            <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
+                                {posts.length === 0 ? <BriefcaseIcon className="h-6 w-6" /> : <SearchX className="h-6 w-6" />}
+                            </span>
+                            <h3 className={skin.emptyTitle}>
+                                {posts.length === 0 ? 'No job posts yet' : 'No matching posts'}
+                            </h3>
+                            <p className={`mx-auto mt-2 max-w-sm ${skin.body}`}>
                                 {posts.length === 0
-                                    ? 'No job posts yet. Create a post to start a pipeline.'
-                                    : 'No posts match your search.'}
+                                    ? 'Create a post to start a pipeline.'
+                                    : searchTerm
+                                        ? <>Nothing matches <span className={`break-words ${skin.cardValue}`}>“{searchTerm}”</span>. Try a different title, department or location.</>
+                                        : 'No posts to show.'}
                             </p>
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm('')}
+                                    className={`mt-5 ${skin.secondary} ${FOCUS}`}
+                                >
+                                    Clear search
+                                </button>
+                            )}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                             {filteredPosts.map(post => (
-                                <RecruitmentCard
+                                <PostCard
                                     key={post.id}
-                                    recruitment={post}
-                                    applicantCount={countsByPost[post.id as string] || 0}
-                                    onClick={() => openPost(post)}
+                                    post={{ ...post, applicantCount: countsByPost[post.id as string] || 0 }}
+                                    onOpen={openPost}
                                 />
                             ))}
                         </div>
@@ -525,7 +584,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                             onDragStart={(e) => onDragStart(e, item.key)}
                                             onClick={() => setDetailItem(item)}
                                             title="View interview response & details"
-                                            className={`p-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} cursor-grab active:cursor-grabbing transition-colors duration-200 ${skin.cardHover} group flex flex-col h-56 overflow-y-auto hover-scrollbar`}
+                                            className={`p-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} cursor-grab active:cursor-grabbing transition-colors duration-200 ${skin.cardHover} group flex flex-col h-56 overflow-hidden`}
                                         >
                                             <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                                 <h4 className="font-bold text-ink truncate pr-2" title={item.name}>{item.name}</h4>
@@ -564,43 +623,115 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 );
                                             })()}
 
-                                            <div className="text-xs text-ink/60 space-y-1 flex-1">
-                                                <div className="flex items-center gap-1">
-                                                    <BriefcaseIcon className="h-3 w-3 flex-shrink-0 text-brand" />
-                                                    <span>{item.role || 'No Role'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <User className="h-3 w-3 flex-shrink-0 text-brand" />
-                                                    <span>{item.experience || '0'} YoE</span>
-                                                </div>
+                                            <div className="text-xs text-ink/60 flex-1 min-h-0 overflow-y-auto hover-scrollbar pr-1 divide-y divide-ink/10">
+                                                {Boolean(item.role) && item.role !== 'Not specified' && (
+                                                    <p className="py-1 leading-snug">{item.role}</p>
+                                                )}
+                                                {Boolean(item.experience) && item.experience !== '0' && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Experience</span>
+                                                        <p className="leading-snug">{item.experience} YoE</p>
+                                                    </div>
+                                                )}
                                                 {item.skills.length > 0 && (
-                                                    <div className="flex items-start gap-1 pt-0.5">
-                                                        <Tag className="h-3 w-3 flex-shrink-0 mt-0.5 text-brand" />
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Skills</span>
                                                         <div className="flex flex-wrap gap-1">
-                                                            {(expandedSkills.has(item.key) ? item.skills : item.skills.slice(0, 6)).map((skill, i) => (
-                                                                <span key={i} className={skin.tag}>
-                                                                    {skill}
-                                                                </span>
+                                                        {(expandedSkills.has(item.key) ? item.skills : item.skills.slice(0, 6)).map((skill, i) => (
+                                                            <span key={i} className={skin.tag}>
+                                                                {skill}
+                                                            </span>
+                                                        ))}
+                                                        {item.skills.length > 6 && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); toggleSkillsExpanded(item.key); }}
+                                                                className={`flex items-center gap-0.5 px-1.5 py-0.5 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} text-[9px] font-bold ${FOCUS}`}
+                                                            >
+                                                                {expandedSkills.has(item.key) ? (
+                                                                    <>Less <ChevronUp className="h-2.5 w-2.5" /></>
+                                                                ) : (
+                                                                    <>+{item.skills.length - 6} <ChevronDown className="h-2.5 w-2.5" /></>
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    </div>
+                                                )}
+                                                {(item.email || item.phone || item.address) && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Contact</span>
+                                                        {item.email && <p className="truncate" title={item.email}>{item.email}</p>}
+                                                        {item.phone && <p className="truncate" title={item.phone}>{item.phone}</p>}
+                                                        {item.address && <p className="truncate" title={item.address}>{item.address}</p>}
+                                                    </div>
+                                                )}
+                                                {item.education && item.education.length > 0 && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Education</span>
+                                                        {item.education.map((edu, i) => {
+                                                            const hasDegree = Boolean(edu.degree || edu.field);
+                                                            const line = hasDegree
+                                                                ? [edu.degree, edu.field].filter(Boolean).join(' in ')
+                                                                : edu.institution;
+                                                            const meta = [
+                                                                hasDegree ? edu.institution : '',
+                                                                edu.year,
+                                                                edu.cgpa ? `CGPA ${edu.cgpa}` : ''
+                                                            ].filter(Boolean).map((v) => ` · ${v}`).join('');
+                                                            return (
+                                                                <p key={i} className="leading-snug break-words" title={line}>
+                                                                    {line}
+                                                                    <span className="text-ink/40">{meta}</span>
+                                                                </p>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                {item.experienceItems && item.experienceItems.length > 0 && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Work Experience</span>
+                                                        {item.experienceItems.map((exp, i) => (
+                                                            <p key={i} className="leading-snug break-words" title={exp.title}>
+                                                                {exp.title}
+                                                                {exp.meta && <span className="text-ink/40"> · {exp.meta}</span>}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {item.projects && item.projects.length > 0 && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Projects</span>
+                                                        {item.projects.map((project, i) => (
+                                                            <p key={i} className="leading-snug break-words" title={project.title}>
+                                                                {project.title}
+                                                                {project.meta && <span className="text-ink/40"> · {project.meta}</span>}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {item.certificates && item.certificates.length > 0 && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Certificates</span>
+                                                        {item.certificates.map((certificate, i) => (
+                                                            <p key={i} className="leading-snug break-words" title={certificate.title}>
+                                                                {certificate.title}
+                                                                {certificate.meta && <span className="text-ink/40"> · {certificate.meta}</span>}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {item.courses && item.courses.length > 0 && (
+                                                    <div className="py-1.5 space-y-1">
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Courses</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {item.courses.map((course, i) => (
+                                                                <span key={i} className={skin.tag}>{course}</span>
                                                             ))}
-                                                            {item.skills.length > 6 && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); toggleSkillsExpanded(item.key); }}
-                                                                    className={`flex items-center gap-0.5 px-1.5 py-0.5 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} text-[9px] font-bold ${FOCUS}`}
-                                                                >
-                                                                    {expandedSkills.has(item.key) ? (
-                                                                        <>Less <ChevronUp className="h-2.5 w-2.5" /></>
-                                                                    ) : (
-                                                                        <>+{item.skills.length - 6} <ChevronDown className="h-2.5 w-2.5" /></>
-                                                                    )}
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
                                                 {item.summary && (
-                                                    <p className={`mt-1 text-[10px] text-ink/40 border-t ${skin.edge} pt-1`}>
-                                                        {item.summary}
-                                                    </p>
+                                                    <p className="py-1.5 text-[10px] text-ink/40">{item.summary}</p>
                                                 )}
                                             </div>
 

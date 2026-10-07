@@ -10,6 +10,7 @@ import UserHeader from '@/components/layout/UserHeader';
 import ProfileDetailsView from './ProfileDetailsView';
 import JobsAndApplicationsView from './JobsAndApplicationsView';
 import { ProfileCardSkeleton, ContentCardSkeleton } from './SkeletonLoaders';
+import { sendPasswordResetMail } from '@/lib/emailFunctions';
 
 export default function UserProfile() {
     const [loading, setLoading] = useState(true);
@@ -19,6 +20,7 @@ export default function UserProfile() {
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [calculatingScore, setCalculatingScore] = useState(false);
     const [verifyingEmail, setVerifyingEmail] = useState(false);
+    const [sendingResetLink, setSendingResetLink] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
 
     useEffect(() => {
@@ -285,6 +287,31 @@ export default function UserProfile() {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleChangePassword = async () => {
+        const user = auth.currentUser;
+        if (!user?.email) {
+            toast.error('No email address found for your account');
+            return;
+        }
+
+        setSendingResetLink(true);
+        try {
+            await sendPasswordResetMail({ email: user.email, baseUrl: window.location.origin });
+            toast.success('Password reset link sent! Check your inbox.');
+        } catch (error) {
+            console.error('Error sending password reset link:', error);
+            const code = (error as { code?: string })?.code;
+            const message = (error as { message?: string })?.message;
+            if (code === 'functions/not-found') {
+                toast.error('No account found with this email');
+            } else {
+                toast.error(message || 'Failed to send password reset email');
+            }
+        } finally {
+            setSendingResetLink(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-muted flex flex-col">
@@ -370,7 +397,22 @@ export default function UserProfile() {
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Address</label>
                                                     <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none resize-none h-12" />
                                                 </div>
-                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
+                                                <div>
+                                                    <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Password</label>
+                                                    <div className="flex items-center justify-between gap-2 px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink/60">
+                                                        <span>••••••••</span>
+                                                        <button
+                                                            type="button"
+                                                            disabled={sendingResetLink}
+                                                            onClick={handleChangePassword}
+                                                            className="flex items-center gap-1.5 text-brand font-bold hover:underline disabled:opacity-50 disabled:no-underline"
+                                                        >
+                                                            {sendingResetLink ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                                            {sendingResetLink ? 'Sending…' : 'Change Password'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
                                                     {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
                                                 </button>
                                             </div>
@@ -390,7 +432,7 @@ export default function UserProfile() {
                                                     </div>
                                                     <div className="flex items-center gap-3 text-sm text-ink/60">
                                                         <Phone className="w-4 h-4 text-ink/40 flex-shrink-0" />
-                                                        <span className="leading-none">{formData.mobile || <span className="text-ink/40 italic">No mobile added</span>}</span>
+                                                        <span className="leading-none">{formData.mobile || <span className="text-ink/40">No mobile added</span>}</span>
                                                     </div>
                                                     {formData.yearsOfExperience && (
                                                         <div className="flex items-center gap-3 text-sm text-ink/60">

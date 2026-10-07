@@ -1,5 +1,11 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { sendMail } from "./mailer";
+
+if (getApps().length === 0) {
+  initializeApp();
+}
 
 interface CandidateInput {
   id?: string;
@@ -200,6 +206,65 @@ export const sendVerifyDetails = onCall(async (request) => {
     return { success: true };
   } catch (err: any) {
     console.error("sendVerifyDetails error", err);
+    throw new HttpsError("internal", err.message || "Failed to send email");
+  }
+});
+
+// 6. Password reset link email (used by the login "Forgot Password" link and the
+//    Change Password buttons on the user + recruiter/admin profile pages)
+export const sendPasswordResetMail = onCall(async (request) => {
+  const { email, baseUrl } = request.data as { email?: string; baseUrl?: string };
+
+  if (!email) throw new HttpsError("invalid-argument", "Email missing");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new HttpsError("invalid-argument", "Invalid email address");
+  }
+
+  // Signed-in callers may only request a reset for their own account.
+  // Signed-out callers (login page "Forgot Password") are allowed through.
+  if (request.auth) {
+    const callerEmail = request.auth.token.email;
+    if (!callerEmail || callerEmail.toLowerCase() !== email.toLowerCase()) {
+      throw new HttpsError("permission-denied", "You can only request a password reset for your own account");
+    }
+  }
+
+  const appUrl = (baseUrl || "").replace(/\/+$/, "") || undefined;
+
+  let resetLink: string;
+  try {
+    resetLink = await getAuth().generatePasswordResetLink(email, appUrl ? { url: appUrl } : undefined);
+  } catch (err: any) {
+    console.error("sendPasswordResetMail link error", err);
+    if (err?.code === "auth/user-not-found") {
+      throw new HttpsError("not-found", "No account found with this email");
+    }
+    throw new HttpsError("internal", err?.message || "Failed to generate password reset link");
+  }
+
+  const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;line-height:1.6;border:1px solid #e2e8f0;border-radius:8px;padding:24px;">
+        <h2 style="color:#ff6600;">Change Your Password</h2>
+        <p>Hi there,</p>
+        <p>We received a request to change the password for your Indian Infra account (<strong>${email}</strong>).</p>
+        <p style="margin-top:24px;">
+          <a href="${resetLink}" style="background:#ff6600;color:#ffffff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">
+            Set New Password
+          </a>
+        </p>
+        <p>If the button doesn't work, copy and paste the following URL into your browser:</p>
+        <p style="word-break:break-all;color:#64748b;font-size:14px;">${resetLink}</p>
+        <p style="margin-top:20px;color:#64748b;font-size:14px;">This link expires in 1 hour and can only be used once. If you didn't request this change, you can safely ignore this email &mdash; your password will remain unchanged.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+        <p style="color:#94a3b8;font-size:12px;">Best regards,<br/>Indian Infra Recruitment Team</p>
+      </div>
+    `;
+
+  try {
+    await sendMail({ to: email, subject: "Reset Your Password – Indian Infra", html });
+    return { success: true };
+  } catch (err: any) {
+    console.error("sendPasswordResetMail error", err);
     throw new HttpsError("internal", err.message || "Failed to send email");
   }
 });

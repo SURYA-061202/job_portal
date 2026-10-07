@@ -39,8 +39,8 @@ module.exports = {
            src/styles/theme.css. These two are legacy aliases from the previous
            Outfit/Inter pairing, kept so existing `font-outfit` / `font-inter`
            call sites keep rendering on the current type system. */
-        outfit: ['Fira Sans', 'sans-serif'],
-        inter: ['Fira Sans', 'sans-serif'],
+        outfit: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

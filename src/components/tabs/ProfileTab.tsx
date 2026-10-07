@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { User, Loader2 } from 'lucide-react';
+import { User, Loader2, KeyRound } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { sendPasswordResetMail } from '@/lib/emailFunctions';
 
 interface UserData {
     firstName: string;
@@ -20,6 +21,7 @@ export default function ProfileTab() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [sendingReset, setSendingReset] = useState(false);
     const skin = useSkin();
 
     useEffect(() => {
@@ -77,6 +79,31 @@ export default function ProfileTab() {
     const handleCancel = () => {
         setFormData(userData);
         setIsEditing(false);
+    };
+
+    const handleChangePassword = async () => {
+        const email = auth.currentUser?.email || userData?.email;
+        if (!email) {
+            toast.error('No email address found for your account');
+            return;
+        }
+
+        setSendingReset(true);
+        try {
+            await sendPasswordResetMail({ email, baseUrl: window.location.origin });
+            toast.success('Password reset link sent! Check your inbox.');
+        } catch (error) {
+            console.error('Error sending password reset link:', error);
+            const code = (error as { code?: string })?.code;
+            const message = (error as { message?: string })?.message;
+            if (code === 'functions/not-found') {
+                toast.error('No account found with this email');
+            } else {
+                toast.error(message || 'Failed to send password reset email');
+            }
+        } finally {
+            setSendingReset(false);
+        }
     };
 
     if (loading) {
@@ -155,7 +182,7 @@ export default function ProfileTab() {
                             <label className="block text-sm font-bold text-ink/80 mb-1.5">
                                 Email <span className="text-brand font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.radius} ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.edge} ${skin.radius} ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
                                 {userData.email}
                             </div>
                         </div>
@@ -218,6 +245,16 @@ export default function ProfileTab() {
 
                     {/* Footer / Buttons */}
                     <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3">
+                        {!isEditing && (
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={sendingReset}
+                                className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer ${skin.secondary} ${FOCUS}`}
+                            >
+                                {sendingReset ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                                Change Password
+                            </button>
+                        )}
                         {isEditing ? (
                             <>
                                 <button

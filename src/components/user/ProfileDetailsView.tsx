@@ -215,7 +215,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.educationItems || formData.educationItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No education history added.</p>
+                    <p className="text-ink/60 text-sm">No education history added.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.educationItems.map((edu: any, idx: number) => (
@@ -247,27 +247,15 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.skillItems || formData.skillItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No skills added yet.</p>
+                    <p className="text-ink/60 text-sm">No skills added yet.</p>
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.skillItems.map((skill: string, idx: number) => {
-                            const colors = [
-                                'border-border bg-surface text-ink/70',
-                                'border-brand/20 bg-brand/10 text-brand',
-                                'border-border bg-muted text-ink/80',
-                                'border-ink bg-ink text-surface',
-                                'border-brand/20 bg-brand/10 text-brand',
-                                'border-border bg-surface text-ink/70',
-                                'border-border bg-muted text-ink/80'
-                            ];
-                            const colorClass = colors[idx % colors.length];
-                            return (
-                                <div key={idx} className={`group flex items-center gap-1.5 px-2 py-1 ${colorClass} border rounded-full text-[11px] font-bold transition-all hover:scale-105`}>
+                        {formData.skillItems.map((skill: string, idx: number) => (
+                                <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 border border-border bg-surface text-ink/70 text-[11px] font-bold transition-all hover:scale-105">
                                     <span>{skill}</span>
                                     <button onClick={() => handleRemoveArrayItem('skillItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"><X className="w-3 h-3" /></button>
                                 </div>
-                            );
-                        })}
+                            ))}
                     </div>
                 )}
             </div>
@@ -281,7 +269,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.courseItems || formData.courseItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No courses added yet.</p>
+                    <p className="text-ink/60 text-sm">No courses added yet.</p>
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                         {formData.courseItems.map((course: string, idx: number) => (
@@ -303,7 +291,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.projectItems || formData.projectItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No projects added yet.</p>
+                    <p className="text-ink/60 text-sm">No projects added yet.</p>
                 ) : (
                     <div className="space-y-6">
                         {formData.projectItems.map((proj: any, idx: number) => (
@@ -332,7 +320,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.certificateItems || formData.certificateItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No certifications added yet.</p>
+                    <p className="text-ink/60 text-sm">No certifications added yet.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.certificateItems.map((cert: any, idx: number) => (
@@ -360,7 +348,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </button>
                 </div>
                 {(!formData.experienceItems || formData.experienceItems.length === 0) ? (
-                    <p className="text-ink/60 italic text-sm">No work experience added yet.</p>
+                    <p className="text-ink/60 text-sm">No work experience added yet.</p>
                 ) : (
                     <div className="space-y-4">
                         {formData.experienceItems.map((exp: any, idx: number) => (
@@ -444,7 +432,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -475,7 +463,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Courses'}
                             </button>
                         </div>
@@ -517,7 +505,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -559,7 +547,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -611,7 +599,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -639,18 +627,18 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                         placeholder="e.g. React, Python, UI Design" 
                                         className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
                                     />
-                                    <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-brand/10 text-brand text-sm font-bold rounded-xl hover:bg-brand/20 transition-colors disabled:opacity-50">Add</button>
+                                    <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-brand/10 text-brand text-sm font-bold hover:bg-brand/20 transition-colors disabled:opacity-50">Add</button>
                                 </div>
                             </div>
 
                             <div className="pt-4 border-t border-border">
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-3">Current Skills ({tempSkills.length})</label>
                                 {tempSkills.length === 0 ? (
-                                    <p className="text-ink/60 italic text-sm">No skills added yet.</p>
+                                    <p className="text-ink/60 text-sm">No skills added yet.</p>
                                 ) : (
                                     <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pb-2">
                                         {tempSkills.map((skill: string, idx: number) => (
-                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface text-ink/70 border border-border rounded-full text-sm font-semibold">
+                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface text-ink/70 border border-border text-sm font-semibold">
                                                 <span>{skill}</span>
                                                 <button onClick={() => handleRemoveTempSkill(idx)} className="text-destructive hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
                                             </div>
@@ -661,7 +649,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Skills'}
                             </button>
                         </div>

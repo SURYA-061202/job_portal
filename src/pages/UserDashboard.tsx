@@ -256,6 +256,7 @@ export default function UserDashboard() {
                     <RecruitmentDetailView
                         recruitment={selectedJob}
                         onBack={() => setSelectedJob(null)}
+                        isUserView
                     />
                 </div>
             </div>

@@ -99,6 +99,7 @@ export default function JobDetailPage() {
             <RecruitmentDetailView
                 recruitment={job}
                 onBack={() => navigate(-1)}
+                isUserView
             />
         </div>
     );

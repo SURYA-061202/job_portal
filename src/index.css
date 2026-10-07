@@ -9,10 +9,10 @@
 
 body {
   margin: 0;
-  /* --font-sans is the Fira Sans stack declared in styles/theme.css. The
+  /* --font-sans is the Inter stack declared in styles/theme.css. The
      literal fallback mirrors it so the page never falls back to Times if
      Tailwind tree-shakes the unused variable. */
-  font-family: var(--font-sans, 'Fira Sans', ui-sans-serif, system-ui, sans-serif);
+  font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
   /* Theme tokens from styles/theme.css - the Dock canvas is flat #f5f5f5,
      with white surface cards floating on top. */
   color: var(--color-foreground);

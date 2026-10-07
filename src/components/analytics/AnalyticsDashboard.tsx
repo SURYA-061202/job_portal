@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { collection, getDocs, query as fsQuery, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getUserEducation, getUserSkills } from '@/lib/userToCandidate';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import {
     BarChart,
@@ -64,17 +65,17 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                             phone: data.mobile || '',
                             role: data.department || 'User',
                             experience: data.yearsOfExperience || '',
-                            skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                            skills: getUserSkills(data),
                             resumeUrl: data.resumeUrl || '',
                             extractedData: {
                                 summary: '',
                                 workExperience: [],
-                                education: [],
-                                skills: [],
+                                education: getUserEducation(data),
+                                skills: getUserSkills(data),
                                 certifications: data.certifications || [],
                                 projects: data.keyProjects || data.projects || []
                             },
-                            education: [],
+                            education: getUserEducation(data),
                             createdAt: data.createdAt,
                             updatedAt: data.updatedAt,
                             status: 'pending' as any,

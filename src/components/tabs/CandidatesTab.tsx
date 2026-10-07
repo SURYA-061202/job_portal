@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getApplicantCounts, getPostApplications, getAllApplications, getUserApplications } from '@/lib/jobApplications';
+import { getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
+import { getUserEducation, getUserSkills } from '@/lib/userToCandidate';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
 
@@ -13,7 +14,6 @@ import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar } from 'lucide-react
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
-import RecruitCandidateDropdown from '@/components/recruitment/RecruitCandidateDropdown';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
@@ -32,33 +32,14 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [filterPostId, setFilterPostId] = useState<string | null>(null);
     const [isFilteringApplicants, setIsFilteringApplicants] = useState(false);
 
-    // Registered Candidates State
-    const [viewMode, setViewMode] = useState<'job-candidates' | 'registered-users'>('job-candidates');
+    // Registered Candidates State - the module opens on Registered Candidates;
+    // the Uploaded Candidates list is hidden, so this never switches views.
+    const viewMode: 'job-candidates' | 'registered-users' = 'registered-users';
     const [registeredUsers, setRegisteredUsers] = useState<Candidate[]>([]);
     const [userApplications, setUserApplications] = useState<any[]>([]);
-    const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all');
-    const [userAppDates, setUserAppDates] = useState<Record<string, Date[]>>({});
     const [showPostView, setShowPostView] = useState(false);
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
     const skin = useSkin();
-
-    // Extract unique dates for filter
-    const availableDates = useMemo(() => {
-        console.log('[DateFilter] Recalculating availableDates. UserAppDates keys:', Object.keys(userAppDates).length);
-        const dates = new Set<string>();
-        Object.values(userAppDates).flat().forEach(date => {
-            if (!isNaN(date.getTime())) {
-                const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-                dates.add(monthYear);
-            }
-        });
-        // Sort by date descending
-        return Array.from(dates).sort((a, b) => {
-            const dateA = new Date(a);
-            const dateB = new Date(b);
-            return dateB.getTime() - dateA.getTime();
-        });
-    }, [userAppDates]);
 
     const isFilteringRef = useRef(false);
 
@@ -269,17 +250,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 phone: data.mobile || '',
                                 role: data.department || 'Applicant',
                                 experience: data.yearsOfExperience || '',
-                                skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                                skills: getUserSkills(data),
                                 resumeUrl: data.resumeUrl || '',
                                 extractedData: {
                                     summary: '',
                                     workExperience: [],
-                                    education: [],
-                                    skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                                    education: getUserEducation(data),
+                                    skills: getUserSkills(data),
                                     certifications: data.certifications || [],
                                     projects: data.keyProjects || data.projects || []
                                 },
-                                education: [],
+                                education: getUserEducation(data),
                                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                                 updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
                                 postId: postId,
@@ -327,17 +308,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                     phone: data.mobile || '',
                     role: data.department || 'User',
                     experience: data.yearsOfExperience || '',
-                    skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                    skills: getUserSkills(data),
                     resumeUrl: data.resumeUrl || '',
                     extractedData: {
                         summary: '',
                         workExperience: [],
-                        education: [],
-                        skills: data.skills ? (typeof data.skills === 'string' ? data.skills.split(',').map((s: string) => s.trim()) : data.skills) : [],
+                        education: getUserEducation(data),
+                        skills: getUserSkills(data),
                         certifications: data.certifications || [],
                         projects: data.keyProjects || data.projects || []
                     },
-                    education: [],
+                    education: getUserEducation(data),
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
                     status: 'pending' as any,
@@ -346,24 +327,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             });
 
             setRegisteredUsers(users);
-
-            // Fetch all applications to determine applied dates
-            try {
-                const allApps = await getAllApplications();
-                console.log(`[DateFilter] Fetched ${allApps.length} applications.`);
-                const datesMap: Record<string, Date[]> = {};
-                allApps.forEach(app => {
-                    if (app.user_id && app.created_at) {
-                        if (!datesMap[app.user_id]) datesMap[app.user_id] = [];
-                        const createdAt: any = app.created_at;
-                        datesMap[app.user_id].push(createdAt?.toDate ? createdAt.toDate() : new Date(createdAt));
-                    }
-                });
-                console.log(`[DateFilter] Constructed datesMap for ${Object.keys(datesMap).length} users.`);
-                setUserAppDates(datesMap);
-            } catch (appsError) {
-                console.error('[DateFilter] Error fetching apps:', appsError);
-            }
 
         } catch (error) {
             console.error('Error fetching registered users:', error);
@@ -450,25 +413,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const displayCandidates = useMemo(() => {
         let list: Candidate[] = [];
 
-        // 1. Determine base list based on view mode
-        if (viewMode === 'registered-users') {
-            console.log(`[DateFilter] Filtering. Selected: ${selectedDateFilter}, Total Users: ${registeredUsers.length}`);
-
-            if (selectedDateFilter === 'all') {
-                list = registeredUsers;
-            } else {
-                list = registeredUsers.filter(u => {
-                    const appDates = userAppDates[u.id];
-                    if (!appDates || appDates.length === 0) return false;
-
-                    // Check if ANY of the application dates match the selected filter
-                    return appDates.some(date => {
-                        const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-                        return monthYear === selectedDateFilter;
-                    });
-                });
-            }
-            console.log(`[DateFilter] Filtered Result Count: ${list.length}`);
+        // 1. Determine base list: on the Posts path the post's applicants win;
+        // otherwise the module's registered list.
+        if (viewMode === 'registered-users' && !postId) {
+            list = registeredUsers;
         } else {
             // Otherwise show job candidates
             list = isFilteringApplicants
@@ -490,21 +438,20 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         }
 
         return list;
-    }, [viewMode, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, selectedDateFilter, userAppDates, userRole, isPremium]);
+    }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, userRole, isPremium]);
 
     return (
-        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col`}>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
             {selectedCandidate ? (
                 <CandidateDetail
                     candidate={selectedCandidate}
                     onBack={handleBackToList}
                     onInviteSent={handleInviteSent}
-                    onEdit={(candidate) => setEditingCandidate(candidate)}
                     onRemoveCandidate={() => {
                         fetchCandidates();
                         setSelectedCandidate(null);
                     }}
-                    userApplications={viewMode === 'registered-users' ? userApplications : undefined}
+                    userApplications={!postId && viewMode === 'registered-users' ? userApplications : undefined}
                     activePostId={postId}
                 />
             ) : (
@@ -513,9 +460,9 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                         <>
                             {/* Unified Header & Controls - the Posts masthead
                                 recipe: brand-washed title row (title left,
-                                view controls right), description row, then a
-                                tinted controls row for recruit and filters. */}
-                            <div className="mb-6">
+                                view controls right), then the description
+                                row. Fixed above the scrolling body. */}
+                            <div className="mb-6 shrink-0">
                                 <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
                                     <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -542,7 +489,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         </div>
 
                                         {/* Right end: search, registered-candidates
-                                            switch, post-based toggle. */}
+                                            switch, post-based toggle. The recruit
+                                            action is not offered on the Posts path. */}
                                         <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
                                             <div className="relative w-full sm:w-56">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -556,24 +504,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                 />
                                             </div>
-                                            {!postId && (
-                                                <button
-                                                    onClick={() => {
-                                                        if (viewMode === 'job-candidates') {
-                                                            setViewMode('registered-users');
-                                                        } else {
-                                                            setViewMode('job-candidates');
-                                                            setUserApplications([]);
-                                                        }
-                                                    }}
-                                                    className={`flex h-9 w-full sm:w-56 cursor-pointer items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'registered-users'
-                                                        ? `${skin.cta} ${FOCUS}`
-                                                        : `${skin.secondary} ${FOCUS}`
-                                                        }`}
-                                                >
-                                                    {viewMode === 'registered-users' ? 'Uploaded Candidates' : 'Registered Candidates'}
-                                                </button>
-                                            )}
                                             {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
                                                 <button
                                                     onClick={() => setShowPostView(!showPostView)}
@@ -594,43 +524,12 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             </p>
                                         </div>
                                     )}
-
-                                    {/* Controls row - recruit action and date filter */}
-                                    {(postId || viewMode === 'registered-users') && (
-                                        <div className={`flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
-                                            {postId && (
-                                                <RecruitCandidateDropdown
-                                                    postId={postId}
-                                                    userRole={userRole}
-                                                    userId={userId}
-                                                    excludeIds={filteredCandidates.map(c => c.id)}
-                                                    onRecruited={() => fetchApplicantsForPost(postId)}
-                                                />
-                                            )}
-
-                                            {/* Date Filter (Only for Registered Candidates) */}
-                                            {viewMode === 'registered-users' && (
-                                                <div className="relative">
-                                                    <select
-                                                        value={selectedDateFilter}
-                                                        onChange={(e) => setSelectedDateFilter(e.target.value)}
-                                                        className={`appearance-none py-2 pl-3 pr-8 leading-tight h-full ${skin.field} ${FOCUS}`}
-                                                    >
-                                                        <option value="all">All Dates</option>
-                                                        {availableDates.map(date => (
-                                                            <option key={date} value={date}>{date}</option>
-                                                        ))}
-                                                    </select>
-                                                    <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${skin.subtle}`}>
-                                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
+
+                            {/* Body - the only scrollable area; the masthead above stays put. */}
+                            <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar">
                             {showPostView ? (
                                 /* Post Card Grid View */
                                 <div className="space-y-4">
@@ -752,6 +651,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     jobId={filterPostId}
                                 />
                             )}
+                            </div>
                         </>
                     )}
 

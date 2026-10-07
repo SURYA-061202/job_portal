@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
-    Users, CheckCircle2, Loader2, Send, ChevronLeft, Edit, Trash2, Share2,
+    Users, CheckCircle2, Loader2, FilePlus2, ChevronLeft, Edit, Trash2, Share2,
     Building2, Award, Clock,
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
@@ -22,9 +22,14 @@ interface RecruitmentDetailViewProps {
     onViewCandidates?: (postId: string) => void;
     onEdit?: (post: RecruitmentRequest) => void;
     onDelete?: (postId: string) => void;
+    /** True on the candidate-facing pages (job detail, jobs list, My
+     *  Applications). Those views drop the compensation/opening facts and the
+     *  header openings badge, and show Share as a labelled button in the
+     *  title row instead. */
+    isUserView?: boolean;
 }
 
-export default function RecruitmentDetailView({ recruitment: initialData, onBack, onViewCandidates, onEdit, onDelete }: RecruitmentDetailViewProps) {
+export default function RecruitmentDetailView({ recruitment: initialData, onBack, onViewCandidates, onEdit, onDelete, isUserView = false }: RecruitmentDetailViewProps) {
     const [recruitment, setRecruitment] = useState<RecruitmentRequest>(initialData);
     const [actionLoading, setActionLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -103,22 +108,12 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             return;
         }
 
+        // TEMPORARILY DISABLED: eligibility checks (experience, skills, etc.)
+        // are not enforced while applying - see task note "don't use the
+        // condition (temporarily)". Profile completeness is still required so
+        // recruiters always receive a reachable candidate.
         if (!userProfile?.firstName || !userProfile?.lastName || !userProfile?.mobile) {
             toast.error('Please complete your profile details before applying.');
-            return;
-        }
-
-        const reqExp = parseInt(recruitment.yearsExperience);
-        const userExp = userProfile?.yearsOfExperience ? parseInt(userProfile.yearsOfExperience) : 0;
-
-        if (userExp < reqExp) {
-            toast.error(`Experience Mismatch: This position requires ${reqExp} years, but your profile shows ${userExp} years.`);
-            return;
-        }
-
-        const userSkills = userProfile?.skillItems || userProfile?.skills;
-        if ((!userSkills || (Array.isArray(userSkills) ? userSkills.length === 0 : !userSkills.trim())) && recruitment.skills) {
-            toast.error('Profile Incomplete: Please add your skills to your profile before applying.');
             return;
         }
 
@@ -157,10 +152,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     facts.push(
         { label: 'Priority', value: `${recruitment.urgencyLevel} Priority` },
         { label: 'Experience', value: `${recruitment.yearsExperience} Years` },
-        { label: 'Salary', value: recruitment.budgetPay },
-        { label: 'Job Type', value: recruitment.candidateType || 'Full Time' },
-        { label: 'Openings', value: recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified' },
     );
+    // Compensation and headcount stay on the recruiter/admin view only.
+    if (!isUserView) facts.push({ label: 'Salary', value: recruitment.budgetPay });
+    facts.push({ label: 'Job Type', value: recruitment.candidateType || 'Full Time' });
+    if (!isUserView) facts.push({ label: 'Openings', value: recruitment.candidatesCount ? `${recruitment.candidatesCount}` : 'Not specified' });
     if (isManager && recruitment.applicantCount !== undefined) {
         facts.push({ label: 'Applicants', value: `${recruitment.applicantCount}` });
     }
@@ -186,28 +182,45 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             <h1 className={`${skin.heading} max-w-full truncate`}>
                                 {recruitment.jobTitle}
                             </h1>
-                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
-                                <span
-                                    aria-hidden="true"
-                                    className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                />
-                                {isManager
-                                    ? `${recruitment.applicantCount ?? 0} ${recruitment.applicantCount === 1 ? 'Applicant' : 'Applicants'}`
-                                    : `${recruitment.candidatesCount || 0} ${recruitment.candidatesCount === 1 ? 'Opening' : 'Openings'}`}
-                            </span>
+                            {/* Share takes the badge slot on the candidate view -
+                                no openings count is shown in the header there. */}
+                            {isUserView ? (
+                                <button
+                                    onClick={() => setShowShareModal(true)}
+                                    className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
+                                    title="Share job"
+                                    aria-label="Share this job"
+                                >
+                                    <Share2 className="h-4 w-4" aria-hidden="true" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Share</span>
+                                </button>
+                            ) : (
+                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                    <span
+                                        aria-hidden="true"
+                                        className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                                    />
+                                    {isManager
+                                        ? `${recruitment.applicantCount ?? 0} ${recruitment.applicantCount === 1 ? 'Applicant' : 'Applicants'}`
+                                        : `${recruitment.candidatesCount || 0} ${recruitment.candidatesCount === 1 ? 'Opening' : 'Openings'}`}
+                                </span>
+                            )}
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-2">
-                        <button
-                            onClick={() => setShowShareModal(true)}
-                            className={`inline-flex h-8 w-8 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
-                            title="Share job"
-                            aria-label="Share this job"
-                        >
-                            <Share2 className="h-4 w-4" aria-hidden="true" />
-                        </button>
+                        {/* Actions - on the candidate view Share lives in the
+                            title row, so only Apply / status show here. */}
+                        <div className="flex shrink-0 items-center gap-2">
+                            {!isUserView && (
+                                <button
+                                    onClick={() => setShowShareModal(true)}
+                                    className={`inline-flex h-8 w-8 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                                    title="Share job"
+                                    aria-label="Share this job"
+                                >
+                                    <Share2 className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            )}
                         {isManager ? (
                             <>
                                 <button
@@ -241,7 +254,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 disabled={actionLoading}
                                 className={`inline-flex items-center gap-2 sm:px-6 cursor-pointer ${skin.cta} ${skin.ctaLift} ${FOCUS} disabled:opacity-50`}
                             >
-                                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <Send className="w-3.5 h-3.5" aria-hidden="true" /></>}
+                                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <FilePlus2 className="w-4 h-4" aria-hidden="true" /></>}
                             </button>
                         ) : !isManager && hasApplied ? (
                             <div className={`px-4 py-2 text-xs font-bold rounded-full border flex items-center gap-2 ${statusInfo.className}`}>
