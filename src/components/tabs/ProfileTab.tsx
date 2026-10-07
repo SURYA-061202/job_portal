@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { User, Loader2, KeyRound } from 'lucide-react';
+import { User, Loader2, KeyRound, Camera, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { sendPasswordResetMail } from '@/lib/emailFunctions';
@@ -22,6 +22,9 @@ export default function ProfileTab() {
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [sendingReset, setSendingReset] = useState(false);
+    const [profileImage, setProfileImage] = useState('');
+    const [imageUploading, setImageUploading] = useState(false);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
 
     useEffect(() => {
@@ -30,9 +33,20 @@ export default function ProfileTab() {
                 try {
                     const docSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
                     if (docSnap.exists()) {
-                        const data = docSnap.data() as UserData;
+                        const raw = docSnap.data() as Partial<UserData> & { profileImage?: string };
+                        // Normalize: docs created at signup/invite may be missing
+                        // fields, and updateDoc rejects undefined values.
+                        const data: UserData = {
+                            firstName: raw.firstName || '',
+                            lastName: raw.lastName || '',
+                            email: raw.email || '',
+                            mobile: raw.mobile || '',
+                            department: raw.department || '',
+                            role: raw.role || ''
+                        };
                         setUserData(data);
                         setFormData(data);
+                        setProfileImage(raw.profileImage || '');
                     }
                 } catch (error) {
                     console.error("Error fetching profile:", error);
@@ -58,11 +72,12 @@ export default function ProfileTab() {
         try {
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await updateDoc(userRef, {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                mobile: formData.mobile,
-                department: formData.department,
-                role: formData.role
+                firstName: formData.firstName || '',
+                lastName: formData.lastName || '',
+                mobile: formData.mobile || '',
+                department: formData.department || '',
+                role: formData.role || '',
+                updatedAt: new Date()
             });
 
             setUserData(formData);
@@ -70,7 +85,8 @@ export default function ProfileTab() {
             toast.success("Profile updated successfully");
         } catch (error) {
             console.error("Error updating profile:", error);
-            toast.error("Failed to update profile");
+            const message = error instanceof Error ? error.message : '';
+            toast.error(message ? `Failed to update profile: ${message}` : "Failed to update profile");
         } finally {
             setSaving(false);
         }
@@ -79,6 +95,80 @@ export default function ProfileTab() {
     const handleCancel = () => {
         setFormData(userData);
         setIsEditing(false);
+    };
+
+    const resizeProfileImage = (dataUrl: string): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = 256;
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas unavailable'));
+                    return;
+                }
+                const min = Math.min(img.width, img.height);
+                ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, size, size);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => reject(new Error('Could not read image'));
+            img.src = dataUrl;
+        });
+
+    const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select an image file');
+            return;
+        }
+
+        setImageUploading(true);
+        try {
+            const dataUrl: string = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => reject(new Error('Could not read file'));
+                reader.readAsDataURL(file);
+            });
+            const resized = await resizeProfileImage(dataUrl);
+            if (!auth.currentUser) return;
+
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                profileImage: resized,
+                updatedAt: new Date()
+            });
+            setProfileImage(resized);
+            toast.success('Profile photo updated!');
+        } catch (error) {
+            console.error('Error updating profile photo:', error);
+            toast.error('Failed to update profile photo');
+        } finally {
+            setImageUploading(false);
+        }
+    };
+
+    const handleRemoveProfileImage = async () => {
+        if (!auth.currentUser || imageUploading) return;
+
+        setImageUploading(true);
+        try {
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                profileImage: '',
+                updatedAt: new Date()
+            });
+            setProfileImage('');
+            toast.success('Profile photo removed!');
+        } catch (error) {
+            console.error('Error removing profile photo:', error);
+            toast.error('Failed to remove profile photo');
+        } finally {
+            setImageUploading(false);
+        }
     };
 
     const handleChangePassword = async () => {
@@ -125,10 +215,64 @@ export default function ProfileTab() {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 border-b border-brand/10 pb-5">
                     <div className="relative">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-brand flex items-center justify-center shadow-lg shadow-brand/20">
-                            <User className="w-7 h-7 sm:w-8 sm:h-8 text-ink" />
+                        <div
+                            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-brand flex items-center justify-center shadow-lg shadow-brand/20 overflow-hidden ${isEditing ? 'cursor-pointer' : ''}`}
+                            onClick={() => {
+                                if (isEditing && !imageUploading) profileImageInputRef.current?.click();
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.target !== e.currentTarget) return;
+                                if (isEditing && (e.key === 'Enter' || e.key === ' ')) {
+                                    e.preventDefault();
+                                    profileImageInputRef.current?.click();
+                                }
+                            }}
+                            role={isEditing ? 'button' : undefined}
+                            tabIndex={isEditing ? 0 : undefined}
+                            aria-label={isEditing ? 'Add a profile photo' : undefined}
+                            title={isEditing ? 'Add profile photo' : undefined}
+                        >
+                            {profileImage ? (
+                                <img
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <User className="w-7 h-7 sm:w-8 sm:h-8 text-ink" />
+                            )}
                         </div>
-                        <div className="absolute bottom-0 right-0 sm:bottom-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-brand border-2 sm:border-4 border-white rounded-full"></div>
+                        {isEditing ? (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute bottom-0 right-0 sm:bottom-0.5 sm:right-0 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white bg-brand text-ink shadow-sm"
+                                >
+                                    {imageUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                                </span>
+                                {profileImage && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveProfileImage();
+                                        }}
+                                        title="Remove profile photo"
+                                        aria-label="Remove profile photo"
+                                        className="absolute bottom-0 left-0 sm:bottom-0.5 sm:left-0 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                )}
+                            </>
+                        ) : null}
+                        <input
+                            ref={profileImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleProfileImageChange}
+                        />
                     </div>
                     <div className="text-center sm:text-left">
                         <h1 className={skin.heading}>Personal Information</h1>

@@ -463,7 +463,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 view controls right), then the description
                                 row. Fixed above the scrolling body. */}
                             <div className="mb-6 shrink-0">
-                                <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                                <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                                     <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                                             {(isFilteringApplicants || onBack) && (

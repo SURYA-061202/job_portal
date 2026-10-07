@@ -207,7 +207,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         <div className="flex flex-col gap-6">
 
             {/* Education Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Education</h3>
                     <button onClick={() => openModal('education')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -239,7 +239,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Skills Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Skills</h3>
                     <button onClick={() => openModal('skill')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -261,7 +261,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Courses Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Courses Completed</h3>
                     <button onClick={() => openModal('course')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -283,7 +283,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Projects Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Projects</h3>
                     <button onClick={() => openModal('project')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -312,7 +312,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 )}
             </div>
             {/* Certificates Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Certificates</h3>
                     <button onClick={() => openModal('certificate')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -340,7 +340,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Experience Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Experience</h3>
                     <button onClick={() => openModal('experience')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -367,7 +367,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Resumes Upload Component */}
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5">
+            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
                 <h3 className="text-lg font-bold text-ink mb-4">Resume Upload</h3>
                 {formData.resumeUrl && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted rounded-xl border border-border mb-4 gap-4">

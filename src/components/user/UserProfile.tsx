@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, Sparkles, Star, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, Sparkles, Star, ShieldCheck, ShieldAlert, CheckCircle2, Camera } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import UserHeader from '@/components/layout/UserHeader';
@@ -22,6 +22,9 @@ export default function UserProfile() {
     const [verifyingEmail, setVerifyingEmail] = useState(false);
     const [sendingResetLink, setSendingResetLink] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
+    const [profileImage, setProfileImage] = useState('');
+    const [imageUploading, setImageUploading] = useState(false);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         let interval: any;
@@ -102,6 +105,7 @@ export default function UserProfile() {
                 const migratedCertificates = data.certificateItems || (data.certifications ? [{ name: data.certifications, organization: '', issueDate: '', url: '' }] : []);
                 const migratedSkills = data.skillItems || (data.skills ? data.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
 
+                setProfileImage(data.profileImage || '');
                 setFormData({
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
@@ -205,6 +209,82 @@ export default function UserProfile() {
             toast.error('Failed to update profile details');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const resizeProfileImage = (dataUrl: string): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = 256;
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas unavailable'));
+                    return;
+                }
+                const min = Math.min(img.width, img.height);
+                ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, size, size);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => reject(new Error('Could not read image'));
+            img.src = dataUrl;
+        });
+
+    const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select an image file');
+            return;
+        }
+
+        setImageUploading(true);
+        try {
+            const dataUrl: string = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => reject(new Error('Could not read file'));
+                reader.readAsDataURL(file);
+            });
+            const resized = await resizeProfileImage(dataUrl);
+            const user = auth.currentUser;
+            if (!user) return;
+
+            await updateDoc(doc(db, 'users', user.uid), {
+                profileImage: resized,
+                updatedAt: new Date()
+            });
+            setProfileImage(resized);
+            toast.success('Profile photo updated!');
+        } catch (error) {
+            console.error('Error updating profile photo:', error);
+            toast.error('Failed to update profile photo');
+        } finally {
+            setImageUploading(false);
+        }
+    };
+
+    const handleRemoveProfileImage = async () => {
+        const user = auth.currentUser;
+        if (!user || imageUploading) return;
+
+        setImageUploading(true);
+        try {
+            await updateDoc(doc(db, 'users', user.uid), {
+                profileImage: '',
+                updatedAt: new Date()
+            });
+            setProfileImage('');
+            toast.success('Profile photo removed!');
+        } catch (error) {
+            console.error('Error removing profile photo:', error);
+            toast.error('Failed to remove profile photo');
+        } finally {
+            setImageUploading(false);
         }
     };
 
@@ -344,7 +424,7 @@ export default function UserProfile() {
                     {activeTab === 'profile' && (
                         <div className="w-full lg:w-[350px] flex-shrink-0">
                             <div className="sticky top-24">
-                                <div className="bg-surface rounded-2xl border border-border shadow-xl overflow-hidden group">
+                                <div className="bg-surface rounded-2xl border border-border shadow-md overflow-hidden group">
                                     <div className="h-24 bg-ink relative">
                                         <button
                                             onClick={() => setIsEditingProfile(!isEditingProfile)}
@@ -356,18 +436,71 @@ export default function UserProfile() {
                                     </div>
 
                                     <div className="px-5 pb-5 relative">
-                                        <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center border-4 border-surface mx-auto -mt-10 mb-3 relative z-10">
+                                        <div
+                                            className={`w-20 h-20 rounded-full bg-surface flex items-center justify-center border-4 border-surface mx-auto -mt-10 mb-3 relative z-10 ${isEditingProfile ? 'cursor-pointer' : ''}`}
+                                            onClick={() => {
+                                                if (isEditingProfile && !imageUploading) profileImageInputRef.current?.click();
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.target !== e.currentTarget) return;
+                                                if (isEditingProfile && (e.key === 'Enter' || e.key === ' ')) {
+                                                    e.preventDefault();
+                                                    profileImageInputRef.current?.click();
+                                                }
+                                            }}
+                                            role={isEditingProfile ? 'button' : undefined}
+                                            tabIndex={isEditingProfile ? 0 : undefined}
+                                            aria-label={isEditingProfile ? 'Add a profile photo' : undefined}
+                                            title={isEditingProfile ? 'Add profile photo' : undefined}
+                                        >
                                             <div
                                                 className={`w-full h-full rounded-full flex items-center justify-center p-1 transition-all duration-500`}
                                                 style={{
                                                     background: `conic-gradient(${formData.profileScore >= 75 ? '#0a0a0a' : formData.profileScore >= 40 ? '#737373' : '#ff6600'} ${formData.profileScore * 3.6}deg, #e5e5e5 0deg)`
                                                 }}
                                             >
-                                                <div className="w-full h-full bg-surface rounded-full flex items-center justify-center shadow-inner text-ink/40">
-                                                    <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-ink' : formData.profileScore >= 40 ? 'text-muted-foreground' : 'text-brand'}`} />
+                                                <div className="relative w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden shadow-inner text-ink/40">
+                                                    {profileImage ? (
+                                                        <img
+                                                            src={profileImage}
+                                                            alt="Profile"
+                                                            className="h-full w-full rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-ink' : formData.profileScore >= 40 ? 'text-muted-foreground' : 'text-brand'}`} />
+                                                    )}
                                                 </div>
                                             </div>
+                                            {isEditingProfile && (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-brand text-surface shadow-sm"
+                                                >
+                                                    {imageUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                                                </span>
+                                            )}
+                                            {isEditingProfile && profileImage && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveProfileImage();
+                                                    }}
+                                                    title="Remove profile photo"
+                                                    aria-label="Remove profile photo"
+                                                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            )}
                                         </div>
+                                        <input
+                                            ref={profileImageInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleProfileImageChange}
+                                        />
                                         
                                         {isEditingProfile ? (
                                             <div className="space-y-3">

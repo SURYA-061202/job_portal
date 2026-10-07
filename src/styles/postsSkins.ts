@@ -92,7 +92,7 @@ export interface PostsSkin {
 export const POSTS_SKINS: Record<AppStyle, PostsSkin> = {
     rail: {
         radius: 'rounded-xl',
-        shadow: 'shadow-lg',
+        shadow: 'shadow-md',
         canvas: 'bg-muted',
         surface: 'bg-surface',
         edge: 'border-border',
@@ -135,7 +135,7 @@ export const POSTS_SKINS: Record<AppStyle, PostsSkin> = {
     },
     'rail-dark': {
         radius: 'rounded-xl',
-        shadow: 'shadow-lg',
+        shadow: 'shadow-md',
         canvas: 'bg-ink',
         surface: 'bg-ink',
         edge: 'border-white/10',
@@ -178,7 +178,7 @@ export const POSTS_SKINS: Record<AppStyle, PostsSkin> = {
     },
     ink: {
         radius: 'rounded-lg',
-        shadow: 'shadow-lg',
+        shadow: 'shadow-md',
         canvas: 'bg-ink',
         surface: 'bg-ink',
         edge: 'border-brand/20',
@@ -307,7 +307,7 @@ export const POSTS_SKINS: Record<AppStyle, PostsSkin> = {
     },
     dock: {
         radius: 'rounded-2xl',
-        shadow: 'shadow-xl',
+        shadow: 'shadow-md',
         canvas: 'bg-muted',
         surface: 'bg-surface',
         edge: 'border-border',

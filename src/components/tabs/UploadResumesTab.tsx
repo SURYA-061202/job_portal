@@ -313,7 +313,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                 carrying the heading, count badge and job selector. */}
             {/* No overflow-hidden: it would clip the job-selector menu. The
                 wash is on the panel itself, so the radius still rounds it. */}
-            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                 {/* Title row */}
                 <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">

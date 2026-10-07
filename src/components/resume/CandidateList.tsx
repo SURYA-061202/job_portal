@@ -149,7 +149,7 @@ export default function CandidateList({
           Posts masthead recipe: brand-washed title row with heading, count badge,
           filter and search at the right end. */}
       {!hideHeader && (
-        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
           <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5${description ? ` border-b ${skin.edge}` : ''}`}>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               {onBack && (

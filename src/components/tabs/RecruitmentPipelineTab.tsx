@@ -426,7 +426,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 {/* Header - Posts masthead recipe: brand-washed title row
                     (heading + count badge, search at the right end) over a
                     description row. */}
-                <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                     <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <h2 className={skin.heading}>Recruitment Pipeline</h2>
@@ -509,7 +509,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
             {/* Header Section */}
             {/* Header - Posts masthead recipe with back button and search. */}
-            <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+            <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                 <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <button

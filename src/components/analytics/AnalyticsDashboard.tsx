@@ -224,7 +224,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         masthead recipe: brand wash over the whole header,
                         title row (heading, count badge, stat chip) above a
                         description row. */}
-                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                         {/* Title row */}
                         <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -253,7 +253,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2 space-y-6">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Users className="w-5 h-5" />
                             </div>
@@ -262,7 +262,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{totalCandidates}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -271,7 +271,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{avgExperience} Yrs</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <MapPin className="w-5 h-5" />
                             </div>
@@ -280,7 +280,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-lg font-bold text-ink truncate max-w-[100px]">{locationData[0]?.name || 'N/A'}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -289,7 +289,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{jobPosts.length}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-xl flex items-center hover:border-ink/40">
+                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -302,7 +302,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
 
                     {/* Experience & Location Side by Side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-xl hover:border-ink/40">
+                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-md hover:border-ink/40">
                             <h3 className="text-lg font-semibold text-ink mb-4">Experience Distribution</h3>
                             <div className="h-56 sm:h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -316,7 +316,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-xl hover:border-ink/40">
+                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-md hover:border-ink/40">
                             <h3 className="text-lg font-semibold text-ink mb-4">Candidates by Location (Top 7)</h3>
                             <div className="h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -335,7 +335,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                     {/* Department & Skills Distribution */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* Department Distribution */}
-                        <div className="bg-surface rounded-2xl border border-border shadow-xl p-6 hover:border-ink/40">
+                        <div className="bg-surface rounded-2xl border border-border shadow-md p-6 hover:border-ink/40">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-ink">Department Distribution</h3>
                                 <CustomDropdown
@@ -381,7 +381,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         </div>
 
                         {/* Skills Distribution */}
-                        <div className="bg-surface rounded-2xl border border-border shadow-xl p-6 hover:border-ink/40">
+                        <div className="bg-surface rounded-2xl border border-border shadow-md p-6 hover:border-ink/40">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-ink">Skills Distribution</h3>
                                 <CustomDropdown

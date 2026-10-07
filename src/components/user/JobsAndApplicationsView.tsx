@@ -216,9 +216,9 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
     return (
         <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
-            {/* Search Bar */}
-            <div className="flex justify-center mb-10">
-                <div className="w-full max-w-4xl bg-surface border border-border rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-ink">
+            {/* Search Bar - full width, spanning the filter + job cards row below */}
+            <div className="mb-10">
+                <div className="w-full bg-surface border border-border rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-ink">
                     <div className="relative flex-1 w-full group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
                         <input

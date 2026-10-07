@@ -54,7 +54,7 @@ export default function UserHeader() {
         <header 
             className={`sticky top-0 z-50 transition-all duration-300 ${
                 scrolled
-                ? `${skin.surface} backdrop-blur-md border-b ${skin.edge} shadow-sm py-1`
+                ? `${skin.surface} backdrop-blur-md border-b ${skin.edge} shadow-sm py-2`
                 : `${skin.surface} border-b ${skin.edge} py-2`
             }`}
         >
@@ -72,10 +72,9 @@ export default function UserHeader() {
                                 className="h-7 w-auto object-contain sm:h-8"
                             />
                             <div className="flex items-center gap-1 font-outfit text-xl font-bold tracking-tighter">
-                                <span className="text-ink">Indian Infra</span>
-                                <span className="text-ink">
-                                    Jobs
-                                </span>
+                                <span className="text-brand">Indian</span>
+                                <span className="text-ink">Infra</span>
+                                <span className="text-ink">Jobs</span>
                             </div>
                         </Link>
 
@@ -88,7 +87,15 @@ export default function UserHeader() {
                                             isActive(link.to) ? 'text-brand' : 'text-ink/60 hover:text-brand'
                                         }`}
                                     >
-                                        <span>{link.label}</span>
+                                        <span className="relative">
+                                            {link.label}
+                                            {isActive(link.to) && (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="absolute -bottom-1 left-0 h-0.5 w-full bg-brand"
+                                                />
+                                            )}
+                                        </span>
                                     </Link>
                                 </div>
                             ))}

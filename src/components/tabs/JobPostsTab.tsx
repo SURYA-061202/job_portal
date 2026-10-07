@@ -200,10 +200,10 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Masthead - one panel divided by hairlines. Static, never
-                        scrolls; radius and elevation come from the active skin.
+                        scrolls; radius comes from the active skin.
                         The brand wash covers the whole header (title + controls),
                         never the results below it. */}
-                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                         <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 <h2 className={skin.heading}>

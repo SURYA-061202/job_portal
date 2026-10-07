@@ -166,7 +166,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             {/* Masthead - the Posts tab recipe: hairline edge, surface, radius and
                 elevation from the active skin. The brand wash covers the whole
                 header (title + controls row), never the content below it. */}
-            <div className={`shrink-0 mb-4 z-10 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+            <div className={`shrink-0 mb-4 z-10 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                 {/* Title row */}
                 <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                     <div className="flex min-w-0 items-center gap-3">
@@ -182,19 +182,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             <h1 className={`${skin.heading} max-w-full truncate`}>
                                 {recruitment.jobTitle}
                             </h1>
-                            {/* Share takes the badge slot on the candidate view -
-                                no openings count is shown in the header there. */}
-                            {isUserView ? (
-                                <button
-                                    onClick={() => setShowShareModal(true)}
-                                    className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
-                                    title="Share job"
-                                    aria-label="Share this job"
-                                >
-                                    <Share2 className="h-4 w-4" aria-hidden="true" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Share</span>
-                                </button>
-                            ) : (
+                            {/* No openings count is shown in the header on the
+                                candidate view - Share sits after Apply instead. */}
+                            {!isUserView && (
                                 <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
                                     <span
                                         aria-hidden="true"
@@ -208,8 +198,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         </div>
                     </div>
 
-                        {/* Actions - on the candidate view Share lives in the
-                            title row, so only Apply / status show here. */}
+                        {/* Actions - Apply / status first, Share right after it
+                            on the candidate view. */}
                         <div className="flex shrink-0 items-center gap-2">
                             {!isUserView && (
                                 <button
@@ -262,6 +252,17 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 {statusInfo.label}
                             </div>
                         ) : null}
+                        {isUserView && (
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
+                                title="Share job"
+                                aria-label="Share this job"
+                            >
+                                <Share2 className="h-4 w-4" aria-hidden="true" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Share</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -294,7 +295,6 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
                         <div className={`flex items-center gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
                             <h3 className={skin.emptyTitle}>Job Details</h3>
-                            <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>{facts.length}</span>
                         </div>
                         <div className="overflow-x-auto thin-scroll">
                             <div className="flex snap-x">
@@ -414,7 +414,7 @@ function Section({ title, count, children }: { title: string; count?: string; ch
     const skin = useSkin();
     return (
         <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
-            <div className={`flex items-center gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
+            <div className={`flex items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
                 <h3 className={skin.emptyTitle}>{title}</h3>
                 {count && (
                     <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>{count}</span>

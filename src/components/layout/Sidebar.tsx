@@ -190,7 +190,7 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     iconBtn: 'text-ink/60 hover:bg-ink/5 hover:text-ink',
     rule: 'bg-gradient-to-r from-transparent via-brand to-transparent',
     nav: 'bg-surface',
-    section: 'px-3 pb-5 pt-5',
+    section: 'px-3 pt-2 first:pt-5',
     sectionLabel: 'mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink/50',
     sectionDivider: 'mx-3 mb-2 border-t border-border',
     rowRadius: 'rounded-xl',

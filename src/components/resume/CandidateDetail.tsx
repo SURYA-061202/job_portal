@@ -185,7 +185,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       {/* Masthead - the Posts/Candidates recipe: hairline edge, surface, radius,
           elevation and brand wash from the active skin. Title row carries the
           back control, candidate identity and the page actions. */}
-      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
         <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
           {/* Left: Back + Name/Post */}
           <div className="flex min-w-0 items-center gap-3">

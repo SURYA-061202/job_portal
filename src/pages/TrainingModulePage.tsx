@@ -304,7 +304,7 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
                                 onClick={() => handleSelectOption(currentQ.id, idx)}
                                 className={`flex items-center p-6 ${skin.radius} border-2 transition-all duration-300 text-left cursor-pointer ${FOCUS} ${
                                     answers[currentQ.id] === idx 
-                                    ? `${skin.surface} border-brand shadow-xl shadow-brand/10 -translate-y-1` 
+                                    ? `${skin.surface} border-brand shadow-md shadow-brand/10 -translate-y-1` 
                                     : `${skin.surface} border-transparent hover:border-ink/40`
                                 }`}
                             >

@@ -142,7 +142,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
             {/* Header - Posts masthead recipe: brand-washed title row (heading +
                 count badge, search + Add Recruiters at the right end) over a
                 description row. */}
-            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.shadow} ${skin.radius} ${skin.headerWash}`}>
+            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
                 <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <h2 className={skin.heading}>Team Members</h2>
