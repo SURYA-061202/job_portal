@@ -10,7 +10,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 export function JobCardSkeleton() {
     const skin = useSkin();
     return (
-        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-4 md:p-6 flex flex-col gap-4`}>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-4 md:p-6 flex flex-col gap-4`}>
             <Skeleton className="h-5 w-1/2" />
             <div className="flex flex-wrap gap-2 md:gap-3">
                 <Skeleton className="h-6 w-24 rounded-full" />

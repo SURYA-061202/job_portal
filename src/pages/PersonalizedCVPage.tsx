@@ -59,7 +59,7 @@ export default function PersonalizedCVPage() {
         }
     };
 
-    const handleViewPDF = async (open: boolean = true) => {
+    const handleViewPDF = async () => {
         if (!userData || !resumeRef.current) return;
         
         const toastId = toast.loading('Generating high-clarity resume...');
@@ -86,14 +86,8 @@ export default function PersonalizedCVPage() {
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'MEDIUM');
-            
-            if (open) {
-                const blob = pdf.output('blob');
-                const url = URL.createObjectURL(blob);
-                window.open(url, '_blank');
-            } else {
-                pdf.save(`${userData.firstName}_${userData.lastName}_Resume.pdf`);
-            }
+
+            pdf.save(`${userData.firstName}_${userData.lastName}_Resume.pdf`);
             toast.success('Resume generated successfully!', { id: toastId });
         } catch (error) {
             console.error('Error generating PDF snapshot:', error);
@@ -135,7 +129,7 @@ export default function PersonalizedCVPage() {
                     
                     {userData && !isProfileIncomplete && (
                         <button
-                            onClick={() => handleViewPDF(false)}
+                            onClick={() => handleViewPDF()}
                             className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 border border-ink bg-ink text-surface font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <FileDown className="w-5 h-5" />
@@ -206,14 +200,6 @@ export default function PersonalizedCVPage() {
                                 <div>
                                     <h3 className="text-lg font-bold text-ink">Resume Preview</h3>
                                 </div>
-                                {userData && (
-                                    <button 
-                                        onClick={() => handleViewPDF(true)}
-                                        className="px-4 py-1.5 border border-border bg-surface rounded-full text-[10px] font-bold text-ink/70 uppercase tracking-wider hover:border-ink transition-all"
-                                    >
-                                        View Resume
-                                    </button>
-                                )}
                             </div>
                             
                             <div className="flex-1 overflow-y-auto p-8 bg-muted flex justify-center">

@@ -18,7 +18,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
     const skin = useSkin();
 
     return (
-        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 relative group transition-colors duration-200 ${skin.cardHover}`}>
+        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 relative group transition-colors duration-200 ${skin.cardHover}`}>
             {/* New Badge */}
             {isNew && (
                 <div className="absolute -top-2 -left-2 z-10">

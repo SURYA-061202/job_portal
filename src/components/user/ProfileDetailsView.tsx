@@ -4,6 +4,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
+import ResumePreviewModal from '@/components/resume/ResumePreviewModal';
 import { CheckCircle2, FileUp, Loader2, Edit2, X, Plus, Trash2 } from 'lucide-react';
 
 interface ProfileDetailsViewProps {
@@ -28,6 +29,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     const [tempSkills, setTempSkills] = useState<string[]>([]);
     const [courseInput, setCourseInput] = useState('');
     const [tempCourses, setTempCourses] = useState<string[]>([]);
+    const [showResumePreview, setShowResumePreview] = useState(false);
 
     const openModal = (type: 'education'|'project'|'certificate'|'experience'|'course'|'skill', index: number | null = null) => {
         setEditIndex(index);
@@ -207,7 +209,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         <div className="flex flex-col gap-6">
 
             {/* Education Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Education</h3>
                     <button onClick={() => openModal('education')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -239,7 +241,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Skills Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Skills</h3>
                     <button onClick={() => openModal('skill')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -261,7 +263,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Courses Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Courses Completed</h3>
                     <button onClick={() => openModal('course')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -283,7 +285,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Projects Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Projects</h3>
                     <button onClick={() => openModal('project')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -312,7 +314,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 )}
             </div>
             {/* Certificates Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Certificates</h3>
                     <button onClick={() => openModal('certificate')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -340,7 +342,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Experience Card */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Experience</h3>
                     <button onClick={() => openModal('experience')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -367,7 +369,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Resumes Upload Component */}
-            <div className="bg-surface rounded-2xl border border-border shadow-md p-5">
+            <div className="bg-surface rounded-2xl border border-border p-5">
                 <h3 className="text-lg font-bold text-ink mb-4">Resume Upload</h3>
                 {formData.resumeUrl && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted rounded-xl border border-border mb-4 gap-4">
@@ -379,9 +381,9 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 </p>
                             </div>
                         </div>
-                        <a href={formData.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-center border border-border bg-surface text-ink hover:border-ink px-6 py-2 rounded-xl transition-colors">
-                            View PDF
-                        </a>
+                        <button type="button" onClick={() => setShowResumePreview(true)} className="text-sm font-bold text-center border border-border bg-surface text-ink hover:border-ink px-6 py-2 rounded-xl transition-colors">
+                            View
+                        </button>
                     </div>
                 )}
 
@@ -401,6 +403,11 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 </div>
             </div>
             
+            {/* Resume Preview Modal */}
+            {showResumePreview && formData.resumeUrl && (
+                <ResumePreviewModal url={formData.resumeUrl} onClose={() => setShowResumePreview(false)} />
+            )}
+
             {/* Modal Overlays */}
             {activeModal === 'experience' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">

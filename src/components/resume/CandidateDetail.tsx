@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import InterviewInviteModal from './InterviewInviteModal';
+import ResumePreviewModal from './ResumePreviewModal';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -24,6 +25,7 @@ interface CandidateDetailProps {
 export default function CandidateDetail({ candidate: initialCandidate, onBack, onInviteSent, onRemoveCandidate, userApplications, activePostId }: CandidateDetailProps) {
   const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showResumePreview, setShowResumePreview] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
@@ -236,14 +238,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               {removing ? 'Deleting...' : 'Delete'}
             </button>
 
-            <a
-              href={candidate.resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => candidate.resumeUrl && setShowResumePreview(true)}
               className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.cta} ${FOCUS}`}
             >
               Resume
-            </a>
+            </button>
           </div>
         </div>
 
@@ -525,6 +526,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             })()}
           </div>
       </div>
+
+      {showResumePreview && candidate.resumeUrl && (
+        <ResumePreviewModal url={candidate.resumeUrl} onClose={() => setShowResumePreview(false)} />
+      )}
 
       {showInviteModal && (
         <InterviewInviteModal
