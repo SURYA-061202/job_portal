@@ -54,14 +54,49 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
   ); */
 
   return (
-    <div className="space-y-6">
-      <button onClick={onBack} className={`flex items-center space-x-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} ${FOCUS}`}>
-        <ArrowLeft className="h-5 w-5" />
-        <span>Back to List</span>
-      </button>
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Masthead - Posts/Candidates recipe: back control + identity in the
+          title row, contact details in the description row. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={onBack}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              title="Back"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+                <span
+                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  title="Status"
+                >
+                  Selected
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>
+            {candidate.email}
+            {candidate.phone && (
+              <>
+                <span className="mx-2 text-ink/40">•</span>
+                {candidate.phone}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
 
-      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto p-6 space-y-4`}>
-        <h2 className={skin.heading}>{candidate.name}</h2>
+      {/* Body - fixed height; only the contents inside it scroll */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+      <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
         <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
           <thead className="bg-brand/5">
             <tr>
@@ -132,6 +167,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
           </tbody>
         </table>
       </div>
+      </div>
     </div>
   );
 }
@@ -146,14 +182,49 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
   }
 
   return (
-    <div className="space-y-6">
-      <button onClick={onBack} className={`flex items-center space-x-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} ${FOCUS}`}>
-        <ArrowLeft className="h-5 w-5" />
-        <span>Back to List</span>
-      </button>
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Masthead - Posts/Candidates recipe: back control + identity in the
+          title row, contact details in the description row. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={onBack}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              title="Back"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+                <span
+                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  title="Status"
+                >
+                  Rejected{rejectedRound ? ` · ${rejectedRound}` : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>
+            {candidate.email}
+            {candidate.phone && (
+              <>
+                <span className="mx-2 text-ink/40">•</span>
+                {candidate.phone}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
 
-      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto p-6 space-y-4`}>
-        <h2 className={skin.heading}>{candidate.name}</h2>
+      {/* Body - fixed height; only the contents inside it scroll */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+      <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
         <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
           <thead className="bg-brand/5">
             <tr>
@@ -172,6 +243,7 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
             </tr>
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

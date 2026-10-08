@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAllApplications } from "@/lib/jobApplications";
+import { getPostRounds } from "@/lib/interviewRounds";
 import type { Candidate } from "@/types";
 import type { RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
@@ -17,21 +18,6 @@ const normalizeSkills = (skills: any): string[] => {
   if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
   return [];
 };
-
-const ROUND_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  round1: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round2: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round3: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round4: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round5: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round6: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round7: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round8: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  round9: { bg: "bg-brand/10", border: "border-brand/20", text: "text-brand", badge: "bg-brand/20 text-brand border border-brand/20" },
-  selected: { bg: "bg-muted", border: "border-border", text: "text-ink/70", badge: "bg-surface text-ink/70 border border-border" },
-};
-
-const DEFAULT_COLORS = { bg: "bg-surface", border: "border-border", text: "text-ink/70", badge: "bg-surface text-ink/70 border border-border" };
 
 interface PostWithCount extends RecruitmentRequest {
   interviewCount: number;
@@ -251,52 +237,63 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
     );
   }
 
-  // View 3: Candidates in a round for a post
+  // View 3: Candidates in a round for a post - one header only: the list
+  // masthead carries "Round N - <round name>" as the heading and the post name
+  // as its description row, with the back control inside the same header.
   if (selectedPost && selectedRound) {
     const displayName = selectedRound === 'selected' ? 'Selected' : selectedRound.replace(/^round/, 'Round ');
+    const roundNum = selectedRound.replace(/\D/g, '');
+    const roundName = getPostRounds(selectedPost).find((r) => String(r.roundNumber) === roundNum)?.name || '';
+    const roundTitle = roundName ? `${displayName} - ${roundName}` : displayName;
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <button
-            className={`p-1 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
-            onClick={() => { setSelectedRound(null); setSearchTerm(''); }}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <p className={skin.micro}>{selectedPost.jobTitle}</p>
-            <h2 className={skin.heading}>{displayName}</h2>
-          </div>
-        </div>
-
-        <CandidateList
-          candidates={roundCandidates}
-          onSelectCandidate={setSelectedCandidate}
-          loading={loading}
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-          emptyMessage={`No candidates found in ${displayName}.`}
-          title={`${displayName} Candidates`}
-          hideEmptyIcon
-        />
-      </div>
+      <CandidateList
+        candidates={roundCandidates}
+        onSelectCandidate={setSelectedCandidate}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        emptyMessage={`No candidates found in ${displayName}.`}
+        title={roundTitle}
+        description={selectedPost.jobTitle}
+        onBack={() => { setSelectedRound(null); setSearchTerm(''); }}
+        hideEmptyIcon
+      />
     );
   }
 
   // View 2: Rounds for a post
   if (selectedPost) {
+    const totalCandidates = postRounds.reduce((sum, [, count]) => sum + count, 0);
+    const configuredRounds = getPostRounds(selectedPost);
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <button
-            className={`p-1 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
-            onClick={() => { setSelectedPost(null); setSelectedRound(null); }}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <p className={skin.micro}>{selectedPost.jobTitle}</p>
-            <h2 className={skin.heading}>Interview Rounds</h2>
+        {/* Header - same masthead recipe as the other modules: brand-washed
+            title row (back control, page title, total candidate count) over a
+            description row that names the post. */}
+        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+          <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                onClick={() => { setSelectedPost(null); setSelectedRound(null); }}
+                title="Back to posts"
+                aria-label="Back to posts"
+              >
+                <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+              </button>
+              <h2 className={`${skin.heading} truncate`}>Interview Rounds</h2>
+            </div>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+              />
+              {totalCandidates} Candidate{totalCandidates === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div className="px-4 py-2.5 sm:px-5">
+            <p className={skin.body}>{selectedPost.jobTitle}</p>
           </div>
         </div>
 
@@ -306,42 +303,51 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
             <p className={`mt-1 ${skin.body}`}>Candidates will appear here once they enter the interview pipeline.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {postRounds.map(([status, count]) => {
-              const colors = ROUND_COLORS[status] || DEFAULT_COLORS;
               const displayName = status === 'selected' ? 'Selected' : status.replace(/^round/, 'Round ');
               const roundNum = (status.match(/^round(\d+)$/) || [,''])[1];
+              const roundName = configuredRounds.find((r) => String(r.roundNumber) === roundNum)?.name || '';
 
               return (
                 <button
+                  type="button"
                   key={status}
                   onClick={() => setSelectedRound(status)}
-                  className={`${colors.bg} ${colors.border} border ${skin.radius} p-6 text-left ${skin.shadow} transition-colors duration-200 ${skin.cardHover} group ${FOCUS}`}
+                  aria-label={`Open ${displayName} candidates`}
+                  className={`group flex h-full cursor-pointer flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-4 sm:p-5 text-left transition-colors duration-200 ${skin.cardHover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className={`text-sm font-semibold ${colors.text} uppercase tracking-wide`}>
+                  <span className="flex flex-1 flex-col">
+                    <span className="flex items-start justify-between gap-3">
+                      <span className={`min-w-0 ${skin.cardTitle} text-base!`}>
                         {displayName}
-                      </p>
-                      <p className="mt-3 text-3xl font-bold text-ink">{count}</p>
-                      <p className={`mt-1 ${skin.meta}`}>
-                        candidate{count !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    {roundNum && (
-                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-full`}>
-                        R{roundNum}
+                      </span>
+                      {roundNum && (
+                        <span className={`shrink-0 ${skin.chip}`}>R{roundNum}</span>
+                      )}
+                      {status === 'selected' && (
+                        <span className={`shrink-0 ${skin.chip}`}>✓</span>
+                      )}
+                    </span>
+
+                    {roundName && (
+                      <span className="mt-3 block min-w-0">
+                        <span className="mb-1 block text-xs font-semibold text-ink/60">Round Type</span>
+                        <span className="block truncate text-sm font-semibold text-ink" title={roundName}>
+                          {roundName}
+                        </span>
                       </span>
                     )}
-                    {status === 'selected' && (
-                      <span className={`${colors.badge} text-xs font-bold px-2 py-1 rounded-full`}>
-                        ✓
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-4 text-sm text-ink/60 group-hover:text-ink/80 transition-colors">
-                    View candidates →
-                  </div>
+
+                    <span className="mt-3 flex-1">
+                      <span className="mb-1 block text-xs font-semibold text-ink/60">Candidates</span>
+                      <span className={`block ${skin.statValue}`}>{count}</span>
+                    </span>
+
+                    <span className={`mt-4 flex justify-end border-t ${skin.edge} pt-3`}>
+                      <span className={skin.count}>View rounds →</span>
+                    </span>
+                  </span>
                 </button>
               );
             })}
@@ -394,24 +400,21 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 content-start">
-          {posts.map((post) => (
+          {posts.map((post) => {
+            const totalRounds = getPostRounds(post).length;
+            return (
             <button
               key={post.id}
               onClick={() => setSelectedPost(post)}
               className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 text-left transition-colors duration-200 ${skin.cardHover} group ${FOCUS}`}
             >
-              <div className="flex items-start justify-between">
-                <div className="space-y-1 flex-1 min-w-0">
-                  <h4 className={`${skin.cardTitle} truncate`}>
-                    {post.jobTitle}
-                  </h4>
-                  {post.department && (
-                    <p className={`${skin.meta} truncate`}>{post.department}</p>
-                  )}
-                </div>
-                <span className={`ml-3 flex-shrink-0 inline-flex items-center ${skin.count}`}>
-                  {post.interviewCount}
-                </span>
+              <div className="space-y-1 flex-1 min-w-0">
+                <h4 className={`${skin.cardTitle} truncate`}>
+                  {post.jobTitle}
+                </h4>
+                {post.department && (
+                  <p className={`${skin.meta} truncate`}>{post.department}</p>
+                )}
               </div>
 
               <div className={`mt-3 flex flex-wrap gap-3 ${skin.meta}`}>
@@ -441,25 +444,34 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               </div>
 
               {post.skills && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                    <span key={i} className={skin.tag}>
-                      {skill.trim()}
-                    </span>
-                  ))}
-                  {post.skills.split(',').length > 3 && (
-                    <span className={skin.tag}>
-                      +{post.skills.split(',').length - 3}
-                    </span>
-                  )}
+                <div className="mt-3">
+                  <span className={`mb-2 block ${skin.micro}`}>Skills</span>
+                  <div className="flex flex-wrap gap-1">
+                    {post.skills.split(',').slice(0, 3).map((skill, i) => (
+                      <span key={i} className={skin.tag}>
+                        {skill.trim()}
+                      </span>
+                    ))}
+                    {post.skills.split(',').length > 3 && (
+                      <span className={skin.tag}>
+                        +{post.skills.split(',').length - 3}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
 
-              <div className={`mt-4 pt-3 border-t ${skin.edge} text-xs font-bold text-ink/80`}>
-                View rounds →
+              <div className={`mt-4 flex flex-wrap items-center justify-between gap-2 border-t ${skin.edge} pt-3`}>
+                <span className={skin.statChip}>
+                  {totalRounds} {totalRounds === 1 ? 'Round' : 'Rounds'}
+                </span>
+                <span className={skin.count}>
+                  {post.interviewCount} {post.interviewCount === 1 ? 'Candidate' : 'Candidates'}
+                </span>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

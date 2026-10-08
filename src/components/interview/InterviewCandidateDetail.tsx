@@ -238,33 +238,57 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
 
   const displayedRoundType = interview.roundType || '-';
 
-  return (
-    <div className="space-y-6">
-      <button
-        className={`flex items-center space-x-2 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
-        onClick={onBack}
-      >
-        <ArrowLeft className="h-5 w-5" />
-        <span>Back to List</span>
-      </button>
+  const statusLabel = !status
+    ? 'Not started'
+    : isRound
+      ? `Round ${getRoundNumber(status)}`
+      : status.charAt(0).toUpperCase() + status.slice(1);
 
-      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 space-y-6`}>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className={skin.heading}>{candidate.name}</h2>
-            <p className="text-ink/70 text-sm">
-              {candidate.email}
-              {candidate.phone && (
-                <>
-                  <span className="mx-2 text-ink/60">•</span>
-                  {candidate.phone}
-                </>
-              )}
-            </p>
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Masthead - the Posts/Candidates recipe: hairline edge, surface, radius,
+          elevation and brand wash from the active skin, with the back control
+          and candidate identity in the title row. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={onBack}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              title="Back"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+                <span
+                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  title="Interview status"
+                >
+                  {statusLabel}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>
+            {candidate.email}
+            {candidate.phone && (
+              <>
+                <span className="mx-2 text-ink/40">•</span>
+                {candidate.phone}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
 
+      {/* Body - fixed height; only the contents inside it scroll */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+      <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
         {/* Interview info table */}
         <div className="overflow-x-auto">
           <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
@@ -423,6 +447,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

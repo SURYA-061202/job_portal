@@ -410,38 +410,48 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
   };
 
   return (
-    <div className="space-y-6">
-      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-x-auto`}>
-        <div className={`px-6 py-4 border-b ${skin.edge} flex items-start gap-3`}>
-          <button
-            onClick={onBack}
-            className={`p-1.5 -ml-1.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors flex-shrink-0 ${FOCUS}`}
-            title="Back to list"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className={skin.heading}>{candidate.name}</h2>
-              {postTitle && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
-                  {postTitle}
-                </span>
-              )}
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Masthead - Posts/Candidates recipe: back control + identity in the
+          title row, contact details in the description row. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={onBack}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              title="Back to list"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+                {postTitle && (
+                  <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
+                    {postTitle}
+                  </span>
+                )}
+              </div>
             </div>
-            <p className={`${skin.meta} mt-0.5`}>
-              {candidate.email}
-              {candidate.phone && (
-                <>
-                  <span className="mx-2 text-ink/40">•</span>
-                  {candidate.phone}
-                </>
-              )}
-            </p>
           </div>
         </div>
+        <div className="px-4 py-2.5 sm:px-5">
+          <p className={skin.body}>
+            {candidate.email}
+            {candidate.phone && (
+              <>
+                <span className="mx-2 text-ink/40">•</span>
+                {candidate.phone}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
 
-        <div className="p-6 space-y-4">
+      {/* Body - fixed height; only the contents inside it scroll */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+        <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
         <div className="overflow-x-auto">
           <table className="table-fixed w-auto text-sm">
             <tbody className={`divide-y ${skin.divide}`}>
