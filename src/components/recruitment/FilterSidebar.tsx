@@ -46,12 +46,12 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onClear
 
     return (
         <div>
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-4 md:p-5`}>
+            <div className={`border ${skin.edge} ${skin.surface} rounded-lg ${skin.shadow} p-4 md:p-5`}>
                 {hasActiveFilters && onClearFilters && (
                     <div className="flex justify-end mb-3">
                         <button
                             onClick={onClearFilters}
-                            className={`px-3 py-1.5 text-xs font-bold border border-destructive bg-surface text-destructive ${skin.radius} cursor-pointer transition-colors duration-200 hover:bg-destructive/10 ${FOCUS}`}
+                            className={`px-3 py-1.5 text-xs font-bold border border-destructive bg-surface text-destructive rounded-lg cursor-pointer transition-colors duration-200 hover:bg-destructive/10 ${FOCUS}`}
                             title="Clear all filters"
                         >
                             Clear

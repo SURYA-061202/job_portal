@@ -218,7 +218,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
             {/* Search Bar - full width, spanning the filter + job cards row below */}
             <div className="mb-10">
-                <div className="w-full bg-surface border border-border rounded-2xl p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-ink">
+                <div className="w-full bg-surface border border-border rounded-lg p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-ink">
                     <div className="relative flex-1 w-full group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
                         <input
@@ -226,7 +226,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             placeholder="Job title, keywords, or company"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-xl focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
+                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
                         />
                     </div>
                     <div className="hidden md:block h-10 w-px bg-border" />
@@ -237,11 +237,11 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             placeholder="City or state"
                             value={locationTerm}
                             onChange={(e) => setLocationTerm(e.target.value)}
-                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-xl focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
+                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
                         />
                     </div>
                     <button 
-                        className="w-full md:w-auto px-8 py-3 border border-ink bg-ink text-surface rounded-xl font-semibold text-sm hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
+                        className="w-full md:w-auto px-8 py-3 border border-ink bg-ink text-surface rounded-lg font-semibold text-sm hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
                     >
                         Search
                     </button>
@@ -267,7 +267,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             </h2>
                             <button
                                 onClick={() => setIsFilterDrawerOpen(true)}
-                                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border border-border bg-surface rounded-xl text-xs font-bold text-ink/80"
+                                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border border-border bg-surface rounded-lg text-xs font-bold text-ink/80"
                             >
                                 <Search className="w-3 h-3" /> Filters
                             </button>
@@ -275,11 +275,11 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                         <div className="flex items-center gap-3">
                             {/* Sort Dropdown */}
                             <div className="relative group z-10">
-                                <button className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-surface border border-border rounded-xl text-xs sm:text-sm font-bold text-ink/80 hover:border-ink transition-all">
+                                <button className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-surface border border-border rounded-lg text-xs sm:text-sm font-bold text-ink/80 hover:border-ink transition-all">
                                     {sortBy === 'recent' ? 'Most Recent' : 'Oldest First'}
                                     <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-ink/60" />
                                 </button>
-                                <div className="absolute right-0 mt-2 w-40 bg-surface rounded-2xl border border-border py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl">
+                                <div className="absolute right-0 mt-2 w-40 bg-surface rounded-lg border border-border py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl">
                                     <button onClick={() => setSortBy('recent')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-brand bg-brand/10' : 'text-ink/60 hover:bg-ink/5'}`}>Most Recent</button>
                                     <button onClick={() => setSortBy('oldest')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-brand bg-brand/10' : 'text-ink/60 hover:bg-ink/5'}`}>Oldest First</button>
                                 </div>
@@ -292,7 +292,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             <JobListSkeleton count={3} />
                         ) : activeTab === 'jobs' ? (
                             filteredPosts.length === 0 ? (
-                                <div className="text-center py-20 bg-muted rounded-2xl border border-dashed border-border">
+                                <div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
                                     <h3 className="text-lg font-bold text-ink mb-2">No jobs matched your criteria</h3>
                                     <p className="text-ink/60 max-w-sm mx-auto">Adjust filters or search terms.</p>
                                 </div>
@@ -305,7 +305,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             )
                         ) : (
                             filteredApplications.length === 0 ? (
-                                <div className="text-center py-20 bg-surface rounded-2xl border border-dashed border-border">
+                                <div className="text-center py-20 bg-surface rounded-lg border border-dashed border-border">
                                     <h3 className="text-lg font-bold text-ink mb-2">
                                         {applications.length === 0 ? 'No applications yet' : 'No matching applications'}
                                     </h3>
@@ -359,7 +359,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-surface border-l border-border overflow-y-auto z-[101]">
                         <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                             <h3 className="font-bold text-ink">Filters</h3>
-                            <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-ink/5 rounded-full"><ChevronDown className="w-5 h-5 rotate-90 text-ink/60" /></button>
+                            <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-ink/5 rounded-lg"><ChevronDown className="w-5 h-5 rotate-90 text-ink/60" /></button>
                         </div>
                         <div className="p-4">
                             <FilterSidebar selectedFilters={selectedFilters} onToggleFilter={toggleFilter} onClearFilters={clearAllFilters} />

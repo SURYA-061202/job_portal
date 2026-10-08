@@ -262,11 +262,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
       {/* Content - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-6 space-y-6`}>
+        <div className="p-6 space-y-6">
             {/* Applied Posts - Candidates-module path only; when the detail is
                 reached through a post the context is already known. */}
             {!isPostContext && (
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+            <div>
               <h3 className={`${skin.cardTitle} mb-4`}>
                 Applied Posts
               </h3>
@@ -280,7 +280,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               ) : (
                 <div className="space-y-3">
                   {appliedPosts.map((app, index) => (
-                    <div key={index} className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-4 transition-colors ${skin.rowHover} ${skin.cardHover}`}>
+                    <div key={index} className={`transition-colors ${skin.rowHover}`}>
                       {app.postDetails ? (
                         <div>
                           <div className="flex items-start justify-between">
@@ -327,7 +327,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Contact Info */}
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+            <div>
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Contact Information
               </h3>
@@ -349,7 +349,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+              <div>
                 <h3 className={`${skin.cardTitle} mb-3`}>
                   Skills
                 </h3>
@@ -365,7 +365,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+              <div>
                 <h3 className={`${skin.cardTitle} mb-4 flex flex-wrap items-center gap-3`}>
                   Education
                   {candidate.education.filter((edu) => edu.cgpa).map((edu, i) => (
@@ -392,7 +392,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+            <div>
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Experience
               </h3>
@@ -435,7 +435,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                    <div>
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Key Projects
                       </h3>
@@ -453,7 +453,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                  <div>
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Projects
                     </h3>
@@ -482,7 +482,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                    <div>
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Certifications
                       </h3>
@@ -500,7 +500,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
+                  <div>
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Certifications
                     </h3>

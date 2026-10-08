@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Briefcase, MapPin, Search } from "lucide-react";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
+import { getPostRounds, getRoundLabel } from "@/lib/interviewRounds";
 import { useSkin, FOCUS } from "@/styles/skin";
 
 const normalizeSkills = (skills: any): string[] => {
@@ -177,10 +178,12 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   if (selected) {
     const selectedCandidatePostId = (selected as Candidate & { postId?: string }).postId;
+    const selectedPost = posts.find(p => p.id === selectedCandidatePostId);
     return (
       <ShortlistedCandidateDetail
         candidate={selected}
-        postTitle={posts.find(p => p.id === selectedCandidatePostId)?.jobTitle}
+        post={selectedPost}
+        postTitle={selectedPost?.jobTitle}
         onBack={() => {
           setSelected(null);
           // If there's a parent onBack and we came from another tab, call it
@@ -320,18 +323,32 @@ interface DetailProps {
   onStatusUpdated?: () => void;
   /** Job post this candidate is shortlisted for, shown in the header. */
   postTitle?: string;
+  /** Full post record — its rounds decide the round name used when moving to Round 1. */
+  post?: RecruitmentRequest;
 }
 
-function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTitle }: DetailProps) {
+/** Name of a post's first interview round, the round we move shortlisted candidates into. */
+function firstRoundName(post?: RecruitmentRequest | null): string {
+  const first = getPostRounds(post)[0];
+  return first.name || getRoundLabel(first);
+}
+
+function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTitle, post }: DetailProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
   const [details, setDetails] = useState<any>(null);
   const [moveLoading, setMoveLoading] = useState(false);
-  const [roundName, setRoundName] = useState('Technical');
+  const [roundName, setRoundName] = useState(() => firstRoundName(post));
 
   const candidateId = candidate.id;
   const candidatePostId = (candidate as any).postId as string | undefined;
   const skin = useSkin();
+
+  // Keep the round name in sync with the post's first round (the detail can be
+  // re-used across candidates without remounting).
+  useEffect(() => {
+    setRoundName(firstRoundName(post));
+  }, [post]);
 
   useEffect(() => {
     const loadInterview = async () => {
@@ -452,9 +469,11 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
       {/* Body - fixed height; only the contents inside it scroll */}
       <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
         <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
+        {/* Single table, no row separators — details sit directly under the
+            selected-date row when they exist, so the spacing stays uniform. */}
         <div className="overflow-x-auto">
           <table className="table-fixed w-auto text-sm">
-            <tbody className={`divide-y ${skin.divide}`}>
+            <tbody>
               <tr>
                 <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Role</th>
                 <td className="px-4 py-3 text-ink/80">{candidate.role}</td>
@@ -471,51 +490,47 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
                   )}
                 </td>
               </tr>
+              {details?.dateOfJoining ? (
+                <>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Date of Joining</th>
+                    <td className="px-4 py-3 text-ink/80">{details.dateOfJoining}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Current Salary</th>
+                    <td className="px-4 py-3 text-ink/80">{details.currentSalary || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Expected Salary</th>
+                    <td className="px-4 py-3 text-ink/80">{details.expectedSalary ? `${details.expectedSalary} / ${details.expectedSalaryPeriod}` : '-'}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Years of Experience</th>
+                    <td className="px-4 py-3 text-ink/80">{details.yearsExperience || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Experience In</th>
+                    <td className="px-4 py-3 text-ink/80">{details.experienceIn || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Ready to Relocate</th>
+                    <td className="px-4 py-3 text-ink/80">{details.readyToRelocate || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Laptop</th>
+                    <td className="px-4 py-3 text-ink/80">{details.laptop || '-'}</td>
+                  </tr>
+                </>
+              ) : (
+                response === 'accept' && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-3 text-destructive">Awaiting candidate details</td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>
-
-        {/* Additional details section */}
-        {details && details.dateOfJoining ? (
-          <div className="overflow-x-auto mt-4">
-            <table className="table-fixed w-auto text-sm">
-              <tbody className={`divide-y ${skin.divide}`}>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Date of Joining</th>
-                  <td className="px-4 py-3 text-ink/80">{details.dateOfJoining}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Current Salary</th>
-                  <td className="px-4 py-3 text-ink/80">{details.currentSalary || '-'}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Expected Salary</th>
-                  <td className="px-4 py-3 text-ink/80">{details.expectedSalary ? `${details.expectedSalary} / ${details.expectedSalaryPeriod}` : '-'}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Years of Experience</th>
-                  <td className="px-4 py-3 text-ink/80">{details.yearsExperience || '-'}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Experience In</th>
-                  <td className="px-4 py-3 text-ink/80">{details.experienceIn || '-'}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Ready to Relocate</th>
-                  <td className="px-4 py-3 text-ink/80">{details.readyToRelocate || '-'}</td>
-                </tr>
-                <tr>
-                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Laptop</th>
-                  <td className="px-4 py-3 text-ink/80">{details.laptop || '-'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          response === 'accept' && (
-            <p className="mt-6 text-destructive">Awaiting candidate details</p>
-          )
-        )}
 
         <div className="flex justify-end pt-4 gap-4">
           {response === 'accept' && (

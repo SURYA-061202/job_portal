@@ -143,6 +143,10 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     const rounds = getPostRounds(recruitment);
     const skills = recruitment.skills ? recruitment.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+    // User-side radius convention: the square skinned tokens (chip, tag,
+    // count) get rounded-lg on the candidate view only - the recruiter/admin
+    // detail keeps its current look.
+    const r = isUserView ? 'rounded-lg' : '';
 
     /* At-a-glance facts, rendered as a horizontal strip: bold figure over a
        micro label, vertical hairlines between cells, swipes on small screens. */
@@ -242,7 +246,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             <button
                                 onClick={handleApply}
                                 disabled={actionLoading}
-                                className={`inline-flex items-center gap-2 sm:px-6 cursor-pointer ${skin.cta} ${skin.ctaLift} ${FOCUS} disabled:opacity-50`}
+                                className={`inline-flex items-center gap-2 sm:px-6 rounded-lg cursor-pointer ${skin.cta} ${skin.ctaLift} ${FOCUS} disabled:opacity-50`}
                             >
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <FilePlus2 className="w-4 h-4" aria-hidden="true" /></>}
                             </button>
@@ -255,7 +259,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         {isUserView && (
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
                                 title="Share job"
                                 aria-label="Share this job"
                             >
@@ -268,15 +272,15 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
                 {/* Controls row - tinted band carrying the post's context. */}
                 <div className={`flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip}`}>
+                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
                         <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         <span className="truncate">{recruitment.department}</span>
                     </span>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip}`}>
+                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
                         <Award className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         <span className="truncate">{recruitment.positionLevel}</span>
                     </span>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip}`}>
+                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
                         <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         <span className="truncate">Posted {timeAgo(recruitment.createdAt)}</span>
                     </span>
@@ -312,18 +316,18 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Requirements */}
-                    <Section title="Requirements">
+                    <Section title="Requirements" userView={isUserView}>
                         <p className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:text-base">
                             <span className={skin.body}>Candidates should have a</span>
-                            <span className={`inline-flex items-center ${skin.chip}`}>{recruitment.qualification}</span>
+                            <span className={`inline-flex items-center ${skin.chip} ${r}`}>{recruitment.qualification}</span>
                             <span className={skin.body}>qualification and be from the</span>
-                            <span className={`inline-flex items-center ${skin.chip}`}>{recruitment.department}</span>
+                            <span className={`inline-flex items-center ${skin.chip} ${r}`}>{recruitment.department}</span>
                             <span className={skin.body}>department.</span>
                         </p>
                     </Section>
 
                     {/* Job Description */}
-                    <Section title="Job Description">
+                    <Section title="Job Description" userView={isUserView}>
                         {recruitment.description ? (
                             <div className="space-y-3">
                                 {recruitment.description
@@ -350,7 +354,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     href={recruitment.jdUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-2.5 ${skin.secondary} ${FOCUS}`}
+                                    className={`inline-flex items-center gap-2.5 ${skin.secondary} ${r} ${FOCUS}`}
                                 >
                                     <span>Download Detailed JD</span>
                                 </a>
@@ -359,7 +363,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Interview Rounds */}
-                    <Section title="Interview Rounds" count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
+                    <Section title="Interview Rounds" userView={isUserView} count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
                         {rounds.length === 0 ? (
                             <p className={skin.body}>No interview rounds for this post.</p>
                         ) : (
@@ -377,13 +381,13 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Required Skills */}
-                    <Section title="Required Skills" count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
+                    <Section title="Required Skills" userView={isUserView} count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
                         {skills.length === 0 ? (
                             <p className={skin.body}>No specific skills listed.</p>
                         ) : (
                             <div className="flex flex-wrap gap-2.5">
                                 {skills.map((skill, i) => (
-                                    <span key={i} className={skin.tag}>
+                                    <span key={i} className={`${skin.tag} ${r}`}>
                                         {skill}
                                     </span>
                                 ))}
@@ -410,14 +414,14 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
  *  hairline divider, optional inverted count badge. Deliberately unwashed and
  *  unshadowed - the orange gradient belongs to the page header only, and body
  *  sections sit flat on the canvas rather than floating above it. */
-function Section({ title, count, children }: { title: string; count?: string; children: ReactNode }) {
+function Section({ title, count, userView, children }: { title: string; count?: string; userView?: boolean; children: ReactNode }) {
     const skin = useSkin();
     return (
         <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
             <div className={`flex items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
                 <h3 className={skin.emptyTitle}>{title}</h3>
                 {count && (
-                    <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>{count}</span>
+                    <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} ${userView ? 'rounded-lg' : ''}`}>{count}</span>
                 )}
             </div>
             <div className="px-4 py-4 sm:px-6 sm:py-5">{children}</div>

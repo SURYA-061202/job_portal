@@ -209,7 +209,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         <div className="flex flex-col gap-6">
 
             {/* Education Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Education</h3>
                     <button onClick={() => openModal('education')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -231,8 +231,8 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('education', idx)} className="p-1.5 hover:bg-ink/5 rounded-xl text-ink/60 hover:text-ink transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('educationItems', idx)} className="p-1.5 hover:bg-destructive/10 rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('education', idx)} className="p-1.5 hover:bg-ink/5 rounded-lg text-ink/60 hover:text-ink transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('educationItems', idx)} className="p-1.5 hover:bg-destructive/10 rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                             </div>
                         ))}
@@ -241,7 +241,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Skills Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Skills</h3>
                     <button onClick={() => openModal('skill')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -253,7 +253,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                         {formData.skillItems.map((skill: string, idx: number) => (
-                                <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 border border-border bg-surface text-ink/70 text-[11px] font-bold transition-all hover:scale-105">
+                                <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 border border-border bg-surface rounded-lg text-ink/70 text-[11px] font-bold transition-all hover:scale-105">
                                     <span>{skill}</span>
                                     <button onClick={() => handleRemoveArrayItem('skillItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"><X className="w-3 h-3" /></button>
                                 </div>
@@ -263,7 +263,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Courses Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink whitespace-nowrap">Courses Completed</h3>
                     <button onClick={() => openModal('course')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -275,7 +275,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                         {formData.courseItems.map((course: string, idx: number) => (
-                            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 bg-surface text-ink/70 border border-border rounded-full text-[11px] font-bold transition-all hover:scale-105">
+                            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 bg-surface text-ink/70 border border-border rounded-lg text-[11px] font-bold transition-all hover:scale-105">
                                 <span>{course}</span>
                                 <button onClick={() => handleRemoveArrayItem('courseItems', idx)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"><X className="w-3 h-3" /></button>
                             </div>
@@ -285,7 +285,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Projects Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Projects</h3>
                     <button onClick={() => openModal('project')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -297,10 +297,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 ) : (
                     <div className="space-y-6">
                         {formData.projectItems.map((proj: any, idx: number) => (
-                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('project', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('projectItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('project', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('projectItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{proj.title}</h4>
                                 {(proj.role || proj.duration) && (
@@ -314,7 +314,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 )}
             </div>
             {/* Certificates Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Certificates</h3>
                     <button onClick={() => openModal('certificate')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -326,10 +326,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 ) : (
                     <div className="space-y-4">
                         {formData.certificateItems.map((cert: any, idx: number) => (
-                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('certificate', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('certificateItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('certificate', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('certificateItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{cert.name}</h4>
                                 <p className="text-[10px] font-bold text-ink/60 mt-1 uppercase tracking-tight">{cert.organization}</p>
@@ -342,7 +342,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Experience Card */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-ink">Experience</h3>
                     <button onClick={() => openModal('experience')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
@@ -354,10 +354,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 ) : (
                     <div className="space-y-4">
                         {formData.experienceItems.map((exp: any, idx: number) => (
-                            <div key={idx} className="group relative border border-border bg-muted rounded-xl p-4">
+                            <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openModal('experience', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-xl text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleRemoveArrayItem('experienceItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-xl text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => openModal('experience', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleRemoveArrayItem('experienceItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{exp.company}</h4>
                                 <p className="text-[10px] font-bold text-ink/70 mt-1 uppercase tracking-tight">{exp.role} {exp.duration && `• ${exp.duration}`}</p>
@@ -369,10 +369,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             </div>
 
             {/* Resumes Upload Component */}
-            <div className="bg-surface rounded-2xl border border-border p-5">
+            <div className="bg-surface rounded-lg border border-border p-5">
                 <h3 className="text-lg font-bold text-ink mb-4">Resume Upload</h3>
                 {formData.resumeUrl && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted rounded-xl border border-border mb-4 gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted rounded-lg border border-border mb-4 gap-4">
                         <div className="flex items-center gap-3">
                             <div>
                                 <p className="text-sm font-bold text-ink">Current Resume</p>
@@ -381,7 +381,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 </p>
                             </div>
                         </div>
-                        <button type="button" onClick={() => setShowResumePreview(true)} className="text-sm font-bold text-center border border-border bg-surface text-ink hover:border-ink px-6 py-2 rounded-xl transition-colors">
+                        <button type="button" onClick={() => setShowResumePreview(true)} className="text-sm font-bold text-center border border-border bg-surface text-ink hover:border-ink px-6 py-2 rounded-lg transition-colors">
                             View
                         </button>
                     </div>
@@ -390,7 +390,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 <div
                     {...getRootProps()}
                     className={`cursor-pointer transition-all duration-300 ${isDragActive ? 'bg-muted border-brand' : 'bg-muted border-border hover:border-brand hover:bg-surface'}
-                    border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3`}
+                    border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3`}
                 >
                     <input {...getInputProps()} />
                     <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center border border-border">
@@ -412,34 +412,34 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'experience' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Experience" : "Add Experience"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Company</label>
-                                    <input type="text" value={expForm.company} onChange={(e)=>setExpForm({...expForm, company: e.target.value})} placeholder="e.g. Google" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={expForm.company} onChange={(e)=>setExpForm({...expForm, company: e.target.value})} placeholder="e.g. Google" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Role / Position</label>
-                                    <input type="text" value={expForm.role} onChange={(e)=>setExpForm({...expForm, role: e.target.value})} placeholder="e.g. Software Engineer" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={expForm.role} onChange={(e)=>setExpForm({...expForm, role: e.target.value})} placeholder="e.g. Software Engineer" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Duration</label>
-                                <input type="text" value={expForm.duration} onChange={(e)=>setExpForm({...expForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Present" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={expForm.duration} onChange={(e)=>setExpForm({...expForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Present" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Description</label>
-                                <textarea value={expForm.description} onChange={(e)=>setExpForm({...expForm, description: e.target.value})} placeholder="Describe your roles and achievements..." className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-32 resize-none" />
+                                <textarea value={expForm.description} onChange={(e)=>setExpForm({...expForm, description: e.target.value})} placeholder="Describe your roles and achievements..." className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-32 resize-none" />
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveExp} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -449,28 +449,28 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'course' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">Courses Completed</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="mb-4">
                             <div className="flex gap-2">
-                                <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink" />
-                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-xl text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors">Add</button>
+                                <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink" />
+                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-lg text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors">Add</button>
                             </div>
                         </div>
                         <div className="overflow-y-auto pr-2 flex flex-wrap gap-2 pb-2">
                             {tempCourses.map((course, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full text-xs font-bold text-ink/70">
+                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-lg text-xs font-bold text-ink/70">
                                     <span>{course}</span>
                                     <button onClick={() => setTempCourses(tempCourses.filter((_, i) => i !== idx))}><X className="w-3.5 h-3.5 text-ink/60 hover:text-destructive"/></button>
                                 </div>
                             ))}
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveCourse} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Courses'}
                             </button>
                         </div>
@@ -481,38 +481,38 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'education' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Education" : "Add Education"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">College / University Name</label>
-                                <input type="text" value={eduForm.collegeName} onChange={(e)=>setEduForm({...eduForm, collegeName: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={eduForm.collegeName} onChange={(e)=>setEduForm({...eduForm, collegeName: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Course / Degree</label>
-                                <input type="text" value={eduForm.course} onChange={(e)=>setEduForm({...eduForm, course: e.target.value})} placeholder="e.g. B.Tech, BSc" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={eduForm.course} onChange={(e)=>setEduForm({...eduForm, course: e.target.value})} placeholder="e.g. B.Tech, BSc" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Specialization</label>
-                                <input type="text" value={eduForm.specialization} onChange={(e)=>setEduForm({...eduForm, specialization: e.target.value})} placeholder="e.g. Computer Science" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={eduForm.specialization} onChange={(e)=>setEduForm({...eduForm, specialization: e.target.value})} placeholder="e.g. Computer Science" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Graduated Year</label>
-                                    <input type="text" value={eduForm.graduatedYear} onChange={(e)=>setEduForm({...eduForm, graduatedYear: e.target.value})} placeholder="e.g. 2024" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={eduForm.graduatedYear} onChange={(e)=>setEduForm({...eduForm, graduatedYear: e.target.value})} placeholder="e.g. 2024" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Grade (CGPA / %)</label>
-                                    <input type="text" value={eduForm.grade} onChange={(e)=>setEduForm({...eduForm, grade: e.target.value})} placeholder="e.g. 8.5 CGPA" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={eduForm.grade} onChange={(e)=>setEduForm({...eduForm, grade: e.target.value})} placeholder="e.g. 8.5 CGPA" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveEdu} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -523,38 +523,38 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'project' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Project" : "Add Project"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Project Title</label>
-                                <input type="text" value={projForm.title} onChange={(e)=>setProjForm({...projForm, title: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={projForm.title} onChange={(e)=>setProjForm({...projForm, title: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Your Role</label>
-                                    <input type="text" value={projForm.role} onChange={(e)=>setProjForm({...projForm, role: e.target.value})} placeholder="e.g. Frontend Developer" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={projForm.role} onChange={(e)=>setProjForm({...projForm, role: e.target.value})} placeholder="e.g. Frontend Developer" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Duration</label>
-                                    <input type="text" value={projForm.duration} onChange={(e)=>setProjForm({...projForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Mar 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <input type="text" value={projForm.duration} onChange={(e)=>setProjForm({...projForm, duration: e.target.value})} placeholder="e.g. Jan 2023 - Mar 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Description</label>
-                                <textarea value={projForm.description} onChange={(e)=>setProjForm({...projForm, description: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-28 resize-none" />
+                                <textarea value={projForm.description} onChange={(e)=>setProjForm({...projForm, description: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20 h-28 resize-none" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Project URL (Optional)</label>
-                                <input type="url" value={projForm.link} onChange={(e)=>setProjForm({...projForm, link: e.target.value})} placeholder="https://" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="url" value={projForm.link} onChange={(e)=>setProjForm({...projForm, link: e.target.value})} placeholder="https://" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveProj} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -565,28 +565,28 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'certificate' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Certificate" : "Add Certificate"}</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Certificate Name</label>
-                                <input type="text" value={certForm.name} onChange={(e)=>setCertForm({...certForm, name: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={certForm.name} onChange={(e)=>setCertForm({...certForm, name: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Issuing Organization</label>
-                                <input type="text" value={certForm.organization} onChange={(e)=>setCertForm({...certForm, organization: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={certForm.organization} onChange={(e)=>setCertForm({...certForm, organization: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Issue Date</label>
-                                <input type="text" value={certForm.issueDate} onChange={(e)=>setCertForm({...certForm, issueDate: e.target.value})} placeholder="e.g. Aug 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                <input type="text" value={certForm.issueDate} onChange={(e)=>setCertForm({...certForm, issueDate: e.target.value})} placeholder="e.g. Aug 2023" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Upload Certificate (Image / PDF)</label>
                                 {certForm.url ? (
-                                    <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                    <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
                                         <div className="flex items-center gap-2">
                                             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                             <span className="text-xs font-bold text-emerald-700">File attached</span>
@@ -594,7 +594,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                         <button onClick={() => setCertForm({...certForm, url: ''})} className="text-xs font-bold text-destructive hover:text-destructive">Remove</button>
                                     </div>
                                 ) : (
-                                    <label className="flex items-center justify-center w-full px-4 py-6 bg-muted border border-border border-dashed rounded-xl cursor-pointer hover:bg-ink/5 hover:border-brand transition-all">
+                                    <label className="flex items-center justify-center w-full px-4 py-6 bg-muted border border-border border-dashed rounded-lg cursor-pointer hover:bg-ink/5 hover:border-brand transition-all">
                                         <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleCertFileUpload} />
                                         <div className="flex flex-col items-center gap-2 text-center mt-1">
                                             {uploadingCert ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-ink/60" />}
@@ -605,8 +605,8 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -617,10 +617,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             {activeModal === 'skill' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-                    <div className="bg-surface rounded-2xl w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
+                    <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h2 className="text-xl font-bold text-ink">Manage Skills</h2>
-                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
+                            <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
@@ -632,7 +632,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                         onChange={(e) => setSkillInput(e.target.value)} 
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddTempSkill()}
                                         placeholder="e.g. React, Python, UI Design" 
-                                        className="w-full px-4 py-2 bg-surface border border-border rounded-xl text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
+                                        className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
                                     />
                                     <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-brand/10 text-brand text-sm font-bold hover:bg-brand/20 transition-colors disabled:opacity-50">Add</button>
                                 </div>
@@ -645,7 +645,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 ) : (
                                     <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pb-2">
                                         {tempSkills.map((skill: string, idx: number) => (
-                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface text-ink/70 border border-border text-sm font-semibold">
+                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-ink/70 border border-border text-sm font-semibold">
                                                 <span>{skill}</span>
                                                 <button onClick={() => handleRemoveTempSkill(idx)} className="text-destructive hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
                                             </div>
@@ -655,8 +655,8 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border flex-shrink-0">
-                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-xl transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
+                            <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
+                            <button disabled={saving} onClick={handleSaveSkills} className="px-6 py-2.5 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[120px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Skills'}
                             </button>
                         </div>

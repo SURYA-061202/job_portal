@@ -7,6 +7,7 @@ import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
+import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 interface Props {
@@ -16,6 +17,13 @@ interface Props {
   /** Post to pre-select for manual candidates (the post whose candidate list this invite was opened from). */
   defaultPostId?: string | null;
 }
+
+/** Round Type always mirrors the post's first interview round. */
+const roundTypeForPost = (post?: RecruitmentRequest | null): string => {
+  if (!post) return 'Technical';
+  const first = getPostRounds(post)[0];
+  return first.name || getRoundLabel(first);
+};
 
 export default function InterviewInviteModal({ candidate, onClose, onSent, defaultPostId }: Props) {
   const [role, setRole] = useState(candidate.role || '');
@@ -84,6 +92,8 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
           // The interview is for the post's role, not whatever the resume listed.
           const effectiveJob = fetchedJobs.find(j => j.id === effectivePostId);
           if (effectiveJob?.jobTitle) setRole(effectiveJob.jobTitle);
+          // Round Type comes from the post's first interview round.
+          if (effectiveJob) setRoundType(roundTypeForPost(effectiveJob));
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);
@@ -99,6 +109,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
     const selectedJob = jobPosts.find(j => j.id === postId);
     if (selectedJob) {
       setRole(selectedJob.jobTitle);
+      setRoundType(roundTypeForPost(selectedJob));
     }
   };
 
@@ -277,16 +288,8 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
             </div>
           </div>
 
-          {/* Round Type */}
-          <div>
-            <label className="block text-sm font-medium text-ink/80 mb-1">Round Type</label>
-            <input
-              type="text"
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
-              value={roundType}
-              onChange={(e) => setRoundType(e.target.value)}
-            />
-          </div>
+          {/* Round Type is intentionally not a field here: it is derived from
+              the post's first interview round and only used when sending. */}
 
           {/* Interviewers */}
           <div>

@@ -428,7 +428,7 @@ export default function UserProfile() {
                                     <div className="h-24 bg-ink relative">
                                         <button
                                             onClick={() => setIsEditingProfile(!isEditingProfile)}
-                                            className="absolute top-3 right-3 p-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full text-surface transition-colors border border-surface/20"
+                                            className="absolute top-3 right-3 p-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-lg text-surface transition-colors border border-surface/20"
                                             title="Edit Profile Info"
                                         >
                                             {isEditingProfile ? <X className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
@@ -488,7 +488,7 @@ export default function UserProfile() {
                                                     }}
                                                     title="Remove profile photo"
                                                     aria-label="Remove profile photo"
-                                                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
+                                                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-lg border-2 border-surface bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </button>
@@ -507,32 +507,32 @@ export default function UserProfile() {
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div>
                                                         <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">First Name</label>
-                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
+                                                        <input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Last Name</label>
-                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
+                                                        <input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Role</label>
-                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
+                                                    <input type="text" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} placeholder="e.g. Frontend Developer" className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Mobile</label>
-                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
+                                                    <input type="tel" value={formData.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Years of Experience</label>
-                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
+                                                    <input type="number" value={formData.yearsOfExperience} onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)} placeholder="e.g. 3" className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Address</label>
-                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none resize-none h-12" />
+                                                    <textarea value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="City, State" className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink focus:ring-2 focus:ring-brand/20 focus:border-ink outline-none resize-none h-12" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[9px] uppercase font-bold text-ink/60 mb-0.5">Password</label>
-                                                    <div className="flex items-center justify-between gap-2 px-2 py-1.5 bg-surface border border-border rounded-xl text-xs text-ink/60">
+                                                    <div className="flex items-center justify-between gap-2 px-2 py-1.5 bg-surface border border-border rounded-lg text-xs text-ink/60">
                                                         <span>••••••••</span>
                                                         <button
                                                             type="button"
@@ -545,7 +545,7 @@ export default function UserProfile() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
                                                     {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
                                                 </button>
                                             </div>
@@ -553,9 +553,9 @@ export default function UserProfile() {
                                             <div className="text-center">
                                                 <h1 className="text-lg font-black text-ink tracking-tight">{formData.firstName} {formData.lastName}</h1>
                                                 {formData.department ? (
-                                                    <p className="text-xs text-ink/70 font-bold mt-1 mb-3 bg-surface inline-block px-3 py-1 rounded-full border border-border">{formData.department}</p>
+                                                    <p className="text-xs text-ink/70 font-bold mt-1 mb-3 bg-surface inline-block px-3 py-1 rounded-lg border border-border">{formData.department}</p>
                                                 ) : (
-                                                    <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-full border border-brand/20">+ Add your role</button>
+                                                    <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-lg border border-brand/20">+ Add your role</button>
                                                 )}
 
                                                 <div className="space-y-3 text-left border-t border-border pt-5 pb-2">
@@ -589,7 +589,7 @@ export default function UserProfile() {
                                                             <button
                                                                 onClick={calculateProfileScore}
                                                                 disabled={calculatingScore}
-                                                                className="p-1 hover:bg-ink/5 rounded-xl text-ink/60 hover:text-ink transition-all disabled:opacity-50"
+                                                                className="p-1 hover:bg-ink/5 rounded-lg text-ink/60 hover:text-ink transition-all disabled:opacity-50"
                                                                 title="Refresh Score"
                                                             >
                                                                 <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-brand' : ''}`} />

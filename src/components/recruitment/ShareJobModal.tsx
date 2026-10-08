@@ -53,11 +53,11 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
                             type="text"
                             value={shareUrl}
                             readOnly
-                            className={`flex-1 px-4 py-3 ${skin.field} ${FOCUS}`}
+                            className={`flex-1 rounded-lg px-4 py-3 ${skin.field} ${FOCUS}`}
                         />
                         <button
                             onClick={handleCopyLink}
-                            className={`inline-flex items-center gap-2 cursor-pointer transition-all ${skin.cta} ${FOCUS} ${copied
+                            className={`inline-flex items-center gap-2 rounded-lg cursor-pointer transition-all ${skin.cta} ${FOCUS} ${copied
                                 ? ''
                                 : 'hover:scale-105 active:scale-95'
                                 }`}

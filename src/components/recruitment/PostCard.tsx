@@ -4,8 +4,8 @@ import { useSkin } from '@/styles/skin';
 import { Calendar } from 'lucide-react';
 
 /* The job-post card shared by the Posts tab and the Pipeline tab, so both
-   modules list posts with the same UI. Static brand rule, two-cell rule grid
-   for Experience/Location, micro-labelled skills, footer with posted-ago and
+   modules list posts with the same UI. Two-cell rule grid for
+   Experience/Location, micro-labelled skills, footer with posted-ago and
    applicant count. Deliberately a <button>: every child is a <span>, so the
    focus outline and hit area stay intact. */
 export default function PostCard({ post, onOpen }: { post: RecruitmentRequest; onOpen: (post: RecruitmentRequest) => void }) {
@@ -19,22 +19,12 @@ export default function PostCard({ post, onOpen }: { post: RecruitmentRequest; o
             aria-label={`Open job post: ${post.jobTitle}`}
             className={`group flex h-full cursor-pointer flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} text-left transition-colors duration-200 ${skin.cardHover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40`}
         >
-            {/* Static brand rule - a structural line, not a reveal animation. */}
-            <span aria-hidden="true" className="h-1 w-full shrink-0 bg-brand" />
-
             <span className="flex flex-1 flex-col p-4 sm:p-5">
-                <span className="flex items-start justify-between gap-3">
-                    {/* `text-base!` trims the shared cardTitle size (text-lg) by
-                        one step - the important suffix is what makes the
-                        override win over the token without touching the token. */}
-                    <span className={`min-w-0 ${skin.cardTitle} text-base!`}>
-                        {post.jobTitle}
-                    </span>
-                    {post.positionLevel && (
-                        <span className={`shrink-0 ${skin.chip}`}>
-                            {post.positionLevel}
-                        </span>
-                    )}
+                {/* `text-base!` trims the shared cardTitle size (text-lg) by
+                    one step - the important suffix is what makes the
+                    override win over the token without touching the token. */}
+                <span className={`min-w-0 ${skin.cardTitle} text-base!`}>
+                    {post.jobTitle}
                 </span>
                 <span className={`mt-1 block ${skin.micro}`}>{post.department}</span>
 
