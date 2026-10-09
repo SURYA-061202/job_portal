@@ -107,9 +107,9 @@ export default function UserHeader() {
                         <NotificationBell />
                         <button
                             onClick={handleLogout}
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-destructive bg-surface text-destructive ${skin.radius} transition-all hover:bg-destructive/10 ${FOCUS}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-destructive bg-surface text-destructive rounded-lg transition-all hover:bg-destructive/10 ${FOCUS}`}
                         >
-                            <LogOut className="w-4 h-4" />
+                            <LogOut className="w-3.5 h-3.5" />
                             <span>Logout</span>
                         </button>
                     </div>

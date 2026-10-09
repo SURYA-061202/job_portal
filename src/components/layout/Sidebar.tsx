@@ -473,7 +473,7 @@ function ColumnSidebar({
             />
             {!isCollapsed && (
               <div className={`min-w-0 flex-1 truncate ${skin.wordmark}`}>
-                IndianInfra <span className={skin.wordmarkAccent}>Jobs</span>
+                <span className="text-brand">Indian</span> Infra <span className={skin.wordmarkAccent}>Jobs</span>
               </div>
             )}
           </div>

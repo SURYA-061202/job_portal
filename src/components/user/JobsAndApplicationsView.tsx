@@ -7,7 +7,7 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
-import { Search, MapPin, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface JobsAndApplicationsViewProps {
@@ -21,14 +21,13 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [locationTerm, setLocationTerm] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
         jobType: [],
         experience: [],
         salary: [],
-        department: []
+        department: [],
+        location: []
     });
-    const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
@@ -127,12 +126,12 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
     const clearAllFilters = () => {
         setSelectedFilters({
-            jobType: [], experience: [], salary: [], department: []
+            jobType: [], experience: [], salary: [], department: [], location: []
         });
     };
 
     /**
-     * Search box, location box and the sidebar filters, applied to one post.
+     * Search box and the sidebar filters, applied to one post.
      * Shared by both tabs. Every field read here is optional on a post now, so
      * nothing may be dereferenced directly — a blank department used to throw
      * inside .filter() and take the whole list down with it.
@@ -143,9 +142,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         const term = searchTerm.trim().toLowerCase();
         const matchesSearch = !term || [post.jobTitle, post.department, post.skills, post.companyName]
             .some(field => String(field || '').toLowerCase().includes(term));
-
-        const location = locationTerm.trim().toLowerCase();
-        const matchesLocation = !location || String(post.location || '').toLowerCase().includes(location);
 
         const matchesJobType = selectedFilters.jobType.length === 0 ||
             selectedFilters.jobType.includes(post.candidateType || 'Permanent');
@@ -171,7 +167,17 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         const matchesDepartment = selectedFilters.department.length === 0 ||
             selectedFilters.department.includes(post.department || '');
 
-        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment;
+        const matchesLocation = (selectedFilters.location?.length ?? 0) === 0 ||
+            selectedFilters.location.some(city => {
+                const place = String(post.location || '').toLowerCase();
+                if (!place) return false;
+                const name = city.toLowerCase();
+                // Posts spell it either way; "Bangalore" should catch "Bengaluru".
+                const forms = name === 'bangalore' ? ['bangalore', 'bengaluru'] : [name];
+                return forms.some(form => place.includes(form));
+            });
+
+        return matchesSearch && matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesLocation;
     };
 
     /** Firestore Timestamp, Date, or anything Date can parse. */
@@ -188,18 +194,18 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         return Number.isNaN(parsed) ? 0 : parsed;
     };
 
-    const bySortOrder = (aDate: SortableDate, bDate: SortableDate) =>
-        sortBy === 'recent' ? toMillis(bDate) - toMillis(aDate) : toMillis(aDate) - toMillis(bDate);
+    /** Newest first, the order the sort dropdown used to default to. */
+    const newestFirst = (aDate: SortableDate, bDate: SortableDate) => toMillis(bDate) - toMillis(aDate);
 
     const filteredPosts = posts
         // Jobs already applied to live on the Applications tab instead.
         .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
-        .sort((a, b) => bySortOrder(a.createdAt, b.createdAt));
+        .sort((a, b) => newestFirst(a.createdAt, b.createdAt));
 
     // The Applications tab honours the same filters; it used to render the raw list.
     const filteredApplications = applications
         .filter(app => matchesFilters(app.recruitment_requests))
-        .sort((a, b) => bySortOrder(a.created_at || a.recruitment_requests?.createdAt, b.created_at || b.recruitment_requests?.createdAt));
+        .sort((a, b) => newestFirst(a.created_at || a.recruitment_requests?.createdAt, b.created_at || b.recruitment_requests?.createdAt));
 
 
     if (selectedJob) {
@@ -216,41 +222,9 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
     return (
         <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
-            {/* Search Bar - full width, spanning the filter + job cards row below */}
-            <div className="mb-10">
-                <div className="w-full bg-surface border border-border rounded-lg p-1.5 flex flex-col md:flex-row items-center gap-2 transition-all duration-300 focus-within:border-ink">
-                    <div className="relative flex-1 w-full group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Job title, keywords, or company"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
-                        />
-                    </div>
-                    <div className="hidden md:block h-10 w-px bg-border" />
-                    <div className="relative flex-[0.7] w-full group">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="City or state"
-                            value={locationTerm}
-                            onChange={(e) => setLocationTerm(e.target.value)}
-                            className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
-                        />
-                    </div>
-                    <button 
-                        className="w-full md:w-auto px-8 py-3 border border-ink bg-ink text-surface rounded-lg font-semibold text-sm hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
-                    >
-                        Search
-                    </button>
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Left Sidebar - Filters */}
-                <aside className="hidden lg:block lg:col-span-1 border-r border-border pr-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto hover-scrollbar">
+                {/* Left Sidebar - Filters, starting level with the search field */}
+                <aside className="hidden lg:block lg:col-span-1 pr-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide">
                     <FilterSidebar
                         selectedFilters={selectedFilters}
                         onToggleFilter={toggleFilter}
@@ -258,36 +232,39 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     />
                 </aside>
 
-                {/* Right Content - Job List */}
+                {/* Right Content - Search field at the top, posts below it */}
                 <div className="lg:col-span-3 flex flex-col">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div className="flex items-center justify-between w-full sm:w-auto">
-                            <h2 className="text-lg md:text-xl font-bold text-ink">
-                                {activeTab === 'jobs' ? 'Available Jobs' : 'Applied Jobs'} <span className="text-ink/60">({activeTab === 'jobs' ? filteredPosts.length : filteredApplications.length})</span>
-                            </h2>
+                    <div className="mb-3">
+                        <div className="w-full bg-surface border border-border rounded-lg p-1.5 flex items-center gap-2 transition-all duration-300 focus-within:border-ink">
+                            <div className="relative flex-1 w-full group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Job title, keywords, or company"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
+                                />
+                            </div>
                             <button
-                                onClick={() => setIsFilterDrawerOpen(true)}
-                                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border border-border bg-surface rounded-lg text-xs font-bold text-ink/80"
+                                className="w-full md:w-auto px-6 py-2.5 border border-ink bg-ink text-surface rounded-lg font-semibold text-sm hover:bg-ink/80 hover:border-ink/80 hover:scale-[1.02] active:scale-95 transition-all"
                             >
-                                <Search className="w-3 h-3" /> Filters
+                                Search
                             </button>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {/* Sort Dropdown */}
-                            <div className="relative group z-10">
-                                <button className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-surface border border-border rounded-lg text-xs sm:text-sm font-bold text-ink/80 hover:border-ink transition-all">
-                                    {sortBy === 'recent' ? 'Most Recent' : 'Oldest First'}
-                                    <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-ink/60" />
-                                </button>
-                                <div className="absolute right-0 mt-2 w-40 bg-surface rounded-lg border border-border py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl">
-                                    <button onClick={() => setSortBy('recent')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'recent' ? 'text-brand bg-brand/10' : 'text-ink/60 hover:bg-ink/5'}`}>Most Recent</button>
-                                    <button onClick={() => setSortBy('oldest')} className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${sortBy === 'oldest' ? 'text-brand bg-brand/10' : 'text-ink/60 hover:bg-ink/5'}`}>Oldest First</button>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
+                    {/* Mobile-only filter trigger; on desktop the sidebar covers filtering */}
+                    <div className="flex justify-end mb-3 lg:hidden">
+                        <button
+                            onClick={() => setIsFilterDrawerOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 border border-border bg-surface rounded-lg text-xs font-bold text-ink/80"
+                        >
+                            <Search className="w-3 h-3" /> Filters
+                        </button>
                     </div>
 
-                    <div className="overflow-y-auto hover-scrollbar pr-2 max-h-[calc(100vh-17rem)]">
+                    {/* White panel holding the cards, height matched to the filter sidebar */}
+                    <div className="bg-surface border border-border rounded-lg p-3 md:p-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-7rem)]">
                         {loading ? (
                             <JobListSkeleton count={3} />
                         ) : activeTab === 'jobs' ? (
@@ -305,7 +282,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             )
                         ) : (
                             filteredApplications.length === 0 ? (
-                                <div className="text-center py-20 bg-surface rounded-lg border border-dashed border-border">
+                                <div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
                                     <h3 className="text-lg font-bold text-ink mb-2">
                                         {applications.length === 0 ? 'No applications yet' : 'No matching applications'}
                                     </h3>
@@ -320,27 +297,14 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                     {filteredApplications.map((app) => (
                                         <UserJobCard
                                             key={app.id}
+                                            /* Spread the whole post: hand-picking fields used to drop
+                                               `rounds`/`totalRounds` (and `modeOfWork`), so the detail
+                                               view fell back to four unnamed interview rounds. */
                                             recruitment={{
+                                                ...app.recruitment_requests,
                                                 id: app.recruitment_requests.id,
-                                                jobTitle: app.recruitment_requests.jobTitle,
-                                                urgencyLevel: app.recruitment_requests.urgencyLevel,
-                                                department: app.recruitment_requests.department,
-                                                candidateType: app.recruitment_requests.candidateType,
-                                                positionLevel: app.recruitment_requests.positionLevel,
-                                                yearsExperience: app.recruitment_requests.yearsExperience,
-                                                location: app.recruitment_requests.location,
-                                                candidatesCount: app.recruitment_requests.candidatesCount,
-                                                qualification: app.recruitment_requests.qualification,
-                                                skills: app.recruitment_requests.skills,
-                                                description: app.recruitment_requests.description,
-                                                jdUrl: app.recruitment_requests.jdUrl,
-                                                budgetPay: app.recruitment_requests.budgetPay,
-                                                salaryBreakup: app.recruitment_requests.salaryBreakup,
-                                                recruiterName: app.recruitment_requests.recruiterName,
-                                                companyName: app.recruitment_requests.companyName,
-                                                createdAt: app.recruitment_requests.createdAt,
                                                 applicantCount: applicantCounts[app.recruitment_requests.id] || 0
-                                            } as any}
+                                            }}
                                             applicationStatus={app.status}
                                             onViewDetails={(j) => setSelectedJob(j)}
                                         />
@@ -356,7 +320,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
             {isFilterDrawerOpen && (
                 <div className="fixed inset-0 z-[100] lg:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsFilterDrawerOpen(false)} />
-                    <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-surface border-l border-border overflow-y-auto z-[101]">
+                        <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-surface border-l border-border overflow-y-auto scrollbar-hide z-[101]">
                         <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                             <h3 className="font-bold text-ink">Filters</h3>
                             <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-ink/5 rounded-lg"><ChevronDown className="w-5 h-5 rotate-90 text-ink/60" /></button>

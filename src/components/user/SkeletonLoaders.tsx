@@ -76,7 +76,7 @@ export function ProfileCardSkeleton() {
         <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden bg-surface`}>
             <div className={`h-24 ${skin.skeleton} animate-pulse`} />
             <div className="p-6 flex flex-col items-center gap-3">
-                <div className={`w-20 h-20 rounded-full ${skin.skeleton} animate-pulse border-4 border-surface -mt-10 relative`} />
+                <div className={`w-24 h-24 rounded-full ${skin.skeleton} animate-pulse border-4 border-surface -mt-12 relative`} />
                 <Skeleton className="h-5 w-1/2" />
                 <Skeleton className="h-3 w-1/3" />
                 <div className="w-full pt-3 space-y-2">

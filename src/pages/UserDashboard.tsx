@@ -25,7 +25,8 @@ export default function UserDashboard() {
         jobType: [],
         experience: [],
         salary: [],
-        department: []
+        department: [],
+        location: []
     });
     const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -161,7 +162,8 @@ export default function UserDashboard() {
             jobType: [],
             experience: [],
             salary: [],
-            department: []
+            department: [],
+            location: []
         });
     };
 
@@ -233,10 +235,21 @@ export default function UserDashboard() {
         const matchesDepartment = selectedFilters.department.length === 0 ||
             selectedFilters.department.includes(post.department);
 
+        // Sidebar Location checkboxes
+        const matchesSelectedCities = selectedFilters.location.length === 0 ||
+            selectedFilters.location.some(city => {
+                const place = (post.location || '').toLowerCase();
+                if (!place) return false;
+                const name = city.toLowerCase();
+                // Posts spell it either way; "Bangalore" should catch "Bengaluru".
+                const forms = name === 'bangalore' ? ['bangalore', 'bengaluru'] : [name];
+                return forms.some(form => place.includes(form));
+            });
+
         // 3. Application Exclusion
         const isApplied = applications.some(app => app.post_id === post.id);
 
-        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && !isApplied;
+        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesSelectedCities && !isApplied;
     }).sort((a, b) => {
         const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
         const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
@@ -319,7 +332,7 @@ export default function UserDashboard() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative z-10">
                     {/* Left Sidebar - Filters */}
-                    <aside className="hidden lg:block lg:col-span-1">
+                    <aside className="hidden lg:block lg:col-span-1 max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide">
                         <FilterSidebar
                             selectedFilters={selectedFilters}
                             onToggleFilter={toggleFilter}
@@ -418,13 +431,13 @@ export default function UserDashboard() {
                             </div>
                         </div>
 
-                        {/* Scrollable Job Cards Container - Hidden Scrollbar */}
-                        <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
+                        {/* Scrollable Job Cards Container - white panel, hidden scrollbar */}
+                        <div className="bg-surface border border-border rounded-lg p-3 md:p-4 overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
                             {loading ? (
                                 <JobListSkeleton count={3} />
                             ) : activeTab === 'jobs' ? (
-                                filteredPosts.length === 0 ? (
-                                    <div className={`text-center py-20 border border-dashed ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+                                    filteredPosts.length === 0 ? (
+                                    <div className={`text-center py-20 border border-dashed ${skin.edge} bg-muted ${skin.radius} ${skin.shadow}`}>
                                         <div className={`${skin.stateIcon} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
                                             <Search className="w-8 h-8" />
                                         </div>
@@ -447,7 +460,7 @@ export default function UserDashboard() {
                                 )
                             ) : (
                                 applications.length === 0 ? (
-                                    <div className={`text-center py-20 border border-dashed ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+                                    <div className={`text-center py-20 border border-dashed ${skin.edge} bg-muted ${skin.radius} ${skin.shadow}`}>
                                         <div className={`${skin.stateIcon} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
                                             <History className="w-8 h-8 text-brand" />
                                         </div>
@@ -467,27 +480,14 @@ export default function UserDashboard() {
                                         {applications.map((app) => (
                                             <UserJobCard
                                                 key={app.id}
+                                                /* Spread the whole post: hand-picking fields used to drop
+                                                   `rounds`/`totalRounds` (and `modeOfWork`), so the detail
+                                                   view fell back to four unnamed interview rounds. */
                                                 recruitment={{
+                                                    ...app.recruitment_requests,
                                                     id: app.recruitment_requests.id,
-                                                    jobTitle: app.recruitment_requests.jobTitle,
-                                                    urgencyLevel: app.recruitment_requests.urgencyLevel,
-                                                    department: app.recruitment_requests.department,
-                                                    candidateType: app.recruitment_requests.candidateType,
-                                                    positionLevel: app.recruitment_requests.positionLevel,
-                                                    yearsExperience: app.recruitment_requests.yearsExperience,
-                                                    location: app.recruitment_requests.location,
-                                                    candidatesCount: app.recruitment_requests.candidatesCount,
-                                                    qualification: app.recruitment_requests.qualification,
-                                                    skills: app.recruitment_requests.skills,
-                                                    description: app.recruitment_requests.description,
-                                                    jdUrl: app.recruitment_requests.jdUrl,
-                                                    budgetPay: app.recruitment_requests.budgetPay,
-                                                    salaryBreakup: app.recruitment_requests.salaryBreakup,
-                                                    recruiterName: app.recruitment_requests.recruiterName,
-                                                    companyName: app.recruitment_requests.companyName,
-                                                    createdAt: app.recruitment_requests.createdAt,
                                                     applicantCount: applicantCounts[app.recruitment_requests.id] || 0
-                                                } as any}
+                                                }}
                                                 applicationStatus={app.status}
                                                 onViewDetails={handleViewJobDetails}
                                             />
@@ -508,7 +508,7 @@ export default function UserDashboard() {
                             onClick={() => setIsFilterDrawerOpen(false)}
                         />
                         {/* Drawer */}
-                        <div className={`absolute right-0 top-0 bottom-0 w-[280px] ${skin.canvas} shadow-2xl overflow-y-auto animate-slide-left`}>
+                        <div className={`absolute right-0 top-0 bottom-0 w-[280px] ${skin.canvas} shadow-2xl overflow-y-auto scrollbar-hide animate-slide-left`}>
                             <div className={`p-4 ${skin.surface} border-b ${skin.edge} flex items-center justify-between sticky top-0 z-10`}>
                                 <h3 className="font-bold text-ink">Filters</h3>
                                 <button

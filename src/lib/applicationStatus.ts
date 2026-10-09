@@ -22,5 +22,5 @@ export function getApplicationStatusInfo(status?: string | null): { label: strin
     if (s === 'shortlisted') {
         return { label: 'Shortlisted', className: 'bg-ink/5 text-ink/80 border-ink/20' };
     }
-    return { label: 'Applied', className: 'bg-muted text-ink/70 border-border' };
+    return { label: 'Applied', className: 'bg-ink/5 text-ink/80 border-ink/20' };
 }

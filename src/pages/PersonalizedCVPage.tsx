@@ -130,7 +130,7 @@ export default function PersonalizedCVPage() {
                     {userData && !isProfileIncomplete && (
                         <button
                             onClick={() => handleViewPDF()}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 border border-ink bg-ink text-surface font-semibold rounded-xl hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
+                            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <FileDown className="w-5 h-5" />
                             Download Resume
@@ -203,7 +203,7 @@ export default function PersonalizedCVPage() {
                             </div>
                             
                             <div className="flex-1 overflow-y-auto p-8 bg-muted flex justify-center">
-                                    <div ref={resumeRef} className="w-full max-w-[600px] min-h-[800px] flex flex-col gap-1 text-black" style={{ fontFamily: 'sans-serif', backgroundColor: '#ffffff', color: '#000000', padding: '40px', border: '1px solid #f3f4f6' }}>
+                                    <div ref={resumeRef} className="w-full max-w-[720px] min-h-[800px] flex flex-col gap-1 text-black" style={{ fontFamily: 'sans-serif', backgroundColor: '#ffffff', color: '#000000', padding: '40px', border: '1px solid #f3f4f6' }}>
                                         <div className="text-center mb-4">
                                             <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'sans-serif', color: '#000000' }}>{userData?.firstName} {userData?.lastName}</h2>
                                             <p className="text-[11px] mt-1" style={{ color: '#374151' }}>{userData?.address || 'Salem, Tamilnadu , India'}</p>

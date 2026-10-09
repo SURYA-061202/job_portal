@@ -139,7 +139,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         }
     };
 
-    const statusInfo = getApplicationStatusInfo(applicationStatus) ?? { label: 'Applied', className: 'bg-muted text-ink/70 border-border' };
+    const statusInfo = getApplicationStatusInfo(applicationStatus) ?? { label: 'Applied', className: 'bg-ink/5 text-ink/80 border-ink/20' };
 
     const rounds = getPostRounds(recruitment);
     const skills = recruitment.skills ? recruitment.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -148,13 +148,32 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     // the Posts module fields. Count badges and buttons carry it too.
     const r = 'rounded-lg';
 
-    /* At-a-glance facts, rendered as a horizontal strip: bold figure over a
-       micro label, vertical hairlines between cells, swipes on small screens. */
+    /* Candidate view strips the chip chrome from the Requirements values. */
+    const requirementValue = isUserView
+        ? 'inline-flex items-center font-semibold text-ink'
+        : `inline-flex items-center ${skin.chip} ${r}`;
+    /* Panels: white body, grey sections on the candidate view. */
+    const panelClass = `overflow-hidden border ${skin.edge} ${isUserView ? 'bg-muted' : skin.surface} ${skin.radius}`;
+    /* Candidate view reuses the post-card grey: the back button gets a grey
+       tile with the button radius, and the skill tags copy the post-card pill
+       (padding, size and weight included) so they read identically. */
+    const greySurface = isUserView ? `bg-border text-ink ${r}` : null;
+    const greyTag = isUserView ? `${r} bg-border px-2 py-1 text-xs font-medium text-ink/70` : null;
+    /* Interview round tiles pick up the same grey on the candidate view. */
+    const roundPanel = isUserView
+        ? `flex items-center ${skin.radius} p-3 bg-border text-ink`
+        : `flex items-center border ${skin.edge} ${skin.radius} p-3`;
+
+    /* At-a-glance facts, rendered as a horizontal strip: label above the bold
+       figure, no dividers between cells, swipes on small screens. */
     type Fact = { label: string; value: string };
-    const facts: Fact[] = [{ label: 'Location', value: recruitment.location || 'Not specified' }];
+    const facts: Fact[] = [
+        { label: 'Department', value: recruitment.department || 'Not specified' },
+        { label: 'Location', value: recruitment.location || 'Not specified' },
+    ];
     if (recruitment.modeOfWork) facts.push({ label: 'Work Mode', value: recruitment.modeOfWork });
     facts.push(
-        { label: 'Priority', value: `${recruitment.urgencyLevel} Priority` },
+        { label: 'Position Level', value: recruitment.positionLevel || 'Not specified' },
         { label: 'Experience', value: `${recruitment.yearsExperience} Years` },
     );
     // Compensation and headcount stay on the recruiter/admin view only.
@@ -167,16 +186,18 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     return (
         <div className={`flex flex-col h-full ${skin.canvas}`}>
-            {/* Masthead - the Posts tab recipe: hairline edge, surface, radius and
-                elevation from the active skin. The brand wash covers the whole
-                header (title + controls row), never the content below it. */}
-            <div className={`shrink-0 mb-4 z-10 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+            {/* Header. On the candidate view there is no header panel and no
+                controls row - the back button, title and actions sit straight
+                on the page canvas. The recruiter/admin view keeps the
+                Posts-tab masthead recipe: hairline edge, surface, radius, wash
+                and the controls row. */}
+            <div className={`shrink-0 mb-4 z-10 ${isUserView ? '' : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
                 {/* Title row */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? 'py-1' : `border-b ${skin.edge} px-4 py-3.5 sm:px-5`}`}>
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             onClick={onBack}
-                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${greySurface ?? `${skin.iconTile} ${skin.radius}`} cursor-pointer transition-colors duration-200 hover:bg-ink/10 ${FOCUS}`}
                             title="Go Back"
                             aria-label="Go back to job posts"
                         >
@@ -251,7 +272,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <FilePlus2 className="w-4 h-4" aria-hidden="true" /></>}
                             </button>
                         ) : !isManager && hasApplied ? (
-                            <div className={`px-4 py-2 text-xs font-bold rounded-full border flex items-center gap-2 ${statusInfo.className}`}>
+                            <div className={`px-4 py-2 text-xs font-bold rounded-lg border flex items-center gap-2 ${statusInfo.className}`}>
                                 <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                                 {statusInfo.label}
                             </div>
@@ -270,45 +291,49 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
                 </div>
 
-                {/* Controls row - tinted band carrying the post's context. */}
-                <div className={`flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                        <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{recruitment.department}</span>
-                    </span>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                        <Award className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{recruitment.positionLevel}</span>
-                    </span>
-                    <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">Posted {timeAgo(recruitment.createdAt)}</span>
-                    </span>
-                </div>
+                {/* Controls row - department, level and posting age. Recruiter
+                    header only; the candidate view shows the department beside
+                    the title instead. */}
+                {!isUserView && (
+                    <div className={`flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
+                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
+                            <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span className="truncate">{recruitment.department}</span>
+                        </span>
+                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
+                            <Award className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span className="truncate">{recruitment.positionLevel}</span>
+                        </span>
+                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
+                            <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span className="truncate">Posted {timeAgo(recruitment.createdAt)}</span>
+                        </span>
+                    </div>
+                )}
             </div>
-
-            {/* Content - no horizontal padding: the body runs the same width
-                as the masthead above it, edge to edge. */}
-            <div className="flex-1 overflow-y-auto w-full pb-4">
-                <div className="py-6 space-y-4 min-h-full">
+            {/* Content. The candidate view gets a white body that starts below
+                the header contents (those sit on the page canvas), with the
+                sections inset a little so they read narrower than full bleed. */}
+            <div className={`flex-1 overflow-y-auto w-full pb-4 ${isUserView ? `bg-surface ${r}` : ''}`}>
+                <div className={`py-6 space-y-4 min-h-full ${isUserView ? 'px-3 sm:px-5' : ''}`}>
 
                     {/* At a glance - this section's own style: uppercase header
                         with a count badge over a full-bleed strip of stat cells,
                         its scrollbar thinned to 6px. No fill of its own and no
                         elevation - the page canvas carries it. */}
-                    <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
-                        <div className={`flex items-center gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
+                    <div className={panelClass}>
+                        <div className="flex items-center gap-3 px-4 pt-3 pb-1 sm:px-6">
                             <h3 className={skin.emptyTitle}>Job Details</h3>
                         </div>
                         <div className="overflow-x-auto thin-scroll">
                             <div className="flex snap-x">
-                                {facts.map((fact, i) => (
+                                {facts.map((fact) => (
                                     <div
                                         key={fact.label}
-                                        className={`flex min-w-[160px] flex-1 snap-start flex-col gap-1 px-4 py-3.5 sm:px-5 ${i > 0 ? `border-l ${skin.edge}` : ''}`}
+                                        className="flex min-w-[160px] flex-1 snap-start flex-col gap-1 px-4 py-3.5 sm:px-5"
                                     >
+                                        <span className={`${skin.meta}`}>{fact.label}</span>
                                         <span className={`${skin.statValue} break-words`}>{fact.value}</span>
-                                        <span className={skin.micro}>{fact.label}</span>
                                     </div>
                                 ))}
                             </div>
@@ -316,18 +341,18 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Requirements */}
-                    <Section title="Requirements">
+                    <Section title="Requirements" panelClass={panelClass}>
                         <p className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:text-base">
                             <span className={skin.body}>Candidates should have a</span>
-                            <span className={`inline-flex items-center ${skin.chip} ${r}`}>{recruitment.qualification}</span>
+                            <span className={requirementValue}>{recruitment.qualification}</span>
                             <span className={skin.body}>qualification and be from the</span>
-                            <span className={`inline-flex items-center ${skin.chip} ${r}`}>{recruitment.department}</span>
+                            <span className={requirementValue}>{recruitment.department}</span>
                             <span className={skin.body}>department.</span>
                         </p>
                     </Section>
 
                     {/* Job Description */}
-                    <Section title="Job Description">
+                    <Section title="Job Description" panelClass={panelClass}>
                         {recruitment.description ? (
                             <div className="space-y-3">
                                 {recruitment.description
@@ -363,13 +388,13 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Interview Rounds */}
-                    <Section title="Interview Rounds" count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
+                    <Section title="Interview Rounds" panelClass={panelClass} count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
                         {rounds.length === 0 ? (
                             <p className={skin.body}>No interview rounds for this post.</p>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {rounds.map(round => (
-                                    <div key={round.roundNumber} className={`flex items-center border ${skin.edge} ${skin.radius} p-3`}>
+                                    <div key={round.roundNumber} className={roundPanel}>
                                         <div className="min-w-0">
                                             <span className={`block ${skin.micro}`}>Round {round.roundNumber}</span>
                                             <span className={`block break-words ${skin.cardValue}`}>{round.name || 'Not named'}</span>
@@ -381,13 +406,13 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Required Skills */}
-                    <Section title="Required Skills" count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
+                    <Section title="Required Skills" panelClass={panelClass} count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
                         {skills.length === 0 ? (
                             <p className={skin.body}>No specific skills listed.</p>
                         ) : (
-                            <div className="flex flex-wrap gap-2.5">
+                            <div className="flex flex-wrap gap-1.5">
                                 {skills.map((skill, i) => (
-                                    <span key={i} className={`${skin.tag} ${r}`}>
+                                    <span key={i} className={greyTag ?? `${skin.tag} ${r}`}>
                                         {skill}
                                     </span>
                                 ))}
@@ -411,20 +436,20 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 }
 
 /** Content panel whose header follows the masthead recipe: uppercase title,
- *  hairline divider, optional inverted count badge. Deliberately unwashed and
- *  unshadowed - the orange gradient belongs to the page header only, and body
- *  sections sit flat on the canvas rather than floating above it. */
-function Section({ title, count, children }: { title: string; count?: string; children: ReactNode }) {
+ *  hairline divider, optional inverted count badge. Fill comes from the caller:
+ *  the candidate view passes a grey panel over its white body, the
+ *  recruiter/admin view keeps the skin surface. */
+function Section({ title, count, panelClass, children }: { title: string; count?: string; panelClass?: string; children: ReactNode }) {
     const skin = useSkin();
     return (
-        <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
-            <div className={`flex items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
+        <div className={panelClass ?? `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-1 sm:px-6">
                 <h3 className={skin.emptyTitle}>{title}</h3>
                 {count && (
                     <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>{count}</span>
                 )}
             </div>
-            <div className="px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+            <div className="px-4 pt-1.5 pb-4 sm:px-6 sm:pt-2 sm:pb-5">{children}</div>
         </div>
     );
 }

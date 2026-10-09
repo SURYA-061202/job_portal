@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, Sparkles, Star, ShieldCheck, ShieldAlert, CheckCircle2, Camera } from 'lucide-react';
+import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import UserHeader from '@/components/layout/UserHeader';
@@ -18,7 +18,6 @@ export default function UserProfile() {
     const [searchParams] = useSearchParams();
     const activeTab = (searchParams.get('tab') || 'profile') as 'profile' | 'jobs' | 'applications';
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [calculatingScore, setCalculatingScore] = useState(false);
     const [verifyingEmail, setVerifyingEmail] = useState(false);
     const [sendingResetLink, setSendingResetLink] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
@@ -131,59 +130,6 @@ export default function UserProfile() {
             toast.error('Failed to load profile');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const calculateProfileScore = async () => {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        setCalculatingScore(true);
-        try {
-            const prompt = `
-                Evaluate this user profile completeness and strength on a scale of 0-100.
-                Return ONLY a JSON object: { "score": number, "feedback": "very short string" }
-                
-                Profile Data:
-                - Name: ${formData.firstName} ${formData.lastName}
-                - Role: ${formData.department}
-                - Experience: ${formData.yearsOfExperience} years
-                - Education: ${JSON.stringify(formData.educationItems)}
-                - Projects: ${JSON.stringify(formData.projectItems)}
-                - Skills: ${JSON.stringify(formData.skillItems)}
-                - Certificates: ${JSON.stringify(formData.certificateItems)}
-                - Resume: ${formData.resumeUrl ? 'Uploaded' : 'Missing'}
-            `;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.3
-                })
-            });
-
-            const data = await response.json();
-            const result = JSON.parse(data.choices[0].message.content);
-            const newScore = Math.min(100, Math.max(0, result.score || 0));
-
-            await updateDoc(doc(db, 'users', user.uid), {
-                profileScore: newScore,
-                updatedAt: new Date()
-            });
-
-            setFormData(prev => ({ ...prev, profileScore: newScore }));
-            toast.success(`Profile Score Updated: ${newScore}%`);
-        } catch (error) {
-            console.error('Score calculation error:', error);
-            toast.error('Failed to calculate profile score');
-        } finally {
-            setCalculatingScore(false);
         }
     };
 
@@ -437,7 +383,7 @@ export default function UserProfile() {
 
                                     <div className="px-5 pb-5 relative">
                                         <div
-                                            className={`w-20 h-20 rounded-full bg-surface flex items-center justify-center border-4 border-surface mx-auto -mt-10 mb-3 relative z-10 ${isEditingProfile ? 'cursor-pointer' : ''}`}
+                                            className={`w-24 h-24 rounded-full bg-surface flex items-center justify-center border-4 border-surface mx-auto -mt-12 mb-3 relative z-10 ${isEditingProfile ? 'cursor-pointer' : ''}`}
                                             onClick={() => {
                                                 if (isEditingProfile && !imageUploading) profileImageInputRef.current?.click();
                                             }}
@@ -467,7 +413,7 @@ export default function UserProfile() {
                                                             className="h-full w-full rounded-full object-cover"
                                                         />
                                                     ) : (
-                                                        <User className={`w-8 h-8 ${formData.profileScore >= 75 ? 'text-ink' : formData.profileScore >= 40 ? 'text-muted-foreground' : 'text-brand'}`} />
+                                                        <User className={`w-9 h-9 ${formData.profileScore >= 75 ? 'text-ink' : formData.profileScore >= 40 ? 'text-muted-foreground' : 'text-brand'}`} />
                                                     )}
                                                 </div>
                                             </div>
@@ -553,7 +499,7 @@ export default function UserProfile() {
                                             <div className="text-center">
                                                 <h1 className="text-lg font-black text-ink tracking-tight">{formData.firstName} {formData.lastName}</h1>
                                                 {formData.department ? (
-                                                    <p className="text-xs text-ink/70 font-bold mt-1 mb-3 bg-surface inline-block px-3 py-1 rounded-lg border border-border">{formData.department}</p>
+                                                    <p className="text-xs text-ink/70 font-bold mt-1 mb-3 bg-border inline-block px-3 py-1 rounded-lg">{formData.department}</p>
                                                 ) : (
                                                     <button onClick={() => setIsEditingProfile(true)} className="text-[10px] text-brand font-bold mt-1 mb-3 bg-brand/10 hover:bg-brand/20 transition-colors inline-block px-3 py-1 rounded-lg border border-brand/20">+ Add your role</button>
                                                 )}
@@ -579,32 +525,6 @@ export default function UserProfile() {
                                                             <span className="whitespace-pre-wrap leading-tight">{formData.address}</span>
                                                         </div>
                                                     )}
-
-                                                    <div className="pt-3 border-t border-border mt-2">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <Star className="w-3.5 h-3.5 text-brand fill-brand" />
-                                                                <span className="text-[11px] font-bold text-ink/80 uppercase">Profile Score: {formData.profileScore || 0}%</span>
-                                                            </div>
-                                                            <button
-                                                                onClick={calculateProfileScore}
-                                                                disabled={calculatingScore}
-                                                                className="p-1 hover:bg-ink/5 rounded-lg text-ink/60 hover:text-ink transition-all disabled:opacity-50"
-                                                                title="Refresh Score"
-                                                            >
-                                                                <Sparkles className={`w-3.5 h-3.5 ${calculatingScore ? 'animate-pulse text-brand' : ''}`} />
-                                                            </button>
-                                                        </div>
-                                                        <div className="h-2 w-full bg-border rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full transition-all duration-1000 ${formData.profileScore >= 75 ? 'bg-ink' : formData.profileScore >= 40 ? 'bg-muted-foreground' : 'bg-brand'}`}
-                                                                style={{ width: `${formData.profileScore || 0}%` }}
-                                                            />
-                                                        </div>
-                                                        <p className="text-[10px] text-ink/40 mt-1.5 font-medium italic">
-                                                            Based on your profile completeness and content.
-                                                        </p>
-                                                    </div>
 
                                                     {/* Email Verification Status */}
                                                     <div className="pt-3 border-t border-border mt-2">
