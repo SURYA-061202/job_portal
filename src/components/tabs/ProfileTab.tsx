@@ -294,10 +294,10 @@ export default function ProfileTab() {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleInputChange}
-                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
                                     {userData.firstName}
                                 </div>
                             )}
@@ -312,10 +312,10 @@ export default function ProfileTab() {
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleInputChange}
-                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
                                     {userData.lastName}
                                 </div>
                             )}
@@ -326,7 +326,7 @@ export default function ProfileTab() {
                             <label className="block text-sm font-bold text-ink/80 mb-1.5">
                                 Email <span className="text-brand font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.edge} ${skin.radius} ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.edge} rounded-lg ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
                                 {userData.email}
                             </div>
                         </div>
@@ -341,10 +341,10 @@ export default function ProfileTab() {
                                     value={formData.mobile || ''}
                                     onChange={handleInputChange}
                                     placeholder="+91..."
-                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
                                     {userData.mobile || '+919087654321'}
                                 </div>
                             )}
@@ -359,10 +359,10 @@ export default function ProfileTab() {
                                     name="department"
                                     value={formData.department || ''}
                                     onChange={handleInputChange}
-                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${skin.field} ${FOCUS}`}
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
                                     {userData.department || 'None'}
                                 </div>
                             )}
@@ -377,10 +377,10 @@ export default function ProfileTab() {
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}
-                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 capitalize text-sm sm:text-base ${skin.field} ${FOCUS}`}
+                                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 capitalize text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium capitalize text-sm sm:text-base border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium capitalize text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
                                     {userData.role}
                                 </div>
                             )}
@@ -393,7 +393,7 @@ export default function ProfileTab() {
                             <button
                                 onClick={handleChangePassword}
                                 disabled={sendingReset}
-                                className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer ${skin.secondary} ${FOCUS}`}
+                                className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
                             >
                                 {sendingReset ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                                 Change Password
@@ -403,7 +403,7 @@ export default function ProfileTab() {
                             <>
                                 <button
                                     onClick={handleCancel}
-                                    className={`w-full sm:w-auto cursor-pointer ${skin.secondary} ${FOCUS}`}
+                                    className={`w-full sm:w-auto cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
                                     disabled={saving}
                                 >
                                     Cancel
@@ -411,7 +411,7 @@ export default function ProfileTab() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
+                                    className={`w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Save Changes
@@ -420,7 +420,7 @@ export default function ProfileTab() {
                         ) : (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className={`w-full sm:w-auto cursor-pointer ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
+                                className={`w-full sm:w-auto cursor-pointer rounded-lg ${skin.cta} ${FOCUS} hover:scale-[1.02]`}
                             >
                                 Edit Profile
                             </button>

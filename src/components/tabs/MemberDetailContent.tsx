@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Mail, Phone, Building2, Shield, Loader2, Briefcase } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -98,92 +98,64 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
     }
 
     return (
-        <div className="space-y-6 flex-1 flex flex-col">
-            {/* Back Button */}
-            <div className={`p-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-                <button
-                    onClick={onBack}
-                    className={`flex items-center gap-2 text-sm font-medium text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} transition-colors ${FOCUS}`}
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Members
-                </button>
-            </div>
-
-            {/* Profile Card */}
-            <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-                <div className="bg-ink px-6 py-8">
-                    <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 bg-surface/20 rounded-full flex items-center justify-center text-surface font-bold text-3xl">
-                            {member.firstName?.[0]}{member.lastName?.[0]}
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-surface">{member.firstName} {member.lastName}</h2>
-                            <span className="inline-block text-xs bg-brand text-ink px-3 py-1 rounded-full font-medium mt-1">
-                                {member.role?.toUpperCase()}
-                            </span>
-                        </div>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
+            {/* Masthead — same recipe as other detail pages: brand-washed title row
+                (back icon button + name + role chip) over an email/phone description row. */}
+            <div className={`shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <button
+                            onClick={onBack}
+                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                            title="Back to members"
+                            aria-label="Back to members"
+                        >
+                            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+                        </button>
+                        <h2 className={`${skin.heading} max-w-full truncate`}>{member.firstName} {member.lastName}</h2>
+                        <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
+                            {member.role?.toUpperCase()}
+                        </span>
                     </div>
                 </div>
-                <div className="p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
-                            <Mail className="w-5 h-5 text-brand flex-shrink-0" />
-                            <div>
-                                <p className="text-xs text-brand font-bold">Email</p>
-                                <p className="text-sm text-ink truncate">{member.email}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
-                            <Phone className="w-5 h-5 text-brand flex-shrink-0" />
-                            <div>
-                                <p className="text-xs text-brand font-bold">Phone</p>
-                                <p className="text-sm text-ink">{member.mobile || 'N/A'}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
-                            <Building2 className="w-5 h-5 text-brand flex-shrink-0" />
-                            <div>
-                                <p className="text-xs text-brand font-bold">Department</p>
-                                <p className="text-sm text-ink">{member.department || 'N/A'}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 bg-brand/5 px-4 py-3 rounded-lg border border-brand/20">
-                            <Shield className="w-5 h-5 text-brand flex-shrink-0" />
-                            <div>
-                                <p className="text-xs text-brand font-bold">Role</p>
-                                <p className="text-sm text-ink capitalize">{member.role}</p>
-                            </div>
-                        </div>
-                    </div>
+                <div className="px-4 py-2.5 sm:px-5">
+                    <p className={skin.body}>
+                        {member.email}
+                        {member.mobile && (
+                            <>
+                                <span className="mx-2 text-ink/40">•</span>
+                                {member.mobile}
+                            </>
+                        )}
+                    </p>
                 </div>
             </div>
 
             {/* Posts Section */}
-            <div className={`p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+            <div className={`flex-1 flex flex-col border ${skin.edge} ${skin.surface} ${skin.radius} p-6`}>
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-brand" />
-                        <h3 className={skin.cardTitle}>Posted Jobs</h3>
-                    </div>
-                    <span className={skin.count}>
+                    <h3 className={skin.cardTitle}>Posted Jobs</h3>
+                    <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                        <span
+                            aria-hidden="true"
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
+                        />
                         {posts.length} posts
                     </span>
                 </div>
 
                 {loadingPosts ? (
-                    <div className="flex justify-center py-8">
+                    <div className="flex flex-1 items-center justify-center">
                         <Loader2 className="w-8 h-8 animate-spin text-brand" />
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className={`bg-brand/5 border border-dashed ${skin.edge} ${skin.radius} p-8 text-center`}>
-                        <Briefcase className="w-10 h-10 text-brand mx-auto mb-3" />
+                    <div className="flex flex-1 items-center justify-center">
                         <p className={skin.emptyTitle}>No posts yet</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {posts.map(post => (
-                            <div key={post.id} className={`bg-brand/5 border border-brand/20 ${skin.radius} p-4 hover:bg-brand/10 transition-colors duration-200 ${skin.cardHover}`}>
+                            <div key={post.id} className="rounded-lg p-4 hover:bg-ink/5 transition-colors duration-200">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 min-w-0">
                                         <p className="text-base font-bold text-ink">{post.jobTitle}</p>

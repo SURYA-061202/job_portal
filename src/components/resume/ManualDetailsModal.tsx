@@ -118,7 +118,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               name="name"
               value={form.name}
               onChange={handleChange}
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
             />
           </div>
           <div>
@@ -128,7 +128,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               name="email"
               value={form.email}
               onChange={handleChange}
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
             />
           </div>
           <div>
@@ -138,7 +138,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               name="phone"
               value={form.phone}
               onChange={handleChange}
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
             />
           </div>
           <div>
@@ -148,7 +148,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               name="role"
               value={form.role}
               onChange={handleChange}
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
             />
           </div>
           <div>
@@ -158,7 +158,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
               value={form.experience}
               onChange={handleChange}
               rows={3}
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
             />
           </div>
           <div>
@@ -167,7 +167,7 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
             {skills.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {skills.map((skill) => (
-                  <span key={skill} className={`inline-flex items-center cursor-pointer ${skin.tag} hover:bg-brand/30`}
+                  <span key={skill} className={`inline-flex items-center cursor-pointer ${skin.tag} rounded-lg hover:bg-brand/30`}
                     onClick={() => toggleSkill(skill)}>
                     {skill} <X className="ml-1 h-3 w-3" />
                   </span>
@@ -184,9 +184,9 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
             {/* Manual input */}
             <div className="flex gap-2">
               <input type="text" value={skillInput} onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Add custom skill" className={`flex-1 px-3 py-2 ${skin.field} ${FOCUS}`} />
+                placeholder="Add custom skill" className={`flex-1 px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`} />
               <button type="button" onClick={addSkillFromInput}
-                className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS}`}>Add</button>
+                className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}>Add</button>
             </div>
           </div>
         </div>
@@ -194,14 +194,14 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={handleCancel}
-            className={`cursor-pointer ${skin.secondary} ${FOCUS}`}
+            className={`cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
             disabled={saving}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+            className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
             disabled={saving}
           >
             {saving ? 'Saving…' : 'Save'}

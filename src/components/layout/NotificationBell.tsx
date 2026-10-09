@@ -125,7 +125,7 @@ export default function NotificationBell({ className = '', simpleMode = false }:
           <div className={`px-4 py-3 border-b ${skin.edge} flex justify-between items-center gap-3 flex-shrink-0`}>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-ink">Notifications</span>
-              <span className={skin.count}>
+              <span className={`${skin.count} rounded-lg`}>
                 {notifications.length}
               </span>
             </div>

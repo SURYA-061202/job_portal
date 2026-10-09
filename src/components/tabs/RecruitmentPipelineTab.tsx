@@ -430,7 +430,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                     <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <h2 className={skin.heading}>Recruitment Pipeline</h2>
-                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                                 <span
                                     aria-hidden="true"
                                     className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -447,7 +447,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                 <input
                                     type="text"
                                     placeholder="Search posts..."
-                                    className={`block w-full pl-10 pr-3 py-2 leading-5 ${skin.field} ${FOCUS}`}
+                                    className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -480,7 +480,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                 <button
                                     type="button"
                                     onClick={() => setSearchTerm('')}
-                                    className={`mt-5 ${skin.secondary} ${FOCUS}`}
+                                    className={`mt-5 rounded-lg ${skin.secondary} ${FOCUS}`}
                                 >
                                     Clear search
                                 </button>
@@ -521,7 +521,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
                         </button>
                         <h2 className={`${skin.heading} truncate`}>{selectedPost.jobTitle}</h2>
-                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                             <span
                                 aria-hidden="true"
                                 className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -539,7 +539,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             <input
                                 type="text"
                                 placeholder="Search by name, role..."
-                                className={`block w-full pl-10 pr-3 py-2 leading-5 ${skin.field} ${FOCUS}`}
+                                className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -571,7 +571,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             >
                                 <div className={`p-3 border-b ${skin.edge} flex justify-between items-center gap-2 ${skin.surface} rounded-t-2xl flex-shrink-0`}>
                                     <h3 className="font-bold text-ink truncate" title={col.title}>{col.title}</h3>
-                                    <span className={`flex-shrink-0 ${skin.count}`}>
+                                    <span className={`flex-shrink-0 ${skin.count} rounded-lg`}>
                                         {columnItems.length}
                                     </span>
                                 </div>
@@ -615,7 +615,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 }
                                                 return (
                                                     <div className="mb-2 flex-shrink-0">
-                                                            <span className={`inline-flex items-center gap-1 ${skin.chip}`}>
+                                                            <span className={`inline-flex items-center gap-1 ${skin.chip} rounded-lg`}>
                                                             <Clock className="h-2.5 w-2.5" />
                                                             Awaiting response
                                                         </span>
@@ -638,7 +638,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                         <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Skills</span>
                                                         <div className="flex flex-wrap gap-1">
                                                         {(expandedSkills.has(item.key) ? item.skills : item.skills.slice(0, 6)).map((skill, i) => (
-                                                            <span key={i} className={skin.tag}>
+                                                            <span key={i} className={`${skin.tag} rounded-lg`}>
                                                                 {skill}
                                                             </span>
                                                         ))}
@@ -725,7 +725,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                         <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Courses</span>
                                                         <div className="flex flex-wrap gap-1">
                                                             {item.courses.map((course, i) => (
-                                                                <span key={i} className={skin.tag}>{course}</span>
+                                                                <span key={i} className={`${skin.tag} rounded-lg`}>{course}</span>
                                                             ))}
                                                         </div>
                                                     </div>

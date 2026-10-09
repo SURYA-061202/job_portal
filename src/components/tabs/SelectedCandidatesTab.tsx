@@ -72,7 +72,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
                 <span
-                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
                   title="Status"
                 >
                   Selected
@@ -152,7 +152,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                       setSending(false);
                     }
                   }}
-                  className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+                  className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                 >
                   {sending && (
                     <svg className="animate-spin h-3 w-3 text-surface" viewBox="0 0 24 24">
@@ -200,7 +200,7 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
                 <span
-                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
                   title="Status"
                 >
                   Rejected{rejectedRound ? ` · ${rejectedRound}` : ''}
@@ -410,6 +410,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
           { value: 'rejected', label: 'Rejected Candidates' }
         ]}
         onFilterChange={(value) => setView(value as 'selected' | 'rejected')}
+        searchWidth="sm:w-52"
       />
     </div>
   );

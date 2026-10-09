@@ -29,7 +29,7 @@ export default function PostCard({ post, onOpen }: { post: RecruitmentRequest; o
                 <span className={`mt-1 block ${skin.micro}`}>{post.department}</span>
 
                 {/* Two-cell rule grid - no boxes inside boxes, just dividers. */}
-                <span className={`mt-4 grid grid-cols-2 border ${skin.edge}`}>
+                <span className={`mt-4 grid grid-cols-2 overflow-hidden rounded-lg border ${skin.edge}`}>
                     <span className={`border-r ${skin.edge} p-2.5`}>
                         <span className={`block ${skin.micro}`}>Experience</span>
                         <span className={`mt-1 block ${skin.cardValue}`}>{post.yearsExperience}</span>
@@ -44,7 +44,7 @@ export default function PostCard({ post, onOpen }: { post: RecruitmentRequest; o
                     <span className={`mb-2 block ${skin.micro}`}>Key Skills</span>
                     <span className="flex flex-wrap gap-1.5">
                         {skills.map((skill, i) => (
-                            <span key={i} className={skin.tag}>
+                            <span key={i} className={`${skin.tag} rounded-lg`}>
                                 {skill.trim()}
                             </span>
                         ))}
@@ -56,7 +56,7 @@ export default function PostCard({ post, onOpen }: { post: RecruitmentRequest; o
                         <Calendar className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
                         {timeAgo(post.createdAt)}
                     </span>
-                    <span className={skin.count}>
+                    <span className={`${skin.count} rounded-lg`}>
                         {post.applicantCount ?? 0} {post.applicantCount === 1 ? 'Applicant' : 'Applicants'}
                     </span>
                 </span>

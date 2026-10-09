@@ -479,7 +479,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             <h2 className={skin.heading}>
                                                 {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
                                             </h2>
-                                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                                                 <span
                                                     aria-hidden="true"
                                                     className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -499,7 +499,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 <input
                                                     type="text"
                                                     placeholder="Search candidates..."
-                                                    className={`block w-full h-9 pl-10 pr-3 sm:text-sm ${skin.field} ${FOCUS}`}
+                                                    className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                 />
@@ -565,7 +565,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                                         {post.jobTitle}
                                                                     </h3>
                                                                     {post.positionLevel && (
-                                                                        <span className={`flex-shrink-0 inline-flex items-center ${skin.chip}`}>
+                                                                        <span className={`flex-shrink-0 inline-flex items-center ${skin.chip} rounded-lg`}>
                                                                             {post.positionLevel}
                                                                         </span>
                                                                     )}
@@ -603,7 +603,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                                 <span className={`${skin.micro} block mb-2`}>Key Skills</span>
                                                                 <div className="flex flex-wrap gap-1.5">
                                                                     {post.skills.split(',').slice(0, 3).map((skill: string, i: number) => (
-                                                                        <span key={i} className={skin.tag}>
+                                                                        <span key={i} className={`${skin.tag} rounded-lg`}>
                                                                             {skill.trim()}
                                                                         </span>
                                                                     ))}
@@ -627,7 +627,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                                     })()}
                                                                 </div>
                                                             )}
-                                                            <div className={skin.count}>
+                                                            <div className={`${skin.count} rounded-lg`}>
                                                                 {post.applicantCount} Applicant{post.applicantCount !== 1 ? 's' : ''}
                                                             </div>
                                                         </div>

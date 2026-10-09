@@ -18,6 +18,7 @@ interface UserData {
     department: string;
     role: 'manager' | 'user' | 'admin' | 'recruiter';
     companyName?: string;
+    profileImage?: string;
 }
 
 export default function AddMembersTab({ onViewMember }: { onViewMember?: (memberId: string) => void }) {
@@ -30,9 +31,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         lastName: '',
         email: '',
         mobile: '',
-        department: '',
-        password: '',
-        companyName: ''
+        password: ''
     });
     const [addingMember, setAddingMember] = useState(false);
     const skin = useSkin();
@@ -87,8 +86,6 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                 lastName: formData.lastName,
                 email: formData.email,
                 mobile: formData.mobile,
-                department: formData.department,
-                companyName: formData.companyName,
                 role: 'recruiter',
                 createdAt: new Date().toISOString()
             });
@@ -112,7 +109,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                 toast.success('Member added, but failed to send welcome email automatically.');
             }
             setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', email: '', mobile: '', department: '', password: '', companyName: '' });
+            setFormData({ firstName: '', lastName: '', email: '', mobile: '', password: '' });
             fetchMembers();
 
         } catch (error) {
@@ -146,7 +143,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                 <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <h2 className={skin.heading}>Team Members</h2>
-                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                             <span
                                 aria-hidden="true"
                                 className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -165,12 +162,12 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 placeholder="Search members..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
+                                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
                             />
                         </div>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${skin.cta} ${FOCUS}`}
+                            className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
                         >
                             <UserPlus className="w-4 h-4" />
                             <span className="hidden sm:inline">Add Recruiters</span>
@@ -194,8 +191,16 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                     >
                         {/* Avatar */}
                         <div className="flex flex-col items-center mb-4">
-                            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
-                                {member.firstName?.[0]}{member.lastName?.[0]}
+                            <div className="w-20 h-20 overflow-hidden bg-muted rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
+                                {member.profileImage ? (
+                                    <img
+                                        src={member.profileImage}
+                                        alt={`${member.firstName} ${member.lastName}`}
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <>{member.firstName?.[0]}{member.lastName?.[0]}</>
+                                )}
                             </div>
                         </div>
 
@@ -207,11 +212,11 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
 
                         {/* Contact Info */}
                         <div className="space-y-2">
-                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border ${skin.edge} ${skin.canvas} ${skin.radius} group-hover:bg-ink/5`}>
+                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border border-ink bg-surface rounded-lg`}>
                                 <Mail className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
                                 <span className="truncate" title={member.email}>{member.email}</span>
                             </div>
-                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border ${skin.edge} ${skin.canvas} ${skin.radius} group-hover:bg-ink/5`}>
+                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border border-ink bg-surface rounded-lg`}>
                                 <Phone className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
                                 <span>{member.mobile || 'N/A'}</span>
                             </div>
@@ -234,7 +239,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                         type="text"
                                         value={formData.firstName}
                                         onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                        className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
+                                        className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
                                     />
                                 </div>
                                 <div>
@@ -244,7 +249,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                         type="text"
                                         value={formData.lastName}
                                         onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                        className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
+                                        className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
                                     />
                                 </div>
                             </div>
@@ -256,7 +261,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                     type="email"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
+                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             </div>
 
@@ -267,36 +272,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                     type="tel"
                                     value={formData.mobile}
                                     onChange={e => setFormData({ ...formData, mobile: e.target.value })}
-                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-ink/80 mb-1">Department</label>
-                                <select
-                                    required
-                                    value={formData.department}
-                                    onChange={e => setFormData({ ...formData, department: e.target.value })}
-                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
-                                >
-                                    <option value="">Select Department</option>
-                                    <option value="IT">IT</option>
-                                    <option value="HR">HR</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Sales">Sales</option>
-                                    <option value="Marketing">Marketing</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-ink/80 mb-1">Company Name</label>
-                                <input
-                                    required
-                                    type="text"
-                                    value={formData.companyName}
-                                    placeholder="Enter company name"
-                                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                    className={`w-full p-2.5 ${skin.field} ${FOCUS}`}
+                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             </div>
 
@@ -304,14 +280,14 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className={`flex-1 cursor-pointer ${skin.secondary} ${FOCUS}`}
+                                    className={`flex-1 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={addingMember}
-                                    className={`flex-1 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+                                    className={`flex-1 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                                 >
                                     {addingMember ? 'Adding...' : 'Add Member'}
                                 </button>

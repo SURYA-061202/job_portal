@@ -143,10 +143,10 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     const rounds = getPostRounds(recruitment);
     const skills = recruitment.skills ? recruitment.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
-    // User-side radius convention: the square skinned tokens (chip, tag,
-    // count) get rounded-lg on the candidate view only - the recruiter/admin
-    // detail keeps its current look.
-    const r = isUserView ? 'rounded-lg' : '';
+    // Radius convention: the square skinned chips/tags (department, level,
+    // posted, requirements, skills) now get rounded-lg on both views, like
+    // the Posts module fields. Count badges and buttons carry it too.
+    const r = 'rounded-lg';
 
     /* At-a-glance facts, rendered as a horizontal strip: bold figure over a
        micro label, vertical hairlines between cells, swipes on small screens. */
@@ -189,7 +189,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             {/* No openings count is shown in the header on the
                                 candidate view - Share sits after Apply instead. */}
                             {!isUserView && (
-                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                                     <span
                                         aria-hidden="true"
                                         className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -236,7 +236,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 </button>
                                 <button
                                     onClick={() => onViewCandidates?.(recruitment.id!)}
-                                    className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
+                                    className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
                                 >
                                     <Users className="w-4 h-4" aria-hidden="true" />
                                     <span>Candidates</span>
@@ -316,7 +316,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
 
                     {/* Requirements */}
-                    <Section title="Requirements" userView={isUserView}>
+                    <Section title="Requirements">
                         <p className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:text-base">
                             <span className={skin.body}>Candidates should have a</span>
                             <span className={`inline-flex items-center ${skin.chip} ${r}`}>{recruitment.qualification}</span>
@@ -327,7 +327,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Job Description */}
-                    <Section title="Job Description" userView={isUserView}>
+                    <Section title="Job Description">
                         {recruitment.description ? (
                             <div className="space-y-3">
                                 {recruitment.description
@@ -354,7 +354,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     href={recruitment.jdUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-2.5 ${skin.secondary} ${r} ${FOCUS}`}
+                                    className={`inline-flex items-center gap-2.5 rounded-lg ${skin.secondary} ${FOCUS}`}
                                 >
                                     <span>Download Detailed JD</span>
                                 </a>
@@ -363,7 +363,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Interview Rounds */}
-                    <Section title="Interview Rounds" userView={isUserView} count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
+                    <Section title="Interview Rounds" count={`${rounds.length} ${rounds.length === 1 ? 'Round' : 'Rounds'}`}>
                         {rounds.length === 0 ? (
                             <p className={skin.body}>No interview rounds for this post.</p>
                         ) : (
@@ -381,7 +381,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                     {/* Required Skills */}
-                    <Section title="Required Skills" userView={isUserView} count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
+                    <Section title="Required Skills" count={`${skills.length} ${skills.length === 1 ? 'Skill' : 'Skills'}`}>
                         {skills.length === 0 ? (
                             <p className={skin.body}>No specific skills listed.</p>
                         ) : (
@@ -414,14 +414,14 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
  *  hairline divider, optional inverted count badge. Deliberately unwashed and
  *  unshadowed - the orange gradient belongs to the page header only, and body
  *  sections sit flat on the canvas rather than floating above it. */
-function Section({ title, count, userView, children }: { title: string; count?: string; userView?: boolean; children: ReactNode }) {
+function Section({ title, count, children }: { title: string; count?: string; children: ReactNode }) {
     const skin = useSkin();
     return (
         <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
             <div className={`flex items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3 sm:px-6`}>
                 <h3 className={skin.emptyTitle}>{title}</h3>
                 {count && (
-                    <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} ${userView ? 'rounded-lg' : ''}`}>{count}</span>
+                    <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>{count}</span>
                 )}
             </div>
             <div className="px-4 py-4 sm:px-6 sm:py-5">{children}</div>

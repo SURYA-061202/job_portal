@@ -209,7 +209,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <h2 className={skin.heading}>
                                     Job Posts
                                 </h2>
-                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                                     <span
                                         aria-hidden="true"
                                         className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -217,7 +217,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     {countBadge}
                                 </span>
                                 {visiblePosts.length > 0 && (
-                                    <span className={`hidden shrink-0 items-center gap-1.5 sm:inline-flex ${skin.statChip}`}>
+                                    <span className={`hidden shrink-0 items-center gap-1.5 sm:inline-flex ${skin.statChip} rounded-lg`}>
                                         <Users aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
                                         {totalApplicants} {totalApplicants === 1 ? 'Applicant' : 'Applicants'}
                                     </span>
@@ -227,7 +227,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 type="button"
                                 onClick={() => setIsRecruitmentModalOpen(true)}
                                 aria-label="Add a new job post"
-                                className={`inline-flex cursor-pointer items-center gap-2 ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
                             >
                                 <Plus className="h-4 w-4" aria-hidden="true" />
                                 Add Post
@@ -250,7 +250,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     type="text"
                                     placeholder="Title, department or location..."
                                     aria-describedby="job-posts-search-hint"
-                                    className={`block w-full py-2 pl-9 pr-9 ${skin.field} ${FOCUS}`}
+                                    className={`block w-full py-2 pl-9 pr-9 rounded-lg ${skin.field} ${FOCUS}`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyDown={(e) => {
@@ -268,7 +268,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         type="button"
                                         onClick={() => setSearchTerm('')}
                                         aria-label="Clear search"
-                                        className={`absolute inset-y-0 right-0 my-auto ml-3 flex h-6 w-6 cursor-pointer items-center transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                                        className={`absolute inset-y-0 right-0 my-auto ml-3 flex h-6 w-6 cursor-pointer items-center rounded-full transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
                                     >
                                         <X className="h-4 w-4" aria-hidden="true" />
                                     </button>
@@ -284,7 +284,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         id="job-posts-sort"
                                         value={sort}
                                         onChange={(e) => setSort(e.target.value as SortKey)}
-                                        className={`cursor-pointer appearance-none py-2 pl-3 pr-8 ${skin.field} ${FOCUS}`}
+                                        className={`cursor-pointer appearance-none py-2 pl-3 pr-8 rounded-lg ${skin.field} ${FOCUS}`}
                                     >
                                         {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                                             <option key={key} value={key}>{SORT_LABELS[key]}</option>
@@ -365,7 +365,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <button
                                     type="button"
                                     onClick={() => setIsRecruitmentModalOpen(true)}
-                                    className={`mt-5 inline-flex cursor-pointer items-center gap-2 ${skin.cta} ${FOCUS}`}
+                                    className={`mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
                                 >
                                     <Plus className="h-4 w-4" aria-hidden="true" />
                                     Create your first post
@@ -386,7 +386,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     <button
                                         type="button"
                                         onClick={() => setSearchTerm('')}
-                                        className={`mt-5 ${skin.secondary} ${FOCUS}`}
+                                        className={`mt-5 rounded-lg ${skin.secondary} ${FOCUS}`}
                                     >
                                         Clear search
                                     </button>
@@ -426,7 +426,7 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
     const skin = useSkin();
 
     return (
-        <div className={`divide-y ${skin.divide} border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+        <div className={`divide-y ${skin.divide} overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
             {posts.map((post) => (
                 <button
                     key={post.id}
@@ -437,7 +437,7 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
                 >
                     <span
                         aria-hidden="true"
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center ${skin.iconTile}`}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius}`}
                     >
                         <Briefcase className="h-4 w-4" />
                     </span>
@@ -446,7 +446,7 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
                         <span className="flex items-center gap-2">
                             <span className={skin.rowTitle}>{post.jobTitle}</span>
                             {post.positionLevel && (
-                                <span className={`hidden shrink-0 ${skin.chip} sm:inline`}>
+                                <span className={`hidden shrink-0 ${skin.chip} rounded-lg sm:inline`}>
                                     {post.positionLevel}
                                 </span>
                             )}
@@ -463,7 +463,7 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
                         {timeAgo(post.createdAt)}
                     </span>
 
-                    <span className={`shrink-0 ${skin.count}`}>
+                    <span className={`shrink-0 ${skin.count} rounded-lg`}>
                         {post.applicantCount ?? 0} {post.applicantCount === 1 ? 'applicant' : 'applicants'}
                     </span>
 

@@ -245,7 +245,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
             <div>
               <label className="block text-sm font-medium text-ink/80 mb-1">Select Job Position</label>
               <select
-                className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
                 value={selectedPostId}
                 onChange={(e) => handlePostChange(e.target.value)}
                 disabled={loadingJobs}
@@ -266,7 +266,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
             <label className="block text-sm font-medium text-ink/80 mb-1">Interview Role</label>
             <input
               type="text"
-              className={`w-full px-3 py-2 ${skin.field} ${FOCUS}`}
+              className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
               value={role}
               onChange={(e) => setRole(e.target.value)}
             />
@@ -280,7 +280,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
                 <input
                   key={idx}
                   type="date"
-                  className={`px-3 py-2 ${skin.field} ${FOCUS}`}
+                  className={`px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
                   value={d}
                   onChange={(e) => handleDateChange(idx, e.target.value)}
                 />
@@ -320,14 +320,14 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className={`cursor-pointer ${skin.secondary} ${FOCUS}`}
+            className={`cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
             disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handleSend}
-            className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+            className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
             disabled={loading}
           >
             {loading ? 'Sending…' : 'Send'}

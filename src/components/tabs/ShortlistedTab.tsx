@@ -218,7 +218,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h2 className={skin.heading}>Shortlisted</h2>
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
               <span
                 aria-hidden="true"
                 className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -235,7 +235,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
               <input
                 type="text"
                 placeholder="Search posts..."
-                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
+                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
                 value={postSearch}
                 onChange={(e) => setPostSearch(e.target.value)}
               />
@@ -268,7 +268,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className={`${skin.cardTitle} line-clamp-2`}>{post.jobTitle}</h3>
                   {post.positionLevel && (
-                    <span className={`inline-flex items-center whitespace-nowrap ${skin.chip}`}>
+                    <span className={`inline-flex items-center whitespace-nowrap ${skin.chip} rounded-lg`}>
                       {post.positionLevel}
                     </span>
                   )}
@@ -286,7 +286,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
                   </div>
                 )}
                 <div className={`mt-3 pt-3 border-t ${skin.edge} flex items-center justify-between`}>
-                  <span className={skin.count}>
+                  <span className={`${skin.count} rounded-lg`}>
                     {post.shortlistedCount} Shortlisted
                   </span>
                 </div>
@@ -445,7 +445,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
                 {postTitle && (
-                  <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
+                  <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
                     {postTitle}
                   </span>
                 )}
@@ -540,12 +540,12 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
                 value={roundName}
                 onChange={(e) => setRoundName(e.target.value)}
                 placeholder="Round name (e.g. Technical)"
-                className={`px-3 py-2 ${skin.field} ${FOCUS}`}
+                className={`px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
               />
               <button
                 disabled={moveLoading}
                 onClick={moveToRound1}
-                className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+                className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
               >
                 {moveLoading ? 'Moving…' : 'Move to Round1'}
               </button>

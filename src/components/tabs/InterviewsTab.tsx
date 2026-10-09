@@ -283,7 +283,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               </button>
               <h2 className={`${skin.heading} truncate`}>Interview Rounds</h2>
             </div>
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
               <span
                 aria-hidden="true"
                 className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -323,10 +323,10 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                         {displayName}
                       </span>
                       {roundNum && (
-                        <span className={`shrink-0 ${skin.chip}`}>R{roundNum}</span>
+                        <span className={`shrink-0 ${skin.chip} rounded-lg`}>R{roundNum}</span>
                       )}
                       {status === 'selected' && (
-                        <span className={`shrink-0 ${skin.chip}`}>✓</span>
+                        <span className={`shrink-0 ${skin.chip} rounded-lg`}>✓</span>
                       )}
                     </span>
 
@@ -345,7 +345,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                     </span>
 
                     <span className={`mt-4 flex justify-end border-t ${skin.edge} pt-3`}>
-                      <span className={skin.count}>View rounds →</span>
+                      <span className={`${skin.count} rounded-lg`}>View rounds →</span>
                     </span>
                   </span>
                 </button>
@@ -366,7 +366,7 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
         <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h2 className={skin.heading}>Interview Posts</h2>
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
               <span
                 aria-hidden="true"
                 className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -448,12 +448,12 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
                   <span className={`mb-2 block ${skin.micro}`}>Skills</span>
                   <div className="flex flex-wrap gap-1">
                     {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                      <span key={i} className={skin.tag}>
+                      <span key={i} className={`${skin.tag} rounded-lg`}>
                         {skill.trim()}
                       </span>
                     ))}
                     {post.skills.split(',').length > 3 && (
-                      <span className={skin.tag}>
+                      <span className={`${skin.tag} rounded-lg`}>
                         +{post.skills.split(',').length - 3}
                       </span>
                     )}
@@ -462,10 +462,10 @@ export default function InterviewsTab({ userRole, userId }: { userRole?: string 
               )}
 
               <div className={`mt-4 flex flex-wrap items-center justify-between gap-2 border-t ${skin.edge} pt-3`}>
-                <span className={skin.statChip}>
+                <span className={`${skin.statChip} rounded-lg`}>
                   {totalRounds} {totalRounds === 1 ? 'Round' : 'Rounds'}
                 </span>
-                <span className={skin.count}>
+                <span className={`${skin.count} rounded-lg`}>
                   {post.interviewCount} {post.interviewCount === 1 ? 'Candidate' : 'Candidates'}
                 </span>
               </div>

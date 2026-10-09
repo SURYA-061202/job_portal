@@ -207,7 +207,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 {activePostId && (
                   statusLabel ? (
                     <span
-                      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink ${skin.radius}`}
+                      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink`}
                       title="Interview status"
                     >
                       {statusLabel}
@@ -232,7 +232,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             <button
               onClick={handleRemove}
               disabled={removing}
-              className={`inline-flex items-center gap-1.5 cursor-pointer border border-destructive bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-wider text-destructive transition-colors duration-200 hover:bg-destructive hover:text-white disabled:opacity-50 ${FOCUS}`}
+              className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-destructive bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-wider text-destructive transition-colors duration-200 hover:bg-destructive hover:text-white disabled:opacity-50 ${FOCUS}`}
             >
               {removing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {removing ? 'Deleting...' : 'Delete'}
@@ -241,7 +241,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             <button
               type="button"
               onClick={() => candidate.resumeUrl && setShowResumePreview(true)}
-              className={`inline-flex items-center gap-1.5 cursor-pointer ${skin.cta} ${FOCUS}`}
+              className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
             >
               Resume
             </button>
@@ -252,7 +252,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             used across the other mastheads. */}
         {(activePost?.jobTitle || candidate.selectedInterviewDate) && (
           <div className="px-4 py-2.5 sm:px-5">
-            {activePost?.jobTitle && <p className={skin.body}>{activePost.jobTitle}</p>}
+            {activePost?.jobTitle && (
+              <span className="inline-flex max-w-full items-center truncate rounded-lg border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-sm font-medium text-brand">
+                {activePost.jobTitle}
+              </span>
+            )}
             {candidate.selectedInterviewDate && (
               <p className={`${skin.meta} mt-1`}>Interview on {candidate.selectedInterviewDate}</p>
             )}
@@ -260,13 +264,17 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
         )}
       </div>
 
-      {/* Content - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="p-6 space-y-6">
+      {/* Content - the surface panel fills the height that remains below the
+          masthead, so its border/radius stay fixed; only the content inside
+          the panel scrolls. */}
+      <div className="flex-1 min-h-0 flex flex-col pb-4">
+        <div className={`flex-1 min-h-0 flex flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className={`p-6 divide-y ${skin.divide}`}>
             {/* Applied Posts - Candidates-module path only; when the detail is
                 reached through a post the context is already known. */}
             {!isPostContext && (
-            <div>
+            <div className="py-6 first:pt-0 last:pb-0">
               <h3 className={`${skin.cardTitle} mb-4`}>
                 Applied Posts
               </h3>
@@ -327,7 +335,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Contact Info */}
-            <div>
+            <div className="py-6 first:pt-0 last:pb-0">
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Contact Information
               </h3>
@@ -349,13 +357,13 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Skills */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div>
+              <div className="py-6 first:pt-0 last:pb-0">
                 <h3 className={`${skin.cardTitle} mb-3`}>
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {candidate.skills.map((skill, index) => (
-                    <span key={index} className={skin.tag}>
+                    <span key={index} className={`${skin.tag} rounded-lg`}>
                       {skill}
                     </span>
                   ))}
@@ -365,11 +373,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div>
+              <div className="py-6 first:pt-0 last:pb-0">
                 <h3 className={`${skin.cardTitle} mb-4 flex flex-wrap items-center gap-3`}>
                   Education
                   {candidate.education.filter((edu) => edu.cgpa).map((edu, i) => (
-                    <span key={i} className="inline-block bg-ink px-2 py-0.5 text-xs font-semibold text-surface">
+                    <span key={i} className="inline-block rounded-lg bg-ink px-2 py-0.5 text-xs font-semibold text-surface">
                       {isNaN(parseFloat(String(edu.cgpa))) ? edu.cgpa : `CGPA: ${edu.cgpa}`}
                     </span>
                   ))}
@@ -392,12 +400,12 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div>
+            <div className="py-6 first:pt-0 last:pb-0">
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Experience
               </h3>
               {(candidate.role || candidate.experience) && (
-                <div className={`mb-4 pb-4 border-b ${skin.edge} space-y-1.5`}>
+                <div className={`space-y-1.5${candidate.extractedData?.workExperience?.length ? ` mb-4 pb-4 border-b ${skin.edge}` : ''}`}>
                   {candidate.role && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-ink/60">Role:</span>
@@ -435,7 +443,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div>
+                    <div className="py-6 first:pt-0 last:pb-0">
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Key Projects
                       </h3>
@@ -453,7 +461,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div>
+                  <div className="py-6 first:pt-0 last:pb-0">
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Projects
                     </h3>
@@ -482,7 +490,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div>
+                    <div className="py-6 first:pt-0 last:pb-0">
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Certifications
                       </h3>
@@ -500,7 +508,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div>
+                  <div className="py-6 first:pt-0 last:pb-0">
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Certifications
                     </h3>
@@ -524,8 +532,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               return null;
             })()}
+            </div>
           </div>
+        </div>
       </div>
+
 
       {showResumePreview && candidate.resumeUrl && (
         <ResumePreviewModal url={candidate.resumeUrl} onClose={() => setShowResumePreview(false)} />

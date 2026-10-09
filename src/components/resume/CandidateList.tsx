@@ -1,6 +1,6 @@
 import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, User, ArrowLeft } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User, ArrowLeft, ChevronDown } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
@@ -57,6 +57,8 @@ interface CandidateListProps {
   hideRole?: boolean;
   /** Hides the illustration icon in the empty state message. */
   hideEmptyIcon?: boolean;
+  /** Tailwind width class for the search field (applied at sm+; full width below). */
+  searchWidth?: string;
 }
 
 export default function CandidateList({
@@ -75,7 +77,8 @@ export default function CandidateList({
   onFilterChange,
   onBack,
   hideRole = false,
-  hideEmptyIcon = false
+  hideEmptyIcon = false,
+  searchWidth = 'sm:w-72'
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
@@ -163,7 +166,7 @@ export default function CandidateList({
                 </button>
               )}
               <h2 className={skin.heading}>{title || 'Candidates'}</h2>
-              <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
+              <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
                 <span
                   aria-hidden="true"
                   className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
@@ -174,27 +177,33 @@ export default function CandidateList({
 
             <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
               {filterOptions && onFilterChange && (
-                <select
-                  value={filterValue}
-                  onChange={(e) => onFilterChange(e.target.value)}
-                  className={`px-3 py-2 w-40 ${skin.field} ${FOCUS}`}
-                >
-                  {filterOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={filterValue}
+                    onChange={(e) => onFilterChange(e.target.value)}
+                    className={`cursor-pointer appearance-none pl-3 pr-8 py-2 w-52 rounded-lg ${skin.field} ${FOCUS}`}
+                  >
+                    {filterOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
+                  />
+                </div>
               )}
 
-              <div className="relative w-full sm:w-72">
+              <div className={`relative w-full ${searchWidth}`}>
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-ink/40" />
                 </div>
                 <input
                   type="text"
                   placeholder="Search candidates..."
-                  className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm ${skin.field} ${FOCUS}`}
+                  className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
                   value={searchTerm}
                   onChange={(e) => onSearchTermChange?.(e.target.value)}
                 />
@@ -286,7 +295,7 @@ export default function CandidateList({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${skin.surface} text-ink/70 border ${skin.edge} max-w-[150px] truncate`} title={candidate.experience}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${skin.surface} text-ink/70 border ${skin.edge} max-w-[150px] truncate`} title={candidate.experience}>
                         {formatExperience(candidate.experience)}
                       </span>
                     </td>

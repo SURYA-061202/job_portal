@@ -264,7 +264,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
                 <span
-                  className="inline-flex shrink-0 items-center whitespace-nowrap border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
+                  className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
                   title="Interview status"
                 >
                   {statusLabel}
