@@ -139,7 +139,7 @@ export default function Dashboard() {
           />
         );
       case 'interviews':
-        return <InterviewsTab userRole={userRole} userId={userId} />;
+        return <InterviewsTab userRole={userRole} userId={userId} onCandidateSelected={() => setActiveTab('selected')} />;
       case 'selected':
         return <SelectedCandidatesTab userRole={userRole} userId={userId} />;
       case 'notifications':

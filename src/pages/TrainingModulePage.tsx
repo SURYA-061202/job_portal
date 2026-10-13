@@ -4,7 +4,7 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, doc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { BookOpen, X, ChevronLeft, AlertCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { Skeleton, ContentCardSkeleton } from '@/components/user/SkeletonLoaders';
 
@@ -73,7 +73,7 @@ export default function TrainingModulePage() {
 
         } catch (error) {
             console.error('Error fetching training data:', error);
-            toast.error('Failed to load training modules');
+            popup.error('Failed to load training modules');
         } finally {
             setLoading(false);
         }
@@ -92,10 +92,10 @@ export default function TrainingModulePage() {
             await setDoc(doc(db, 'users', user.uid, 'testResults', testId), result);
             setUserResults(prev => ({ ...prev, [testId]: result }));
             setActiveTest(null);
-            toast.success(`Assessment completed! Score: ${score}/${total}`);
+            popup.success(`Assessment completed! Score: ${score}/${total}`);
         } catch (error) {
             console.error('Error saving test result:', error);
-            toast.error('Failed to save assessment result');
+            popup.error('Failed to save assessment result');
         }
     };
 

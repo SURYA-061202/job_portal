@@ -16,10 +16,11 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-import { Loader2, Users, Briefcase, MapPin } from 'lucide-react';
+import { Users, Briefcase, MapPin } from 'lucide-react';
 import CustomDropdown from '@/components/CustomDropdown';
 import { BRAND, CHART_COLORS } from '@/constants/colors';
 import { useSkin } from '@/styles/skin';
+import { AnalyticsSkeleton } from '@/components/user/SkeletonLoaders';
 
 // Lightness steps of the one brand orange (see constants/colors.ts)
 const COLORS = CHART_COLORS;
@@ -36,55 +37,50 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
         const fetchData = async () => {
             try {
                 const isAdmin = userRole === 'admin';
-                const candidatesRef = collection(db, 'candidates');
                 const jobsRef = collection(db, 'recruits');
 
-                // Recruiters only see analytics for posts/candidates they created; admin sees all.
-                const candQuery = (!isAdmin && userId) ? fsQuery(candidatesRef, where('recruiterId', '==', userId)) : fsQuery(candidatesRef);
+                // Recruiters only see analytics for posts they created; admin sees all.
                 const jobsQuery = (!isAdmin && userId) ? fsQuery(jobsRef, where('recruiterId', '==', userId)) : fsQuery(jobsRef);
 
-                const [candSnapshot, jobsSnapshot, usersSnapshot] = await Promise.all([
-                    getDocs(candQuery),
+                const [usersSnapshot, jobsSnapshot] = await Promise.all([
+                    getDocs(collection(db, 'users')),
                     getDocs(jobsQuery),
-                    !isAdmin ? getDocs(collection(db, 'users')) : Promise.resolve(null)
                 ]);
 
-                const uploadedCandidates = candSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Candidate[];
-
-                // For recruiters, also fold in registered users (job seekers) so analytics reflects
-                // the same two pools they see in the Candidates tab: their own uploads + registered users.
+                // Candidate analytics are based on registered job seekers only
+                // (users with role 'user') - uploaded/parsed resumes are excluded.
                 const registeredUsers: Candidate[] = [];
-                if (usersSnapshot) {
-                    usersSnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        if (data.role !== 'user') return;
-                        registeredUsers.push({
-                            id: doc.id,
-                            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed User',
-                            email: data.email || '',
-                            phone: data.mobile || '',
-                            role: data.department || 'User',
-                            experience: data.yearsOfExperience || '',
-                            skills: getUserSkills(data),
-                            resumeUrl: data.resumeUrl || '',
-                            extractedData: {
-                                summary: '',
-                                workExperience: [],
-                                education: getUserEducation(data),
-                                skills: getUserSkills(data),
-                                certifications: data.certifications || [],
-                                projects: data.keyProjects || data.projects || []
-                            },
+                usersSnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.role !== 'user') return;
+                    registeredUsers.push({
+                        id: doc.id,
+                        name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed User',
+                        email: data.email || '',
+                        phone: data.mobile || '',
+                        role: data.department || 'User',
+                        experience: data.yearsOfExperience || '',
+                        skills: getUserSkills(data),
+                        resumeUrl: data.resumeUrl || '',
+                        // Profile-tab location ("City, State") drives the location analytics.
+                        address: data.address || '',
+                        extractedData: {
+                            summary: '',
+                            workExperience: [],
                             education: getUserEducation(data),
-                            createdAt: data.createdAt,
-                            updatedAt: data.updatedAt,
-                            status: 'pending' as any,
-                            rankings: data.rankings
-                        } as Candidate);
-                    });
-                }
+                            skills: getUserSkills(data),
+                            certifications: data.certifications || [],
+                            projects: data.keyProjects || data.projects || []
+                        },
+                        education: getUserEducation(data),
+                        createdAt: data.createdAt,
+                        updatedAt: data.updatedAt,
+                        status: 'pending' as any,
+                        rankings: data.rankings
+                    } as Candidate);
+                });
 
-                setCandidates(isAdmin ? uploadedCandidates : [...uploadedCandidates, ...registeredUsers]);
+                setCandidates(registeredUsers);
                 setJobPosts(jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as RecruitmentRequest[]);
             } catch (error) {
                 console.error("Error fetching analytics data:", error);
@@ -130,10 +126,12 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     const locationData = useMemo(() => {
         const counts: Record<string, number> = {};
         candidates.forEach(c => {
-            let loc = 'Unknown';
-            if (c.extractedData?.workExperience?.length) {
-                loc = (c.extractedData.workExperience[0] as any).location || 'Unknown';
-            }
+            // Location comes from the profile tab's address field; resume
+            // work experience is only a fallback for older data.
+            const profileAddress = (c as unknown as { address?: string }).address;
+            let loc = profileAddress
+                || (c.extractedData?.workExperience?.[0] as any)?.location
+                || 'Unknown';
             loc = loc.split(',')[0].trim();
             if (loc.length > 15) loc = 'Other';
             counts[loc] = (counts[loc] || 0) + 1;
@@ -210,11 +208,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     }, [selectedSkill, jobPosts]);
 
     if (loading) {
-        return (
-            <div className="flex h-96 items-center justify-center bg-muted">
-                <Loader2 className="w-8 h-8 animate-spin text-brand" />
-            </div>
-        );
+        return <AnalyticsSkeleton />;
     }
 
     return (
@@ -222,30 +216,17 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Header Section - static, does not scroll. Posts tab
                         masthead recipe: brand wash over the whole header,
-                        title row (heading, count badge, stat chip) above a
-                        description row. */}
-                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
+                        title row above a description row. No divider between
+                        the two rows and no count badges on the title. */}
+                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} rounded-lg ${skin.headerWash}`}>
                         {/* Title row */}
-                        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                <h2 className={skin.heading}>Analytics</h2>
-                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
-                                    <span
-                                        aria-hidden="true"
-                                        className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                    />
-                                    {totalCandidates} Candidates · {jobPosts.length} Posts
-                                </span>
-                                <span className={`hidden shrink-0 items-center gap-1.5 sm:inline-flex ${skin.statChip}`}>
-                                    <BarChart className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
-                                    {allDepartments.length} Departments
-                                </span>
-                            </div>
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-3.5 pb-1 sm:px-5">
+                            <h2 className={skin.heading}>Analytics</h2>
                         </div>
 
                         {/* Description row */}
                         <div className="px-4 py-2.5 sm:px-5">
-                            <p className={skin.body}>Insights about candidates, departments, and skills</p>
+                            <p className={skin.body}>Insights into candidate experience and location, and post departments and skills</p>
                         </div>
                     </div>
 
@@ -253,7 +234,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2 space-y-6">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
+                        <div className={`bg-surface p-4 rounded-lg border border-border flex items-center hover:border-ink/40`}>
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Users className="w-5 h-5" />
                             </div>
@@ -262,7 +243,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{totalCandidates}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
+                        <div className={`bg-surface p-4 rounded-lg border border-border flex items-center hover:border-ink/40`}>
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -271,7 +252,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{avgExperience} Yrs</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
+                        <div className={`bg-surface p-4 rounded-lg border border-border flex items-center hover:border-ink/40`}>
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <MapPin className="w-5 h-5" />
                             </div>
@@ -280,7 +261,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-lg font-bold text-ink truncate max-w-[100px]">{locationData[0]?.name || 'N/A'}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
+                        <div className={`bg-surface p-4 rounded-lg border border-border flex items-center hover:border-ink/40`}>
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -289,7 +270,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 <h3 className="text-xl font-bold text-ink">{jobPosts.length}</h3>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-2xl border border-border shadow-md flex items-center hover:border-ink/40">
+                        <div className={`bg-surface p-4 rounded-lg border border-border flex items-center hover:border-ink/40`}>
                             <div className="p-2 rounded-lg bg-brand/10 text-brand mr-3">
                                 <Briefcase className="w-5 h-5" />
                             </div>
@@ -302,7 +283,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
 
                     {/* Experience & Location Side by Side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-md hover:border-ink/40">
+                        <div className={`bg-surface p-4 sm:p-6 rounded-lg border border-border hover:border-ink/40`}>
                             <h3 className="text-lg font-semibold text-ink mb-4">Experience Distribution</h3>
                             <div className="h-56 sm:h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -316,7 +297,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="bg-surface p-4 sm:p-6 rounded-2xl border border-border shadow-md hover:border-ink/40">
+                        <div className={`bg-surface p-4 sm:p-6 rounded-lg border border-border hover:border-ink/40`}>
                             <h3 className="text-lg font-semibold text-ink mb-4">Candidates by Location (Top 7)</h3>
                             <div className="h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -335,7 +316,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                     {/* Department & Skills Distribution */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* Department Distribution */}
-                        <div className="bg-surface rounded-2xl border border-border shadow-md p-6 hover:border-ink/40">
+                        <div className={`bg-surface rounded-lg border border-border p-6 hover:border-ink/40`}>
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-ink">Department Distribution</h3>
                                 <CustomDropdown
@@ -363,15 +344,15 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                             ) : (
                                 departmentStats && (
                                     <div className="space-y-4 mt-6">
-                                        <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
+                                        <div className={`bg-brand/10 border border-brand/20 rounded-lg p-4`}>
                                             <div className="text-sm text-ink/70 mb-1">Total Job Posts</div>
                                             <div className="text-2xl font-bold text-brand">{departmentStats.totalPosts}</div>
                                         </div>
-                                        <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
+                                        <div className={`bg-brand/10 border border-brand/20 rounded-lg p-4`}>
                                             <div className="text-sm text-ink/70 mb-1">Total Openings</div>
                                             <div className="text-2xl font-bold text-brand">{departmentStats.totalOpenings}</div>
                                         </div>
-                                        <div className="bg-muted border border-border rounded-lg p-4">
+                                        <div className={`bg-muted border border-border rounded-lg p-4`}>
                                             <div className="text-sm text-ink/70 mb-1">Salary Ranges</div>
                                             <div className="text-sm font-medium text-ink/80">{departmentStats.avgSalary}</div>
                                         </div>
@@ -381,7 +362,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         </div>
 
                         {/* Skills Distribution */}
-                        <div className="bg-surface rounded-2xl border border-border shadow-md p-6 hover:border-ink/40">
+                        <div className={`bg-surface rounded-lg border border-border p-6 hover:border-ink/40`}>
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-ink">Skills Distribution</h3>
                                 <CustomDropdown
@@ -409,15 +390,15 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                             ) : (
                                 skillStats && (
                                     <div className="space-y-4 mt-6">
-                                        <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
+                                        <div className={`bg-brand/10 border border-brand/20 rounded-lg p-4`}>
                                             <div className="text-sm text-ink/70 mb-1">Job Posts Requiring This Skill</div>
                                             <div className="text-2xl font-bold text-brand">{skillStats.totalPosts}</div>
                                         </div>
-                                        <div className="bg-brand/10 border border-brand/20 rounded-lg p-4">
+                                        <div className={`bg-brand/10 border border-brand/20 rounded-lg p-4`}>
                                             <div className="text-sm text-ink/70 mb-1">Departments</div>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {skillStats.departments.map((dept) => (
-                                                    <span key={dept} className="px-2 py-1 bg-brand/10 border border-brand/20 text-brand text-xs font-medium rounded-full">
+                                                    <span key={dept} className={`px-2 py-1 bg-brand/10 border border-brand/20 text-brand text-xs font-medium rounded-lg`}>
                                                         {dept}
                                                     </span>
                                                 ))}

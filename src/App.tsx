@@ -1,6 +1,5 @@
 import './index.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import { PopupProvider } from './components/ui/Popup';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -37,7 +36,6 @@ function App() {
           <Route path="/verify-details" element={<VerifyDetailsPage />} />
           <Route path="/matching-jobs" element={<MatchingJobs />} />
         </Routes>
-        <Toaster position="bottom-center" />
       </PopupProvider>
     </BrowserRouter>
   );

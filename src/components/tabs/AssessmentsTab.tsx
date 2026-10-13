@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, X, ClipboardCheck, BookOpen, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -51,7 +51,7 @@ export default function AssessmentsTab() {
             setSections(data);
         } catch (error) {
             console.error('Error fetching assessments:', error);
-            toast.error('Failed to load assessments');
+            popup.error('Failed to load assessments');
         } finally {
             setLoading(false);
         }
@@ -65,13 +65,13 @@ export default function AssessmentsTab() {
                 questions: [],
                 createdAt: new Date()
             });
-            toast.success('Assessment section added!');
+            popup.success('Assessment section added!');
             setNewSection({ title: '', description: '' });
             setIsAddingSection(false);
             fetchSections();
         } catch (error) {
             console.error('Error adding section:', error);
-            toast.error('Failed to add section');
+            popup.error('Failed to add section');
         }
     };
 
@@ -94,11 +94,11 @@ export default function AssessmentsTab() {
             await updateDoc(doc(db, 'assessments', sectionId), {
                 questions: updatedQuestions
             });
-            toast.success('Questions updated!');
+            popup.success('Questions updated!');
             fetchSections();
         } catch (error) {
             console.error('Error updating questions:', error);
-            toast.error('Failed to save questions');
+            popup.error('Failed to save questions');
         }
     };
 

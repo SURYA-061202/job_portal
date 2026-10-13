@@ -15,7 +15,7 @@ import {
 import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
 import PostCard from '@/components/recruitment/PostCard';
-import { toast } from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { X, ArrowRight, Search, Briefcase as BriefcaseIcon, SearchX, ChevronDown, ChevronUp, ChevronLeft, CalendarCheck, CalendarX, Clock } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -275,7 +275,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
             setItems(nextItems);
         } catch (error) {
             console.error('Error fetching pipeline data:', error);
-            toast.error('Failed to load pipeline');
+            popup.error('Failed to load pipeline');
         } finally {
             setLoading(false);
         }
@@ -289,14 +289,6 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     const postItems = useMemo(
         () => (selectedPost ? items.filter(i => i.postId === selectedPost.id) : []),
         [items, selectedPost]
-    );
-
-    // Candidates sitting in one of this post's stages. Anyone still at an earlier
-    // status (e.g. a fresh 'applied') isn't shown here, so this matches the sum
-    // of the column counts.
-    const visiblePostItems = useMemo(
-        () => postItems.filter(i => columns.some(c => c.match((i.status || '').toLowerCase()))),
-        [postItems, columns]
     );
 
     // Per-post count of candidates actually sitting in one of that post's stages,
@@ -336,10 +328,10 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 status: newStatus,
                 roundLabel: column?.title,
             });
-            toast.success(`Moved to ${column?.title || newStatus}`);
+            popup.success(`Moved to ${column?.title || newStatus}`);
         } catch (error) {
             console.error('Error updating status:', error);
-            toast.error('Failed to update status');
+            popup.error('Failed to update status');
         }
     };
 
@@ -385,12 +377,24 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     if (loading) {
         return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
+                {/* Header skeleton: same masthead shape as the loaded view. */}
+                <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`} role="status" aria-busy="true">
+                    <span className="sr-only">Loading posts…</span>
+                    <div className={`h-6 w-44 animate-pulse ${skin.skeleton}`} />
+                    <div className={`mt-3 h-4 w-1/2 max-w-md animate-pulse ${skin.skeleton}`} />
+                </div>
+                {/* Controls-row skeleton: search left, count right. */}
+                <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
+                    <div className={`h-9 w-full sm:w-72 animate-pulse ${skin.skeleton}`} />
+                    <div className={`h-6 w-24 animate-pulse ${skin.skeleton}`} />
+                </div>
+                {/* Same white results panel the Posts tab uses, so the grey
+                    cards read against a white body while loading too. */}
+                <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
                     {/* Same card-grid skeleton the Posts tab shows while loading. */}
-                    <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                        <span className="sr-only">Loading posts…</span>
+                    <div aria-hidden="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.surface} ${skin.radius} p-4 sm:p-5`}>
+                            <div key={i} className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
                                 <div className={`h-5 w-2/3 ${skin.skeleton}`} />
                                 <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
                                 <div className="mt-6 grid grid-cols-2">
@@ -423,46 +427,38 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
         return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-                {/* Header - Posts masthead recipe: brand-washed title row
-                    (heading + count badge, search at the right end) over a
-                    description row. */}
-                <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                    <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <h2 className={skin.heading}>Recruitment Pipeline</h2>
-                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                                <span
-                                    aria-hidden="true"
-                                    className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                />
-                                {posts.length}
-                            </span>
-                        </div>
-
-                        <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-                            <div className="relative w-full sm:w-72">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-4 w-4 text-ink/40" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search posts..."
-                                    className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="px-4 py-2.5 sm:px-5">
-                        <p className={skin.body}>Select a job post to manage its candidates through each stage.</p>
-                    </div>
+                {/* Header - title and description only. */}
+                <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+                    <h2 className={skin.heading}>Recruitment Pipeline</h2>
+                    <p className={`mt-1.5 ${skin.body}`}>Select a job post to manage its candidates through each stage.</p>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
+                {/* Controls row below the header: search at the left end, the
+                    posts count at the right end. Sits on the canvas. */}
+                <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
+                    <div className="relative w-full sm:w-72">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-ink/40" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search posts..."
+                            className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                        Posts: {posts.length}
+                    </span>
+                </div>
+
+                {/* Results - the only scrollable region, on a white panel
+                    with the posts themselves in the page grey, same recipe
+                    as the Posts tab. */}
+                <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
                     {filteredPosts.length === 0 ? (
-                        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} px-6 py-14 text-center`}>
+                        <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
                             <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
                                 {posts.length === 0 ? <BriefcaseIcon className="h-6 w-6" /> : <SearchX className="h-6 w-6" />}
                             </span>
@@ -507,51 +503,44 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-            {/* Header Section */}
-            {/* Header - Posts masthead recipe with back button and search. */}
-            <div className={`shrink-0 mb-4 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <button
-                            onClick={closePost}
-                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
-                            title="Back to posts"
-                            aria-label="Back to posts"
-                        >
-                            <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-                        </button>
+            {/* Header - back button with the title and description only. */}
+            <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+                <div className="flex min-w-0 items-center gap-2">
+                    <button
+                        onClick={closePost}
+                        className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                        title="Back to posts"
+                        aria-label="Back to posts"
+                    >
+                        <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+                    </button>
+                    <div className="min-w-0">
                         <h2 className={`${skin.heading} truncate`}>{selectedPost.jobTitle}</h2>
-                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                            <span
-                                aria-hidden="true"
-                                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                            />
-                            {visiblePostItems.length}
-                        </span>
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-                        <div className="relative w-full sm:w-72">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-ink/40" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search by name, role..."
-                                className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                        <p className={`mt-1.5 ${skin.body}`}>
+                            Move candidates through each stage, review their responses and track their progress across the interview rounds.
+                        </p>
                     </div>
                 </div>
+            </div>
 
-                <div className="px-4 py-2.5 sm:px-5">
-                    <p className={skin.body}>
-                        {rounds.length} interview round{rounds.length === 1 ? '' : 's'} · {visiblePostItems.length} candidate{visiblePostItems.length === 1 ? '' : 's'}
-                    </p>
+            {/* Controls row below the header: search at the left end, the
+                round count at the right end. Sits on the canvas. */}
+            <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
+                <div className="relative w-full sm:w-72">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-ink/40" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Search by name, role..."
+                        className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                    {rounds.length} {rounds.length === 1 ? 'Round' : 'Rounds'}
+                </span>
             </div>
 
             <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden hover-scrollbar pb-2">
@@ -565,7 +554,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                         return (
                             <div
                                 key={col.id}
-                                className={`flex-[0_0_300px] w-[300px] ${skin.canvas} ${skin.radius} flex flex-col h-full border ${skin.edge} border-t-4 border-brand ${skin.shadow}`}
+                                className={`flex-[0_0_300px] w-[300px] ${skin.surface} ${skin.radius} flex flex-col h-full border ${skin.edge} border-t-4 border-ink ${skin.shadow}`}
                                 onDragOver={onDragOver}
                                 onDrop={(e) => onDrop(e, col)}
                             >
@@ -584,7 +573,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                             onDragStart={(e) => onDragStart(e, item.key)}
                                             onClick={() => setDetailItem(item)}
                                             title="View interview response & details"
-                                            className={`p-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} cursor-grab active:cursor-grabbing transition-colors duration-200 ${skin.cardHover} group flex flex-col h-56 overflow-hidden`}
+                                            className={`p-3 border ${skin.edge} ${skin.cardSurface} ${skin.radius} cursor-grab active:cursor-grabbing transition-colors duration-200 ${skin.cardHover} group flex flex-col h-56 overflow-hidden`}
                                         >
                                             <div className="flex justify-between items-start mb-2 flex-shrink-0">
                                                 <h4 className="font-bold text-ink truncate pr-2" title={item.name}>{item.name}</h4>
@@ -596,7 +585,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 if (interview.response === 'accept') {
                                                     return (
                                                         <div className="mb-2 flex-shrink-0">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand/10 text-brand border border-brand/20">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-brand/10 text-brand border border-brand/20">
                                                                 <CalendarCheck className="h-2.5 w-2.5" />
                                                                 {interview.selectedDate || 'Confirmed'}
                                                             </span>
@@ -606,7 +595,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 if (interview.response) {
                                                     return (
                                                         <div className="mb-2 flex-shrink-0">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20">
                                                                 <CalendarX className="h-2.5 w-2.5" />
                                                                 Declined
                                                             </span>
@@ -630,7 +619,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 {Boolean(item.experience) && item.experience !== '0' && (
                                                     <div className="py-1.5 space-y-1">
                                                         <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Experience</span>
-                                                        <p className="leading-snug">{item.experience} YoE</p>
+                                                        <p className="leading-snug">{item.experience} Years of Experience</p>
                                                     </div>
                                                 )}
                                                 {item.skills.length > 0 && (
@@ -638,7 +627,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                         <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Skills</span>
                                                         <div className="flex flex-wrap gap-1">
                                                         {(expandedSkills.has(item.key) ? item.skills : item.skills.slice(0, 6)).map((skill, i) => (
-                                                            <span key={i} className={`${skin.tag} rounded-lg`}>
+                                                            <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
                                                                 {skill}
                                                             </span>
                                                         ))}
@@ -725,7 +714,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                         <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Courses</span>
                                                         <div className="flex flex-wrap gap-1">
                                                             {item.courses.map((course, i) => (
-                                                                <span key={i} className={`${skin.tag} rounded-lg`}>{course}</span>
+                                                                <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">{course}</span>
                                                             ))}
                                                         </div>
                                                     </div>
@@ -753,7 +742,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                     {advanceTo && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); updateStatus(item, advanceTo.targetStatus); }}
-                                                            className={`p-1 border border-ink bg-ink text-surface ${skin.radius} hover:border-brand hover:bg-brand hover:text-ink cursor-pointer ${FOCUS}`}
+                                                            className={`p-1 border border-ink bg-ink text-surface ${skin.radius} hover:bg-ink/80 cursor-pointer ${FOCUS}`}
                                                             title={`Move to ${advanceTo.title}`}
                                                         >
                                                             <ArrowRight className="h-3 w-3" />
@@ -786,11 +775,12 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     );
 }
 
+/** One label→value row on the grey fill, stacked with its siblings. */
 function DetailRow({ label, value }: { label: string; value?: string | null }) {
     const skin = useSkin();
     return (
-        <div className={`flex flex-col p-2.5 border ${skin.edge} ${skin.canvas} ${skin.radius}`}>
-            <span className={`mb-0.5 ${skin.micro}`}>{label}</span>
+        <div className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-3 py-2.5 border ${skin.edge} ${skin.canvas} ${skin.radius}`}>
+            <span className="text-xs font-medium text-ink/60">{label}</span>
             <span className="text-sm font-bold text-ink break-words">{value || '—'}</span>
         </div>
     );
@@ -808,57 +798,56 @@ function CandidateDetailModal({ item, interview, onClose }: { item: PipelineItem
         !!interview.experienceIn
     );
 
+    // One flat label→value list: the invite outcome first, then the verified
+    // details the candidate submitted.
+    const rows: { label: string; value?: string | null }[] = [];
+    if (accepted) {
+        rows.push({ label: 'Response', value: 'Accepted' });
+        if (interview?.selectedDate) rows.push({ label: 'Chosen Slot', value: interview.selectedDate });
+        if (interview?.roundType) rows.push({ label: 'Round', value: interview.roundType });
+        if (hasDetails) {
+            rows.push({ label: 'Date of Joining', value: interview?.dateOfJoining });
+            rows.push({ label: 'Current Salary', value: interview?.currentSalary });
+            if (interview?.expectedSalary) {
+                rows.push({ label: 'Expected Salary', value: `${interview.expectedSalary} / ${interview.expectedSalaryPeriod || 'month'}` });
+            }
+            rows.push({ label: 'Years of Experience', value: interview?.yearsExperience });
+            rows.push({ label: 'Experience In', value: interview?.experienceIn });
+            rows.push({ label: 'Ready to Relocate', value: interview?.readyToRelocate });
+            rows.push({ label: 'Has a Laptop', value: interview?.laptop });
+        }
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/30 backdrop-blur-sm" onClick={onClose}>
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-lg max-h-[85vh] flex flex-col`} onClick={(e) => e.stopPropagation()}>
-                <div className={`px-6 py-4 border-b ${skin.edge} flex justify-between items-start gap-3 flex-shrink-0`}>
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-2xl max-h-[85vh] flex flex-col`} onClick={(e) => e.stopPropagation()}>
+                {/* Header - candidate identity with the brand wash, the same
+                    masthead recipe as the rest of the Posts module. */}
+                <div className={`px-6 py-4 border-b ${skin.edge} ${skin.headerWash} flex justify-between items-start gap-3 flex-shrink-0`}>
                     <div className="min-w-0">
                         <h3 className={`${skin.cardTitle} truncate`}>{item.name}</h3>
-                        <p className="text-sm text-ink/60 truncate">{item.role}{item.experience ? ` · ${item.experience} YoE` : ''}</p>
+                        <p className={`mt-1 ${skin.meta}`}>
+                            {item.role}{item.experience ? ` · ${item.experience} Years of Experience` : ''}
+                        </p>
                     </div>
-                    <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} transition-colors flex-shrink-0 ${FOCUS}`}>
+                    <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink cursor-pointer ${skin.radius} transition-colors flex-shrink-0 ${FOCUS}`} aria-label="Close">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                    <div>
-                        <h4 className="text-sm font-bold text-ink mb-3">Interview Response</h4>
-                        {!interview ? (
-                            <p className="text-sm text-ink/60 italic">No interview invite has been sent to this candidate yet.</p>
-                        ) : !interview.response ? (
-                            <p className="text-sm text-ink/60 italic">Invite sent — waiting for the candidate to respond.</p>
-                        ) : accepted ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <DetailRow label="Response" value="Accepted" />
-                                <DetailRow label="Chosen Slot" value={interview.selectedDate} />
-                                {interview.roundType && <DetailRow label="Round" value={interview.roundType} />}
-                            </div>
-                        ) : (
-                            <p className="text-sm font-bold text-destructive">Candidate declined the invitation.</p>
-                        )}
-                    </div>
-
-                    {accepted && (
-                        <div>
-                            <h4 className="text-sm font-bold text-ink mb-3">Verified Details</h4>
-                            {hasDetails ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <DetailRow label="Date of Joining" value={interview?.dateOfJoining} />
-                                    <DetailRow label="Current Salary" value={interview?.currentSalary} />
-                                    <DetailRow
-                                        label="Expected Salary"
-                                        value={interview?.expectedSalary ? `${interview.expectedSalary} / ${interview.expectedSalaryPeriod || 'month'}` : ''}
-                                    />
-                                    <DetailRow label="Years of Experience" value={interview?.yearsExperience} />
-                                    <DetailRow label="Experience In" value={interview?.experienceIn} />
-                                    <DetailRow label="Ready to Relocate" value={interview?.readyToRelocate} />
-                                    <DetailRow label="Has a Laptop" value={interview?.laptop} />
-                                </div>
-                            ) : (
-                                <p className="text-sm text-ink/60 italic">The candidate accepted before details were collected on this step.</p>
-                            )}
-                        </div>
+                <div className="p-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+                    {!interview ? (
+                        <p className="text-sm text-ink/60 italic">No interview invite has been sent to this candidate yet.</p>
+                    ) : !interview.response ? (
+                        <p className="text-sm text-ink/60 italic">Invite sent — waiting for the candidate to respond.</p>
+                    ) : !accepted ? (
+                        <p className="text-sm font-bold text-destructive">Candidate declined the invitation.</p>
+                    ) : hasDetails || interview.selectedDate || interview.roundType ? (
+                        rows.map((row) => (
+                            <DetailRow key={row.label} label={row.label} value={row.value} />
+                        ))
+                    ) : (
+                        <p className="text-sm text-ink/60 italic">The candidate accepted before details were collected on this step.</p>
                     )}
                 </div>
             </div>

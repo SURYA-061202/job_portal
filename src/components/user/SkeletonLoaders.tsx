@@ -103,3 +103,45 @@ export function ContentCardSkeleton({ lines = 3 }: { lines?: number }) {
         </div>
     );
 }
+
+/** Placeholder shaped like the Analytics dashboard: header, KPI row and the
+ *  two chart rows, so the layout does not jump when data arrives. */
+export function AnalyticsSkeleton() {
+    const skin = useSkin();
+    return (
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
+            <div className="flex-1 flex flex-col min-h-0 space-y-6">
+                {/* Header panel */}
+                <div className={`shrink-0 border ${skin.edge} ${skin.surface} rounded-lg px-4 py-3.5 sm:px-5`}>
+                    <Skeleton className="h-7 w-40" />
+                    <Skeleton className="mt-3 h-4 w-2/3 max-w-md" />
+                </div>
+
+                {/* KPI cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 flex items-center gap-3`}>
+                            <Skeleton className="h-9 w-9 shrink-0" />
+                            <div className="min-w-0 flex-1 space-y-2">
+                                <Skeleton className="h-3 w-20" />
+                                <Skeleton className="h-5 w-12" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Two rows of two chart cards */}
+                {[0, 1].map((row) => (
+                    <div key={row} className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        {[0, 1].map((col) => (
+                            <div key={col} className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 sm:p-6`}>
+                                <Skeleton className="h-5 w-44" />
+                                <Skeleton className="mt-4 h-56 sm:h-64 w-full" />
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

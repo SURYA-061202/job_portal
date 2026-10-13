@@ -8,7 +8,7 @@ import type { Candidate, RecruitmentRequest } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import CustomDropdown from '@/components/CustomDropdown';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import openai, { isOpenAIConfigured } from '@/lib/openai';
 import { analyzeCandidateScores } from '@/lib/aiService';
 import { useSkin } from '@/styles/skin';
@@ -116,7 +116,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             if (sanitized.email) {
                 const emailExists = await checkEmailExistsInUsers(sanitized.email);
                 if (emailExists) {
-                    toast.error(`This email (${sanitized.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
+                    popup.error(`This email (${sanitized.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
                     setLoading(false);
                     return;
                 }
@@ -152,16 +152,16 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             const docRef = await addDoc(collection(db, 'candidates'), candidateData);
 
             if (parseFailed || missingCoreInfo) {
-                toast.error('Details could not be extracted. Please enter them manually.');
+                popup.error('Details could not be extracted. Please enter them manually.');
                 setManualCandidate({ id: docRef.id, ...candidateData } as Candidate);
             } else {
-                toast.success(`Resume uploaded successfully! Extracted data for ${candidateData.name}`);
+                popup.success(`Resume uploaded successfully! Extracted data for ${candidateData.name}`);
 
                 // If a job is selected, trigger AI scoring immediately
                 if (selectedJobId) {
                     const selectedJob = jobPosts.find(j => j.id === selectedJobId);
                     if (selectedJob && selectedJob.description) {
-                        toast.loading(`Scoring against "${selectedJob.jobTitle}"...`, { id: 'upload-scoring' });
+                        popup.loading(`Scoring against "${selectedJob.jobTitle}"...`, { id: 'upload-scoring' });
                         try {
                             // Construct a full Candidate object with ID
                             const newCandidateWithId = { id: docRef.id, ...candidateData } as Candidate;
@@ -172,10 +172,10 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                                 selectedJob.id!,
                                 selectedJob.jobTitle
                             );
-                            toast.success(`Scored against ${selectedJob.jobTitle}!`, { id: 'upload-scoring' });
+                            popup.success(`Scored against ${selectedJob.jobTitle}!`, { id: 'upload-scoring' });
                         } catch (scoreErr) {
                             console.error('Error scoring new candidate:', scoreErr);
-                            toast.error('Failed to generate AI score', { id: 'upload-scoring' });
+                            popup.error('Failed to generate AI score', { id: 'upload-scoring' });
                         }
                     }
                 }
@@ -187,9 +187,9 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             console.error('Error uploading resume:', error);
 
             if (error.message && error.message.includes('Storage policy')) {
-                toast.error('Storage configuration issue. Please check Firebase Storage settings.');
+                popup.error('Storage configuration issue. Please check Firebase Storage settings.');
             } else {
-                toast.error(error.message || 'Failed to upload resume');
+                popup.error(error.message || 'Failed to upload resume');
             }
         } finally {
             setLoading(false);
@@ -303,31 +303,38 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
 
     const handleManualDetailsSaved = async () => {
         setManualCandidate(null);
-        toast.success('Resume uploaded successfully!');
+        popup.success('Resume uploaded successfully!');
         setUploadKey(prev => prev + 1);
     };
 
     return (
-        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col h-full`}>
-            {/* Header Section - Posts masthead recipe: brand-washed title row
-                carrying the heading, count badge and job selector. */}
-            {/* No overflow-hidden: it would clip the job-selector menu. The
-                wash is on the panel itself, so the radius still rounds it. */}
-            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                {/* Title row */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 flex flex-col h-full`}>
+            {/* Header + controls group - tighter space-y-3 gap between the
+                masthead and the count/selector row, so the row sits closer to
+                the header than the page's outer space-y-6 rhythm. */}
+            <div className="shrink-0 space-y-3">
+                {/* Header Section - Posts masthead recipe: brand-washed title row
+                    with the description below it. The count badge and job selector
+                    moved to the controls row on the canvas below the panel. */}
+                <div className={`border ${skin.edge} ${skin.surface} rounded-lg ${skin.headerWash}`}>
+                    {/* Title row */}
+                    <div className="px-4 py-3.5 sm:px-5">
                         <h2 className={skin.heading}>Upload Resumes</h2>
-                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count}`}>
-                            <span
-                                aria-hidden="true"
-                                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                            />
-                            {jobPosts.length} {jobPosts.length === 1 ? 'Post' : 'Posts'}
-                        </span>
                     </div>
 
-                    {/* Job selector at the right end */}
+                    {/* Description row */}
+                    <div className="px-4 pb-3.5 pt-0 sm:px-5">
+                        <p className={skin.body}>Upload candidate resumes to parse details and add them to the pipeline.</p>
+                    </div>
+                </div>
+
+                {/* Controls row below the header - posts count at the left end,
+                    job selector at the right end. */}
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                        {jobPosts.length} {jobPosts.length === 1 ? 'Post' : 'Posts'}
+                    </span>
+
                     <div className="flex w-full justify-end sm:w-auto">
                         <CustomDropdown
                             value={selectedJobId}
@@ -340,14 +347,9 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                         />
                     </div>
                 </div>
-
-                {/* Description row */}
-                <div className="px-4 py-2.5 sm:px-5">
-                    <p className={skin.body}>Upload candidate resumes to parse details and add them to the pipeline.</p>
-                </div>
             </div>
 
-            <div className={`flex-1 min-h-0 flex items-center justify-center p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+            <div className={`mt-3 flex-1 min-h-0 flex items-center justify-center p-6 border ${skin.edge} ${skin.surface} rounded-lg`}>
                 <div className="max-w-2xl w-full">
                     <ResumeUpload key={uploadKey} onUpload={handleResumeUpload} loading={loading} />
                 </div>

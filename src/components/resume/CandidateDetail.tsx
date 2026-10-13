@@ -186,95 +186,130 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
     <div className="flex flex-col flex-1 min-h-0">
       {/* Masthead - the Posts/Candidates recipe: hairline edge, surface, radius,
           elevation and brand wash from the active skin. Title row carries the
-          back control, candidate identity and the page actions. */}
+          back control, the candidate name with the post title beside it, and
+          the interview status pinned to the right end; a description sits under
+          the title. */}
       <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
+        <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5`}>
           {/* Left: Back + Name/Post */}
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={onBack}
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
               title="Back"
               aria-label="Go back"
             >
               <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
             </button>
-            <div className="flex min-w-0 flex-col">
+            <div className="min-w-0">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h1 className={`${skin.heading} max-w-full truncate`}>
                   {candidate.name}
                 </h1>
-                {activePostId && (
-                  statusLabel ? (
-                    <span
-                      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink`}
-                      title="Interview status"
-                    >
-                      {statusLabel}
+                {activePost?.jobTitle && (
+                  <>
+                    <span aria-hidden="true" className={skin.subtle}>·</span>
+                    <span className={`${skin.heading} max-w-full truncate`}>
+                      {activePost.jobTitle}
                     </span>
-                  ) : candidate.email ? (
-                    <button
-                      onClick={() => setShowInviteModal(true)}
-                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand active:scale-95 ${FOCUS}`}
-                      title="Send Interview Invite"
-                      aria-label="Send interview invite"
-                    >
-                      <MailPlus className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  ) : null
+                  </>
                 )}
               </div>
+              {/* Description - starts at the title's left edge. */}
+              <p className={`mt-1.5 ${skin.body}`}>
+                Review the candidate's contact details, skills, education and experience.
+              </p>
+              {candidate.selectedInterviewDate && (
+                <p className={`${skin.meta} mt-1`}>Interview on {candidate.selectedInterviewDate}</p>
+              )}
             </div>
           </div>
 
-          {/* Right: Action Buttons */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <button
-              onClick={handleRemove}
-              disabled={removing}
-              className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-destructive bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-wider text-destructive transition-colors duration-200 hover:bg-destructive hover:text-white disabled:opacity-50 ${FOCUS}`}
-            >
-              {removing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-              {removing ? 'Deleting...' : 'Delete'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => candidate.resumeUrl && setShowResumePreview(true)}
-              className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
-            >
-              Resume
-            </button>
-          </div>
+          {/* Right end: interview status, or the invite action while the
+              candidate is still awaiting an invite. */}
+          {activePostId && (
+            <div className="flex shrink-0 items-center gap-2">
+              {statusLabel ? (
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink`}
+                  title="Interview status"
+                >
+                  {statusLabel}
+                </span>
+              ) : candidate.email ? (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink active:scale-95 ${FOCUS}`}
+                  title="Send Interview Invite"
+                  aria-label="Send interview invite"
+                >
+                  <MailPlus className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          )}
         </div>
-
-        {/* Description row - separated from the title row by the same hairline
-            used across the other mastheads. */}
-        {(activePost?.jobTitle || candidate.selectedInterviewDate) && (
-          <div className="px-4 py-2.5 sm:px-5">
-            {activePost?.jobTitle && (
-              <span className="inline-flex max-w-full items-center truncate rounded-lg border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-sm font-medium text-brand">
-                {activePost.jobTitle}
-              </span>
-            )}
-            {candidate.selectedInterviewDate && (
-              <p className={`${skin.meta} mt-1`}>Interview on {candidate.selectedInterviewDate}</p>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Content - the surface panel fills the height that remains below the
-          masthead, so its border/radius stay fixed; only the content inside
-          the panel scrolls. */}
+      {/* Controls row below the header: context field at the left end, Delete
+          and Resume at the right end. Reached via the Posts module the field is
+          the post's department; via the Candidates module it is the candidate's
+          role. The field is a filled chip with a black border: normal-case
+          label, bold value. */}
+      <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {activePostId ? (
+            activePost?.department && (
+              <span className="inline-flex max-w-full items-center gap-1.5">
+                <span className="shrink-0 text-xs font-medium text-ink/60">Department</span>
+                <span className="max-w-full truncate rounded-lg border border-ink bg-surface px-2.5 py-1 text-sm font-bold text-ink">{activePost.department}</span>
+              </span>
+            )
+          ) : (
+            candidate.role && (
+              <span className="inline-flex max-w-full items-center gap-1.5">
+                <span className="shrink-0 text-xs font-medium text-ink/60">Role</span>
+                <span className="max-w-full truncate rounded-lg border border-ink bg-surface px-2.5 py-1 text-sm font-bold text-ink">{candidate.role}</span>
+              </span>
+            )
+          )}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            onClick={handleRemove}
+            disabled={removing}
+            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-destructive bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-wider text-destructive transition-colors duration-200 hover:bg-destructive hover:text-white disabled:opacity-50 ${FOCUS}`}
+          >
+            {removing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {removing ? 'Deleting...' : 'Delete'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => candidate.resumeUrl && setShowResumePreview(true)}
+            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+          >
+            Resume
+          </button>
+        </div>
+      </div>
+
+      {/* Content - the white results panel fills the height that remains
+          below the header; every section inside it is a grey card, the same
+          recipe as the Recruitment Detail page. The panel's top and bottom
+          padding are pinned strips on the panel itself, so they stay at the
+          top and bottom of the body bg while the sections scroll between
+          them. */}
       <div className="flex-1 min-h-0 flex flex-col pb-4">
-        <div className={`flex-1 min-h-0 flex flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className={`p-6 divide-y ${skin.divide}`}>
+        <div className={`flex-1 min-h-0 flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
+            <div className="h-4 sm:h-6 shrink-0" aria-hidden="true" />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="px-4 sm:px-6 space-y-4">
             {/* Applied Posts - Candidates-module path only; when the detail is
                 reached through a post the context is already known. */}
             {!isPostContext && (
-            <div className="py-6 first:pt-0 last:pb-0">
+            <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
               <h3 className={`${skin.cardTitle} mb-4`}>
                 Applied Posts
               </h3>
@@ -288,7 +323,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               ) : (
                 <div className="space-y-3">
                   {appliedPosts.map((app, index) => (
-                    <div key={index} className={`transition-colors ${skin.rowHover}`}>
+                    <div key={index}>
                       {app.postDetails ? (
                         <div>
                           <div className="flex items-start justify-between">
@@ -309,7 +344,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                                 Applied: {app.created_at?.toDate?.() ? new Date(app.created_at.toDate()).toLocaleDateString() : (app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A')}
                               </p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${app.status === 'shortlisted' ? 'bg-brand/10 text-brand border-brand/20' :
+                            <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${app.status === 'shortlisted' ? 'bg-brand/10 text-brand border-brand/20' :
                               app.status === 'selected' ? 'bg-ink/10 text-ink border-ink/20' :
                                 app.status === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/20' :
                                   app.status === 'interviewed' ? 'bg-muted text-ink/70 border-border' :
@@ -335,7 +370,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Contact Info */}
-            <div className="py-6 first:pt-0 last:pb-0">
+            <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Contact Information
               </h3>
@@ -355,15 +390,16 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               </div>
             </div>
 
-            {/* Skills */}
+            {/* Skills - grey tags, the same recipe as the Recruitment Detail
+                page's Required Skills section. */}
             {candidate.skills && candidate.skills.length > 0 && (
-              <div className="py-6 first:pt-0 last:pb-0">
+              <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
                 <h3 className={`${skin.cardTitle} mb-3`}>
                   Skills
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {candidate.skills.map((skill, index) => (
-                    <span key={index} className={`${skin.tag} rounded-lg`}>
+                    <span key={index} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
                       {skill}
                     </span>
                   ))}
@@ -373,14 +409,9 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Education */}
             {candidate.education && candidate.education.length > 0 && (
-              <div className="py-6 first:pt-0 last:pb-0">
-                <h3 className={`${skin.cardTitle} mb-4 flex flex-wrap items-center gap-3`}>
+              <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
+                <h3 className={`${skin.cardTitle} mb-4`}>
                   Education
-                  {candidate.education.filter((edu) => edu.cgpa).map((edu, i) => (
-                    <span key={i} className="inline-block rounded-lg bg-ink px-2 py-0.5 text-xs font-semibold text-surface">
-                      {isNaN(parseFloat(String(edu.cgpa))) ? edu.cgpa : `CGPA: ${edu.cgpa}`}
-                    </span>
-                  ))}
                 </h3>
                 <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-6">
                   {candidate.education.map((edu, index) => (
@@ -392,6 +423,11 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                         </p>
                       )}
                       <p className="text-ink/70">{edu.institution}</p>
+                      {edu.cgpa && (
+                        <p className="mt-2 text-sm text-ink/60">
+                          {isNaN(parseFloat(String(edu.cgpa))) ? edu.cgpa : `CGPA: ${edu.cgpa}`}
+                        </p>
+                      )}
                       {edu.year && <p className="mt-2 text-sm text-ink/60">{edu.year}</p>}
                     </div>
                   ))}
@@ -400,7 +436,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             )}
 
             {/* Experience */}
-            <div className="py-6 first:pt-0 last:pb-0">
+            <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
               <h3 className={`${skin.cardTitle} mb-3`}>
                 Experience
               </h3>
@@ -443,7 +479,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (projectLines.length > 0) {
                   return (
-                    <div className="py-6 first:pt-0 last:pb-0">
+                    <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Key Projects
                       </h3>
@@ -461,7 +497,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(projectsRaw) && projectsRaw.length > 0) {
                 return (
-                  <div className="py-6 first:pt-0 last:pb-0">
+                  <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Projects
                     </h3>
@@ -482,7 +518,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               return null;
             })()}
 
-            {/* Certifications */}
+            {/* Certifications - grey tags, the same recipe as the Recruitment
+                Detail page's Required Skills section. */}
             {(() => {
               const certificationsRaw = (candidate as any).certifications ?? (candidate as any).extractedData?.certifications;
 
@@ -490,15 +527,15 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
                 if (certLines.length > 0) {
                   return (
-                    <div className="py-6 first:pt-0 last:pb-0">
+                    <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
                       <h3 className={`${skin.cardTitle} mb-3`}>
                         Certifications
                       </h3>
-                      <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {certLines.map((line: string, index: number) => (
-                          <div key={index} className="text-ink/80">
+                          <span key={index} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
                             {line.trim()}
-                          </div>
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -508,21 +545,21 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
               if (Array.isArray(certificationsRaw) && certificationsRaw.length > 0) {
                 return (
-                  <div className="py-6 first:pt-0 last:pb-0">
+                  <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-4 sm:px-6 sm:py-5`}>
                     <h3 className={`${skin.cardTitle} mb-3`}>
                       Certifications
                     </h3>
-                    <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {certificationsRaw.map((cert: any, index: number) => {
                         const text = typeof cert === 'string' ? cert : (cert.certificate ?? cert.name ?? JSON.stringify(cert));
                         if (!text) return null;
                         return (
-                          <div key={index} className="text-ink/80">
+                          <span key={index} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
                             {text}
                             {cert.provider && (
-                              <span className="text-ink/60 text-xs ml-2">({cert.provider})</span>
+                              <span className="text-ink/50 ml-1">({cert.provider})</span>
                             )}
-                          </div>
+                          </span>
                         );
                       })}
                     </div>
@@ -533,7 +570,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
               return null;
             })()}
             </div>
-          </div>
+            </div>
+            <div className="h-4 sm:h-6 shrink-0" aria-hidden="true" />
         </div>
       </div>
 

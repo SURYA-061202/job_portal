@@ -35,9 +35,42 @@ function formatExperience(exp?: string) {
   return cleanExp.length > 20 ? `${cleanExp.substring(0, 17)}...` : cleanExp;
 }
 
+// Helper to decide if a candidate matches the current search term
+function candidateMatchesSearch(candidate: Candidate, term: string, postTitles?: Record<string, string>) {
+  if (!term) return true;
+  const q = term.toLowerCase();
+
+  // Collect searchable strings
+  const tokens: string[] = [];
+
+  // Include name and role as searchable fields
+  if (candidate.name) tokens.push(candidate.name);
+  if (candidate.role) tokens.push(candidate.role);
+  if (candidate.experience) tokens.push(candidate.experience);
+  if (candidate.email) tokens.push(candidate.email);
+
+  // Include the post title when a post map is provided (Selected Candidates)
+  const postId = (candidate as { postId?: string }).postId;
+  if (postTitles && postId && postTitles[postId]) tokens.push(postTitles[postId]);
+
+  // Treat "place" as company/institution names in work experience & education
+  (candidate.extractedData?.workExperience || []).forEach((we: any) => {
+    if (we.company) tokens.push(we.company);
+    if (we.location) tokens.push(we.location);
+    if (we.position) tokens.push(we.position);
+  });
+
+  (candidate.education || []).forEach((edu: any) => {
+    if (edu.institution) tokens.push(edu.institution);
+    if (edu.field) tokens.push(edu.field);
+  });
+
+  return tokens.some((t) => t?.toLowerCase().includes(q));
+}
+
 interface CandidateListProps {
   candidates: Candidate[];
-  onSelectCandidate: (candidate: Candidate) => void;
+  onSelectCandidate?: (candidate: Candidate) => void;
   loading: boolean;
   searchTerm?: string;
   onSearchTermChange?: (term: string) => void;
@@ -59,6 +92,10 @@ interface CandidateListProps {
   hideEmptyIcon?: boolean;
   /** Tailwind width class for the search field (applied at sm+; full width below). */
   searchWidth?: string;
+  /** Post title per post id — adds a "Post" column to the table when provided. */
+  postTitles?: Record<string, string>;
+  /** Extra per-row actions rendered in the Actions column, before the delete button. */
+  extraActions?: (candidate: Candidate) => React.ReactNode;
 }
 
 export default function CandidateList({
@@ -78,7 +115,9 @@ export default function CandidateList({
   onBack,
   hideRole = false,
   hideEmptyIcon = false,
-  searchWidth = 'sm:w-72'
+  searchWidth = 'sm:w-72',
+  postTitles,
+  extraActions
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
@@ -111,54 +150,22 @@ export default function CandidateList({
     }
   };
 
-  // Helper to decide if a candidate matches the current search term
-  const candidateMatchesSearch = (candidate: Candidate, term: string) => {
-    if (!term) return true;
-    const q = term.toLowerCase();
-
-    // Collect searchable strings
-    const tokens: string[] = [];
-
-    // Include name and role as searchable fields
-    if (candidate.name) tokens.push(candidate.name);
-    if (candidate.role) tokens.push(candidate.role);
-    if (candidate.experience) tokens.push(candidate.experience);
-    if (candidate.email) tokens.push(candidate.email);
-
-    // Treat "place" as company/institution names in work experience & education
-    (candidate.extractedData?.workExperience || []).forEach((we: any) => {
-      if (we.company) tokens.push(we.company);
-      if (we.location) tokens.push(we.location);
-      if (we.position) tokens.push(we.position);
-    });
-
-    (candidate.education || []).forEach((edu: any) => {
-      if (edu.institution) tokens.push(edu.institution);
-      if (edu.field) tokens.push(edu.field);
-    });
-
-    return tokens.some((t) => t?.toLowerCase().includes(q));
-  };
-
   // Memoised filtered list
   const filteredCandidates = useMemo(() => {
-    return candidates.filter((c) => candidateMatchesSearch(c, searchTerm));
-  }, [candidates, searchTerm]);
+    return candidates.filter((c) => candidateMatchesSearch(c, searchTerm, postTitles));
+  }, [candidates, searchTerm, postTitles]);
 
   return (
     <div className="space-y-4">
-      {/* Header with Search and Optional Filter — always shown, even while loading or empty,
-          so filter/search controls (e.g. the Selected/Rejected toggle) never disappear.
-          Posts masthead recipe: brand-washed title row with heading, count badge,
-          filter and search at the right end. */}
+      {/* Header - title and description with no line separator. */}
       {!hideHeader && (
-        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-          <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5${description ? ` border-b ${skin.edge}` : ''}`}>
+        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               {onBack && (
                 <button
                   onClick={onBack}
-                  className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                  className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
                   title="Back to posts"
                   aria-label="Back to posts"
                 >
@@ -166,61 +173,66 @@ export default function CandidateList({
                 </button>
               )}
               <h2 className={skin.heading}>{title || 'Candidates'}</h2>
-              <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                <span
-                  aria-hidden="true"
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                />
-                {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
-              </span>
-            </div>
-
-            <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-              {filterOptions && onFilterChange && (
-                <div className="relative">
-                  <select
-                    value={filterValue}
-                    onChange={(e) => onFilterChange(e.target.value)}
-                    className={`cursor-pointer appearance-none pl-3 pr-8 py-2 w-52 rounded-lg ${skin.field} ${FOCUS}`}
-                  >
-                    {filterOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
-                  />
-                </div>
-              )}
-
-              <div className={`relative w-full ${searchWidth}`}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-ink/40" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search candidates..."
-                  className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-                  value={searchTerm}
-                  onChange={(e) => onSearchTermChange?.(e.target.value)}
-                />
-              </div>
             </div>
           </div>
 
           {description && (
-            <div className="px-4 py-2.5 sm:px-5">
-              <p className={skin.body}>{description}</p>
-            </div>
+            <p className={`mt-1.5 ${skin.body}`}>{description}</p>
           )}
         </div>
       )}
 
+      {/* Controls row below the header: search at the left end; the candidate
+          count followed by the filter dropdown at the right. */}
+      {!hideHeader && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className={`relative w-full ${searchWidth}`}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-ink/40" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search candidates..."
+              className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+              value={searchTerm}
+              onChange={(e) => onSearchTermChange?.(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+              {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+            </span>
+
+            {filterOptions && onFilterChange && (
+              <div className="relative">
+                <select
+                  value={filterValue}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  className={`cursor-pointer appearance-none pl-3 pr-8 py-2 w-52 rounded-lg ${skin.field} ${FOCUS}`}
+                >
+                  {filterOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Body - white results panel wrapping the grey list, the same
+          grey-on-white treatment as the other modules; consumers that pass
+          hideHeader bring their own panel around the list. */}
+      <div className={hideHeader ? undefined : `border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4`}>
       {loading ? (
-        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
+        <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center space-x-4 animate-pulse">
@@ -234,7 +246,7 @@ export default function CandidateList({
           </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
+        <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
           {!hideEmptyIcon && (
             <div className="mx-auto h-12 w-12 text-ink/30 mb-4">
               <User className="h-full w-full" />
@@ -244,24 +256,28 @@ export default function CandidateList({
           <p className={`mt-1 ${skin.body}`}>{emptyMessage || 'Upload a resume to get started.'}</p>
         </div>
       ) : (
-      <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
+      <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
         <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           <table className={`min-w-full divide-y ${skin.divide}`}>
-            <thead className={`${skin.canvas} sticky top-0 z-10`}>
+            <thead className={`bg-ink/5 sticky top-0 z-10`}>
               <tr>
-                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>{hideRole ? 'Name' : 'Name / Role'}</th>
-                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Contact Info</th>
-                <th scope="col" className={`px-6 py-4 text-left ${skin.micro} ${skin.canvas}`}>Experience</th>
-                <th scope="col" className={`px-6 py-4 text-center ${skin.micro} ${skin.canvas}`}>Actions</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>{hideRole ? 'Name' : 'Name / Role'}</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>Contact Info</th>
+                <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>Experience</th>
+                {postTitles && (
+                  <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>Post</th>
+                )}
+                <th scope="col" className={`px-6 py-4 text-center ${skin.micro}`}>Actions</th>
               </tr>
             </thead>
-            <tbody className={`${skin.surface} divide-y ${skin.divide}`}>
+            <tbody className={`${skin.cardSurface} divide-y ${skin.divide}`}>
               {filteredCandidates.map((candidate) => {
+                const postId = (candidate as { postId?: string }).postId;
                 return (
                   <tr
                     key={candidate.id}
-                    className={`group ${skin.rowHover} transition-colors duration-150 cursor-pointer`}
-                    onClick={() => onSelectCandidate(candidate)}
+                    className={`group ${skin.rowHover} transition-colors duration-150${onSelectCandidate ? ' cursor-pointer' : ''}`}
+                    onClick={onSelectCandidate ? () => onSelectCandidate(candidate) : undefined}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -271,7 +287,7 @@ export default function CandidateList({
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-ink group-hover:text-brand transition-colors">
+                          <div className="text-sm font-semibold text-ink group-hover:text-ink transition-colors">
                             {toTitleCase(candidate.name)}
                           </div>
                           {!hideRole && (
@@ -299,8 +315,16 @@ export default function CandidateList({
                         {formatExperience(candidate.experience)}
                       </span>
                     </td>
+                    {postTitles && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-ink/70 max-w-[200px] truncate" title={postId ? (postTitles[postId] || '') : ''}>
+                          {(postId && postTitles[postId]) || '-'}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <div className="flex items-center justify-center gap-2 transition-opacity">
+                        {extraActions?.(candidate)}
                         <button
                           onClick={(e) => handleRemove(e, candidate)}
                           disabled={deletingId === candidate.id}
@@ -329,6 +353,7 @@ export default function CandidateList({
         )}
       </div>
       )}
+      </div>
     </div>
   );
 }

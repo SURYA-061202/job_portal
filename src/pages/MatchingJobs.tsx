@@ -7,7 +7,7 @@ import type { RecruitmentRequest } from '@/types';
 import UserHeader from '@/components/layout/UserHeader';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import { Award, ChevronLeft, Sparkles } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 
@@ -37,7 +37,7 @@ export default function MatchingJobs() {
             // 1. Fetch User matching scores
             const userDoc = await getDoc(doc(db, 'users', uid));
             if (!userDoc.exists()) {
-                toast.error('User profile not found');
+                popup.error('User profile not found');
                 return;
             }
             const uData = userDoc.data();
@@ -63,7 +63,7 @@ export default function MatchingJobs() {
             setPosts(matchedPosts);
         } catch (error) {
             console.error('Error fetching matching jobs:', error);
-            toast.error('Failed to load matching jobs');
+            popup.error('Failed to load matching jobs');
         } finally {
             setLoading(false);
         }

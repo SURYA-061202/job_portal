@@ -3,8 +3,9 @@ import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } fr
 import { db } from "@/lib/firebase";
 import type { Candidate, RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
-import toast from "react-hot-toast";
-import { ArrowLeft, Calendar, Briefcase, MapPin, Search } from "lucide-react";
+import popup from '@/components/ui/Popup';
+import { ArrowLeft, Calendar, Search } from "lucide-react";
+import PostCard from "@/components/recruitment/PostCard";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
@@ -161,7 +162,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load candidates");
+      popup.error("Failed to load candidates");
     } finally {
       setLoading(false);
     }
@@ -211,108 +212,140 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   if (!selectedPostView) {
     return (
-    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
-      {/* Header - Posts masthead recipe: brand-washed title row (heading +
-          count badge, search at the right end) over a description row. */}
-      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h2 className={skin.heading}>Shortlisted</h2>
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-              <span
-                aria-hidden="true"
-                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-              />
-              {postsWithCounts.length}
-            </span>
-          </div>
-
-          <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-            <div className="relative w-full sm:w-56">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-ink/40" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search posts..."
-                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-                value={postSearch}
-                onChange={(e) => setPostSearch(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 py-2.5 sm:px-5">
-          <p className={skin.body}>Select a job post to view its shortlisted candidates.</p>
-        </div>
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
+      {/* Header - Posts masthead recipe: brand-washed title over a
+          description line, with no separator between them. */}
+      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+        <h2 className={skin.heading}>Shortlisted</h2>
+        <p className={`mt-1.5 ${skin.body}`}>Select a job post to view its shortlisted candidates.</p>
       </div>
 
+      {/* Controls row below the header: search at the left end, posts count at
+          the right end — the same row the Candidates module uses. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full sm:w-56">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-ink/40" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search posts..."
+            className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+            value={postSearch}
+            onChange={(e) => setPostSearch(e.target.value)}
+          />
+        </div>
+        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+          Posts: {postsWithCounts.length}
+        </span>
+      </div>
+
+      {/* Body - the white results panel the Posts module uses, so the grey
+          cards read grey-on-white. The scroll container takes the remaining
+          height, but the panel hugs the grid when it is short and only fills
+          the area while loading or empty. */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
+      <div className={`${loading || postsWithCounts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
       {loading ? (
-        <div className="text-center py-12 text-ink/60 flex-1 flex items-center justify-center">Loading…</div>
+        <div className="py-12 text-center text-ink/60">Loading…</div>
       ) : postsWithCounts.length === 0 ? (
-        <div className={`border border-dashed ${skin.edge} ${skin.surface} ${skin.radius} p-12 text-center flex-1 flex items-center justify-center`}>
+        <div className={`border border-dashed ${skin.edge} ${skin.radius} p-12 text-center`}>
           <div>
             <h3 className={skin.emptyTitle}>No shortlisted candidates yet</h3>
             <p className={`mt-1 ${skin.body}`}>Candidates you shortlist for your posts will appear here.</p>
           </div>
         </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 content-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 content-start">
             {postsWithCounts.map((post) => (
-              <div
+              <PostCard
                 key={post.id}
-                onClick={() => setSelectedPostView(post)}
-              className={`group relative border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} cursor-pointer overflow-hidden flex flex-col h-full p-4 sm:p-6 ${FOCUS}`}
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className={`${skin.cardTitle} line-clamp-2`}>{post.jobTitle}</h3>
-                  {post.positionLevel && (
-                    <span className={`inline-flex items-center whitespace-nowrap ${skin.chip} rounded-lg`}>
-                      {post.positionLevel}
-                    </span>
-                  )}
-                </div>
-                {post.department && (
-                  <div className={`flex items-center ${skin.meta} mb-3`}>
-                    <Briefcase className="w-3.5 h-3.5 mr-1.5" />
-                    {post.department}
-                  </div>
-                )}
-                {post.location && (
-                  <div className={`flex items-center ${skin.meta} mb-3`}>
-                    <MapPin className="w-3.5 h-3.5 mr-1.5" />
-                    {post.location}
-                  </div>
-                )}
-                <div className={`mt-3 pt-3 border-t ${skin.edge} flex items-center justify-between`}>
-                  <span className={`${skin.count} rounded-lg`}>
-                    {post.shortlistedCount} Shortlisted
-                  </span>
-                </div>
-              </div>
+                post={post}
+                onOpen={(p) => setSelectedPostView(p)}
+                count={post.shortlistedCount}
+                countLabel="Shortlisted"
+              />
             ))}
           </div>
         )}
       </div>
+      </div>
+      </div>
     );
   }
 
+  const shortlistedForPost = candidates.filter(c => (c as any).postId === selectedPostView.id);
+
   return (
-    <div className="space-y-6">
-      <CandidateList
-        candidates={candidates.filter(c => (c as any).postId === selectedPostView.id)}
-        onSelectCandidate={setSelected}
-        loading={loading}
-        searchTerm={search}
-        onSearchTermChange={setSearch}
-        emptyMessage="No shortlisted candidates found."
-        title="Shortlisted"
-        description={selectedPostView.jobTitle}
-        onBack={() => { setSelectedPostView(null); setSearch(''); }}
-        hideRole
-        hideEmptyIcon
-      />
+    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
+      {/* Masthead - back control beside a title block; the job title sits
+          beside the title and the description starts at the title's left
+          edge. No line separator between rows. The back arrow uses the same
+          rounded-lg as the buttons. */}
+      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            onClick={() => { setSelectedPostView(null); setSearch(''); }}
+            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+            title="Back to posts"
+            aria-label="Back to posts"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 className={`${skin.heading} min-w-0 truncate`}>Shortlisted</h2>
+              {selectedPostView.jobTitle && (
+                <>
+                  <span aria-hidden="true" className={skin.subtle}>·</span>
+                  <span className={`${skin.heading} min-w-0 truncate`}>{selectedPostView.jobTitle}</span>
+                </>
+              )}
+            </div>
+            <p className={`mt-1.5 ${skin.body}`}>Review and manage the candidates you have shortlisted for this post.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls row below the header: search at the left end, shortlisted
+          count at the right end — no animated indicator. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full sm:w-72">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-ink/40" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search candidates..."
+            className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+          Shortlisted: {shortlistedForPost.length}
+        </span>
+      </div>
+
+      {/* Body - the white results panel the Candidates module uses, so the grey
+          candidate list reads grey-on-white. The scroll container takes the
+          remaining height, but the panel hugs the list when it is short and
+          only fills the area when there is nothing to show. */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
+        <div className={`${shortlistedForPost.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+          <CandidateList
+            candidates={shortlistedForPost}
+            onSelectCandidate={setSelected}
+            loading={loading}
+            searchTerm={search}
+            onSearchTermChange={setSearch}
+            emptyMessage="No shortlisted candidates found."
+            hideHeader
+            hideRole
+            hideEmptyIcon
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -417,10 +450,10 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
         roundLabel: effectiveRoundName,
       });
 
-      toast.success("Moved to Round 1");
+      popup.success("Moved to Round 1");
       onStatusUpdated?.();
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+      popup.error(err.message || "Failed to update status");
     } finally {
       setMoveLoading(false);
     }
@@ -428,52 +461,76 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Masthead - Posts/Candidates recipe: back control + identity in the
-          title row, contact details in the description row. */}
-      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              onClick={onBack}
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
-              title="Back to list"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-            </button>
-            <div className="flex min-w-0 flex-col">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
-                {postTitle && (
-                  <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
-                    {postTitle}
-                  </span>
-                )}
-              </div>
+      {/* Masthead - back control + identity: the job title sits beside the
+          candidate name in the same colour, with a description underneath.
+          No line separator between rows; the back arrow uses the same
+          rounded-lg as the buttons. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            onClick={onBack}
+            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+            title="Back to list"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+              {postTitle && (
+                <>
+                  <span aria-hidden="true" className={skin.subtle}>·</span>
+                  <span className={`${skin.heading} max-w-full truncate`}>{postTitle}</span>
+                </>
+              )}
             </div>
+            <p className={`mt-1.5 ${skin.body}`}>Review the candidate's details and move them forward to the next interview round.</p>
           </div>
-        </div>
-        <div className="px-4 py-2.5 sm:px-5">
-          <p className={skin.body}>
-            {candidate.email}
-            {candidate.phone && (
-              <>
-                <span className="mx-2 text-ink/40">•</span>
-                {candidate.phone}
-              </>
-            )}
-          </p>
         </div>
       </div>
 
-      {/* Body - fixed height; only the contents inside it scroll */}
-      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-        <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
+      {/* Controls row below the header: round name and move action pinned to
+          the right end. */}
+      {response === 'accept' && (
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-end gap-3">
+          <input
+            type="text"
+            value={roundName}
+            onChange={(e) => setRoundName(e.target.value)}
+            placeholder="Round name (e.g. Technical)"
+            className={`px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+          />
+          <button
+            disabled={moveLoading}
+            onClick={moveToRound1}
+            className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
+          >
+            {moveLoading ? 'Moving…' : 'Move to Round1'}
+          </button>
+        </div>
+      )}
+
+      {/* Body - white surface with no shadow; the details themselves sit on
+          a grey section inside it. */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6">
+        <div className={`border ${skin.edge} ${skin.radius} ${skin.canvas} overflow-hidden`}>
         {/* Single table, no row separators — details sit directly under the
             selected-date row when they exist, so the spacing stays uniform. */}
         <div className="overflow-x-auto">
           <table className="table-fixed w-auto text-sm">
             <tbody>
+              <tr>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Email</th>
+                <td className="px-4 py-3 text-ink/80">{candidate.email || '-'}</td>
+              </tr>
+              {candidate.phone && (
+                <tr>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Phone</th>
+                  <td className="px-4 py-3 text-ink/80">{candidate.phone}</td>
+                </tr>
+              )}
               <tr>
                 <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Role</th>
                 <td className="px-4 py-3 text-ink/80">{candidate.role}</td>
@@ -531,27 +588,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
             </tbody>
           </table>
         </div>
-
-        <div className="flex justify-end pt-4 gap-4">
-          {response === 'accept' && (
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={roundName}
-                onChange={(e) => setRoundName(e.target.value)}
-                placeholder="Round name (e.g. Technical)"
-                className={`px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
-              />
-              <button
-                disabled={moveLoading}
-                onClick={moveToRound1}
-                className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
-              >
-                {moveLoading ? 'Moving…' : 'Move to Round1'}
-              </button>
-            </div>
-          )}
-          </div>
+        </div>
         </div>
       </div>
     </div>

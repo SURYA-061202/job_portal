@@ -11,7 +11,7 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { Search, History, MapPin, ChevronDown } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 
@@ -45,7 +45,16 @@ export default function UserDashboard() {
         } else {
             setActiveTab('jobs');
         }
-        setSelectedJob(null); // Reset detail view on tab switch
+        // Reset detail view and all filter/search state on tab switch —
+        // both routes share this component instance, so nothing else clears it.
+        setSelectedJob(null);
+        setSearchTerm('');
+        setLocationTerm('');
+        setSortBy('recent');
+        setIsFilterDrawerOpen(false);
+        setSelectedFilters({
+            jobType: [], experience: [], salary: [], department: [], location: []
+        });
     }, [location.pathname]);
 
     useEffect(() => {
@@ -109,7 +118,7 @@ export default function UserDashboard() {
 
         } catch (error: any) {
             console.error('Error fetching applications:', error);
-            toast.error('Failed to load applications. ' + (error?.message || ''));
+            popup.error('Failed to load applications. ' + (error?.message || ''));
         } finally {
             setLoading(false);
         }
@@ -138,7 +147,7 @@ export default function UserDashboard() {
             setPosts(merged);
         } catch (error) {
             console.error('Error fetching posts from Firestore:', error);
-            toast.error('Failed to load job posts');
+            popup.error('Failed to load job posts');
         } finally {
             setLoading(false);
         }

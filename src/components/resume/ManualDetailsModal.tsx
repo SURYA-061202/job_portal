@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useSkin, FOCUS } from '@/styles/skin';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 
 // Check if an email already exists in the users collection
 const checkEmailExistsInUsers = async (email: string): Promise<boolean> => {
@@ -61,14 +61,14 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
 
   const handleSave = async () => {
     if (!form.name || !form.email || !form.phone) {
-      toast.error('Please fill name, email and phone');
+      popup.error('Please fill name, email and phone');
       return;
     }
 
     // Check if email already exists in users collection (registered users)
     const emailExists = await checkEmailExistsInUsers(form.email);
     if (emailExists) {
-      toast.error(`This email (${form.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
+      popup.error(`This email (${form.email}) is already registered as a user. Please use a different email or contact the user directly.`, { duration: 5000 });
       return;
     }
 
@@ -83,11 +83,11 @@ export default function ManualDetailsModal({ candidate, onCancel, onSaved }: Pro
         skills,
         updatedAt: new Date(),
       });
-      toast.success('Details saved');
+      popup.success('Details saved');
       onSaved?.();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to save details');
+      popup.error('Failed to save details');
     } finally {
       setSaving(false);
     }

@@ -3,7 +3,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import NotificationBell from './NotificationBell';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -36,18 +36,18 @@ export default function UserHeader() {
         try {
             await signOut(auth);
             navigate('/');
-            toast.success('Logged out successfully');
+            popup.success('Logged out successfully');
         } catch (error) {
             console.error('Error signing out:', error);
-            toast.error('Failed to log out');
+            popup.error('Failed to log out');
         }
     };
 
     const navLinks = [
         { to: '/home?tab=profile', label: 'Profile' },
         { to: '/home?tab=jobs', label: 'Find Jobs' },
-        { to: '/home?tab=applications', label: 'My Applications' },
-        { to: '/personalized-cv', label: 'Personalized CV' },
+        { to: '/home?tab=applications', label: 'Applied Jobs' },
+        { to: '/personalized-cv', label: 'CV Creation' },
     ];
 
     return (

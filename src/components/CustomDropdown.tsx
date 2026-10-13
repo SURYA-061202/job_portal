@@ -33,7 +33,7 @@ export default function CustomDropdown({ value, onChange, options, placeholder, 
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full px-4 py-2 ${skin.field} ${FOCUS} cursor-pointer text-left flex items-center justify-between`}
+                className={`w-full px-4 py-2 ${skin.field} rounded-lg ${FOCUS} cursor-pointer text-left flex items-center justify-between`}
             >
                 <span className="truncate">{selectedOption?.label || placeholder}</span>
                 <ChevronDown className={`w-4 h-4 text-ink/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />

@@ -8,7 +8,7 @@ import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 import { Search, ChevronDown } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 
 interface JobsAndApplicationsViewProps {
     activeTab: 'jobs' | 'applications';
@@ -77,7 +77,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
         } catch (error: any) {
             console.error('Error fetching applications:', error);
-            toast.error('Failed to load applications. ' + (error?.message || ''));
+            popup.error('Failed to load applications. ' + (error?.message || ''));
         } finally {
             setLoading(false);
         }
@@ -106,7 +106,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
             setPosts(merged);
         } catch (error) {
             console.error('Error fetching posts:', error);
-            toast.error('Failed to load job posts');
+            popup.error('Failed to load job posts');
         } finally {
             setLoading(false);
         }

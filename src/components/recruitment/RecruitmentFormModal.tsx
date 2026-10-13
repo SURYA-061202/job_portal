@@ -216,7 +216,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm overflow-y-auto">
             <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-4xl max-h-[90vh] flex flex-col`}>
                 <div className={`px-6 py-4 border-b ${skin.edge} ${skin.surface} flex justify-between items-center flex-shrink-0 rounded-t-2xl`}>
-                    <h2 className={`${skin.heading} font-outfit`}>{initialData?.id ? 'Edit Recruitment Request' : 'Add Recruitment Request'}</h2>
+                    <h2 className={`${skin.heading} font-outfit`}>{initialData?.id ? 'Update Post' : 'Add Post'}</h2>
                     <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} cursor-pointer transition-colors ${FOCUS}`}>
                         <X className="w-5 h-5" />
                     </button>
@@ -418,8 +418,9 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-ink/80 mb-1">Detailed Job Description</label>
+                        <label className="block text-sm font-medium text-ink/80 mb-1">Detailed Job Description *</label>
                         <textarea
+                            required
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
@@ -499,7 +500,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                         className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                     >
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {initialData?.id ? 'Update Request' : 'Add Post'}
+                        {initialData?.id ? 'Update Post' : 'Add Post'}
                     </button>
                 </div>
             </div>

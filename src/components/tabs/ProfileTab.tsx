@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { User, Loader2, KeyRound, Camera, X } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { sendPasswordResetMail } from '@/lib/emailFunctions';
 
@@ -50,7 +50,7 @@ export default function ProfileTab() {
                     }
                 } catch (error) {
                     console.error("Error fetching profile:", error);
-                    toast.error("Failed to load profile");
+                    popup.error("Failed to load profile");
                 } finally {
                     setLoading(false);
                 }
@@ -82,11 +82,11 @@ export default function ProfileTab() {
 
             setUserData(formData);
             setIsEditing(false);
-            toast.success("Profile updated successfully");
+            popup.success("Profile updated successfully");
         } catch (error) {
             console.error("Error updating profile:", error);
             const message = error instanceof Error ? error.message : '';
-            toast.error(message ? `Failed to update profile: ${message}` : "Failed to update profile");
+            popup.error(message ? `Failed to update profile: ${message}` : "Failed to update profile");
         } finally {
             setSaving(false);
         }
@@ -123,7 +123,7 @@ export default function ProfileTab() {
         e.target.value = '';
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            toast.error('Please select an image file');
+            popup.error('Please select an image file');
             return;
         }
 
@@ -143,10 +143,10 @@ export default function ProfileTab() {
                 updatedAt: new Date()
             });
             setProfileImage(resized);
-            toast.success('Profile photo updated!');
+            popup.success('Profile photo updated!');
         } catch (error) {
             console.error('Error updating profile photo:', error);
-            toast.error('Failed to update profile photo');
+            popup.error('Failed to update profile photo');
         } finally {
             setImageUploading(false);
         }
@@ -162,10 +162,10 @@ export default function ProfileTab() {
                 updatedAt: new Date()
             });
             setProfileImage('');
-            toast.success('Profile photo removed!');
+            popup.success('Profile photo removed!');
         } catch (error) {
             console.error('Error removing profile photo:', error);
-            toast.error('Failed to remove profile photo');
+            popup.error('Failed to remove profile photo');
         } finally {
             setImageUploading(false);
         }
@@ -174,22 +174,22 @@ export default function ProfileTab() {
     const handleChangePassword = async () => {
         const email = auth.currentUser?.email || userData?.email;
         if (!email) {
-            toast.error('No email address found for your account');
+            popup.error('No email address found for your account');
             return;
         }
 
         setSendingReset(true);
         try {
             await sendPasswordResetMail({ email, baseUrl: window.location.origin });
-            toast.success('Password reset link sent! Check your inbox.');
+            popup.success('Password reset link sent! Check your inbox.');
         } catch (error) {
             console.error('Error sending password reset link:', error);
             const code = (error as { code?: string })?.code;
             const message = (error as { message?: string })?.message;
             if (code === 'functions/not-found') {
-                toast.error('No account found with this email');
+                popup.error('No account found with this email');
             } else {
-                toast.error(message || 'Failed to send password reset email');
+                popup.error(message || 'Failed to send password reset email');
             }
         } finally {
             setSendingReset(false);
@@ -276,7 +276,7 @@ export default function ProfileTab() {
                     </div>
                     <div className="text-center sm:text-left">
                         <h1 className={skin.heading}>Personal Information</h1>
-                        <p className="text-brand text-sm mt-1">Update your personal details</p>
+                        <p className="text-ink text-sm mt-1">Update your personal details</p>
                     </div>
                 </div>
 
@@ -297,7 +297,7 @@ export default function ProfileTab() {
                                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg`}>
                                     {userData.firstName}
                                 </div>
                             )}
@@ -315,7 +315,7 @@ export default function ProfileTab() {
                                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg`}>
                                     {userData.lastName}
                                 </div>
                             )}
@@ -326,7 +326,7 @@ export default function ProfileTab() {
                             <label className="block text-sm font-bold text-ink/80 mb-1.5">
                                 Email <span className="text-brand font-normal text-xs ml-1">(Not editable)</span>
                             </label>
-                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.edge} rounded-lg ${isEditing ? `${skin.canvas} cursor-not-allowed` : skin.surface}`}>
+                            <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink/60 font-medium text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg cursor-not-allowed`}>
                                 {userData.email}
                             </div>
                         </div>
@@ -344,7 +344,7 @@ export default function ProfileTab() {
                                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg`}>
                                     {userData.mobile || '+919087654321'}
                                 </div>
                             )}
@@ -362,7 +362,7 @@ export default function ProfileTab() {
                                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg`}>
                                     {userData.department || 'None'}
                                 </div>
                             )}
@@ -380,7 +380,7 @@ export default function ProfileTab() {
                                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 capitalize text-sm sm:text-base rounded-lg ${skin.field} ${FOCUS}`}
                                 />
                             ) : (
-                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium capitalize text-sm sm:text-base border ${skin.edge} ${skin.surface} rounded-lg`}>
+                                <div className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-ink font-medium capitalize text-sm sm:text-base border ${skin.edge} ${skin.canvas} rounded-lg`}>
                                     {userData.role}
                                 </div>
                             )}

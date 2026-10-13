@@ -36,7 +36,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
   };
 
   return (
-    <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} p-6 w-full h-full flex flex-col`}>
+    <div className={`border ${skin.edge} ${skin.surface} rounded-lg p-6 w-full h-full flex flex-col`}>
 
 
       <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
@@ -44,7 +44,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
 
           <div
             {...getRootProps()}
-            className={`flex-1 border-2 border-dashed ${skin.radius} p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${isDragActive
+            className={`flex-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors flex items-center justify-center ${isDragActive
                 ? 'border-brand bg-brand/10'
                 : `${skin.edge} hover:border-brand`
               }`}
@@ -81,7 +81,7 @@ export default function ResumeUpload({ onUpload, loading }: ResumeUploadProps) {
         <button
           type="submit"
           disabled={loading || !file}
-          className={`w-full inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
+          className={`w-full inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {loading ? 'Uploading & Extracting…' : 'Upload Resume'}
         </button>

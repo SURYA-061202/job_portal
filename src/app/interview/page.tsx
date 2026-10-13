@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { db } from "../../lib/firebase";
 import { doc, getDoc, collection, setDoc, Timestamp } from "firebase/firestore";
-import toast from "react-hot-toast";
+import popup from '@/components/ui/Popup';
 
 export default function InterviewResponsePage() {
   const location = useLocation();
@@ -26,7 +26,7 @@ export default function InterviewResponsePage() {
       try {
         const snapshot = await getDoc(doc(db, "candidates", candidateId));
         if (!snapshot.exists()) {
-          toast.error("Invalid candidate ID");
+          popup.error("Invalid candidate ID");
           return;
         }
         const data: any = snapshot.data();
@@ -39,7 +39,7 @@ export default function InterviewResponsePage() {
         }
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load details");
+        popup.error("Failed to load details");
       } finally {
         setLoading(false);
       }
@@ -50,14 +50,14 @@ export default function InterviewResponsePage() {
   const handleSubmit = async () => {
     if (!candidateId) return;
     if (interest === "interested" && (!selectedDate || !selectedTime)) {
-      toast.error("Please select date & time");
+      popup.error("Please select date & time");
       return;
     }
     try {
       const ref = doc(collection(db, "interviews"), candidateId);
       const respSnap = await getDoc(ref);
       if (respSnap.exists()) {
-        toast.error("Already submitted");
+        popup.error("Already submitted");
         setExistingResponse(respSnap.data());
         return;
       }
@@ -68,11 +68,11 @@ export default function InterviewResponsePage() {
         selectedDate: interest === "interested" ? `${selectedDate} ${selectedTime}` : null,
         respondedAt: Timestamp.now(),
       });
-      toast.success("Response recorded. Thank you!");
+      popup.success("Response recorded. Thank you!");
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to record response");
+      popup.error("Failed to record response");
     }
   };
 

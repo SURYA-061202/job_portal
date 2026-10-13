@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Clock, IndianRupee } from 'lucide-react';
+import { MapPin, Briefcase, Clock } from 'lucide-react';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -54,10 +54,6 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                     <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
                         <Clock className="w-3 h-3 shrink-0" />
                         {recruitment.yearsExperience} Years
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
-                        <IndianRupee className="w-3 h-3 shrink-0" />
-                        {recruitment.budgetPay || 'As per norms'}
                     </div>
                 </div>
 

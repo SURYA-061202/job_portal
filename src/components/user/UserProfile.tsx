@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase';
 import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import UserHeader from '@/components/layout/UserHeader';
 
 import ProfileDetailsView from './ProfileDetailsView';
@@ -34,7 +34,7 @@ export default function UserProfile() {
                     await user.reload();
                     if (user.emailVerified) {
                         setIsEmailVerified(true);
-                        toast.success('Email verified successfully!');
+                        popup.success('Email verified successfully!');
                         clearInterval(interval);
                     }
                 }
@@ -127,7 +127,7 @@ export default function UserProfile() {
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
-            toast.error('Failed to load profile');
+            popup.error('Failed to load profile');
         } finally {
             setLoading(false);
         }
@@ -148,11 +148,11 @@ export default function UserProfile() {
                 address: formData.address,
                 updatedAt: new Date()
             });
-            toast.success('Profile details updated!');
+            popup.success('Profile details updated!');
             setIsEditingProfile(false);
         } catch (error) {
             console.error('Error updating profile card:', error);
-            toast.error('Failed to update profile details');
+            popup.error('Failed to update profile details');
         } finally {
             setSaving(false);
         }
@@ -184,7 +184,7 @@ export default function UserProfile() {
         e.target.value = '';
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            toast.error('Please select an image file');
+            popup.error('Please select an image file');
             return;
         }
 
@@ -205,10 +205,10 @@ export default function UserProfile() {
                 updatedAt: new Date()
             });
             setProfileImage(resized);
-            toast.success('Profile photo updated!');
+            popup.success('Profile photo updated!');
         } catch (error) {
             console.error('Error updating profile photo:', error);
-            toast.error('Failed to update profile photo');
+            popup.error('Failed to update profile photo');
         } finally {
             setImageUploading(false);
         }
@@ -225,10 +225,10 @@ export default function UserProfile() {
                 updatedAt: new Date()
             });
             setProfileImage('');
-            toast.success('Profile photo removed!');
+            popup.success('Profile photo removed!');
         } catch (error) {
             console.error('Error removing profile photo:', error);
-            toast.error('Failed to remove profile photo');
+            popup.error('Failed to remove profile photo');
         } finally {
             setImageUploading(false);
         }
@@ -296,13 +296,13 @@ export default function UserProfile() {
         setVerifyingEmail(true);
         try {
             await sendEmailVerification(user);
-            toast.success('Verification email sent! Please check your inbox.');
+            popup.success('Verification email sent! Please check your inbox.');
         } catch (error: any) {
             console.error('Error sending verification email:', error);
             if (error.code === 'auth/too-many-requests') {
-                toast.error('Too many requests. Please try again later.');
+                popup.error('Too many requests. Please try again later.');
             } else {
-                toast.error('Failed to send verification email');
+                popup.error('Failed to send verification email');
             }
         } finally {
             setVerifyingEmail(false);
@@ -316,22 +316,22 @@ export default function UserProfile() {
     const handleChangePassword = async () => {
         const user = auth.currentUser;
         if (!user?.email) {
-            toast.error('No email address found for your account');
+            popup.error('No email address found for your account');
             return;
         }
 
         setSendingResetLink(true);
         try {
             await sendPasswordResetMail({ email: user.email, baseUrl: window.location.origin });
-            toast.success('Password reset link sent! Check your inbox.');
+            popup.success('Password reset link sent! Check your inbox.');
         } catch (error) {
             console.error('Error sending password reset link:', error);
             const code = (error as { code?: string })?.code;
             const message = (error as { message?: string })?.message;
             if (code === 'functions/not-found') {
-                toast.error('No account found with this email');
+                popup.error('No account found with this email');
             } else {
-                toast.error(message || 'Failed to send password reset email');
+                popup.error(message || 'Failed to send password reset email');
             }
         } finally {
             setSendingResetLink(false);
@@ -572,8 +572,12 @@ export default function UserProfile() {
                                 />
                             )}
                             {(activeTab === 'jobs' || activeTab === 'applications') && (
-                                <JobsAndApplicationsView 
-                                    activeTab={activeTab} 
+                                /* key forces a fresh mount on tab switch so filters,
+                                   search, and the sidebar reset instead of leaking
+                                   from Find Jobs into My Applications (and back). */
+                                <JobsAndApplicationsView
+                                    key={activeTab}
+                                    activeTab={activeTab}
                                     onCompleteProfile={() => navigate('/home?tab=profile')}
                                 />
                             )}

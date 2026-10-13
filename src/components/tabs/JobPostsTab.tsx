@@ -7,11 +7,11 @@ import { timeAgo } from '@/lib/format';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import PostCard from '@/components/recruitment/PostCard';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
     Search, Plus, Briefcase, Inbox, SearchX, X, LayoutGrid, List,
-    ChevronDown, ChevronRight, Users,
+    ChevronDown, ChevronRight,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -112,7 +112,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             }
         } catch (error) {
             console.error('Error fetching recruitment requests:', error);
-            toast.error('Failed to fetch recruitment requests');
+            popup.error('Failed to fetch recruitment requests');
         } finally {
             setLoadingPosts(false);
         }
@@ -176,7 +176,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const countBadge = term
         ? `${visiblePosts.length} of ${total} ${total === 1 ? 'Post' : 'Posts'}`
         : `${total} ${total === 1 ? 'Post' : 'Posts'}`;
-    const totalApplicants = visiblePosts.reduce((sum, post) => sum + (post.applicantCount ?? 0), 0);
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 flex-1 min-h-0 flex flex-col overflow-hidden ${skin.canvas}`}>
@@ -199,43 +198,36 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 />
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
-                    {/* Masthead - one panel divided by hairlines. Static, never
-                        scrolls; radius comes from the active skin.
-                        The brand wash covers the whole header (title + controls),
-                        never the results below it. */}
-                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                <h2 className={skin.heading}>
-                                    Job Posts
-                                </h2>
-                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                                    <span
-                                        aria-hidden="true"
-                                        className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                    />
-                                    {countBadge}
-                                </span>
-                                {visiblePosts.length > 0 && (
-                                    <span className={`hidden shrink-0 items-center gap-1.5 sm:inline-flex ${skin.statChip} rounded-lg`}>
-                                        <Users aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
-                                        {totalApplicants} {totalApplicants === 1 ? 'Applicant' : 'Applicants'}
-                                    </span>
-                                )}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsRecruitmentModalOpen(true)}
-                                aria-label="Add a new job post"
-                                className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
-                            >
-                                <Plus className="h-4 w-4" aria-hidden="true" />
-                                Add Post
-                            </button>
+                    {/* Masthead - one row: title, description, stats and the
+                        Add Post CTA. No internal hairline; radius comes from
+                        the active skin. The brand wash covers only this panel,
+                        never the controls or the results below it. */}
+                    <div className={`mb-3 flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                            <h2 className={skin.heading}>
+                                Job Posts
+                            </h2>
+                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                                {countBadge}
+                            </span>
+                            <p className={`w-full ${skin.body}`}>
+                                Create, track and manage your job posts and the candidates who apply.
+                            </p>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsRecruitmentModalOpen(true)}
+                            aria-label="Add a new job post"
+                            className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
+                        >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                            Add Post
+                        </button>
+                    </div>
 
-                        {/* Controls row: search, clear, sort, view. */}
-                        <div className={`flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
+                    {/* Controls row: search, clear, sort, view. Sits on the
+                        canvas below the masthead - no panel, no tint. */}
+                    <div className="mb-4 flex flex-shrink-0 flex-wrap items-center gap-3">
                             <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
                                 <label htmlFor="job-posts-search" className="sr-only">
                                     Search job posts by title, department or location
@@ -276,9 +268,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
 
                             <div className="ml-auto flex flex-wrap items-center gap-3">
-                                <label htmlFor="job-posts-sort" className={skin.micro}>
-                                    Sort
-                                </label>
                                 <div className="relative">
                                     <select
                                         id="job-posts-sort"
@@ -327,17 +316,22 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     </button>
                                 </div>
                             </div>
-                        </div>
                     </div>
 
-                    {/* Results - the only scrollable region. The mb-4 on the masthead
-                        above sits outside this box, so that gap never scrolls in. */}
-                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2">
+                    {/* Results - the only scrollable region, on a white panel
+                        with the posts themselves in the page grey. The mb-4 on
+                        the controls row above sits outside this box, so that
+                        gap never scrolls in. The panel's top padding is a
+                        pinned strip on the panel itself, so it stays at the
+                        top of the body bg while the posts scroll under it. */}
+                    <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
+                        <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4 pb-3 md:pb-4">
                         {loadingPosts ? (
                             <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                                 <span className="sr-only">Loading job posts…</span>
                                 {Array.from({ length: 8 }).map((_, i) => (
-                                    <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.surface} ${skin.radius} p-4 sm:p-5`}>
+                                    <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
                                         <div className={`h-5 w-2/3 ${skin.skeleton}`} />
                                         <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
                                         <div className="mt-6 grid grid-cols-2">
@@ -354,7 +348,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 ))}
                             </div>
                         ) : recruitmentRequests.length === 0 ? (
-                            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} px-6 py-14 text-center`}>
+                            <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
                                 <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
                                     <Inbox className="h-6 w-6" />
                                 </span>
@@ -372,7 +366,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 </button>
                             </div>
                         ) : visiblePosts.length === 0 ? (
-                            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} px-6 py-14 text-center`}>
+                            <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
                                 <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
                                     <SearchX className="h-6 w-6" />
                                 </span>
@@ -401,6 +395,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         ) : (
                             <PostList posts={visiblePosts} onOpen={setSelectedPost} />
                         )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -426,7 +421,7 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
     const skin = useSkin();
 
     return (
-        <div className={`divide-y ${skin.divide} overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+        <div className={`divide-y ${skin.divide} overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius}`}>
             {posts.map((post) => (
                 <button
                     key={post.id}
@@ -463,13 +458,13 @@ function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (pos
                         {timeAgo(post.createdAt)}
                     </span>
 
-                    <span className={`shrink-0 ${skin.count} rounded-lg`}>
+                    <span className={`inline-flex w-28 shrink-0 justify-center ${skin.count} rounded-lg`}>
                         {post.applicantCount ?? 0} {post.applicantCount === 1 ? 'applicant' : 'applicants'}
                     </span>
 
                     <ChevronRight
                         aria-hidden="true"
-                        className={`h-4 w-4 shrink-0 transition-colors duration-200 ${skin.subtle} group-hover:text-brand`}
+                        className={`h-4 w-4 shrink-0 transition-colors duration-200 ${skin.subtle} group-hover:text-ink`}
                     />
                 </button>
             ))}

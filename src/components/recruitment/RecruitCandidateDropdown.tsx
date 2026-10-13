@@ -4,7 +4,7 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 import { db } from '@/lib/firebase';
 import { upsertApplication } from '@/lib/jobApplications';
 import { UserPlus, ChevronDown } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 interface Option {
@@ -121,7 +121,7 @@ export default function RecruitCandidateDropdown({
             setUploadedOptions(uploaded);
         } catch (error) {
             console.error('Error loading candidates to recruit:', error);
-            toast.error('Failed to load candidates');
+            popup.error('Failed to load candidates');
         } finally {
             setLoading(false);
         }
@@ -164,14 +164,14 @@ export default function RecruitCandidateDropdown({
                     await upsertApplication(postId, id, 'pending');
                 }
             }
-            toast.success(`Recruited ${selected.size} candidate${selected.size > 1 ? 's' : ''}`);
+            popup.success(`Recruited ${selected.size} candidate${selected.size > 1 ? 's' : ''}`);
             setSelected(new Set());
             setOpen(false);
             loadedRef.current = false;
             onRecruited();
         } catch (error) {
             console.error('Error recruiting candidates:', error);
-            toast.error('Failed to recruit candidates');
+            popup.error('Failed to recruit candidates');
         } finally {
             setSubmitting(false);
         }

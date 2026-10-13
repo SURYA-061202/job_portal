@@ -1,4 +1,4 @@
-import * as nodemailer from "nodemailer";
+import type * as Nodemailer from "nodemailer";
 
 const HOST = process.env.SMTP_HOST || "smtp.gmail.com";
 const PORT = Number(process.env.SMTP_PORT || "465");
@@ -7,13 +7,16 @@ const USER = process.env.SMTP_USER;
 const PASS = process.env.SMTP_PASS;
 const MAIL_FROM = process.env.MAIL_FROM || `Indian Infra <${USER}>`;
 
-let transporter: nodemailer.Transporter | null = null;
+let transporter: Nodemailer.Transporter | null = null;
 
-function getTransporter(): nodemailer.Transporter {
+function getTransporter(): Nodemailer.Transporter {
   if (!USER || !PASS) {
     throw new Error("SMTP_USER / SMTP_PASS are not configured");
   }
   if (!transporter) {
+    // Lazy-loaded: importing nodemailer at module scope pushes first-load
+    // past the 10s deployment-analysis timeout on slower build machines.
+    const nodemailer = require("nodemailer") as typeof import("nodemailer");
     transporter = nodemailer.createTransport({
       host: HOST,
       port: PORT,

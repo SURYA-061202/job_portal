@@ -2,15 +2,15 @@
 
 import {
   Award,
-  BarChart3,
-  Briefcase,
   CheckCircle,
   ChevronDown,
   ChevronUp,
   ChevronsLeft,
   ChevronsRight,
+  FileSearch,
   LogOut,
   MessageSquare,
+  PieChart,
   SquareKanban,
   Upload,
   User,
@@ -165,7 +165,7 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     rule: 'bg-brand',
     nav: 'bg-surface',
     section: 'border-t border-ink px-3 pb-6 pt-4',
-    sectionLabel: 'mb-3 px-3 text-xs font-black uppercase tracking-[0.16em] text-ink',
+    sectionLabel: 'mb-3 px-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink',
     sectionDivider: 'h-2',
     rowRadius: 'rounded-none',
     rowMinHeight: 'min-h-10',
@@ -183,15 +183,15 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     label: 'Dock',
     root: 'overflow-hidden border-r border-border bg-surface',
     header:
-      'relative bg-surface after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-gradient-to-r after:from-transparent after:via-brand after:to-transparent',
+      'relative bg-surface after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-brand/30',
     wordmark: 'text-lg font-bold leading-tight tracking-tight text-ink',
     wordmarkAccent: 'text-ink',
     controls: 'bg-surface',
     iconBtn: 'text-ink/60 hover:bg-ink/5 hover:text-ink',
-    rule: 'bg-gradient-to-r from-transparent via-brand to-transparent',
+    rule: 'bg-brand/30',
     nav: 'bg-surface',
     section: 'px-3 pt-2 first:pt-5',
-    sectionLabel: 'mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink/50',
+    sectionLabel: 'mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink',
     sectionDivider: 'mx-3 mb-2 border-t border-border',
     rowRadius: 'rounded-xl',
     rowMinHeight: 'min-h-10',
@@ -202,7 +202,7 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     bar: 'left-1.5 h-5 w-1 rounded-full bg-brand',
     underline: null,
     footer:
-      'relative bg-surface before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-transparent before:via-brand before:to-transparent',
+      'relative bg-surface before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-brand/30',
     accountBtn: 'text-ink/60 hover:bg-ink/5 hover:text-ink',
     logout: 'text-ink/70 hover:bg-destructive/10 hover:text-ink',
   },
@@ -517,7 +517,7 @@ function ColumnSidebar({
               </button>
             </div>
           </div>
-          <div aria-hidden="true" className={`absolute inset-x-0 bottom-0 h-0.5 ${skin.rule}`} />
+          <div aria-hidden="true" className={`absolute inset-x-0 bottom-0 h-px ${skin.rule}`} />
         </div>
 
         <nav aria-label="Main" className={`hover-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-4 ${skin.nav}`}>
@@ -541,7 +541,7 @@ function ColumnSidebar({
         </nav>
 
         {/* Account Section - Fixed at Bottom */}
-        <div className={`flex-shrink-0 px-3 py-4 ${skin.footer}`}>
+        <div className={`flex-shrink-0 px-3 pt-3 pb-2 ${skin.footer}`}>
           <button
             type="button"
             onClick={() => setIsAccountOpen(!isAccountOpen)}
@@ -607,8 +607,8 @@ export default function Sidebar(props: SidebarProps) {
   const variant = useAppStyle();
 
   const jobPostsTabs: NavTab[] = [
-    { id: 'job-posts', label: 'Posts', short: 'Posts', icon: Briefcase },
-    { id: 'analytics', label: 'Analytics', short: 'Analytics', icon: BarChart3 },
+    { id: 'job-posts', label: 'Posts', short: 'Posts', icon: FileSearch },
+    { id: 'analytics', label: 'Analytics', short: 'Analytics', icon: PieChart },
   ];
 
   const screeningTabs: NavTab[] = [

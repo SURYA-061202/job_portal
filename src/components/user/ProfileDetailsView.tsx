@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useDropzone } from 'react-dropzone';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import ResumePreviewModal from '@/components/resume/ResumePreviewModal';
 import { CheckCircle2, FileUp, Loader2, Edit2, X, Plus, Trash2 } from 'lucide-react';
 
@@ -74,19 +74,19 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 updatedAt: new Date()
             });
             setFormData((prev: any) => ({ ...prev, [arrayField]: items }));
-            toast.success('Updated successfully!');
+            popup.success('Updated successfully!');
             closeModal();
             setSkillInput('');
         } catch (error) {
             console.error(error);
-            toast.error('Failed to update');
+            popup.error('Failed to update');
         } finally {
             setSaving(false);
         }
     };
 
     const handleSaveEdu = () => {
-        if (!eduForm.collegeName.trim()) return toast.error('College Name is required');
+        if (!eduForm.collegeName.trim()) return popup.error('College Name is required');
         const newArray = [...(formData.educationItems || [])];
         if (editIndex !== null) newArray[editIndex] = eduForm;
         else newArray.push(eduForm);
@@ -94,7 +94,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     };
 
     const handleSaveProj = () => {
-        if (!projForm.title.trim()) return toast.error('Project Title is required');
+        if (!projForm.title.trim()) return popup.error('Project Title is required');
         const newArray = [...(formData.projectItems || [])];
         if (editIndex !== null) newArray[editIndex] = projForm;
         else newArray.push(projForm);
@@ -102,7 +102,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     };
 
     const handleSaveCert = () => {
-        if (!certForm.name.trim()) return toast.error('Certificate Name is required');
+        if (!certForm.name.trim()) return popup.error('Certificate Name is required');
         const newArray = [...(formData.certificateItems || [])];
         if (editIndex !== null) newArray[editIndex] = certForm;
         else newArray.push(certForm);
@@ -110,7 +110,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     };
 
     const handleSaveExp = () => {
-        if (!expForm.company.trim() || !expForm.role.trim()) return toast.error('Company and Role are required');
+        if (!expForm.company.trim() || !expForm.role.trim()) return popup.error('Company and Role are required');
         const newArray = [...(formData.experienceItems || [])];
         if (editIndex !== null) newArray[editIndex] = expForm;
         else newArray.push(expForm);
@@ -126,7 +126,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         const user = auth.currentUser;
         if (!file || !user) return;
         
-        if (file.size > 2 * 1024 * 1024) return toast.error('File size exceeds 2MB limit');
+        if (file.size > 2 * 1024 * 1024) return popup.error('File size exceeds 2MB limit');
 
         setUploadingCert(true);
         try {
@@ -139,9 +139,9 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             const publicUrl = await getDownloadURL(snapshot.ref);
 
             setCertForm({ ...certForm, url: publicUrl });
-            toast.success('Certificate file uploaded!');
+            popup.success('Certificate file uploaded!');
         } catch (error: any) {
-            toast.error(`Upload failed`);
+            popup.error(`Upload failed`);
         } finally {
             setUploadingCert(false);
             e.target.value = '';
@@ -177,7 +177,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         const user = auth.currentUser;
         if (!file || !user) return;
 
-        if (file.size > 5 * 1024 * 1024) return toast.error('File size exceeds 5MB limit');
+        if (file.size > 5 * 1024 * 1024) return popup.error('File size exceeds 5MB limit');
 
         setUploading(true);
         try {
@@ -191,9 +191,9 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
 
             setFormData((prev: any) => ({ ...prev, resumeUrl: publicUrl }));
             await updateDoc(doc(db, 'users', user.uid), { resumeUrl: publicUrl, updatedAt: new Date() });
-            toast.success('Resume uploaded successfully!');
+            popup.success('Resume uploaded successfully!');
         } catch (error: any) {
-            toast.error(`Upload failed`);
+            popup.error(`Upload failed`);
         } finally {
             setUploading(false);
         }
@@ -225,9 +225,9 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 <div>
                                     <h4 className="font-bold text-ink">{edu.collegeName}</h4>
                                     <p className="text-sm font-semibold text-ink/70 mt-0.5">{edu.course} {edu.specialization && `- ${edu.specialization}`}</p>
-                                    <div className="flex items-center gap-4 mt-1 text-xs text-ink/60">
-                                        {edu.graduatedYear && <span>Year of Completion: {edu.graduatedYear}</span>}
-                                        {edu.grade && <span>Grade: {edu.grade}</span>}
+                                    <div className="mt-1 text-xs text-ink/60">
+                                        {edu.grade && <p>Grade: {edu.grade}</p>}
+                                        {edu.graduatedYear && <p>Year of Completion: {edu.graduatedYear}</p>}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -304,7 +304,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{proj.title}</h4>
                                 {(proj.role || proj.duration) && (
-                                    <p className="text-[10px] font-bold text-ink/60 mt-1 uppercase tracking-tight">{proj.role} {proj.role && proj.duration && '•'} {proj.duration}</p>
+                                    <div className="mt-1 text-xs text-ink/60 space-y-0.5">
+                                        {proj.role && <p><span className="font-semibold text-ink/70">Role:</span> {proj.role}</p>}
+                                        {proj.duration && <p><span className="font-semibold text-ink/70">Duration:</span> {proj.duration}</p>}
+                                    </div>
                                 )}
                                 {proj.description && <p className="text-xs text-ink/40 mt-2 whitespace-pre-wrap leading-relaxed">{proj.description}</p>}
                                 {proj.link && <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-ink/80 underline hover:text-ink mt-3 inline-block">View Project Source</a>}
@@ -332,8 +335,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                     <button onClick={() => handleRemoveArrayItem('certificateItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{cert.name}</h4>
-                                <p className="text-[10px] font-bold text-ink/60 mt-1 uppercase tracking-tight">{cert.organization}</p>
-                                {cert.issueDate && <p className="text-[10px] font-bold text-ink/70 mt-1 uppercase tracking-tight">{cert.issueDate}</p>}
+                                <div className="mt-1 text-xs text-ink/60 space-y-0.5">
+                                    {cert.organization && <p><span className="font-semibold text-ink/70">Issued Organization:</span> {cert.organization}</p>}
+                                    {cert.issueDate && <p><span className="font-semibold text-ink/70">Issued Date:</span> {cert.issueDate}</p>}
+                                </div>
                                 {cert.url && <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-ink/80 underline hover:text-ink mt-3 inline-block">View Credential</a>}
                             </div>
                         ))}
@@ -360,7 +365,8 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                     <button onClick={() => handleRemoveArrayItem('experienceItems', idx)} className="p-1.5 bg-surface hover:bg-destructive/10 border border-border rounded-lg text-ink/60 hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <h4 className="font-bold text-ink pr-20">{exp.company}</h4>
-                                <p className="text-[10px] font-bold text-ink/70 mt-1 uppercase tracking-tight">{exp.role} {exp.duration && `• ${exp.duration}`}</p>
+                                {exp.role && <p className="text-xs font-bold text-ink/70 mt-1">{exp.role}</p>}
+                                {exp.duration && <p className="text-xs font-semibold text-ink/60 mt-0.5">{exp.duration}</p>}
                                 {exp.description && <p className="text-xs text-ink/40 mt-2 whitespace-pre-wrap leading-relaxed">{exp.description}</p>}
                             </div>
                         ))}
@@ -439,7 +445,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveExp} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveExp} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -457,12 +463,12 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         <div className="mb-4">
                             <div className="flex gap-2">
                                 <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink" />
-                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-lg text-sm font-semibold hover:border-brand hover:bg-brand hover:text-ink transition-colors">Add</button>
+                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-lg text-sm font-semibold hover:border-ink/80 hover:bg-ink/80 transition-colors">Add</button>
                             </div>
                         </div>
                         <div className="overflow-y-auto pr-2 flex flex-wrap gap-2 pb-2">
                             {tempCourses.map((course, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-lg text-xs font-bold text-ink/70">
+                                <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-border rounded-lg text-xs font-bold text-ink/70">
                                     <span>{course}</span>
                                     <button onClick={() => setTempCourses(tempCourses.filter((_, i) => i !== idx))}><X className="w-3.5 h-3.5 text-ink/60 hover:text-destructive"/></button>
                                 </div>
@@ -470,7 +476,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveCourse} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveCourse} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Courses'}
                             </button>
                         </div>
@@ -512,7 +518,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveEdu} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -554,7 +560,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveProj} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveProj} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -606,7 +612,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -638,16 +644,16 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-border">
+                            <div className="pt-4">
                                 <label className="block text-[11px] uppercase font-bold text-ink/60 mb-3">Current Skills ({tempSkills.length})</label>
                                 {tempSkills.length === 0 ? (
                                     <p className="text-ink/60 text-sm">No skills added yet.</p>
                                 ) : (
                                     <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pb-2">
                                         {tempSkills.map((skill: string, idx: number) => (
-                                            <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-ink/70 border border-border text-sm font-semibold">
+                                            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1 bg-border rounded-lg text-ink/70 text-[11px] font-bold">
                                                 <span>{skill}</span>
-                                                <button onClick={() => handleRemoveTempSkill(idx)} className="text-destructive hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleRemoveTempSkill(idx)} className="text-destructive hover:text-destructive"><X className="w-3 h-3" /></button>
                                             </div>
                                         ))}
                                     </div>
@@ -656,7 +662,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveSkills} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveSkills} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Skills'}
                             </button>
                         </div>

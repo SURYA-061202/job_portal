@@ -11,7 +11,7 @@ import CandidateList from '@/components/resume/CandidateList';
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -330,7 +330,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
         } catch (error) {
             console.error('Error fetching registered users:', error);
-            toast.error('Failed to load registered users');
+            popup.error('Failed to load registered users');
         } finally {
             setLoading(false);
         }
@@ -440,8 +440,12 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         return list;
     }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, userRole, isPremium]);
 
+    // The white results panel hugs the list, but fills the whole body area
+    // when there is nothing to show.
+    const listEmpty = showPostView ? postCards.length === 0 : displayCandidates.length === 0;
+
     return (
-        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
             {selectedCandidate ? (
                 <CandidateDetail
                     candidate={selectedCandidate}
@@ -458,83 +462,89 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 <>
                     {activeView === 'list' && (
                         <>
-                            {/* Unified Header & Controls - the Posts masthead
-                                recipe: brand-washed title row (title left,
-                                view controls right), then the description
-                                row. Fixed above the scrolling body. */}
-                            <div className="mb-6 shrink-0">
+                            {/* Unified Header - the Posts masthead recipe:
+                                 brand-washed title and description rows, with
+                                 the search and count on a controls row below
+                                 the panel. Fixed above the scrolling body.
+                                 Spacing to the body comes from the parent's
+                                 space-y-4 only - no mb here, or the flex gap
+                                 doubles up (mb + mt don't collapse). */}
+                            <div className="shrink-0">
                                 <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                                    <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5`}>
+                                        <div className="flex min-w-0 items-center gap-2">
                                             {(isFilteringApplicants || onBack) && (
                                                 <button
                                                     onClick={onBack}
-                                                    className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                                                    className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
                                                     title="Back"
                                                     aria-label="Go back"
                                                 >
                                                     <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                                                 </button>
                                             )}
-                                            <h2 className={skin.heading}>
-                                                {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
-                                            </h2>
-                                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                                                <span
-                                                    aria-hidden="true"
-                                                    className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                                />
-                                                {displayCandidates.length}
-                                            </span>
-                                        </div>
-
-                                        {/* Right end: search, registered-candidates
-                                            switch, post-based toggle. The recruit
-                                            action is not offered on the Posts path. */}
-                                        <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-                                            <div className="relative w-full sm:w-56">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <Search className="h-4 w-4 text-ink/40" />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Search candidates..."
-                                                    className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-                                                    value={searchTerm}
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                />
+                                            <div className="min-w-0">
+                                                <h2 className={skin.heading}>
+                                                    {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
+                                                </h2>
+                                                {/* Description - starts at the title's left edge. */}
+                                                {((postId && postTitle) || !postId) && (
+                                                    <p className={`mt-1.5 ${skin.body}`}>
+                                                        {postId ? postTitle : 'Review and manage candidate applications and profiles'}
+                                                    </p>
+                                                )}
                                             </div>
-                                            {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
-                                                <button
-                                                    onClick={() => setShowPostView(!showPostView)}
-                                                    className={`p-2 border border-ink bg-ink text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/80 ${FOCUS}`}
-                                                    title="Post-based view"
-                                                >
-                                                    <LayoutGrid className="w-5 h-5" />
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Description row */}
-                                    {((postId && postTitle) || !postId) && (
-                                        <div className="px-4 py-2.5 sm:px-5">
-                                            <p className={skin.body}>
-                                                {postId ? postTitle : 'Review and manage candidate applications and profiles'}
-                                            </p>
+                                {/* Controls row below the header: search at the
+                                    left end, candidates count at the right end.
+                                    The post-based toggle rides next to the
+                                    search; it is not offered on the Posts path. */}
+                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+                                        <div className="relative w-full sm:w-56">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Search className="h-4 w-4 text-ink/40" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Search candidates..."
+                                                className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
                                         </div>
-                                    )}
+                                        {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
+                                            <button
+                                                onClick={() => setShowPostView(!showPostView)}
+                                                className={`p-2 border border-ink bg-ink text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/80 ${FOCUS}`}
+                                                title="Post-based view"
+                                            >
+                                                <LayoutGrid className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                                        Candidates: {displayCandidates.length}
+                                    </span>
                                 </div>
                             </div>
 
 
-                            {/* Body - the only scrollable area; the masthead above stays put. */}
-                            <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar">
+                            {/* Body - the only scrollable area, on the same
+                                white results panel the Posts module uses, so
+                                the cards read grey-on-white. The panel hugs
+                                the list and only fills the area when empty.
+                                The masthead above stays put. */}
+                            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
+                            <div className={`${listEmpty ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
                             {showPostView ? (
                                 /* Post Card Grid View */
                                 <div className="space-y-4">
                                     {postCards.length === 0 ? (
-                                        <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} p-12 text-center`}>
+                                        <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
                                             <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
                                             <h3 className={skin.emptyTitle}>No posts found</h3>
                                             <p className={`mt-1 ${skin.body}`}>Create a job post to get started.</p>
@@ -551,7 +561,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                         isFilteringRef.current = true;
                                                         fetchApplicantsForPost(post.id || '');
                                                     }}
-                                                    className={`group relative border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} cursor-pointer overflow-hidden flex flex-col h-full ${FOCUS}`}
+                                                    className={`group relative border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover} cursor-pointer overflow-hidden flex flex-col h-full ${FOCUS}`}
                                                 >
                                                     {/* Top accent bar */}
                                                     <div className="h-1 w-full bg-brand transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
@@ -652,12 +662,13 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 />
                             )}
                             </div>
+                            </div>
                         </>
                     )}
 
                     {activeView === 'history' && (
                         <>
-                            <div className={`flex items-center gap-2 mb-4 cursor-pointer text-ink/70 hover:text-ink ${FOCUS}`} onClick={() => setActiveView('list')}>
+                            <div className={`flex items-center gap-2 cursor-pointer text-ink/70 hover:text-ink ${FOCUS}`} onClick={() => setActiveView('list')}>
                                 <ArrowLeft className="h-5 w-5" />
                                 <span>Back</span>
                             </div>

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Candidate } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
-import toast from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
+import popup from '@/components/ui/Popup';
+import { ArrowLeft, Mail, Loader2 } from "lucide-react";
 import { sendCongratulationsMail } from "@/lib/emailFunctions";
 import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
@@ -62,7 +62,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={onBack}
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
               title="Back"
               aria-label="Go back"
             >
@@ -144,10 +144,10 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
                         console.error('Failed to create notification', err);
                       }
 
-                      toast.success('Email sent successfully');
+                      popup.success('Email sent successfully');
                       setSent(true);
                     } catch (err: any) {
-                      toast.error(err.message || 'Failed to send email');
+                      popup.error(err.message || 'Failed to send email');
                     } finally {
                       setSending(false);
                     }
@@ -190,7 +190,7 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={onBack}
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
               title="Back"
               aria-label="Go back"
             >
@@ -249,10 +249,89 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
   );
 }
 
+/** Row-level action: sends the congratulations mail without leaving the list. */
+function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(() => (candidate.interviewDetails as { successmail?: boolean } | undefined)?.successmail === true);
+  const skin = useSkin();
+
+  // The interview doc is the source of truth for whether the mail already went out.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'interviews', candidate.id));
+        if (!cancelled && snap.exists() && snap.data()?.successmail === true) setSent(true);
+      } catch (err) {
+        console.error("Failed to fetch interview details", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [candidate.id]);
+
+  const send = async (e: MouseEvent) => {
+    e.stopPropagation();
+    if (sending || sent) return;
+    setSending(true);
+    try {
+      await sendCongratulationsMail({
+        candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+      });
+
+      // update Firestore interviews doc
+      const interviewRef = doc(db, 'interviews', candidate.id);
+      const snap = await getDoc(interviewRef);
+      if (snap.exists()) {
+        await updateDoc(interviewRef, { successmail: true, updatedAt: new Date() });
+      } else {
+        await setDoc(interviewRef, { successmail: true, createdAt: new Date() });
+      }
+
+      // also update in candidate's interviewDetails if exists
+      const candRef = doc(db, 'candidates', candidate.id);
+      const candSnap = await getDoc(candRef);
+      if (candSnap.exists()) {
+        await updateDoc(candRef, { 'interviewDetails.successmail': true });
+      }
+
+      // Create notification for the candidate
+      try {
+        await createCongratulationsNotification(candidate.email, candidate.role);
+      } catch (err) {
+        console.error('Failed to create notification', err);
+      }
+
+      popup.success('Email sent successfully');
+      setSent(true);
+    } catch (err: any) {
+      popup.error(err.message || 'Failed to send email');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={send}
+      disabled={sending || sent}
+      title={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
+      aria-label={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
+      className={`p-2 border border-border bg-surface cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${sent ? 'text-ink/40' : 'text-brand hover:bg-brand/10'} ${skin.radius} ${FOCUS}`}
+    >
+      {sending ? (
+        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <Mail className="w-4 h-4" aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
 export default function SelectedCandidatesTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Candidate | null>(null);
+  const [postTitles, setPostTitles] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [view, setView] = useState<'selected' | 'rejected'>('selected');
   const skin = useSkin();
@@ -277,18 +356,31 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
           return Number(dateB) - Number(dateA);
         });
 
-        // 2. Fetch job applications
+        // 2. Fetch job applications + post titles for the "Post" column
         let ownedPostIds: string[] = [];
+        const titles: Record<string, string> = {};
         if (!isAdmin && userId) {
           const recruitsQs = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
-          ownedPostIds = recruitsQs.docs.map(doc => doc.id);
+          ownedPostIds = recruitsQs.docs.map(d => d.id);
+          recruitsQs.docs.forEach((d) => {
+            const jobTitle = d.data()?.jobTitle;
+            if (jobTitle) titles[d.id] = jobTitle;
+          });
 
           if (ownedPostIds.length === 0 && allCandidates.length === 0) {
             setCandidates([]);
+            setPostTitles(titles);
             setLoading(false);
             return;
           }
+        } else {
+          const postsSnap = await getDocs(query(collection(db, 'recruits')));
+          postsSnap.docs.forEach((d) => {
+            const jobTitle = d.data()?.jobTitle;
+            if (jobTitle) titles[d.id] = jobTitle;
+          });
         }
+        setPostTitles(titles);
 
         let applications: { user_id: string; post_id: string; status: string }[] = [];
         try {
@@ -363,7 +455,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         setCandidates(allCandidates);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load candidates");
+        popup.error("Failed to load candidates");
       } finally {
         setLoading(false);
       }
@@ -378,21 +470,10 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
     return false;
   });
 
-  if (selected) {
-    const status = (selected as any).status || '';
-    if (status === 'selected') {
-      return <SelectedCandidateDetail candidate={selected} onBack={() => setSelected(null)} />;
-    }
-    if (status.endsWith('rejected')) {
-      return <RejectedCandidateDetail candidate={selected} onBack={() => setSelected(null)} />;
-    }
-  }
-
   return (
     <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
       <CandidateList
         candidates={filtered}
-        onSelectCandidate={setSelected}
         loading={loading}
         searchTerm={search}
         onSearchTermChange={setSearch}
@@ -411,6 +492,8 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         ]}
         onFilterChange={(value) => setView(value as 'selected' | 'rejected')}
         searchWidth="sm:w-52"
+        postTitles={postTitles}
+        extraActions={(candidate) => <SendCongratulationsButton candidate={candidate} />}
       />
     </div>
   );

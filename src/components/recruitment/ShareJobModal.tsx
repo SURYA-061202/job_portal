@@ -1,6 +1,6 @@
 import { X, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 interface ShareJobModalProps {
@@ -19,10 +19,10 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
             const textToCopy = `${jobTitle}\n${shareUrl}`;
             await navigator.clipboard.writeText(textToCopy);
             setCopied(true);
-            toast.success('Link copied to clipboard!');
+            popup.success('Link copied to clipboard!');
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-            toast.error('Failed to copy link');
+            popup.error('Failed to copy link');
         }
     };
 

@@ -4,7 +4,7 @@ import { X, Crown, Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { createPremiumRequestNotification } from '@/lib/notificationHelper';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import type { PremiumRequestStatus } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -70,11 +70,11 @@ export default function PremiumRequestModal({ isOpen, onClose, currentStatus, on
             await createPremiumRequestNotification(admin.email, userName, user.email || '');
 
             onStatusChange('pending');
-            toast.success('Premium request sent to admin!');
+            popup.success('Premium request sent to admin!');
             onClose();
         } catch (error) {
             console.error('Error requesting premium:', error);
-            toast.error('Failed to send premium request');
+            popup.error('Failed to send premium request');
         } finally {
             setLoading(false);
         }

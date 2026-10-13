@@ -1,7 +1,7 @@
 import UserHeader from '@/components/layout/UserHeader';
 import { useState, useRef } from 'react';
 import { Send } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 const WHATSAPP_NUMBER = '8778326518';
@@ -23,7 +23,7 @@ export default function CareerAssistancePage() {
     const handleSend = () => {
         const trimmed = message.trim();
         if (!trimmed) {
-            toast.error('Please enter your message');
+            popup.error('Please enter your message');
             return;
         }
         const encoded = encodeURIComponent(trimmed);
@@ -35,7 +35,7 @@ export default function CareerAssistancePage() {
         }
         setMessage('');
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
-        toast.success(isMobile ? 'Opening WhatsApp...' : 'Opening WhatsApp Web...');
+        popup.success(isMobile ? 'Opening WhatsApp...' : 'Opening WhatsApp Web...');
     };
 
     return (

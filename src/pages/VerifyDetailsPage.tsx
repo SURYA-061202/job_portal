@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 
 export default function VerifyDetailsPage() {
   const [searchParams] = useSearchParams();
@@ -29,7 +29,7 @@ export default function VerifyDetailsPage() {
       }
       const snap = await getDoc(doc(db, 'interviews', candidateId));
       if (!snap.exists()) {
-        toast.error('Invalid candidate link');
+        popup.error('Invalid candidate link');
         setLoading(false);
         return;
       }
@@ -78,11 +78,11 @@ export default function VerifyDetailsPage() {
         console.error('Failed to add notification', err);
       }
 
-      toast.success('Details submitted successfully');
+      popup.success('Details submitted successfully');
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to submit');
+      popup.error('Failed to submit');
     }
   };
 

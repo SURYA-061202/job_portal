@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { sendInterviewInvite } from '@/lib/emailFunctions';
 import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
@@ -116,12 +116,12 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   const handleSend = async () => {
     const isJobApplicant = !!(candidate as any).postId;
     if (!role || dates.some((d) => !d) || !roundType || interviewers.length === 0) {
-      toast.error('Please fill all fields');
+      popup.error('Please fill all fields');
       return;
     }
 
     if (!isJobApplicant && !selectedPostId) {
-      toast.error('Please select a job position');
+      popup.error('Please select a job position');
       return;
     }
 
@@ -175,7 +175,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         console.log('[InterviewInvite] Application created/updated successfully');
       } catch (appError: any) {
         console.error('Error creating job application:', appError);
-        toast.error(`Sync Error: ${appError.message}`);
+        popup.error(`Sync Error: ${appError.message}`);
       }
 
       // Store interview details in interviews collection for both types
@@ -217,11 +217,11 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         console.error('Failed to create notification', err);
       }
 
-      toast.success('Email sent successfully');
+      popup.success('Email sent successfully');
       onSent?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send email');
+      popup.error(err.message || 'Failed to send email');
     } finally {
       setLoading(false);
     }

@@ -152,7 +152,10 @@ export default function FilterSidebar({ selectedFilters, onToggleFilter, onClear
                 {hasActiveFilters && onClearFilters && (
                     <div className="flex justify-end mb-3">
                         <button
-                            onClick={onClearFilters}
+                            onClick={() => {
+                                setCityQuery('');
+                                onClearFilters();
+                            }}
                             className={`px-3 py-1.5 text-xs font-bold border border-destructive bg-surface text-destructive rounded-lg cursor-pointer transition-colors duration-200 hover:bg-destructive/10 ${FOCUS}`}
                             title="Clear all filters"
                         >

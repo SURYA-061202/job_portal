@@ -5,7 +5,7 @@ import { db, firebaseConfig } from '@/lib/firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { sendManagerInvite } from '@/lib/emailFunctions';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import { createManagerInviteNotification } from '@/lib/notificationHelper';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -49,7 +49,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
             setMembers(membersData);
         } catch (error) {
             console.error('Error fetching members:', error);
-            toast.error('Failed to load members');
+            popup.error('Failed to load members');
         } finally {
             setLoading(false);
         }
@@ -104,9 +104,9 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                     console.error('Failed to create notification', err);
                 }
 
-                toast.success('Member added and welcome email sent!');
+                popup.success('Member added and welcome email sent!');
             } else {
-                toast.success('Member added, but failed to send welcome email automatically.');
+                popup.success('Member added, but failed to send welcome email automatically.');
             }
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', mobile: '', password: '' });
@@ -114,7 +114,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
 
         } catch (error) {
             console.error('Error adding member:', error);
-            toast.error('Failed to add member');
+            popup.error('Failed to add member');
         } finally {
             setAddingMember(false);
         }
@@ -135,63 +135,60 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
     }
 
     return (
-        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 flex flex-col`}>
-            {/* Header - Posts masthead recipe: brand-washed title row (heading +
-                count badge, search + Add Recruiters at the right end) over a
-                description row. */}
-            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h2 className={skin.heading}>Team Members</h2>
-                        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                            <span
-                                aria-hidden="true"
-                                className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                            />
-                            {members.length}
-                        </span>
-                    </div>
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
+            {/* Header - title and description with no line separator. */}
+            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+                <h2 className={skin.heading}>Team Members</h2>
+                <p className={`mt-1.5 ${skin.body}`}>Manage your recruitment team and assign manager roles</p>
+            </div>
 
-                    <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
-                        <div className="relative w-full sm:w-72">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-ink/40" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search members..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-                            />
-                        </div>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
-                        >
-                            <UserPlus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Add Recruiters</span>
-                            <span className="sm:hidden">Add Member</span>
-                        </button>
+            {/* Controls row below the header: search at the left end; the
+                member count followed by Add Recruiters at the right. */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="relative w-full sm:w-72">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-ink/40" />
                     </div>
+                    <input
+                        type="text"
+                        placeholder="Search members..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+                    />
                 </div>
-
-                <div className="px-4 py-2.5 sm:px-5">
-                    <p className={skin.body}>Manage your recruitment team and assign manager roles</p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <span
+                        role="status"
+                        aria-atomic="true"
+                        className="inline-flex shrink-0 items-center justify-center whitespace-nowrap px-4 py-2 rounded-lg border border-ink text-ink text-xs font-semibold uppercase tracking-wider"
+                    >
+                        {members.length} Recruiter{members.length === 1 ? '' : 's'}
+                    </span>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Add Recruiters</span>
+                        <span className="sm:hidden">Add Member</span>
+                    </button>
                 </div>
             </div>
 
+            {/* Body - white results panel with the grey member cards inside. */}
+            <div className={`border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4`}>
             {/* Member Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredMembers.map(member => (
                     <div
                         key={member.id}
                         onClick={() => onViewMember?.(member.id)}
-                        className={`p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} transition-colors duration-200 ${skin.cardHover} group cursor-pointer ${FOCUS}`}
+                        className={`p-6 border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover} group cursor-pointer ${FOCUS}`}
                     >
                         {/* Avatar */}
                         <div className="flex flex-col items-center mb-4">
-                            <div className="w-20 h-20 overflow-hidden bg-muted rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
+                            <div className="w-20 h-20 overflow-hidden bg-surface rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
                                 {member.profileImage ? (
                                     <img
                                         src={member.profileImage}
@@ -223,6 +220,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                         </div>
                     </div>
                 ))}
+            </div>
             </div>
 
             {isModalOpen && (

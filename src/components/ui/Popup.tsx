@@ -1,98 +1,177 @@
-import { useState, useCallback, createContext, useContext } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, Info, X, Loader2 } from 'lucide-react';
+/* The popup API is intentionally co-located with its renderer so every call
+ * site has exactly one import for all popup behaviour. */
+/* eslint-disable react-refresh/only-export-components */
+import { useSyncExternalStore } from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, Info, X, Loader2 } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
-type PopupType = 'success' | 'error' | 'warning' | 'info' | 'loading';
+/**
+ * The single popup module for the whole app. Every surface (CV page,
+ * profile, recruitment, auth, ...) reports through this file, and
+ * `PopupProvider` renders one stack at the bottom right.
+ *
+ * Rules: one line tall (fixed height), simple icon + message, longer
+ * messages truncate with an ellipsis. Loading popups stay until they are
+ * replaced (pass the same `id`) or dismissed.
+ *
+ *   import popup from '@/components/ui/Popup';
+ *   const id = popup.loading('Saving...');
+ *   popup.success('Saved', { id });          // replaces the spinner
+ *   popup.error('Failed');                    // auto-dismisses in 3s
+ */
+
+type PopupKind = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
 interface PopupItem {
-  id: string;
-  type: PopupType;
-  message: string;
-  duration?: number;
+    id: string;
+    kind: PopupKind;
+    message: string;
 }
 
-interface PopupContextValue {
-  showSuccess: (message: string, duration?: number) => void;
-  showError: (message: string, duration?: number) => void;
-  showWarning: (message: string, duration?: number) => void;
-  showInfo: (message: string, duration?: number) => void;
-  showLoading: (message: string) => string;
-  hideLoading: (id: string) => void;
+interface PopupOptions {
+    /** Replace the popup with this id (used to turn a loading popup into its result). */
+    id?: string;
+    /** Auto-dismiss delay in ms. Ignored for loading popups. */
+    duration?: number;
 }
 
-const PopupContext = createContext<PopupContextValue | null>(null);
+interface PopupApi {
+    success: (message: string, options?: PopupOptions) => string;
+    error: (message: string, options?: PopupOptions) => string;
+    warning: (message: string, options?: PopupOptions) => string;
+    info: (message: string, options?: PopupOptions) => string;
+    loading: (message: string, options?: PopupOptions) => string;
+    dismiss: (id?: string) => void;
+}
 
-let globalPopupId = 0;
+/** Module-level store so popups work from anywhere (handlers, utils,
+ *  non-component code) without a React context lookup. */
+let items: PopupItem[] = [];
+const listeners = new Set<() => void>();
+const timers = new Map<string, number>();
+let seq = 0;
 
-export function PopupProvider({ children }: { children: React.ReactNode }) {
-  const [popups, setPopups] = useState<PopupItem[]>([]);
-  const skin = useSkin();
+const emit = () => listeners.forEach((listener) => listener());
 
-  const addPopup = useCallback((type: PopupType, message: string, duration?: number) => {
-    const id = `popup-${++globalPopupId}`;
-    const item: PopupItem = { id, type, message, duration };
-    setPopups(prev => [...prev, item]);
+const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => {
+        listeners.delete(listener);
+    };
+};
 
-    if (type !== 'loading' && duration !== 0) {
-      setTimeout(() => {
-        setPopups(prev => prev.filter(p => p.id !== id));
-      }, duration || 3000);
+const snapshot = () => items;
+
+const put = (kind: PopupKind, message: string, options?: PopupOptions): string => {
+    const id = options?.id || `popup-${++seq}`;
+    const next: PopupItem = { id, kind, message };
+    items = items.some((item) => item.id === id)
+        ? items.map((item) => (item.id === id ? next : item))
+        : [...items, next];
+    emit();
+
+    const running = timers.get(id);
+    if (running) window.clearTimeout(running);
+    timers.delete(id);
+    if (kind !== 'loading') {
+        timers.set(id, window.setTimeout(() => popup.dismiss(id), options?.duration ?? 3000));
     }
-
     return id;
-  }, []);
+};
 
-  const hidePopup = useCallback((id: string) => {
-    setPopups(prev => prev.filter(p => p.id !== id));
-  }, []);
+export const popup: PopupApi = {
+    success: (message, options) => put('success', message, options),
+    error: (message, options) => put('error', message, options),
+    warning: (message, options) => put('warning', message, options),
+    info: (message, options) => put('info', message, options),
+    loading: (message, options) => put('loading', message, options),
+    dismiss: (id) => {
+        if (id) {
+            const running = timers.get(id);
+            if (running) window.clearTimeout(running);
+            timers.delete(id);
+            items = items.filter((item) => item.id !== id);
+        } else {
+            timers.forEach((running) => window.clearTimeout(running));
+            timers.clear();
+            items = [];
+        }
+        emit();
+    },
+};
 
-  const value: PopupContextValue = {
-    showSuccess: useCallback((msg, dur) => addPopup('success', msg, dur), [addPopup]),
-    showError: useCallback((msg, dur) => addPopup('error', msg, dur), [addPopup]),
-    showWarning: useCallback((msg, dur) => addPopup('warning', msg, dur), [addPopup]),
-    showInfo: useCallback((msg, dur) => addPopup('info', msg, dur), [addPopup]),
-    showLoading: useCallback((msg) => addPopup('loading', msg, 0), [addPopup]),
-    hideLoading: useCallback((id) => hidePopup(id), [hidePopup]),
-  };
+export default popup;
 
-  const iconMap: Record<PopupType, React.ReactNode> = {
-    success: <CheckCircle className="h-5 w-5 text-green-500" />,
-    error: <XCircle className="h-5 w-5 text-destructive" />,
-    warning: <AlertTriangle className="h-5 w-5 text-ink/70" />,
-    info: <Info className="h-5 w-5 text-ink/70" />,
-    loading: <Loader2 className="h-5 w-5 text-ink/40 animate-spin" />,
-  };
+const ICONS: Record<PopupKind, React.ReactNode> = {
+    success: <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />,
+    error: <XCircle className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />,
+    warning: <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />,
+    info: <Info className="h-4 w-4 shrink-0 text-sky-500" aria-hidden="true" />,
+    loading: <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ink/40" aria-hidden="true" />,
+};
 
-  return (
-    <PopupContext.Provider value={value}>
-      {children}
+/** Mount once at the app root; renders the bottom-right popup stack. */
+export function PopupProvider({ children }: { children: React.ReactNode }) {
+    const skin = useSkin();
+    const list = useSyncExternalStore(subscribe, snapshot, snapshot);
 
-      {/* Toast Popups - Bottom Right */}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
-        {popups.map((popup) => (
-          <div
-            key={popup.id}
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} min-w-[280px] max-w-[400px] animate-slide-in`}
-          >
-            {iconMap[popup.type]}
-            <span className="text-sm text-ink/80 flex-1">{popup.message}</span>
-            {popup.type !== 'loading' && (
-              <button
-                onClick={() => hidePopup(popup.id)}
-                className={`text-ink/60 hover:text-ink hover:bg-ink/5 ${skin.radius} flex-shrink-0 ${FOCUS}`}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </PopupContext.Provider>
-  );
+    return (
+        <>
+            {children}
+            <div
+                className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col items-end gap-2"
+                role="status"
+                aria-live="polite"
+            >
+                {list.map((item) => (
+                    <div
+                        key={item.id}
+                        className={`pointer-events-auto flex h-10 w-fit max-w-[340px] items-center gap-2 border px-3 ${skin.edge} ${skin.surface} ${skin.radius} animate-slide-in`}
+                    >
+                        {ICONS[item.kind]}
+                        <span className="min-w-0 flex-1 truncate text-sm text-ink/80">{item.message}</span>
+                        {item.kind !== 'loading' && (
+                            <button
+                                type="button"
+                                aria-label="Dismiss"
+                                onClick={() => popup.dismiss(item.id)}
+                                className={`shrink-0 text-ink/50 hover:bg-ink/5 hover:text-ink ${FOCUS} ${skin.radius}`}
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </>
+    );
 }
 
-export function usePopup(): PopupContextValue {
-  const ctx = useContext(PopupContext);
-  if (!ctx) throw new Error('usePopup must be used within PopupProvider');
-  return ctx;
+/** Hook form of the same API for components that prefer it. */
+export function usePopup(): {
+    showSuccess: (message: string, duration?: number) => void;
+    showError: (message: string, duration?: number) => void;
+    showWarning: (message: string, duration?: number) => void;
+    showInfo: (message: string, duration?: number) => void;
+    showLoading: (message: string) => string;
+    hideLoading: (id: string) => void;
+} {
+    return {
+        showSuccess: (message, duration) => {
+            popup.success(message, { duration });
+        },
+        showError: (message, duration) => {
+            popup.error(message, { duration });
+        },
+        showWarning: (message, duration) => {
+            popup.warning(message, { duration });
+        },
+        showInfo: (message, duration) => {
+            popup.info(message, { duration });
+        },
+        showLoading: (message) => popup.loading(message),
+        hideLoading: (id) => {
+            popup.dismiss(id);
+        },
+    };
 }

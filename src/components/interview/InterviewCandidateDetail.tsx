@@ -1,21 +1,48 @@
-import type { Candidate } from "@/types";
-import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil } from "lucide-react";
+import type { Candidate, RecruitmentRequest } from "@/types";
+import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil, Loader2 } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
-import toast from "react-hot-toast";
+import { getPostRounds } from '@/lib/interviewRounds';
+import popup from '@/components/ui/Popup';
 import { useEffect, useState } from "react";
 import { useSkin, FOCUS } from '@/styles/skin';
 
-interface Props {
-  candidate: Candidate;
-  onBack: () => void;
-  onStatusUpdated?: () => void;
+/** Dynamic: determine next round from current status */
+function getNextRound(current?: string): string | null {
+  if (!current) return 'round1';
+  if (current === 'pending') return 'round1';
+  const match = current.match(/^round(\d+)$/);
+  if (match) return `round${parseInt(match[1]) + 1}`;
+  return null;
 }
 
-export default function InterviewCandidateDetail({ candidate, onBack, onStatusUpdated }: Props) {
+/** Extract round number from status (e.g. "round3" -> 3) */
+function getRoundNumber(current?: string): number {
+  if (!current) return 0;
+  const match = current.match(/^round(\d+)$/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+/** Prefill: the name configured on the post for the round the candidate moves into next. */
+function defaultRoundName(status?: string, post?: RecruitmentRequest | null): string {
+  const next = getNextRound(status);
+  if (!next) return '';
+  return getPostRounds(post)[getRoundNumber(next) - 1]?.name || '';
+}
+
+interface Props {
+  candidate: Candidate;
+  post?: RecruitmentRequest | null;
+  onBack: () => void;
+  onStatusUpdated?: () => void;
+  /** Called after a successful Select so the shell can jump to the Selected Candidates module. */
+  onCandidateSelected?: () => void;
+}
+
+export default function InterviewCandidateDetail({ candidate, post, onBack, onStatusUpdated, onCandidateSelected }: Props) {
   const interview = (candidate as any).interviewDetails || {};
   const status = (candidate as any).status;
 
@@ -28,7 +55,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
   const [experienceIn, setExperienceIn] = useState<string>(interview.experienceIn ?? '');
   const [readyRelocate, setReadyRelocate] = useState<string>(interview.readyToRelocate ?? '');
   const [feedback, setFeedback] = useState<string>(interview.feedback ?? 'Good');
-  const [roundName, setRoundName] = useState<string>('');
+  const [roundName, setRoundName] = useState<string>(() => defaultRoundName(status, post));
   const [moving, setMoving] = useState(false);
   const [editCurSal, setEditCurSal] = useState(false);
   const [editExpSal, setEditExpSal] = useState(false);
@@ -59,31 +86,18 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
     fetchInterview();
   }, [candidate.id]);
 
-  /** Dynamic: determine next round from current status */
-  const getNextRound = (current?: string): string | null => {
-    if (!current) return 'round1';
-    if (current === 'pending') return 'round1';
-    const match = current.match(/^round(\d+)$/);
-    if (match) return `round${parseInt(match[1]) + 1}`;
-    return null;
-  };
-
-  /** Extract round number from status (e.g. "round3" -> 3) */
-  const getRoundNumber = (current?: string): number => {
-    if (!current) return 0;
-    const match = current.match(/^round(\d+)$/);
-    return match ? parseInt(match[1]) : 0;
-  };
-
   const nextRound = getNextRound(status);
   const isRound = /^round\d+$/.test(status || '');
 
   /** Check if status is already 'selected' */
   const isSelected = status === 'selected';
 
+  /** Only the post's last round may select the candidate outright. */
+  const isLastRound = isRound && getRoundNumber(status) >= getPostRounds(post).length;
+
   const moveToNextRound = async () => {
     if (!nextRound || !roundName.trim()) {
-      toast.error('Please enter a round name');
+      popup.error('Please enter a round name');
       return;
     }
     setMoving(true);
@@ -143,19 +157,18 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         roundLabel: effectiveRoundName,
       });
 
-      toast.success(`Moved to Round ${nextRoundNum} (${effectiveRoundName})`);
+      popup.success(`Moved to Round ${nextRoundNum} (${effectiveRoundName})`);
       onStatusUpdated?.();
       onBack();
     } catch (err: any) {
       console.error("Failed to update status", err);
-      toast.error(err.message || "Failed to update");
+      popup.error(err.message || "Failed to update");
     } finally {
       setMoving(false);
     }
   };
 
   const handleSelect = async () => {
-    if (!confirm("Select this candidate?")) return;
     setMoving(true);
     try {
       const applicantPostId = (candidate as any).postId;
@@ -192,12 +205,16 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         status: 'selected',
       });
 
-      toast.success("Candidate selected!");
+      popup.success("Candidate selected!");
       onStatusUpdated?.();
-      onBack();
+      if (onCandidateSelected) {
+        onCandidateSelected();
+      } else {
+        onBack();
+      }
     } catch (err: any) {
       console.error("Failed to select candidate", err);
-      toast.error(err.message || "Failed to select");
+      popup.error(err.message || "Failed to select");
     } finally {
       setMoving(false);
     }
@@ -227,96 +244,147 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
         status: newStatus,
       });
 
-      toast.success("Candidate rejected");
+      popup.success("Candidate rejected");
       onStatusUpdated?.();
       onBack();
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to reject");
+      popup.error("Failed to reject");
     }
   };
 
-  const displayedRoundType = interview.roundType || '-';
-
-  const statusLabel = !status
-    ? 'Not started'
-    : isRound
-      ? `Round ${getRoundNumber(status)}`
-      : status.charAt(0).toUpperCase() + status.slice(1);
+  /** Present round in the body: the number comes from the status, the name
+      from the post's configuration (falling back to the name recorded when
+      the candidate was moved in). */
+  const presentRoundNum = getRoundNumber(status);
+  const presentRoundName = (((isRound && getPostRounds(post)[presentRoundNum - 1]?.name) || interview.roundType || '-').trim()) || '-';
+  const presentRoundLabel = isRound
+    ? `Round ${presentRoundNum}`
+    : status
+      ? status.charAt(0).toUpperCase() + status.slice(1)
+      : 'Not started';
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Masthead - the Posts/Candidates recipe: hairline edge, surface, radius,
-          elevation and brand wash from the active skin, with the back control
-          and candidate identity in the title row. */}
-      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-        <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-4 py-3.5 sm:px-5`}>
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              onClick={onBack}
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
-              title="Back"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-            </button>
-            <div className="flex min-w-0 flex-col">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
-                <span
-                  className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink"
-                  title="Interview status"
-                >
-                  {statusLabel}
-                </span>
-              </div>
-            </div>
+      {/* Masthead - back control beside the identity: the name alone (the
+          round number lives in the body), a description underneath; no line
+          separator between rows, and the back arrow uses the same
+          rounded-lg as the buttons. */}
+      <div className={`shrink-0 mb-4 overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            onClick={onBack}
+            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+            title="Back to list"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+          </button>
+          <div className="min-w-0">
+            <h1 className={`${skin.heading} max-w-full truncate`}>{candidate.name}</h1>
+            <p className={`mt-1.5 ${skin.body}`}>Review the candidate's interview details and move them forward to the next round.</p>
           </div>
-        </div>
-        <div className="px-4 py-2.5 sm:px-5">
-          <p className={skin.body}>
-            {candidate.email}
-            {candidate.phone && (
-              <>
-                <span className="mx-2 text-ink/40">•</span>
-                {candidate.phone}
-              </>
-            )}
-          </p>
         </div>
       </div>
 
-      {/* Body - fixed height; only the contents inside it scroll */}
-      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-      <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
+      {/* Controls row below the header: round name and the round actions
+          pinned to the right end, above the body. The round name and move
+          action disappear once the candidate is in the post's last round —
+          only Select (and Reject) remain. */}
+      {isRound && !isSelected && (
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-end gap-3">
+          {!isLastRound && (
+            <>
+              <input
+                id="interview-round-name"
+                type="text"
+                aria-label="Round name"
+                value={roundName}
+                onChange={(e) => setRoundName(e.target.value)}
+                placeholder="e.g. Technical, HR, Manager Round"
+                className={`px-3 py-2 rounded-lg w-full sm:w-56 ${skin.field} ${FOCUS}`}
+              />
+              {nextRound && (
+                <button
+                  onClick={moveToNextRound}
+                  disabled={moving || !roundName.trim()}
+                  className={`inline-flex items-center gap-2 rounded-lg cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {moving ? 'Moving...' : `Move to ${nextRound.replace(/^round/, 'Round ')}`}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
+          {isLastRound && (
+            <button
+              onClick={handleSelect}
+              disabled={moving}
+              className={`inline-flex items-center gap-2 rounded-lg cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
+            >
+              {moving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" />}
+              {moving ? 'Selecting…' : 'Select'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleReject}
+            disabled={moving}
+            className={`inline-flex items-center px-4 py-2 rounded-lg border border-destructive bg-destructive text-white hover:opacity-90 text-sm font-medium disabled:opacity-50 ${FOCUS}`}
+          >
+            <XCircle className="h-5 w-5 mr-2" /> Reject
+          </button>
+        </div>
+      )}
+
+      {/* Body - white surface with no shadow; the details themselves sit on
+          a grey section inside it, like the Shortlisted module. The vertical
+          padding is pinned strips on the panel itself, so it stays at the top
+          and bottom of the body by default and while the table scrolls
+          between them. */}
+      <div className={`flex flex-1 min-h-0 flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`}>
+      <div className="h-4 sm:h-6 shrink-0" aria-hidden="true" />
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="px-4 sm:px-6">
+        <div className={`border ${skin.edge} ${skin.radius} ${skin.canvas} overflow-hidden`}>
         {/* Interview info table */}
         <div className="overflow-x-auto">
-          <table className={`min-w-full divide-y ${skin.divide} text-sm`}>
-            <tbody className={`divide-y ${skin.divide}`}>
+          <table className="table-fixed w-auto text-sm">
+            <tbody>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60 w-48">Round</th>
-                <td className="px-4 py-3 text-ink/80 capitalize">{status || 'Not started'}</td>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Email</th>
+                <td className="px-4 py-3 text-ink/80">{candidate.email || '-'}</td>
+              </tr>
+              {candidate.phone && (
+                <tr>
+                  <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Phone</th>
+                  <td className="px-4 py-3 text-ink/80">{candidate.phone}</td>
+                </tr>
+              )}
+              <tr>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Round</th>
+                <td className="px-4 py-3 text-ink/80">{presentRoundLabel}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Round Type</th>
-                <td className="px-4 py-3 text-ink/80">{displayedRoundType}</td>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Round Type</th>
+                <td className="px-4 py-3 text-ink/80">{presentRoundName}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Interview Role</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Interview Role</th>
                 <td className="px-4 py-3 text-ink/80">{interview.role || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Interviewers</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Interviewers</th>
                 <td className="px-4 py-3 text-ink/80">{Array.isArray(interview.interviewers) && interview.interviewers.length ? interview.interviewers.join(', ') : '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Proposed Dates</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Proposed Dates</th>
                 <td className="px-4 py-3 text-ink/80">
                   {Array.isArray(interview.dates) && interview.dates.length ? interview.dates.join(', ') : '-'}
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Selected Date</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Selected Date</th>
                 <td className="px-4 py-3">
                   {selectedDate && response === 'accept' ? (
                     <span className="flex items-center text-ink/80"><Calendar className="h-4 w-4 mr-1 text-brand" /> {selectedDate}</span>
@@ -328,7 +396,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Current Salary</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Current Salary</th>
                 <td className="px-4 py-3">
                   {editCurSal ? (
                     <input type="number" value={currentSalary}
@@ -344,7 +412,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Expected Salary</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Expected Salary</th>
                 <td className="px-4 py-3">
                   {editExpSal ? (
                     <input type="number" value={expectedSalary}
@@ -360,7 +428,7 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Date of Joining</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Date of Joining</th>
                 <td className="px-4 py-3">
                   {editJoinDate ? (
                     <input type="date" value={joiningDate}
@@ -374,19 +442,19 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
                 </td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Years of Experience</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Years of Experience</th>
                 <td className="px-4 py-3 text-ink/80">{yearsExperience || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Experience In</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Experience In</th>
                 <td className="px-4 py-3 text-ink/80">{experienceIn || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Ready to Relocate</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Ready to Relocate</th>
                 <td className="px-4 py-3 text-ink/80">{readyRelocate || '-'}</td>
               </tr>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-ink/60">Feedback</th>
+                <th className="w-48 px-4 py-3 text-left font-medium text-ink/70">Feedback</th>
                 <td className="px-4 py-3">
                   {editFeedback ? (
                     <input type="text" value={feedback}
@@ -405,49 +473,10 @@ export default function InterviewCandidateDetail({ candidate, onBack, onStatusUp
             </tbody>
           </table>
         </div>
-
-        {/* Round Name Input + Actions */}
-        {isRound && !isSelected && (
-          <div className={`border-t ${skin.edge} pt-6`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-              <label className="text-sm font-medium text-ink/80 whitespace-nowrap">Round Name:</label>
-              <input
-                type="text"
-                value={roundName}
-                onChange={(e) => setRoundName(e.target.value)}
-                placeholder="e.g. Technical, HR, Manager Round"
-                className={`px-3 py-2 w-full sm:w-56 ${skin.field} ${FOCUS}`}
-              />
-              {nextRound && (
-                <button
-                  onClick={moveToNextRound}
-                  disabled={moving || !roundName.trim()}
-                  className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {moving ? 'Moving...' : `Move to ${nextRound.replace(/^round/, 'Round ')}`}
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
-              <button
-                onClick={handleSelect}
-                disabled={moving}
-                className={`inline-flex items-center gap-2 cursor-pointer ${skin.cta} ${FOCUS} disabled:opacity-50`}
-              >
-                <Check className="h-4 w-4" />
-                Select
-              </button>
-              <button
-                type="button"
-                onClick={handleReject}
-                disabled={moving}
-                className={`inline-flex items-center px-4 py-2 border border-destructive bg-destructive text-white ${skin.radius} hover:opacity-90 text-sm font-medium disabled:opacity-50 ${FOCUS}`}
-              >
-                <XCircle className="h-5 w-5 mr-2" /> Reject
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
+        </div>
       </div>
+      <div className="h-4 sm:h-6 shrink-0" aria-hidden="true" />
       </div>
     </div>
   );

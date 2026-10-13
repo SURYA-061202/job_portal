@@ -2,16 +2,14 @@ import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
     Users, CheckCircle2, Loader2, FilePlus2, ChevronLeft, Edit, Trash2, Share2,
-    Building2, Award, Clock,
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { hasUserApplied, applyForJob, getApplicationStatus } from '@/lib/jobApplications';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
-import toast from 'react-hot-toast';
+import popup from '@/components/ui/Popup';
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds } from '@/lib/interviewRounds';
-import { timeAgo } from '@/lib/format';
 import ShareJobModal from './ShareJobModal';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -104,7 +102,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         if (!recruitment.id) return;
         const user = auth.currentUser;
         if (!user) {
-            toast.error('Please log in to apply');
+            popup.error('Please log in to apply');
             return;
         }
 
@@ -113,7 +111,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         // condition (temporarily)". Profile completeness is still required so
         // recruiters always receive a reachable candidate.
         if (!userProfile?.firstName || !userProfile?.lastName || !userProfile?.mobile) {
-            toast.error('Please complete your profile details before applying.');
+            popup.error('Please complete your profile details before applying.');
             return;
         }
 
@@ -122,18 +120,18 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             const result = await applyForJob(recruitment.id, user.uid);
 
             if (!result.success) {
-                toast.error(result.error || 'You have already applied for this position.');
+                popup.error(result.error || 'You have already applied for this position.');
                 setHasApplied(true);
                 const status = await getApplicationStatus(recruitment.id, user.uid);
                 setApplicationStatus(status);
             } else {
-                toast.success('Successfully applied!');
+                popup.success('Successfully applied!');
                 setHasApplied(true);
                 setApplicationStatus('applied');
             }
         } catch (err: any) {
             console.error('Apply error:', err);
-            toast.error(`Failed to apply: ${err.message}`);
+            popup.error(`Failed to apply: ${err.message}`);
         } finally {
             setActionLoading(false);
         }
@@ -148,21 +146,19 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     // the Posts module fields. Count badges and buttons carry it too.
     const r = 'rounded-lg';
 
-    /* Candidate view strips the chip chrome from the Requirements values. */
-    const requirementValue = isUserView
-        ? 'inline-flex items-center font-semibold text-ink'
-        : `inline-flex items-center ${skin.chip} ${r}`;
-    /* Panels: white body, grey sections on the candidate view. */
-    const panelClass = `overflow-hidden border ${skin.edge} ${isUserView ? 'bg-muted' : skin.surface} ${skin.radius}`;
+    /* Requirements values render as plain emphasis - no border or chip
+       chrome on either view. */
+    const requirementValue = 'inline-flex items-center font-semibold text-ink';
+    /* Panels: grey sections on the common white page, both views. */
+    const panelClass = `overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius}`;
     /* Candidate view reuses the post-card grey: the back button gets a grey
        tile with the button radius, and the skill tags copy the post-card pill
        (padding, size and weight included) so they read identically. */
     const greySurface = isUserView ? `bg-border text-ink ${r}` : null;
-    const greyTag = isUserView ? `${r} bg-border px-2 py-1 text-xs font-medium text-ink/70` : null;
-    /* Interview round tiles pick up the same grey on the candidate view. */
-    const roundPanel = isUserView
-        ? `flex items-center ${skin.radius} p-3 bg-border text-ink`
-        : `flex items-center border ${skin.edge} ${skin.radius} p-3`;
+    /* Skills tags and interview-round tiles share one grey, both views - the
+       same fill the user side uses inside its white body. */
+    const greyTag = `${r} bg-border px-2 py-1 text-xs font-medium text-ink/70`;
+    const roundPanel = `flex items-center ${skin.radius} p-3 bg-border text-ink`;
 
     /* At-a-glance facts, rendered as a horizontal strip: label above the bold
        figure, no dividers between cells, swipes on small screens. */
@@ -193,67 +189,102 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 and the controls row. */}
             <div className={`shrink-0 mb-4 z-10 ${isUserView ? '' : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
                 {/* Title row */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? 'py-1' : `border-b ${skin.edge} px-4 py-3.5 sm:px-5`}`}>
+                <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? 'py-1' : 'px-4 py-3.5 sm:px-5'}`}>
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             onClick={onBack}
-                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${greySurface ?? `${skin.iconTile} ${skin.radius}`} cursor-pointer transition-colors duration-200 hover:bg-ink/10 ${FOCUS}`}
+                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${greySurface ?? `${skin.iconTile} rounded-lg`} cursor-pointer transition-colors duration-200 hover:bg-ink/10 ${FOCUS}`}
                             title="Go Back"
                             aria-label="Go back to job posts"
                         >
                             <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
                         </button>
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <h1 className={`${skin.heading} max-w-full truncate`}>
-                                {recruitment.jobTitle}
-                            </h1>
-                            {/* No openings count is shown in the header on the
-                                candidate view - Share sits after Apply instead. */}
+                        <div className="min-w-0">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <h1 className={`${skin.heading} max-w-full truncate`}>
+                                    {recruitment.jobTitle}
+                                </h1>
+                            </div>
+                            {/* Description - starts at the title's left edge. */}
                             {!isUserView && (
-                                <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                                    <span
-                                        aria-hidden="true"
-                                        className={`h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none ${skin.countDot}`}
-                                    />
-                                    {isManager
-                                        ? `${recruitment.applicantCount ?? 0} ${recruitment.applicantCount === 1 ? 'Applicant' : 'Applicants'}`
-                                        : `${recruitment.candidatesCount || 0} ${recruitment.candidatesCount === 1 ? 'Opening' : 'Openings'}`}
-                                </span>
+                                <p className={`mt-1.5 ${skin.body}`}>
+                                    Review the job details, requirements, interview rounds and required skills.
+                                </p>
                             )}
                         </div>
                     </div>
 
-                        {/* Actions - Apply / status first, Share right after it
-                            on the candidate view. */}
+                    {/* Actions - candidate view only: Apply / status and the
+                        labelled Share. The recruiter/admin actions live on the
+                        controls row below the header. */}
+                    {isUserView && (
                         <div className="flex shrink-0 items-center gap-2">
-                            {!isUserView && (
+                            {!hasApplied && !checkingProfile ? (
                                 <button
-                                    onClick={() => setShowShareModal(true)}
-                                    className={`inline-flex h-8 w-8 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
-                                    title="Share job"
-                                    aria-label="Share this job"
+                                    onClick={handleApply}
+                                    disabled={actionLoading}
+                                    className={`inline-flex items-center gap-2 sm:px-6 rounded-lg cursor-pointer ${skin.cta} ${skin.ctaLift} ${FOCUS} disabled:opacity-50`}
                                 >
-                                    <Share2 className="h-4 w-4" aria-hidden="true" />
+                                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <FilePlus2 className="w-4 h-4" aria-hidden="true" /></>}
                                 </button>
-                            )}
+                            ) : hasApplied ? (
+                                <div className={`px-4 py-2 text-xs font-bold rounded-lg border flex items-center gap-2 ${statusInfo.className}`}>
+                                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                                    {statusInfo.label}
+                                </div>
+                            ) : null}
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
+                                title="Share job"
+                                aria-label="Share this job"
+                            >
+                                <Share2 className="h-4 w-4" aria-hidden="true" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Share</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Controls row below the header - recruiter/admin only: the
+                applicants count at the left end, Share / Edit / Delete /
+                Candidates at the right end. */}
+            {!isUserView && (
+                <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
+                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                        {isManager
+                            ? `${recruitment.applicantCount ?? 0} ${recruitment.applicantCount === 1 ? 'Applicant' : 'Applicants'}`
+                            : `${recruitment.candidatesCount || 0} ${recruitment.candidatesCount === 1 ? 'Opening' : 'Openings'}`}
+                    </span>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className={`inline-flex h-8 items-center gap-1.5 rounded-lg cursor-pointer px-3 ${skin.iconTile} transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                            title="Share job"
+                        >
+                            <Share2 className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Share</span>
+                        </button>
                         {isManager ? (
                             <>
                                 <button
                                     onClick={() => onEdit?.(recruitment)}
-                                    className={`inline-flex h-8 w-8 items-center justify-center ${skin.iconTile} ${skin.radius} cursor-pointer transition-colors duration-200 hover:border-brand hover:text-brand ${FOCUS}`}
+                                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg cursor-pointer px-3 ${skin.iconTile} transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
                                     title="Edit Post"
-                                    aria-label="Edit this job post"
                                 >
                                     <Edit className="h-4 w-4" aria-hidden="true" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Edit</span>
                                 </button>
                                 <button
                                     onClick={handleDelete}
                                     disabled={deleting}
-                                    className={`inline-flex h-8 w-8 items-center justify-center border border-destructive text-destructive ${skin.radius} cursor-pointer transition-colors duration-200 hover:bg-destructive/10 disabled:opacity-50 ${FOCUS}`}
+                                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-destructive px-3 text-destructive cursor-pointer transition-colors duration-200 hover:bg-destructive/10 disabled:opacity-50 ${FOCUS}`}
                                     title="Delete Post"
-                                    aria-label="Delete this job post"
                                 >
                                     {deleting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                                    <span className="text-xs font-bold uppercase tracking-wider">{deleting ? 'Deleting…' : 'Delete'}</span>
                                 </button>
                                 <button
                                     onClick={() => onViewCandidates?.(recruitment.id!)}
@@ -271,51 +302,25 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             >
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <>Apply Now <FilePlus2 className="w-4 h-4" aria-hidden="true" /></>}
                             </button>
-                        ) : !isManager && hasApplied ? (
+                        ) : hasApplied ? (
                             <div className={`px-4 py-2 text-xs font-bold rounded-lg border flex items-center gap-2 ${statusInfo.className}`}>
                                 <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                                 {statusInfo.label}
                             </div>
                         ) : null}
-                        {isUserView && (
-                            <button
-                                onClick={() => setShowShareModal(true)}
-                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
-                                title="Share job"
-                                aria-label="Share this job"
-                            >
-                                <Share2 className="h-4 w-4" aria-hidden="true" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Share</span>
-                            </button>
-                        )}
                     </div>
                 </div>
-
-                {/* Controls row - department, level and posting age. Recruiter
-                    header only; the candidate view shows the department beside
-                    the title instead. */}
-                {!isUserView && (
-                    <div className={`flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-3 sm:px-5 ${skin.controlsBg}`}>
-                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                            <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                            <span className="truncate">{recruitment.department}</span>
-                        </span>
-                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                            <Award className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                            <span className="truncate">{recruitment.positionLevel}</span>
-                        </span>
-                        <span className={`inline-flex max-w-full items-center gap-1.5 ${skin.chip} ${r}`}>
-                            <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                            <span className="truncate">Posted {timeAgo(recruitment.createdAt)}</span>
-                        </span>
-                    </div>
-                )}
-            </div>
-            {/* Content. The candidate view gets a white body that starts below
-                the header contents (those sit on the page canvas), with the
-                sections inset a little so they read narrower than full bleed. */}
-            <div className={`flex-1 overflow-y-auto w-full pb-4 ${isUserView ? `bg-surface ${r}` : ''}`}>
-                <div className={`py-6 space-y-4 min-h-full ${isUserView ? 'px-3 sm:px-5' : ''}`}>
+            )}
+            {/* Content. The header sits on the page canvas; the white body
+                starts below it (both views), with the sections inset a little
+                so they read narrower than full bleed. The body's top and
+                bottom padding are pinned strips on the panel itself, so they
+                stay at the top and bottom of the body bg while the sections
+                scroll between them. */}
+            <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden ${skin.resultsPanel ? `${skin.resultsPanel} ${skin.radius}` : ''}`}>
+                <div className="h-6 shrink-0" aria-hidden="true" />
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 sm:px-5">
+                    <div className="space-y-4 min-h-full">
 
                     {/* At a glance - this section's own style: uppercase header
                         with a count badge over a full-bleed strip of stat cells,
@@ -325,7 +330,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         <div className="flex items-center gap-3 px-4 pt-3 pb-1 sm:px-6">
                             <h3 className={skin.emptyTitle}>Job Details</h3>
                         </div>
-                        <div className="overflow-x-auto thin-scroll">
+                        <div className="overflow-x-auto scrollbar-hide">
                             <div className="flex snap-x">
                                 {facts.map((fact) => (
                                     <div
@@ -412,7 +417,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         ) : (
                             <div className="flex flex-wrap gap-1.5">
                                 {skills.map((skill, i) => (
-                                    <span key={i} className={greyTag ?? `${skin.tag} ${r}`}>
+                                    <span key={i} className={greyTag}>
                                         {skill}
                                     </span>
                                 ))}
@@ -421,6 +426,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </Section>
 
                 </div>
+                </div>
+                <div className="h-4 shrink-0" aria-hidden="true" />
             </div>
 
             {/* Share Modal */}
@@ -437,8 +444,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
 /** Content panel whose header follows the masthead recipe: uppercase title,
  *  hairline divider, optional inverted count badge. Fill comes from the caller:
- *  the candidate view passes a grey panel over its white body, the
- *  recruiter/admin view keeps the skin surface. */
+ *  a grey panel over the common white page, both views. */
 function Section({ title, count, panelClass, children }: { title: string; count?: string; panelClass?: string; children: ReactNode }) {
     const skin = useSkin();
     return (

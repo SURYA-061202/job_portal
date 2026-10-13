@@ -1,11 +1,17 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { sendMail } from "./mailer";
+
+export { verifyEmailExists } from "./emailVerify";
+export { sendSignupOtp, verifySignupOtp } from "./signupOtp";
 
 if (getApps().length === 0) {
   initializeApp();
 }
+
+// Lazy-loaded at call time so deployment analysis (10s code-load budget)
+// does not choke on firebase-admin / nodemailer at module scope.
+const adminAuth = () => require("firebase-admin/auth") as typeof import("firebase-admin/auth");
+const mailer = () => require("./mailer") as typeof import("./mailer");
 
 interface CandidateInput {
   id?: string;
@@ -47,7 +53,7 @@ export const managerInvite = onCall(async (request) => {
     `;
 
   try {
-    await sendMail({ to: email, subject: "Welcome to Indian Infra Recruitment Portal", html });
+    await mailer().sendMail({ to: email, subject: "Welcome to Indian Infra Recruitment Portal", html });
     return { success: true };
   } catch (err: any) {
     console.error("managerInvite error", err);
@@ -92,7 +98,7 @@ export const sendInterviewInvite = onCall(async (request) => {
       `;
 
   try {
-    await sendMail({
+    await mailer().sendMail({
       to: candidate.email,
       subject: `Interview Invitation – ${interviewDetails.role} @ Indian Infra`,
       html,
@@ -133,7 +139,7 @@ export const sendRoundInvite = onCall(async (request) => {
     `;
 
   try {
-    await sendMail({
+    await mailer().sendMail({
       to: candidate.email,
       subject: `Interview Round ${roundNumber} (${roundName}) – ${role} @ Indian Infra`,
       html,
@@ -172,7 +178,7 @@ export const sendCongratulationsMail = onCall(async (request) => {
     `;
 
   try {
-    await sendMail({ to: candidate.email, subject: "Offer Letter – Welcome to Indian Infra", html });
+    await mailer().sendMail({ to: candidate.email, subject: "Offer Letter – Welcome to Indian Infra", html });
     return { success: true };
   } catch (err: any) {
     console.error("sendCongratulationsMail error", err);
@@ -202,7 +208,7 @@ export const sendVerifyDetails = onCall(async (request) => {
       </div>`;
 
   try {
-    await sendMail({ to: candidate.email, subject: "Verify Your Details – Indian Infra", html });
+    await mailer().sendMail({ to: candidate.email, subject: "Verify Your Details – Indian Infra", html });
     return { success: true };
   } catch (err: any) {
     console.error("sendVerifyDetails error", err);
@@ -233,7 +239,7 @@ export const sendPasswordResetMail = onCall(async (request) => {
 
   let resetLink: string;
   try {
-    resetLink = await getAuth().generatePasswordResetLink(email, appUrl ? { url: appUrl } : undefined);
+    resetLink = await adminAuth().getAuth().generatePasswordResetLink(email, appUrl ? { url: appUrl } : undefined);
   } catch (err: any) {
     console.error("sendPasswordResetMail link error", err);
     if (err?.code === "auth/user-not-found") {
@@ -261,7 +267,7 @@ export const sendPasswordResetMail = onCall(async (request) => {
     `;
 
   try {
-    await sendMail({ to: email, subject: "Reset Your Password – Indian Infra", html });
+    await mailer().sendMail({ to: email, subject: "Reset Your Password – Indian Infra", html });
     return { success: true };
   } catch (err: any) {
     console.error("sendPasswordResetMail error", err);
