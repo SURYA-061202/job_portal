@@ -139,7 +139,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
                       // Create notification for the candidate
                       try {
-                        await createCongratulationsNotification(candidate.email, candidate.role);
+                        await createCongratulationsNotification(candidate.email, candidate.role, candidate.id);
                       } catch (err) {
                         console.error('Failed to create notification', err);
                       }
@@ -296,7 +296,7 @@ function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
 
       // Create notification for the candidate
       try {
-        await createCongratulationsNotification(candidate.email, candidate.role);
+        await createCongratulationsNotification(candidate.email, candidate.role, candidate.id);
       } catch (err) {
         console.error('Failed to create notification', err);
       }

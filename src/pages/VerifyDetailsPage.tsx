@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import popup from '@/components/ui/Popup';
+import { notifyRecruiterOfDetailsSubmitted } from '@/lib/notificationHelper';
 
 export default function VerifyDetailsPage() {
   const [searchParams] = useSearchParams();
@@ -51,32 +52,19 @@ export default function VerifyDetailsPage() {
   const handleSubmit = async () => {
     if (!candidateId) return;
     try {
+      const intSnap = await getDoc(doc(db, 'interviews', candidateId));
       await updateDoc(doc(db, 'interviews', candidateId), {
         ...form,
         submittedAt: new Date(),
       });
-      // Add notification entry
-      let candName = '';
-      let candEmail = '';
-      try {
-        const candSnap = await getDoc(doc(db, 'candidates', candidateId));
-        if (candSnap.exists()) {
-          const c: any = candSnap.data();
-          candName = c?.name || '';
-          candEmail = c?.email || '';
-        }
-      } catch (e) { console.error(e); }
-      try {
-        await addDoc(collection(db, 'candidates', candidateId, 'notifications'), {
-          message: 'Submitted verify details form',
-          name: candName,
-          email: candEmail,
-          createdAt: Timestamp.now(),
-          viewed: false,
-        });
-      } catch (err) {
-        console.error('Failed to add notification', err);
-      }
+
+      // Tell the recruiter/admin the candidate verified their details. (This used
+      // to write to candidates/{id}/notifications — a subcollection no screen
+      // ever read, so the response never reached anyone.)
+      void notifyRecruiterOfDetailsSubmitted({
+        postId: intSnap.exists() ? (intSnap.data()?.postId ?? null) : null,
+        candidateId,
+      });
 
       popup.success('Details submitted successfully');
       setSubmitted(true);

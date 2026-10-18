@@ -15,6 +15,9 @@ interface UserJobCardProps {
 export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus }: UserJobCardProps) {
     const isNew = !hideNewBadge && currentUserId && !recruitment.viewedBy?.includes(currentUserId);
     const statusInfo = getApplicationStatusInfo(applicationStatus);
+    const pillInfo = statusInfo && statusInfo.className.includes('brand')
+        ? { label: statusInfo.label, className: 'bg-ink/5 text-ink/80 border-ink/20' }
+        : statusInfo;
     const skin = useSkin();
 
     return (
@@ -34,9 +37,9 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                     <h3 className="text-base md:text-xl font-bold leading-tight text-ink transition-colors duration-200">
                         {recruitment.jobTitle}
                     </h3>
-                    {statusInfo && (
-                        <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[9px] md:text-[11px] font-bold border ${statusInfo.className}`}>
-                            {statusInfo.label}
+                    {pillInfo && (
+                        <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[9px] md:text-[11px] font-bold border ${pillInfo.className}`}>
+                            {pillInfo.label}
                         </span>
                     )}
                 </div>

@@ -210,9 +210,10 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
         console.error('Failed to store interview details', err);
       }
 
-      // Create notification for the candidate
+      // Create notification for the candidate (falls back to their stored email
+      // when the loaded record has none, so the invite never goes unannounced)
       try {
-        await createInterviewInviteNotification(candidate.email, role, dates, roundType);
+        await createInterviewInviteNotification(candidate.email, role, dates, roundType, candidate.id);
       } catch (err) {
         console.error('Failed to create notification', err);
       }

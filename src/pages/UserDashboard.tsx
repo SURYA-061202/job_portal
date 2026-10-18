@@ -441,7 +441,8 @@ export default function UserDashboard() {
                         </div>
 
                         {/* Scrollable Job Cards Container - white panel, hidden scrollbar */}
-                        <div className="bg-surface border border-border rounded-lg p-3 md:p-4 overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(101vh)' }}>
+                        <div className="bg-surface border border-border rounded-lg p-3 md:p-4 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(101vh)' }}>
+                            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                             {loading ? (
                                 <JobListSkeleton count={3} />
                             ) : activeTab === 'jobs' ? (
@@ -504,6 +505,7 @@ export default function UserDashboard() {
                                     </div>
                                 )
                             )}
+                            </div>
                         </div>
                     </div>
                 </div>

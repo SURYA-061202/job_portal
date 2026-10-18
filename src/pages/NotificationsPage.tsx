@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import UserHeader from '@/components/layout/UserHeader';
 import { Bell, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { NotificationListSkeleton } from '@/components/user/SkeletonLoaders';
+import { stripEmoji } from '@/lib/format';
 
 interface Notification {
     id: string;
@@ -37,27 +38,32 @@ export default function NotificationsPage() {
         try {
             setLoading(true);
             const notificationsRef = collection(db, 'notifications');
+            // Equality filter only: `where + orderBy` would demand a composite
+            // index that isn't provisioned, which fails the whole read. Order is
+            // applied after the fetch instead. Emails are lowercased to match
+            // how notifications are written.
             const q = query(
                 notificationsRef,
-                where('userId', '==', email),
-                orderBy('createdAt', 'desc')
+                where('userId', '==', email.trim().toLowerCase())
             );
 
             const snapshot = await getDocs(q);
-            const notificationsData = snapshot.docs.map(doc => {
-                const data = doc.data();
-                const createdAt = data.createdAt?.toDate?.() || new Date();
+            const notificationsData = snapshot.docs
+                .map(doc => {
+                    const data = doc.data();
+                    const createdAt = data.createdAt?.toDate?.() || new Date();
 
-                return {
-                    id: doc.id,
-                    type: getNotificationType(data.type),
-                    title: data.title,
-                    message: data.message,
-                    time: formatTimeAgo(createdAt),
-                    read: data.read || false,
-                    createdAt: data.createdAt,
-                } as Notification;
-            });
+                    return {
+                        id: doc.id,
+                        type: getNotificationType(data.type),
+                        title: stripEmoji(data.title),
+                        message: stripEmoji(data.message),
+                        time: formatTimeAgo(createdAt),
+                        read: data.read || false,
+                        createdAt: data.createdAt,
+                    } as Notification;
+                })
+                .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
 
             setNotifications(notificationsData);
         } catch (error) {
@@ -68,8 +74,8 @@ export default function NotificationsPage() {
     };
 
     const getNotificationType = (type: string): 'success' | 'warning' | 'info' => {
-        if (type === 'congratulations') return 'success';
-        if (type === 'verify_details') return 'warning';
+        if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent'].includes(type)) return 'success';
+        if (['verify_details', 'application_rejected'].includes(type)) return 'warning';
         return 'info';
     };
 
@@ -86,8 +92,11 @@ export default function NotificationsPage() {
 
     const markAsRead = async (notificationId: string) => {
         try {
+            // `viewed` drives the bell badge, `read` this page's styling — write
+            // both so reading here clears the badge too.
             await updateDoc(doc(db, 'notifications', notificationId), {
                 read: true,
+                viewed: true,
             });
 
             setNotifications(prev =>

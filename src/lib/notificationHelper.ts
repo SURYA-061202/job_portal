@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
 export type NotificationType =
@@ -13,10 +13,12 @@ export type NotificationType =
     | 'offer_sent'
     | 'application_rejected'
     | 'job_application'
-    | 'interview_response';
+    | 'interview_response'
+    | 'shortlisted'
+    | 'details_submitted';
 
 export interface NotificationData {
-    userId: string; // User email or UID
+    userId: string; // Recipient email — addressed by email so any device's bell matches
     type: NotificationType;
     title: string;
     message: string;
@@ -31,12 +33,23 @@ export interface NotificationData {
 /**
  * Creates a notification in Firestore
  * @param data Notification data
- * @returns Promise<string> Document ID of created notification
+ * @returns Promise<string> Document ID of created notification ('' when skipped)
  */
 export async function createNotification(data: NotificationData): Promise<string> {
+    // Normalised so the address always matches what the bell queries for:
+    // Firebase Auth hands back lowercase emails, while profile documents store
+    // whatever was typed.
+    const userId = (data.userId || '').trim().toLowerCase();
+    if (!userId) {
+        // Writing a blank recipient would create a doc no query can ever match.
+        console.error('Skipping notification without a recipient:', data.type, data.title);
+        return '';
+    }
+
     try {
         const notificationRef = await addDoc(collection(db, 'notifications'), {
             ...data,
+            userId,
             read: false,
             // NotificationBell and NotificationsTab both key their unread badge off
             // `viewed`; without it every notification stays unread forever.
@@ -60,10 +73,17 @@ export async function createInterviewInviteNotification(
     candidateEmail: string,
     role: string,
     dates: string[],
-    roundType: string
+    roundType: string,
+    /** Falls back to the person's Firestore record when the passed email is empty. */
+    candidateId?: string
 ): Promise<string> {
+    const email = await resolvePersonEmail(candidateId, candidateEmail);
+    if (!email) {
+        console.error('No email for interview invite notification', candidateId);
+        return '';
+    }
     return createNotification({
-        userId: candidateEmail,
+        userId: email,
         type: 'interview_invite',
         title: 'Interview Invitation',
         message: `You have been invited for ${roundType} round interview for the position of ${role}. Please check your email for available dates.`,
@@ -88,12 +108,19 @@ export async function createVerifyDetailsNotification(
 
 export async function createCongratulationsNotification(
     candidateEmail: string,
-    role?: string
+    role?: string,
+    /** Falls back to the person's Firestore record when the passed email is empty. */
+    candidateId?: string
 ): Promise<string> {
+    const email = await resolvePersonEmail(candidateId, candidateEmail);
+    if (!email) {
+        console.error('No email for congratulations notification', candidateId);
+        return '';
+    }
     return createNotification({
-        userId: candidateEmail,
+        userId: email,
         type: 'congratulations',
-        title: 'Congratulations! 🎉',
+        title: 'Congratulations!',
         message: role
             ? `Congratulations! You have been selected for the position of ${role}. Welcome to the team!`
             : 'Congratulations! You have been selected. Welcome to the team!',
@@ -169,13 +196,28 @@ async function getPersonEmail(personId: string): Promise<string | null> {
             const snap = await getDoc(doc(db, path, personId));
             if (snap.exists()) {
                 const email = snap.data()?.email;
-                if (email) return email as string;
+                if (email) return (email as string).trim();
             }
         } catch (err) {
             console.error(`Error reading ${path}/${personId} for notification:`, err);
         }
     }
     return null;
+}
+
+/**
+ * The address a notification should be sent to: the email we were handed if it
+ * is usable, otherwise the one stored against the person's document. Returns
+ * null when neither exists (e.g. a resume uploaded with no contact details).
+ */
+export async function resolvePersonEmail(
+    personId?: string | null,
+    fallbackEmail?: string | null
+): Promise<string | null> {
+    const fallback = (fallbackEmail || '').trim();
+    if (fallback) return fallback;
+    if (!personId) return null;
+    return getPersonEmail(personId);
 }
 
 /** Display name for a candidate id, falling back to their email. */
@@ -264,14 +306,28 @@ export async function notifyCandidateOfStatusChange(params: {
             return;
         }
 
+        if (status === 'shortlisted') {
+            await createNotification({
+                userId: email,
+                type: 'shortlisted',
+                title: 'You Have Been Shortlisted',
+                message: `Good news — you have been shortlisted${forRole}. The recruiter will share interview dates soon.`,
+                metadata: { role: jobTitle },
+            });
+            return;
+        }
+
         const roundMatch = status.match(/^round(\d+)$/);
         if (roundMatch || status === 'technical' || status === 'hr') {
             const roundName = params.roundLabel?.trim() || (roundMatch ? `Round ${roundMatch[1]}` : 'the next round');
+            // "Technical" reads as "Technical Round"; names that already carry
+            // the word ("Round 1", "HR Round", "the next round") stay as they are.
+            const roundPhrase = /round/i.test(roundName) ? roundName : `${roundName} Round`;
             await createNotification({
                 userId: email,
                 type: 'round_moved',
                 title: 'Moved to the Next Round',
-                message: `Good news — you have moved to ${roundName}${forRole}.`,
+                message: `You have moved to ${roundPhrase}${forRole}.`,
                 metadata: { role: jobTitle, roundType: roundName },
             });
         }
@@ -284,20 +340,50 @@ export async function notifyCandidateOfStatusChange(params: {
  * Recruiter-facing notifications
  * ------------------------------------------------------------------ */
 
-/** Tells the post owner that someone applied. Never throws. */
+/**
+ * Everyone who should hear about activity on a post: the recruiter who owns it,
+ * plus the admin(s). When the owner can't be resolved (post written before
+ * `recruiterId` existed, or their user record is gone) the admin still gets the
+ * news instead of the notification being dropped.
+ */
+async function getRecruiterRecipients(postId?: string | null): Promise<string[]> {
+    const recipients = new Set<string>();
+
+    if (postId) {
+        const { recruiterEmail } = await getPostContext(postId);
+        if (recruiterEmail) recipients.add(recruiterEmail.trim());
+    }
+
+    try {
+        const admins = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin')));
+        admins.docs.forEach(d => {
+            const email = d.data()?.email;
+            if (email) recipients.add(String(email).trim());
+        });
+    } catch (err) {
+        console.error('Error resolving admin recipients for notification:', err);
+    }
+
+    return [...recipients].filter(Boolean);
+}
+
+/** Tells the post owner (and admins) that someone applied. Never throws. */
 export async function notifyRecruiterOfApplication(postId: string, candidateId: string): Promise<void> {
     try {
-        const { jobTitle, recruiterEmail } = await getPostContext(postId);
-        if (!recruiterEmail) return;
+        const { jobTitle } = await getPostContext(postId);
+        const recipients = await getRecruiterRecipients(postId);
+        if (recipients.length === 0) return;
         const candidateName = await getPersonName(candidateId);
 
-        await createNotification({
-            userId: recruiterEmail,
-            type: 'job_application',
-            title: 'New Application',
-            message: `${candidateName} applied for ${jobTitle || 'one of your posts'}.`,
-            metadata: { candidateId, postId, role: jobTitle },
-        });
+        for (const recipient of recipients) {
+            await createNotification({
+                userId: recipient,
+                type: 'job_application',
+                title: 'New Application',
+                message: `${candidateName} applied for ${jobTitle || 'one of your posts'}.`,
+                metadata: { candidateId, postId, role: jobTitle },
+            });
+        }
     } catch (err) {
         console.error('Failed to notify recruiter of application:', err);
     }
@@ -311,22 +397,54 @@ export async function notifyRecruiterOfInterviewResponse(params: {
     slot?: string | null;
 }): Promise<void> {
     try {
-        if (!params.postId) return; // no post means no recruiter to address
-        const { jobTitle, recruiterEmail } = await getPostContext(params.postId);
-        if (!recruiterEmail) return;
+        // Without a post there is no owner to look up — the admins still hear
+        // about the response rather than it vanishing.
+        const recipients = await getRecruiterRecipients(params.postId);
+        if (recipients.length === 0) return;
+
+        const jobTitle = params.postId ? (await getPostContext(params.postId)).jobTitle : '';
         const candidateName = await getPersonName(params.candidateId);
         const forRole = jobTitle ? ` for ${jobTitle}` : '';
 
-        await createNotification({
-            userId: recruiterEmail,
-            type: 'interview_response',
-            title: params.accepted ? 'Interview Confirmed' : 'Interview Declined',
-            message: params.accepted
-                ? `${candidateName} accepted the interview${forRole}${params.slot ? ` and chose ${params.slot}` : ''}, and submitted their details.`
-                : `${candidateName} declined the interview invitation${forRole}.`,
-            metadata: { candidateId: params.candidateId, postId: params.postId, role: jobTitle },
-        });
+        for (const recipient of recipients) {
+            await createNotification({
+                userId: recipient,
+                type: 'interview_response',
+                title: params.accepted ? 'Interview Confirmed' : 'Interview Declined',
+                message: params.accepted
+                    ? `${candidateName} accepted the interview${forRole}${params.slot ? ` and chose ${params.slot}` : ''}, and submitted their details.`
+                    : `${candidateName} declined the interview invitation${forRole}.`,
+                metadata: { candidateId: params.candidateId, postId: params.postId ?? undefined, role: jobTitle },
+            });
+        }
     } catch (err) {
         console.error('Failed to notify recruiter of interview response:', err);
+    }
+}
+
+/** Tells the recruiter a candidate filled in the verify-details form. Never throws. */
+export async function notifyRecruiterOfDetailsSubmitted(params: {
+    postId?: string | null;
+    candidateId: string;
+}): Promise<void> {
+    try {
+        const recipients = await getRecruiterRecipients(params.postId);
+        if (recipients.length === 0) return;
+
+        const jobTitle = params.postId ? (await getPostContext(params.postId)).jobTitle : '';
+        const candidateName = await getPersonName(params.candidateId);
+        const forRole = jobTitle ? ` for ${jobTitle}` : '';
+
+        for (const recipient of recipients) {
+            await createNotification({
+                userId: recipient,
+                type: 'details_submitted',
+                title: 'Details Submitted',
+                message: `${candidateName} submitted their verification details${forRole}.`,
+                metadata: { candidateId: params.candidateId, postId: params.postId ?? undefined, role: jobTitle },
+            });
+        }
+    } catch (err) {
+        console.error('Failed to notify recruiter of submitted details:', err);
     }
 }

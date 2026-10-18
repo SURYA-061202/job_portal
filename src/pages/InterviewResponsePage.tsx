@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, setDoc, Timestamp } from 'firebase/firestore';
 import popup from '@/components/ui/Popup';
 import { notifyRecruiterOfInterviewResponse } from '@/lib/notificationHelper';
 
@@ -16,7 +16,6 @@ export default function InterviewResponsePage() {
 
   const [loading, setLoading] = useState(true);
   const [dates, setDates] = useState<string[]>([]);
-  const [candidateInfo, setCandidateInfo] = useState<{ name: string; email: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [interest, setInterest] = useState<'interested' | 'not_interested' | ''>('');
@@ -46,10 +45,7 @@ export default function InterviewResponsePage() {
           snapshot = await getDoc(doc(db, 'users', candidateId));
         }
 
-        if (snapshot.exists()) {
-          const data: any = snapshot.data();
-          setCandidateInfo({ name: data?.name || '', email: data?.email || '' });
-        } else {
+        if (!snapshot.exists()) {
           popup.error('Invalid candidate ID');
         }
 
@@ -113,29 +109,27 @@ export default function InterviewResponsePage() {
         { merge: true }
       );
 
-      // Let the recruiter who raised the invite know how the candidate answered.
+      // Resolve the post this invite was raised against: the interview doc is
+      // the primary source, the candidate's own record the fallback for older
+      // invites written before postId existed.
+      let postId: string | null = snap.exists() ? (snap.data()?.postId ?? null) : null;
+      if (!postId) {
+        try {
+          const candSnap = await getDoc(doc(db, 'candidates', candidateId));
+          postId = candSnap.exists() ? (candSnap.data()?.postId ?? null) : null;
+        } catch (err) {
+          console.error('Failed to resolve post for response notification:', err);
+        }
+      }
+
+      // Let the recruiter who raised the invite know how the candidate answered
+      // (falls back to the admin when the post/owner cannot be resolved).
       void notifyRecruiterOfInterviewResponse({
-        postId: snap.exists() ? snap.data()?.postId : null,
+        postId,
         candidateId,
         accepted,
         slot: accepted ? `${selectedDate} ${selectedTime}` : null,
       });
-
-      // Add notification entry
-      try {
-        const message = accepted
-          ? `Accepted interview on ${selectedDate} ${selectedTime} and submitted their details`
-          : `Declined interview invitation`;
-        await addDoc(collection(db, 'candidates', candidateId, 'notifications'), {
-          message,
-          name: candidateInfo?.name || '',
-          email: candidateInfo?.email || '',
-          createdAt: Timestamp.now(),
-          viewed: false,
-        });
-      } catch (err) {
-        console.error('Failed to add notification', err);
-      }
 
       popup.success('Response recorded. Thank you!');
       setSubmitted(true);

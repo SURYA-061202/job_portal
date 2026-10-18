@@ -23,3 +23,13 @@ export function timeAgo(date: Timeish): string {
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
     return d.toLocaleDateString();
 }
+
+/**
+ * Drops emoji/pictographs (and their variation selectors) from displayed text.
+ * Notification titles are stored at write time, so docs created before a copy
+ * change — e.g. "Congratulations! 🎉" — still carry the icon until rewritten.
+ */
+export function stripEmoji(text?: string | null): string {
+    if (!text) return '';
+    return text.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').replace(/\s{2,}/g, ' ').trim();
+}

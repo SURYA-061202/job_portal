@@ -264,7 +264,8 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     </div>
 
                     {/* White panel holding the cards, height matched to the filter sidebar */}
-                    <div className="bg-surface border border-border rounded-lg p-3 md:p-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-7rem)]">
+                    <div className="bg-surface border border-border rounded-lg p-3 md:p-4 flex flex-col overflow-hidden max-h-[calc(100vh-7rem)]">
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                         {loading ? (
                             <JobListSkeleton count={3} />
                         ) : activeTab === 'jobs' ? (
@@ -312,6 +313,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                 </div>
                             )
                         )}
+                        </div>
                     </div>
                 </div>
             </div>

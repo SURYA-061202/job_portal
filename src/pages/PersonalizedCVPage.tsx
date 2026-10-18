@@ -549,7 +549,7 @@ export default function PersonalizedCVPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Panel - Data Summary */}
                     <div className="lg:col-span-1 flex flex-col gap-6">
-                        <div className="bg-surface rounded-2xl border border-border shadow-md p-6">
+                        <div className="bg-surface rounded-2xl border border-border p-6">
                             <h3 className="text-lg font-bold text-ink mb-6">
                                 Resume Data
                             </h3>
@@ -602,22 +602,16 @@ export default function PersonalizedCVPage() {
 
                     {/* Right Panel - Template Preview */}
                     <div className="lg:col-span-2">
-                        <div className="bg-surface rounded-2xl border border-border shadow-md overflow-hidden flex flex-col h-[700px]">
+                        <div className="bg-surface rounded-2xl border border-border overflow-hidden flex flex-col h-[700px]">
                             <div className="p-6 flex flex-wrap items-center justify-between gap-3 bg-surface">
                                 <div>
                                     <h3 className="text-lg font-bold text-ink">Resume Preview</h3>
                                 </div>
                                 {userData && !isProfileIncomplete && (
                                     isActive ? (
-                                        <button
-                                            type="button"
-                                            onClick={toggleUseInProfile}
-                                            disabled={applyingResume}
-                                            title="Click to restore your previous profile resume"
-                                            className="text-sm font-bold text-ink disabled:opacity-50 cursor-pointer"
-                                        >
+                                        <span className="text-sm font-bold text-ink">
                                             Currently used in your profile
-                                        </button>
+                                        </span>
                                     ) : (
                                         <div className="flex items-center gap-3 select-none">
                                             <span className="text-sm font-bold text-ink/80">Use In Your Profile</span>
@@ -639,10 +633,13 @@ export default function PersonalizedCVPage() {
                                 )}
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-8 bg-muted flex justify-center">
-                                {/* Border lives on the wrapper so it is not
-                                    captured into the generated PDF. */}
-                                <div className="w-full max-w-[720px]" style={{ border: '1px solid #f3f4f6', backgroundColor: '#ffffff' }}>
+                            {/* Fixed padded viewport: the outer gutter stays
+                                visible while the sheet scrolls in the inner area. */}
+                            <div className="flex-1 px-6 py-5 bg-muted flex justify-center overflow-hidden">
+                                <div className="w-full max-w-[960px] h-full overflow-y-auto">
+                                    {/* Border lives on the wrapper so it is not
+                                        captured into the generated PDF. */}
+                                    <div className="w-full" style={{ border: '1px solid #f3f4f6', backgroundColor: '#ffffff' }}>
                                     <div ref={resumeRef} className="w-full min-h-[800px] flex flex-col gap-1 text-black" style={{ fontFamily: 'sans-serif', backgroundColor: '#ffffff', color: '#000000', padding: '40px' }}>
                                         <div className="text-center mb-4">
                                             <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'sans-serif', color: '#000000' }}>{userData?.firstName} {userData?.lastName}</h2>
@@ -745,6 +742,7 @@ export default function PersonalizedCVPage() {
                                             </div>
                                         ))}
                                     </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

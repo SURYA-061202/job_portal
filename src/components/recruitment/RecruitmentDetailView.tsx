@@ -235,7 +235,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             ) : null}
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-brand px-3 text-brand-foreground transition-colors duration-200 hover:bg-brand/90 ${FOCUS}`}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-ink px-3 text-surface transition-colors duration-200 hover:bg-ink/85 ${FOCUS}`}
                                 title="Share job"
                                 aria-label="Share this job"
                             >

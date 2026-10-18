@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { stripEmoji } from '@/lib/format';
 
 interface Notification {
   id: string;
+  title?: string;
   message: string;
   createdAt: any;
   viewed: boolean;
   ref: any;
 }
+
+/** Newest first — done in the client so the query needs no composite index. */
+const byNewestFirst = (a: Notification, b: Notification) =>
+  (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0);
 
 interface Props {
   className?: string;
@@ -25,6 +31,8 @@ export default function NotificationBell({ className = '', simpleMode = false }:
   // the panel opens and can't be resurrected by the next snapshot — the write to
   // Firestore may be rejected by rules, which used to leave the badge stuck.
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const skin = useSkin();
 
   const unreadCount = notifications.filter(n => !n.viewed && !dismissedIds.has(n.id)).length;
@@ -47,21 +55,29 @@ export default function NotificationBell({ className = '', simpleMode = false }:
       return;
     }
 
-    // Query notifications where userId matches current user's email
+    // No orderBy(): `where + orderBy(createdAt)` needs a composite index, and
+    // without it Firestore answers FAILED_PRECONDITION — the listener never
+    // fires and the bell silently shows nothing. The equality filter runs on
+    // the automatic single-field index; order is applied in the client.
+    // Emails are lowercased to match how notifications are written.
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', currentUserEmail),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', currentUserEmail.trim().toLowerCase())
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const list: Notification[] = [];
-      snap.forEach(docSnap => {
-        const data: any = docSnap.data();
-        list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
-      });
-      setNotifications(list);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list: Notification[] = [];
+        snap.forEach(docSnap => {
+          const data: any = docSnap.data();
+          list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
+        });
+        list.sort(byNewestFirst);
+        setNotifications(list);
+      },
+      (err) => console.error('Failed to load notifications:', err)
+    );
     return () => unsub();
   }, [currentUserEmail]);
 
@@ -91,6 +107,28 @@ export default function NotificationBell({ className = '', simpleMode = false }:
       });
   }, [open, notifications, dismissedIds]);
 
+  // While the pointer is over the panel, a wheel that runs out of notification
+  // list must not scroll the page underneath. Native non-passive listener:
+  // React's synthetic onWheel is passive, so preventDefault() there is ignored.
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const scrollArea = scrollAreaRef.current;
+    if (!panel || !scrollArea) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      const atTop = scrollArea.scrollTop <= 0;
+      const atBottom = scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 1;
+      if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+        e.preventDefault();
+      }
+    };
+
+    panel.addEventListener('wheel', handleWheel, { passive: false });
+    return () => panel.removeEventListener('wheel', handleWheel);
+  }, [open]);
+
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent click
     setOpen((prev) => !prev);
@@ -119,8 +157,10 @@ export default function NotificationBell({ className = '', simpleMode = false }:
         )}
       </button>
 
+      {/* mt-4 clears the header's bottom edge — mt-2 parked the panel right on it.
+          85vh leaves room for the header plus four rows on short viewports. */}
       {open && (
-        <div className={`absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-[28rem] border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} z-50 flex flex-col max-h-[70vh]`}>
+        <div ref={panelRef} className={`absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-[28rem] border ${skin.edge} ${skin.surface} ${skin.radius} z-50 flex flex-col max-h-[85vh]`}>
           {/* Header stays put while the list below it scrolls */}
           <div className={`px-4 py-3 border-b ${skin.edge} flex justify-between items-center gap-3 flex-shrink-0`}>
             <div className="flex items-center gap-2">
@@ -129,24 +169,30 @@ export default function NotificationBell({ className = '', simpleMode = false }:
                 {notifications.length}
               </span>
             </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
-              className={`p-1.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
-              title="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+                className={`p-1.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
+                title="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-y-auto custom-scrollbar">
+          {/* Exactly four rows fit before it scrolls: each li is a fixed 106px
+              (py-3 24 + title 22 + two clamped message lines 40 + time 20), so
+              4 × 106 = 424px = 26.5rem. Below that the list shrinks naturally. */}
+          <div ref={scrollAreaRef} className="overflow-y-auto overscroll-contain custom-scrollbar max-h-[26.5rem]">
             {notifications.length === 0 ? (
               <p className={`p-4 ${skin.body}`}>No notifications</p>
             ) : (
-              <ul className={`divide-y ${skin.divide}`}>
+              <ul>
                 {notifications.map((n) => (
-                  <li key={n.id} className={`px-4 py-3 text-sm text-ink/80 ${skin.rowHover}`}>
-                    {n.message}
-                    <div className={`mt-1 ${skin.meta}`}>{new Date(n.createdAt?.seconds * 1000).toLocaleString()}</div>
+                  <li key={n.id} className={`h-[106px] overflow-hidden px-4 py-3 text-sm text-ink/80 ${skin.rowHover}`}>
+                    {n.title && <p className="font-semibold text-ink mb-0.5 truncate">{stripEmoji(n.title)}</p>}
+                    <p className="line-clamp-2">{stripEmoji(n.message)}</p>
+                    <div className={`mt-1 ${skin.meta}`}>{n.createdAt?.seconds ? new Date(n.createdAt.seconds * 1000).toLocaleString() : ''}</div>
                   </li>
                 ))}
               </ul>
