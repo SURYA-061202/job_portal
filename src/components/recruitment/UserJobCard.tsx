@@ -25,7 +25,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
             {/* New Badge */}
             {isNew && (
                 <div className="absolute -top-2 -left-2 z-10">
-                    <span className="flex h-6 items-center px-2.5 rounded-full bg-ink text-surface text-[10px] font-bold shadow-lg shadow-ink/20 animate-bounce cursor-default">
+                    <span className="flex h-6 items-center px-2.5 rounded-full bg-ink/70 text-surface text-[10px] font-bold shadow-lg shadow-ink/20 animate-bounce cursor-default">
                         New
                     </span>
                 </div>
@@ -80,7 +80,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
                     <button
                         onClick={() => onViewDetails?.(recruitment)}
-                        className={`w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-ink text-surface border border-ink font-bold rounded-lg hover:bg-ink/85 active:scale-95 transition-all text-[10px] md:text-xs ${FOCUS}`}
+                        className={`w-full sm:w-auto px-4 md:px-6 py-1.5 md:py-2 bg-ink/70 text-surface border border-ink/70 font-bold rounded-lg hover:bg-ink/60 active:scale-95 transition-all text-[10px] md:text-xs ${FOCUS}`}
                     >
                         View
                     </button>

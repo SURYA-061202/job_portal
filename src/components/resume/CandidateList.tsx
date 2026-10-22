@@ -156,7 +156,7 @@ export default function CandidateList({
   }, [candidates, searchTerm, postTitles]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col flex-1">
       {/* Header - title and description with no line separator. */}
       {!hideHeader && (
         <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
@@ -193,15 +193,17 @@ export default function CandidateList({
             <input
               type="text"
               placeholder="Search candidates..."
-              className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+              className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
               value={searchTerm}
               onChange={(e) => onSearchTermChange?.(e.target.value)}
             />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-              {searchTerm ? `${filteredCandidates.length} found` : candidates.length}
+            <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
+              {searchTerm
+                ? `${filteredCandidates.length} of ${candidates.length} ${candidates.length === 1 ? 'Candidate' : 'Candidates'}`
+                : `${candidates.length} ${candidates.length === 1 ? 'Candidate' : 'Candidates'}`}
             </span>
 
             {filterOptions && onFilterChange && (
@@ -209,7 +211,7 @@ export default function CandidateList({
                 <select
                   value={filterValue}
                   onChange={(e) => onFilterChange(e.target.value)}
-                  className={`cursor-pointer appearance-none pl-3 pr-8 py-2 w-52 rounded-lg ${skin.field} ${FOCUS}`}
+                  className={`cursor-pointer appearance-none h-9 pl-3 pr-8 w-52 rounded-lg ${skin.field} ${FOCUS}`}
                 >
                   {filterOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -229,13 +231,15 @@ export default function CandidateList({
 
       {/* Body - white results panel wrapping the grey list, the same
           grey-on-white treatment as the other modules; consumers that pass
-          hideHeader bring their own panel around the list. */}
-      <div className={hideHeader ? undefined : `border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4`}>
+          hideHeader bring their own panel around the list. The panel grows
+          with the flex chain while loading so the skeleton fills the body. */}
+      <div className={hideHeader ? 'flex-1 min-h-0 flex flex-col' : `border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4${loading || candidates.length === 0 ? ' flex-1 min-h-0 flex flex-col' : ''}`}>
       {loading ? (
-        <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
-          <div className="p-6 space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center space-x-4 animate-pulse">
+        <div role="status" aria-busy="true" className={`flex-1 min-h-[320px] flex flex-col border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
+          <span className="sr-only">Loading candidates…</span>
+          <div className="flex-1 p-6 flex flex-col justify-between">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} aria-hidden="true" className="flex items-center space-x-4 animate-pulse">
                 <div className={`h-10 w-10 ${skin.skeleton} rounded-full`}></div>
                 <div className="flex-1 space-y-2">
                   <div className={`h-4 ${skin.skeleton} rounded w-1/4`}></div>
@@ -246,14 +250,20 @@ export default function CandidateList({
           </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
-          {!hideEmptyIcon && (
-            <div className="mx-auto h-12 w-12 text-ink/30 mb-4">
-              <User className="h-full w-full" />
-            </div>
-          )}
-          <h3 className={skin.emptyTitle}>No candidates found</h3>
-          <p className={`mt-1 ${skin.body}`}>{emptyMessage || 'Upload a resume to get started.'}</p>
+        <div className={`flex-1 min-h-[320px] flex items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
+          <div>
+            {!hideEmptyIcon && (
+              <div className="mx-auto h-12 w-12 text-ink/30 mb-4">
+                <User className="h-full w-full" />
+              </div>
+            )}
+            <h3 className={skin.emptyTitle}>No candidates found</h3>
+            <p className={`mt-1 ${skin.body}`}>{emptyMessage || 'Upload a resume to get started.'}</p>
+          </div>
+        </div>
+      ) : filteredCandidates.length === 0 && searchTerm ? (
+        <div className={`flex-1 min-h-[320px] flex items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center transition-colors duration-200 ${skin.cardHover}`}>
+          <p className={skin.body}>No candidates match your search.</p>
         </div>
       ) : (
       <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
@@ -345,12 +355,6 @@ export default function CandidateList({
             </tbody>
           </table>
         </div>
-
-        {filteredCandidates.length === 0 && searchTerm && (
-          <div className="p-12 text-center">
-            <p className={skin.body}>No candidates match your search.</p>
-          </div>
-        )}
       </div>
       )}
       </div>

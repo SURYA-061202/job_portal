@@ -336,14 +336,14 @@ function QuizInterface({ test, onCancel, onComplete }: { test: AssessmentSection
                 {currentIdx < questions.length - 1 ? (
                     <button
                         onClick={() => setCurrentIdx(prev => prev + 1)}
-                        className="px-10 py-4 border border-ink bg-ink text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all hover:-translate-y-0.5"
+                        className="px-10 py-4 border border-ink/70 bg-ink/70 text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all hover:-translate-y-0.5"
                     >
                         Next Question
                     </button>
                 ) : (
                     <button
                         onClick={handleFinish}
-                        className="px-10 py-4 border border-ink bg-ink text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all hover:-translate-y-0.5"
+                        className="px-10 py-4 border border-ink/70 bg-ink/70 text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all hover:-translate-y-0.5"
                     >
                         Finish Assessment
                     </button>
@@ -399,7 +399,7 @@ function AssessmentResult({ test, result, onClose }: { test: AssessmentSection, 
             <div className="p-8 border-t border-border bg-muted">
                 <button 
                     onClick={onClose}
-                    className="w-full py-4 border border-ink bg-ink text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all"
+                    className="w-full py-4 border border-ink/70 bg-ink/70 text-surface rounded-xl font-semibold shadow-lg hover:border-brand hover:bg-brand hover:text-ink transition-all"
                 >
                     Dismiss Review
                 </button>

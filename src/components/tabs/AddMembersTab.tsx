@@ -201,22 +201,25 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                             </div>
                         </div>
 
-                        {/* Name and Department */}
-                        <div className="text-center mb-4">
-                            <h3 className={`${skin.cardTitle} mb-1`}>{member.firstName} {member.lastName}</h3>
-                            <p className="text-sm text-ink/60">{member.department || 'No Department'}</p>
+                        {/* Name */}
+                        <div className="mb-5 text-center">
+                            <h3 className={skin.cardTitle}>{member.firstName} {member.lastName}</h3>
                         </div>
 
-                        {/* Contact Info */}
-                        <div className="space-y-2">
-                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border border-ink bg-surface rounded-lg`}>
-                                <Mail className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
-                                <span className="truncate" title={member.email}>{member.email}</span>
-                            </div>
-                            <div className={`flex items-center justify-center text-sm text-ink px-3 py-2 transition-colors border border-ink bg-surface rounded-lg`}>
-                                <Phone className="w-4 h-4 text-ink/40 flex-shrink-0 mr-2" />
+                        {/* Contact Info - grey pills, the same fill as the skill
+                            tags on the job post cards (no outlines). */}
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <span
+                                title={member.email}
+                                className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-border px-2.5 py-1.5 text-sm font-medium text-ink/70"
+                            >
+                                <Mail className="h-3.5 w-3.5 flex-shrink-0 text-ink/40" />
+                                <span className="truncate">{member.email}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-border px-2.5 py-1.5 text-sm font-medium text-ink/70">
+                                <Phone className="h-3.5 w-3.5 flex-shrink-0 text-ink/40" />
                                 <span>{member.mobile || 'N/A'}</span>
-                            </div>
+                            </span>
                         </div>
                     </div>
                 ))}

@@ -166,7 +166,7 @@ export default function InterviewResponsePage() {
         <div className="flex justify-center gap-4 mb-6">
           {[{ value: 'interested', label: 'Interested' }, { value: 'not_interested', label: 'Not Interested' }].map(opt => (
             <button key={opt.value} onClick={() => setInterest(opt.value as any)}
-              className={`px-4 py-2 rounded-xl text-sm border transition-colors ${interest === opt.value ? 'border-ink bg-ink text-surface font-semibold hover:border-brand hover:bg-brand hover:text-ink' : 'border-border bg-surface text-ink font-semibold hover:border-ink'}`}>{opt.label}</button>
+              className={`px-4 py-2 rounded-xl text-sm border transition-colors ${interest === opt.value ? 'border-ink/70 bg-ink/70 text-surface font-semibold hover:border-brand hover:bg-brand hover:text-ink' : 'border-border bg-surface text-ink font-semibold hover:border-ink'}`}>{opt.label}</button>
           ))}
         </div>
 
@@ -248,7 +248,7 @@ export default function InterviewResponsePage() {
 
         <button
           onClick={handleSubmit}
-          className="w-full border border-ink bg-ink text-surface font-semibold px-4 py-2 rounded-xl hover:border-brand hover:bg-brand hover:text-ink disabled:opacity-50"
+          className="w-full border border-ink/70 bg-ink/70 text-surface font-semibold px-4 py-2 rounded-xl hover:border-brand hover:bg-brand hover:text-ink disabled:opacity-50"
           disabled={saving || !interest || (isInterested && (!selectedDate || !selectedTime))}
         >
           {saving ? 'Submitting…' : 'Submit'}

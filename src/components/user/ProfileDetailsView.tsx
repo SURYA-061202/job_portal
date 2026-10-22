@@ -445,7 +445,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveExp} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveExp} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -463,7 +463,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         <div className="mb-4">
                             <div className="flex gap-2">
                                 <input type="text" value={courseInput} onChange={(e) => setCourseInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} placeholder="Add a course (e.g. AWS Certified Solutions Architect)" className="flex-1 px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink" />
-                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink bg-ink text-surface rounded-lg text-sm font-semibold hover:border-ink/80 hover:bg-ink/80 transition-colors">Add</button>
+                                <button onClick={() => { if(courseInput.trim()) { setTempCourses([...tempCourses, courseInput.trim()]); setCourseInput(''); } }} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface rounded-lg text-sm font-semibold hover:border-ink/60 hover:bg-ink/60 transition-colors">Add</button>
                             </div>
                         </div>
                         <div className="overflow-y-auto pr-2 flex flex-wrap gap-2 pb-2">
@@ -476,7 +476,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveCourse} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveCourse} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Courses'}
                             </button>
                         </div>
@@ -518,7 +518,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveEdu} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -560,7 +560,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveProj} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveProj} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -612,7 +612,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving || uploadingCert} onClick={handleSaveCert} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -640,7 +640,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                         placeholder="e.g. React, Python, UI Design" 
                                         className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
                                     />
-                                    <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-ink text-surface text-sm font-bold rounded-lg hover:bg-ink/85 transition-colors disabled:opacity-50">Add</button>
+                                    <button onClick={handleAddTempSkill} disabled={!skillInput.trim()} className="px-5 py-2 bg-ink/70 text-surface text-sm font-bold rounded-lg hover:bg-ink/60 transition-colors disabled:opacity-50">Add</button>
                                 </div>
                             </div>
 
@@ -662,7 +662,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveSkills} className="px-4 py-2 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving} onClick={handleSaveSkills} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Skills'}
                             </button>
                         </div>

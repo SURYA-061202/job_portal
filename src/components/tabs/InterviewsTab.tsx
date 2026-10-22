@@ -19,6 +19,13 @@ const normalizeSkills = (skills: any): string[] => {
   return [];
 };
 
+// Interview-pipeline statuses: every stage except pending, shortlisted,
+// rejected, and selected (selected candidates have left the pipeline and
+// live in the Selected Candidates module). Card counts, post membership and
+// the detail list must all use this so they never disagree.
+const isInterviewStage = (status: string): boolean =>
+  !!status && status !== 'pending' && status !== 'shortlisted' && status !== 'selected' && !status.endsWith('rejected');
+
 interface PostWithCount extends RecruitmentRequest {
   interviewCount: number;
 }
@@ -142,9 +149,8 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
       // 3. Fetch posts that have candidates in interview rounds
       const postIds = new Set<string>();
       for (const c of allCandidates) {
-        const st = (c as any).status || '';
         const pid = (c as any).postId;
-        if (pid && st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected')) {
+        if (pid && isInterviewStage((c as any).status || '')) {
           postIds.add(pid);
         }
       }
@@ -155,10 +161,7 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
           const postDoc = await getDoc(doc(db, 'recruits', pid));
           if (postDoc.exists()) {
             const postData = { id: postDoc.id, ...postDoc.data() } as RecruitmentRequest;
-            const count = allCandidates.filter(c => (c as any).postId === pid && (() => {
-              const st = (c as any).status || '';
-              return st && st !== 'pending' && st !== 'shortlisted' && !st.endsWith('rejected');
-            })()).length;
+            const count = allCandidates.filter(c => (c as any).postId === pid && isInterviewStage((c as any).status || '')).length;
             postList.push({ ...postData, interviewCount: count });
           }
         } catch (err) {
@@ -185,10 +188,7 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
   // by default (selected candidates have left the pipeline and live in the
   // Selected Candidates module), narrowed to one round when the dropdown says so.
   const activeCandidates = useMemo(() =>
-    candidates.filter((c) => {
-      const st = (c as any).status || '';
-      return st && st !== 'pending' && st !== 'shortlisted' && st !== 'selected' && !st.endsWith('rejected');
-    }),
+    candidates.filter((c) => isInterviewStage((c as any).status || '')),
     [candidates]
   );
 
@@ -273,14 +273,14 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
             />
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+            <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
               {postCandidates.length} Candidate{postCandidates.length === 1 ? '' : 's'}
             </span>
             <div className="relative">
               <select
                 value={selectedRound ?? ''}
                 onChange={(e) => setSelectedRound(e.target.value || null)}
-                className={`cursor-pointer appearance-none pl-3 pr-8 py-2 w-52 rounded-lg ${skin.field} ${FOCUS}`}
+                className={`cursor-pointer appearance-none h-9 pl-3 pr-8 w-52 rounded-lg ${skin.field} ${FOCUS}`}
                 aria-label="Filter by round"
               >
                 {roundOptions.map((opt) => (
@@ -300,7 +300,7 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
         {/* Body - the white results panel, so the grey candidate list reads
             grey-on-white like the Shortlisted and Candidates modules. */}
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-          <div className={`${postCandidates.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+          <div className={`${loading || postCandidates.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
             <CandidateList
               candidates={postCandidates}
               onSelectCandidate={setSelectedCandidate}
@@ -352,7 +352,7 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
             onChange={(e) => setPostSearch(e.target.value)}
           />
         </div>
-        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
           Posts: {visiblePosts.length}
         </span>
       </div>
@@ -361,19 +361,29 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
           grey-on-white like the Shortlisted module. The panel hugs the grid
           and only fills the area while loading or empty. */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-      <div className={`${loading || visiblePosts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+      <div className={`${loading || visiblePosts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-6 space-y-3`}>
-              <div className={`h-5 ${skin.skeleton} rounded w-2/3`}></div>
-              <div className={`h-4 ${skin.skeleton} rounded w-1/3`}></div>
-              <div className={`h-3 ${skin.skeleton} rounded w-1/2`}></div>
+        <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <span className="sr-only">Loading interview posts…</span>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
+              <div className={`h-5 w-2/3 ${skin.skeleton}`} />
+              <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
+              <div className="mt-6 grid grid-cols-2">
+                <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
+              </div>
+              <div className="mt-6 flex gap-1.5">
+                <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
+              </div>
+              <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
             </div>
           ))}
         </div>
       ) : visiblePosts.length === 0 ? (
-        <div className={`border border-dashed ${skin.edge} ${skin.radius} p-12 text-center flex-1 flex items-center justify-center`}>
+        <div className={`flex-1 flex items-center justify-center border border-dashed ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center`}>
           <div>
             <h3 className={skin.emptyTitle}>{postSearch ? 'No matching posts' : 'No interview posts'}</h3>
             <p className={`mt-1 ${skin.body}`}>Posts will appear here once candidates enter the interview pipeline.</p>

@@ -12,7 +12,7 @@ import {
   MessageSquare,
   PieChart,
   SquareKanban,
-  Upload,
+  // Upload, // hidden: Resume Upload module removed from recruiter/admin nav
   User,
   UserPlus,
   Users,
@@ -106,14 +106,14 @@ interface Skin {
 const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
   ink: {
     label: 'Ink',
-    root: 'overflow-hidden border-r border-brand/20 bg-ink shadow-lg',
-    header: 'border-b border-brand/20 bg-ink',
+    root: 'overflow-hidden border-r border-brand/20 bg-neutral-800 shadow-lg',
+    header: 'border-b border-brand/20 bg-neutral-800',
     wordmark: 'text-lg font-bold leading-tight tracking-tight text-gray-100',
     wordmarkAccent: 'text-brand',
-    controls: 'bg-ink',
+    controls: 'bg-neutral-800',
     iconBtn: 'text-gray-400 hover:bg-surface/5 hover:text-white',
     rule: 'bg-gradient-to-r from-transparent via-brand to-transparent',
-    nav: 'bg-ink',
+    nav: 'bg-neutral-800',
     section: 'px-3 pb-6 pt-6',
     sectionLabel: 'mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-brand',
     sectionDivider: 'mx-3 mb-2 border-t border-brand/20',
@@ -125,7 +125,7 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     rowActiveIcon: '',
     bar: 'left-1 h-5 w-0.5 rounded-full bg-brand',
     underline: null,
-    footer: 'border-t border-brand/20 bg-ink',
+    footer: 'border-t border-brand/20 bg-neutral-800',
     accountBtn: 'text-brand hover:text-white',
     logout: 'text-gray-300 hover:bg-destructive/10 hover:text-destructive',
   },
@@ -197,7 +197,7 @@ const COLUMN_SKINS: Record<ColumnVariant, Skin> = {
     rowMinHeight: 'min-h-10',
     rowMotion: 'transition-colors duration-150',
     rowIdle: 'font-medium text-ink/70 hover:bg-ink/5 hover:text-ink active:opacity-80',
-    rowActive: 'bg-ink font-semibold text-surface',
+    rowActive: 'bg-ink/70 font-semibold text-surface',
     rowActiveIcon: 'text-brand',
     bar: 'left-1.5 h-5 w-1 rounded-full bg-brand',
     underline: null,
@@ -239,7 +239,7 @@ const RAIL_SKINS: Record<RailVariant, RailSkin> = {
   },
   'rail-dark': {
     label: 'Noir',
-    root: 'w-[88px] bg-ink shadow-xl',
+    root: 'w-[88px] bg-neutral-800 shadow-xl',
     markWrap: 'border-b border-white/10 px-4 py-4',
     controlsIcon: 'text-white/60 hover:bg-white/5 hover:text-white',
     rule: 'bg-brand',
@@ -612,7 +612,7 @@ export default function Sidebar(props: SidebarProps) {
   ];
 
   const screeningTabs: NavTab[] = [
-    { id: 'upload-resumes', label: 'Upload Resumes', short: 'Upload', icon: Upload },
+    // { id: 'upload-resumes', label: 'Upload Resumes', short: 'Upload', icon: Upload }, // hidden: Resume Upload module on recruiter/admin side
     { id: 'pipeline', label: 'Pipeline (Kanban)', short: 'Pipeline', icon: SquareKanban },
     { id: 'candidates', label: 'Candidates', short: 'Candidates', icon: Users },
     { id: 'shortlisted', label: 'ShortListed', short: 'Shortlist', icon: CheckCircle },

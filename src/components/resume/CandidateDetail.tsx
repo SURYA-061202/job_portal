@@ -251,31 +251,18 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
         </div>
       </div>
 
-      {/* Controls row below the header: context field at the left end, Delete
-          and Resume at the right end. Reached via the Posts module the field is
-          the post's department; via the Candidates module it is the candidate's
-          role. The field is a filled chip with a black border: normal-case
-          label, bold value. */}
+      {/* Controls row below the header: when reached via the Posts module the
+          left field is the post's department; the Candidates path shows no
+          context field. Delete and Resume sit at the right end. */}
       <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {activePostId ? (
-            activePost?.department && (
-              <span className="inline-flex max-w-full items-center gap-1.5">
-                <span className="shrink-0 text-xs font-medium text-ink/60">Department</span>
-                <span className="max-w-full truncate rounded-lg border border-ink bg-surface px-2.5 py-1 text-sm font-bold text-ink">{activePost.department}</span>
-              </span>
-            )
-          ) : (
-            candidate.role && (
-              <span className="inline-flex max-w-full items-center gap-1.5">
-                <span className="shrink-0 text-xs font-medium text-ink/60">Role</span>
-                <span className="max-w-full truncate rounded-lg border border-ink bg-surface px-2.5 py-1 text-sm font-bold text-ink">{candidate.role}</span>
-              </span>
-            )
-          )}
-        </div>
+        {activePostId && activePost?.department && (
+          <span className="inline-flex max-w-full items-center gap-1.5">
+            <span className="shrink-0 text-xs font-medium text-ink/60">Department</span>
+            <span className="max-w-full truncate rounded-lg border border-ink bg-surface px-2.5 py-1 text-sm font-bold text-ink">{activePost.department}</span>
+          </span>
+        )}
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
           <button
             onClick={handleRemove}
             disabled={removing}

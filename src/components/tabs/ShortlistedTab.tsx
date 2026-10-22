@@ -235,7 +235,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
             onChange={(e) => setPostSearch(e.target.value)}
           />
         </div>
-        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
           Posts: {postsWithCounts.length}
         </span>
       </div>
@@ -245,11 +245,29 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
           height, but the panel hugs the grid when it is short and only fills
           the area while loading or empty. */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-      <div className={`${loading || postsWithCounts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+      <div className={`${loading || postsWithCounts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
       {loading ? (
-        <div className="py-12 text-center text-ink/60">Loading…</div>
+        <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <span className="sr-only">Loading shortlisted posts…</span>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
+              <div className={`h-5 w-2/3 ${skin.skeleton}`} />
+              <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
+              <div className="mt-6 grid grid-cols-2">
+                <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
+              </div>
+              <div className="mt-6 flex gap-1.5">
+                <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
+                <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
+              </div>
+              <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
+            </div>
+          ))}
+        </div>
       ) : postsWithCounts.length === 0 ? (
-        <div className={`border border-dashed ${skin.edge} ${skin.radius} p-12 text-center`}>
+        <div className={`flex-1 flex items-center justify-center border border-dashed ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center`}>
           <div>
             <h3 className={skin.emptyTitle}>No shortlisted candidates yet</h3>
             <p className={`mt-1 ${skin.body}`}>Candidates you shortlist for your posts will appear here.</p>
@@ -322,7 +340,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
           Shortlisted: {shortlistedForPost.length}
         </span>
       </div>
@@ -332,7 +350,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
           remaining height, but the panel hugs the list when it is short and
           only fills the area when there is nothing to show. */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-        <div className={`${shortlistedForPost.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+        <div className={`${loading || shortlistedForPost.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
           <CandidateList
             candidates={shortlistedForPost}
             onSelectCandidate={setSelected}

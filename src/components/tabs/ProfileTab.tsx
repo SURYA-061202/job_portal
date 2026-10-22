@@ -259,7 +259,7 @@ export default function ProfileTab() {
                                         }}
                                         title="Remove profile photo"
                                         aria-label="Remove profile photo"
-                                        className="absolute bottom-0 left-0 sm:bottom-0.5 sm:left-0 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
+                                        className="absolute bottom-0 left-0 sm:bottom-0.5 sm:left-0 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white bg-ink/70 text-surface shadow-sm transition-colors hover:bg-destructive"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>

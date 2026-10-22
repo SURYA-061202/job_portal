@@ -5,7 +5,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import Sidebar from '@/components/layout/Sidebar';
 import JobPostsTab from '@/components/tabs/JobPostsTab';
-import UploadResumesTab from '@/components/tabs/UploadResumesTab';
+// import UploadResumesTab from '@/components/tabs/UploadResumesTab'; // hidden: Resume Upload module disabled on recruiter/admin side
 import CandidatesTab from '@/components/tabs/CandidatesTab';
 import InterviewsTab from '@/components/tabs/InterviewsTab';
 import SelectedCandidatesTab from '@/components/tabs/SelectedCandidatesTab';
@@ -110,7 +110,8 @@ export default function Dashboard() {
       case 'job-posts':
         return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} isPremium={isPremium} />;
       case 'upload-resumes':
-        return <UploadResumesTab userRole={userRole} userId={userId} />;
+        // Hidden: Resume Upload module is disabled on the recruiter/admin side.
+        return null;
       case 'candidates':
         return (
           <CandidatesTab

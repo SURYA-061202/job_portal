@@ -235,7 +235,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                             ) : null}
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-ink px-3 text-surface transition-colors duration-200 hover:bg-ink/85 ${FOCUS}`}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-ink/70 px-3 text-surface transition-colors duration-200 hover:bg-ink/60 ${FOCUS}`}
                                 title="Share job"
                                 aria-label="Share this job"
                             >
@@ -252,7 +252,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 Candidates at the right end. */}
             {!isUserView && (
                 <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
-                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                    <span role="status" aria-atomic="true" className={`inline-flex h-8 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
                         {isManager
                             ? `${recruitment.applicantCount ?? 0} ${recruitment.applicantCount === 1 ? 'Applicant' : 'Applicants'}`
                             : `${recruitment.candidatesCount || 0} ${recruitment.candidatesCount === 1 ? 'Opening' : 'Openings'}`}

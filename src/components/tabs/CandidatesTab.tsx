@@ -519,14 +519,14 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
                                             <button
                                                 onClick={() => setShowPostView(!showPostView)}
-                                                className={`p-2 border border-ink bg-ink text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/80 ${FOCUS}`}
+                                                className={`flex h-9 w-9 items-center justify-center border border-ink/70 bg-ink/70 text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/60 ${FOCUS}`}
                                                 title="Post-based view"
                                             >
                                                 <LayoutGrid className="w-5 h-5" />
                                             </button>
                                         )}
                                     </div>
-                                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                                    <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
                                         Candidates: {displayCandidates.length}
                                     </span>
                                 </div>
@@ -539,15 +539,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 the list and only fills the area when empty.
                                 The masthead above stays put. */}
                             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-                            <div className={`${listEmpty ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+                            <div className={`${listEmpty ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
                             {showPostView ? (
                                 /* Post Card Grid View */
-                                <div className="space-y-4">
+                                <div className="space-y-4 flex flex-col flex-1">
                                     {postCards.length === 0 ? (
-                                        <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
-                                            <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
-                                            <h3 className={skin.emptyTitle}>No posts found</h3>
-                                            <p className={`mt-1 ${skin.body}`}>Create a job post to get started.</p>
+                                        <div className={`flex-1 flex items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 py-14 text-center`}>
+                                            <div>
+                                                <Briefcase className="h-12 w-12 text-brand mx-auto mb-4" />
+                                                <h3 className={skin.emptyTitle}>No posts found</h3>
+                                                <p className={`mt-1 ${skin.body}`}>Create a job post to get started.</p>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

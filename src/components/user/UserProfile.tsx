@@ -371,7 +371,7 @@ export default function UserProfile() {
                         <div className="w-full lg:w-[350px] flex-shrink-0">
                             <div className="sticky top-24">
                                 <div className="bg-surface rounded-2xl border border-border shadow-md overflow-hidden group">
-                                    <div className="h-24 bg-ink relative">
+                                    <div className="h-24 bg-ink/70 relative">
                                         <button
                                             onClick={() => setIsEditingProfile(!isEditingProfile)}
                                             className="absolute top-3 right-3 p-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-lg text-surface transition-colors border border-surface/20"
@@ -434,7 +434,7 @@ export default function UserProfile() {
                                                     }}
                                                     title="Remove profile photo"
                                                     aria-label="Remove profile photo"
-                                                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-lg border-2 border-surface bg-ink text-surface shadow-sm transition-colors hover:bg-destructive"
+                                                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-lg border-2 border-surface bg-ink/70 text-surface shadow-sm transition-colors hover:bg-destructive"
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </button>
@@ -491,7 +491,7 @@ export default function UserProfile() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink bg-ink text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
+                                                <button disabled={saving} onClick={handleSaveProfileCard} className="w-full mt-2 py-1.5 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-brand hover:bg-brand hover:text-ink transition-colors disabled:opacity-50">
                                                     {saving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Save Details'}
                                                 </button>
                                             </div>

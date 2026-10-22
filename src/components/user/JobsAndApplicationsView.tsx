@@ -247,7 +247,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                 />
                             </div>
                             <button
-                                className="w-full md:w-auto px-6 py-2.5 border border-ink bg-ink text-surface rounded-lg font-semibold text-sm hover:bg-ink/80 hover:border-ink/80 hover:scale-[1.02] active:scale-95 transition-all"
+                                className="w-full md:w-auto px-6 py-2.5 border border-ink/70 bg-ink/70 text-surface rounded-lg font-semibold text-sm hover:bg-ink/60 hover:border-ink/60 hover:scale-[1.02] active:scale-95 transition-all"
                             >
                                 Search
                             </button>

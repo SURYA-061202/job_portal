@@ -538,7 +538,7 @@ export default function PersonalizedCVPage() {
                     {userData && !isProfileIncomplete && (
                         <button
                             onClick={() => handleViewPDF()}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-ink bg-ink text-surface text-sm font-semibold rounded-lg hover:border-ink/80 hover:bg-ink/80 hover:scale-[1.02] active:scale-95 transition-all"
+                            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-ink/70 bg-ink/70 text-surface text-sm font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <FileDown className="w-5 h-5" />
                             Download Resume

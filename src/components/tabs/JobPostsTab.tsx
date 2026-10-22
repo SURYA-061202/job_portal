@@ -207,9 +207,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             <h2 className={skin.heading}>
                                 Job Posts
                             </h2>
-                            <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
-                                {countBadge}
-                            </span>
                             <p className={`w-full ${skin.body}`}>
                                 Create, track and manage your job posts and the candidates who apply.
                             </p>
@@ -225,8 +222,9 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         </button>
                     </div>
 
-                    {/* Controls row: search, clear, sort, view. Sits on the
-                        canvas below the masthead - no panel, no tint. */}
+                    {/* Controls row: search, clear, sort, view and the posts
+                        count at the right-most end. Sits on the canvas below
+                        the masthead - no panel, no tint. */}
                     <div className="mb-4 flex flex-shrink-0 flex-wrap items-center gap-3">
                             <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
                                 <label htmlFor="job-posts-search" className="sr-only">
@@ -242,7 +240,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     type="text"
                                     placeholder="Title, department or location..."
                                     aria-describedby="job-posts-search-hint"
-                                    className={`block w-full py-2 pl-9 pr-9 rounded-lg ${skin.field} ${FOCUS}`}
+                                    className={`block w-full h-9 pl-9 pr-9 rounded-lg ${skin.field} ${FOCUS}`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyDown={(e) => {
@@ -273,7 +271,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         id="job-posts-sort"
                                         value={sort}
                                         onChange={(e) => setSort(e.target.value as SortKey)}
-                                        className={`cursor-pointer appearance-none py-2 pl-3 pr-8 rounded-lg ${skin.field} ${FOCUS}`}
+                                        className={`cursor-pointer appearance-none h-9 pl-3 pr-8 rounded-lg ${skin.field} ${FOCUS}`}
                                     >
                                         {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                                             <option key={key} value={key}>{SORT_LABELS[key]}</option>
@@ -288,7 +286,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <div
                                     role="group"
                                     aria-label="Post view"
-                                    className={skin.track}
+                                    className={`${skin.track} h-9`}
                                 >
                                     <button
                                         type="button"
@@ -296,7 +294,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         aria-pressed={view === 'grid'}
                                         aria-label="Grid view"
                                         title="Grid view"
-                                        className={`cursor-pointer p-2 transition-colors duration-200 ${FOCUS} ${
+                                        className={`flex cursor-pointer items-center justify-center px-2.5 transition-colors duration-200 ${FOCUS} ${
                                             view === 'grid' ? skin.trackBtnActive : skin.trackBtnIdle
                                         }`}
                                     >
@@ -308,13 +306,17 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         aria-pressed={view === 'list'}
                                         aria-label="List view"
                                         title="List view"
-                                        className={`cursor-pointer p-2 transition-colors duration-200 ${FOCUS} ${
+                                        className={`flex cursor-pointer items-center justify-center px-2.5 transition-colors duration-200 ${FOCUS} ${
                                             view === 'list' ? skin.trackBtnActive : skin.trackBtnIdle
                                         }`}
                                     >
                                         <List className="h-4 w-4" aria-hidden="true" />
                                     </button>
                                 </div>
+
+                                <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
+                                    {countBadge}
+                                </span>
                             </div>
                     </div>
 
@@ -326,7 +328,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         top of the body bg while the posts scroll under it. */}
                     <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
                         <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
-                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4 pb-3 md:pb-4">
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4">
                         {loadingPosts ? (
                             <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                                 <span className="sr-only">Loading job posts…</span>
@@ -396,6 +398,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             <PostList posts={visiblePosts} onOpen={setSelectedPost} />
                         )}
                         </div>
+                        <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
                     </div>
                 </div>
             )}

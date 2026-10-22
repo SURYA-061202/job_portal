@@ -386,11 +386,13 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 {/* Controls-row skeleton: search left, count right. */}
                 <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
                     <div className={`h-9 w-full sm:w-72 animate-pulse ${skin.skeleton}`} />
-                    <div className={`h-6 w-24 animate-pulse ${skin.skeleton}`} />
+                    <div className={`h-9 w-24 animate-pulse ${skin.skeleton}`} />
                 </div>
                 {/* Same white results panel the Posts tab uses, so the grey
                     cards read against a white body while loading too. */}
-                <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+                <div className={`flex-1 min-h-0 flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
+                    <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4">
                     {/* Same card-grid skeleton the Posts tab shows while loading. */}
                     <div aria-hidden="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                         {Array.from({ length: 8 }).map((_, i) => (
@@ -410,6 +412,8 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             </div>
                         ))}
                     </div>
+                    </div>
+                    <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
                 </div>
             </div>
         );
@@ -443,12 +447,12 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                         <input
                             type="text"
                             placeholder="Search posts..."
-                            className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
+                            className={`block w-full h-9 pl-10 pr-3 rounded-lg ${skin.field} ${FOCUS}`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <span role="status" aria-atomic="true" className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                    <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
                         Posts: {posts.length}
                     </span>
                 </div>
@@ -456,7 +460,9 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 {/* Results - the only scrollable region, on a white panel
                     with the posts themselves in the page grey, same recipe
                     as the Posts tab. */}
-                <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4`}>
+                <div className={`flex-1 min-h-0 flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
+                    <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4">
                     {filteredPosts.length === 0 ? (
                         <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
                             <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
@@ -493,6 +499,8 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                             ))}
                         </div>
                     )}
+                    </div>
+                    <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
                 </div>
             </div>
         );
@@ -533,12 +541,12 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                     <input
                         type="text"
                         placeholder="Search by name, role..."
-                        className={`block w-full pl-10 pr-3 py-2 leading-5 rounded-lg ${skin.field} ${FOCUS}`}
+                        className={`block w-full h-9 pl-10 pr-3 rounded-lg ${skin.field} ${FOCUS}`}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <span className={`inline-flex shrink-0 items-center gap-1.5 ${skin.count} rounded-lg`}>
+                <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
                     {rounds.length} {rounds.length === 1 ? 'Round' : 'Rounds'}
                 </span>
             </div>
@@ -742,7 +750,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                     {advanceTo && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); updateStatus(item, advanceTo.targetStatus); }}
-                                                            className={`p-1 border border-ink bg-ink text-surface ${skin.radius} hover:bg-ink/80 cursor-pointer ${FOCUS}`}
+                                                            className={`p-1 border border-ink/70 bg-ink/70 text-surface ${skin.radius} hover:bg-ink/60 cursor-pointer ${FOCUS}`}
                                                             title={`Move to ${advanceTo.title}`}
                                                         >
                                                             <ArrowRight className="h-3 w-3" />
