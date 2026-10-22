@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { sendEmailVerification } from 'firebase/auth';
+import { sendEmailVerification, RecaptchaVerifier, linkWithPhoneNumber, unlink } from 'firebase/auth';
+import type { ConfirmationResult } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera } from 'lucide-react';
@@ -10,7 +11,7 @@ import UserHeader from '@/components/layout/UserHeader';
 import ProfileDetailsView from './ProfileDetailsView';
 import JobsAndApplicationsView from './JobsAndApplicationsView';
 import { ProfileCardSkeleton, ContentCardSkeleton } from './SkeletonLoaders';
-import { sendPasswordResetMail } from '@/lib/emailFunctions';
+import { sendPasswordResetMail, confirmMobileVerified, checkMobileAvailable, normalizeMobile } from '@/lib/emailFunctions';
 
 export default function UserProfile() {
     const [loading, setLoading] = useState(true);
@@ -21,9 +22,35 @@ export default function UserProfile() {
     const [verifyingEmail, setVerifyingEmail] = useState(false);
     const [sendingResetLink, setSendingResetLink] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
+    const [isMobileVerified, setIsMobileVerified] = useState(false);
+    const [mobileOtpStage, setMobileOtpStage] = useState<'idle' | 'code'>('idle');
+    const [mobileOtp, setMobileOtp] = useState('');
+    const [verifyingMobile, setVerifyingMobile] = useState(false);
+    const [mobileResendIn, setMobileResendIn] = useState(0);
+    /** Mobile number as loaded from Firestore — used to detect edits that
+     *  must invalidate a previous verification. */
+    const [mobileAtLoad, setMobileAtLoad] = useState('');
     const [profileImage, setProfileImage] = useState('');
     const [imageUploading, setImageUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
+    /** Firebase Phone Auth: pending SMS round-trip + its invisible reCAPTCHA. */
+    const mobileConfirmationRef = useRef<ConfirmationResult | null>(null);
+    const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+    /** True once the code was accepted and the credential linked, so a retry
+     *  after a transient backend error doesn't re-submit the same code. */
+    const phoneLinkedRef = useRef(false);
+
+    const resetMobileAuthState = () => {
+        mobileConfirmationRef.current = null;
+        phoneLinkedRef.current = false;
+    };
+
+    const clearRecaptcha = () => {
+        recaptchaVerifierRef.current?.clear();
+        recaptchaVerifierRef.current = null;
+    };
+
+    useEffect(() => () => clearRecaptcha(), []);
 
     useEffect(() => {
         let interval: any;
@@ -44,6 +71,12 @@ export default function UserProfile() {
             if (interval) clearInterval(interval);
         };
     }, [isEmailVerified]);
+
+    useEffect(() => {
+        if (mobileResendIn <= 0) return;
+        const timer = window.setTimeout(() => setMobileResendIn((s) => s - 1), 1000);
+        return () => window.clearTimeout(timer);
+    }, [mobileResendIn]);
     
     // Core Profile Fields
     const [formData, setFormData] = useState({
@@ -51,6 +84,7 @@ export default function UserProfile() {
         lastName: '',
         email: '',
         mobile: '',
+        mobileVerified: false,
         yearsOfExperience: '',
         department: '',
         address: '',
@@ -105,11 +139,14 @@ export default function UserProfile() {
                 const migratedSkills = data.skillItems || (data.skills ? data.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
 
                 setProfileImage(data.profileImage || '');
+                setIsMobileVerified(!!data.mobileVerified);
+                setMobileAtLoad(data.mobile || '');
                 setFormData({
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
                     email: data.email || '',
                     mobile: data.mobile || '',
+                    mobileVerified: !!data.mobileVerified,
                     yearsOfExperience: data.yearsOfExperience || '',
                     department: data.department || '',
                     address: data.address || '',
@@ -137,22 +174,59 @@ export default function UserProfile() {
         const user = auth.currentUser;
         if (!user) return;
 
+        // Changing the number invalidates any previous verification.
+        const normalizedMobile = normalizeMobile(formData.mobile);
+        const mobileChanged = normalizedMobile !== normalizeMobile(mobileAtLoad);
+        const storedMobile = normalizedMobile || formData.mobile;
+        const trimmedMobile = formData.mobile.trim();
+
+        // Unauthorised (malformed) number — warn specifically before writing.
+        // An emptied field is allowed (it just clears the number).
+        if (mobileChanged && trimmedMobile && !normalizedMobile) {
+            popup.warning('That is not a valid Indian mobile number. Enter a 10-digit number starting with 6-9 (e.g., 9876543210).');
+            return;
+        }
+
         setSaving(true);
         try {
+            // Reject numbers already held by another account before writing.
+            if (mobileChanged && normalizedMobile) {
+                await checkMobileAvailable(normalizedMobile);
+            }
             await updateDoc(doc(db, 'users', user.uid), {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                mobile: formData.mobile,
+                mobile: storedMobile,
+                ...(mobileChanged ? { mobileVerified: false } : {}),
                 department: formData.department,
                 yearsOfExperience: formData.yearsOfExperience,
                 address: formData.address,
                 updatedAt: new Date()
             });
+            if (mobileChanged) {
+                setIsMobileVerified(false);
+                setMobileAtLoad(storedMobile);
+                setFormData((prev) => ({ ...prev, mobile: storedMobile }));
+                setMobileOtpStage('idle');
+                setMobileOtp('');
+                setMobileResendIn(0);
+                resetMobileAuthState();
+            }
             popup.success('Profile details updated!');
             setIsEditingProfile(false);
         } catch (error) {
             console.error('Error updating profile card:', error);
-            popup.error('Failed to update profile details');
+            const code = (error as { code?: string })?.code;
+            const message = (error as { message?: string })?.message;
+            if (code === 'functions/failed-precondition') {
+                popup.warning(message || 'This mobile number is already registered to another account. Please use a different number or sign in to that account.');
+            } else if (code === 'functions/invalid-argument') {
+                popup.warning(message || 'That is not a valid Indian mobile number. Enter a 10-digit number starting with 6-9.');
+            } else if (code === 'functions/unauthenticated' || code === 'functions/resource-exhausted') {
+                popup.error(message || 'Please try again in a moment.');
+            } else {
+                popup.error('Failed to update profile details');
+            }
         } finally {
             setSaving(false);
         }
@@ -309,6 +383,146 @@ export default function UserProfile() {
         }
     };
 
+    const handleSendMobileOtp = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const mobile = normalizeMobile(formData.mobile);
+        if (!mobile) {
+            popup.warning('That is not a valid Indian mobile number. Enter a 10-digit number starting with 6-9 (e.g., 9876543210).');
+            return;
+        }
+
+        setVerifyingMobile(true);
+        try {
+            resetMobileAuthState();
+            const linkedPhone = normalizeMobile(
+                user.providerData.find((p) => p.providerId === 'phone')?.phoneNumber || ''
+            );
+
+            // This exact number is already linked to the account (verified
+            // earlier) — no SMS needed, just sync the verified flag.
+            if (linkedPhone === mobile) {
+                await confirmMobileVerified(mobile);
+                setIsMobileVerified(true);
+                setFormData((prev) => ({ ...prev, mobileVerified: true }));
+                popup.success('Mobile number verified successfully!');
+                return;
+            }
+
+            // A different number is still linked — drop it first so the new
+            // one can take its place (email/password sign-in is unaffected).
+            if (linkedPhone) {
+                await unlink(user, 'phone');
+            }
+
+            if (!recaptchaVerifierRef.current) {
+                recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'mobile-otp-recaptcha', {
+                    size: 'invisible',
+                });
+            }
+            mobileConfirmationRef.current = await linkWithPhoneNumber(
+                user,
+                `+91${mobile}`,
+                recaptchaVerifierRef.current
+            );
+            setMobileOtpStage('code');
+            setMobileOtp('');
+            setMobileResendIn(60);
+            popup.success(`Verification code sent to +91 ${mobile}.`);
+        } catch (error) {
+            console.error('Error sending mobile verification code:', error);
+            resetMobileAuthState();
+            clearRecaptcha();
+            const code = (error as { code?: string })?.code;
+            const message = (error as { message?: string })?.message;
+            if (code === 'auth/too-many-requests' || code === 'auth/quota-exceeded') {
+                popup.error('Too many verification requests. Please try again in a while.');
+            } else if (code === 'auth/captcha-check-failed') {
+                popup.error('Security check failed. Please try again.');
+            } else if (code === 'auth/network-request-failed') {
+                popup.error('Network error. Please check your connection and try again.');
+            } else if (code === 'functions/failed-precondition' || code === 'functions/invalid-argument') {
+                popup.error(message || 'Unable to verify this number. Please try again.');
+            } else if (code === 'functions/resource-exhausted' || code === 'functions/unauthenticated') {
+                popup.error(message || 'Please wait a moment and try again.');
+            } else {
+                popup.error(message || 'Failed to send the verification code. Please try again.');
+            }
+        } finally {
+            setVerifyingMobile(false);
+        }
+    };
+
+    const handleVerifyMobileOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const code = mobileOtp.trim();
+        if (!/^\d{6}$/.test(code)) {
+            popup.error('Enter the 6-digit code from your verification message.');
+            return;
+        }
+        const mobile = normalizeMobile(formData.mobile);
+        if (!mobile) {
+            popup.warning('That is not a valid Indian mobile number. Enter a 10-digit number starting with 6-9 (e.g., 9876543210).');
+            return;
+        }
+
+        setVerifyingMobile(true);
+        try {
+            // Accepts the code and links the phone credential to the
+            // signed-in account — the uid (and session) never change.
+            if (!phoneLinkedRef.current) {
+                const confirmation = mobileConfirmationRef.current;
+                if (!confirmation) {
+                    popup.error('Please request a new code.');
+                    return;
+                }
+                await confirmation.confirm(code);
+                phoneLinkedRef.current = true;
+            }
+
+            // Backend re-reads the linked number from Firebase Auth and is
+            // the only code allowed to set mobileVerified.
+            await confirmMobileVerified(mobile);
+
+            setIsMobileVerified(true);
+            setFormData((prev) => ({ ...prev, mobileVerified: true }));
+            setMobileOtpStage('idle');
+            setMobileOtp('');
+            setMobileResendIn(0);
+            resetMobileAuthState();
+            popup.success('Mobile number verified successfully!');
+        } catch (error) {
+            console.error('Error verifying mobile code:', error);
+            const code_ = (error as { code?: string })?.code;
+            const message = (error as { message?: string })?.message;
+            if (code_ === 'auth/code-invalid-verification-code' || code_ === 'auth/invalid-verification-code') {
+                popup.error('Incorrect code. Please try again.');
+            } else if (code_ === 'auth/code-expired' || code_ === 'auth/session-expired') {
+                popup.error('This code has expired. Please request a new one.');
+                resetMobileAuthState();
+                setMobileOtpStage('idle');
+                setMobileOtp('');
+                setMobileResendIn(0);
+            } else if (code_ === 'auth/too-many-requests' || code_ === 'auth/quota-exceeded') {
+                popup.error('Too many attempts. Please wait a while before requesting a new code.');
+            } else if (code_ && code_.startsWith('functions/')) {
+                popup.warning(message || 'Verification failed. Please try again.');
+            } else {
+                popup.error(message || 'Something went wrong. Please try again.');
+            }
+        } finally {
+            setVerifyingMobile(false);
+        }
+    };
+
+    const handleCancelMobileOtp = () => {
+        setMobileOtpStage('idle');
+        setMobileOtp('');
+        setMobileResendIn(0);
+        resetMobileAuthState();
+    };
+
     const handleInputChange = (field: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
@@ -362,6 +576,10 @@ export default function UserProfile() {
     return (
         <div className="min-h-screen bg-muted flex flex-col">
             <UserHeader />
+
+            {/* Invisible reCAPTCHA widget for Firebase Phone Auth — kept at
+                root so it never unmounts mid-flow (e.g. toggling edit mode). */}
+            <div id="mobile-otp-recaptcha" />
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
                 <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8 relative`}>
@@ -552,6 +770,88 @@ export default function UserProfile() {
                                                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                                                             )}
                                                         </div>
+                                                    </div>
+
+                                                    {/* Mobile Verification Status */}
+                                                    <div className="pt-3 border-t border-border mt-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                {isMobileVerified ? (
+                                                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                                                                ) : (
+                                                                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                                                                )}
+                                                                <span className={`text-[11px] font-bold uppercase ${isMobileVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                                                    {isMobileVerified ? 'Mobile Verified' : 'Verify Mobile'}
+                                                                </span>
+                                                            </div>
+                                                            {!isMobileVerified && mobileOtpStage === 'idle' && (
+                                                                normalizeMobile(formData.mobile) ? (
+                                                                    <button
+                                                                        onClick={handleSendMobileOtp}
+                                                                        disabled={verifyingMobile}
+                                                                        className="text-[10px] font-bold text-brand hover:text-brand disabled:opacity-50 transition-all active:scale-95"
+                                                                    >
+                                                                        {verifyingMobile ? 'Sending...' : 'Verify Now'}
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => setIsEditingProfile(true)}
+                                                                        className="text-[10px] font-bold text-brand hover:text-brand transition-all active:scale-95"
+                                                                    >
+                                                                        Add Number
+                                                                    </button>
+                                                                )
+                                                            )}
+                                                            {isMobileVerified && (
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                            )}
+                                                        </div>
+
+                                                        {/* OTP entry after the code has been sent */}
+                                                        {!isMobileVerified && mobileOtpStage === 'code' && (
+                                                            <form onSubmit={handleVerifyMobileOtp} className="mt-3 space-y-2">
+                                                                <p className="text-[10px] text-ink/60 font-semibold">
+                                                                    Enter the 6-digit code sent to +91 {normalizeMobile(formData.mobile) || formData.mobile}
+                                                                </p>
+                                                                <input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    autoComplete="one-time-code"
+                                                                    maxLength={6}
+                                                                    value={mobileOtp}
+                                                                    onChange={(e) => setMobileOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                                    placeholder="______"
+                                                                    className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-center text-sm font-mono tracking-[0.4em] text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20"
+                                                                />
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleCancelMobileOtp}
+                                                                        className="text-[10px] font-bold text-ink/60 hover:text-ink transition-colors"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={handleSendMobileOtp}
+                                                                            disabled={verifyingMobile || mobileResendIn > 0}
+                                                                            className="text-[10px] font-bold text-brand hover:text-brand disabled:text-ink/40 disabled:cursor-not-allowed transition-colors"
+                                                                        >
+                                                                            {mobileResendIn > 0 ? `Resend in ${mobileResendIn}s` : 'Resend'}
+                                                                        </button>
+                                                                        <button
+                                                                            type="submit"
+                                                                            disabled={verifyingMobile || mobileOtp.length !== 6}
+                                                                            className="text-[10px] font-bold px-3 py-1 border border-ink/70 bg-ink/70 text-surface rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50"
+                                                                        >
+                                                                            {verifyingMobile ? 'Verifying...' : 'Verify Code'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

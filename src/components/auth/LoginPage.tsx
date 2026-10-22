@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { sendPasswordResetMail, verifyEmailExists, sendSignupOtp, verifySignupOtp } from '@/lib/emailFunctions';
+import { sendPasswordResetMail, verifyEmailExists, sendSignupOtp, verifySignupOtp, normalizeMobile } from '@/lib/emailFunctions';
 import { useNavigate } from 'react-router-dom';
 import popup from '@/components/ui/Popup';
 import { Mail, Phone, User, Eye, EyeOff, ShieldCheck, ArrowLeft } from 'lucide-react';
@@ -69,6 +69,14 @@ export default function LoginPage() {
           return;
         }
 
+        // Normalize to the 10-digit form so duplicate-number checks and the
+        // stored profile value match what other accounts already have.
+        const normalizedMobile = normalizeMobile(mobile);
+        if (!normalizedMobile) {
+          popup.error('Please enter a valid 10-digit mobile number (e.g. 8778326518).');
+          return;
+        }
+
         // Block signup when the mail server says the mailbox does not exist.
         // Unknown (null) or a failed check allows signup, so a legitimate
         // user is never locked out by the verification service being down.
@@ -78,9 +86,10 @@ export default function LoginPage() {
           return;
         }
 
-        // No account is created yet - just email the 6-digit code and switch
-        // the form to the code entry step.
-        await sendSignupOtp({ email: trimmedEmail.toLowerCase() });
+        // No account is created yet - the backend rejects the request when
+        // the mobile number already belongs to another account, then emails
+        // the 6-digit code and switches the form to the code entry step.
+        await sendSignupOtp({ email: trimmedEmail.toLowerCase(), mobile: normalizedMobile });
         setSignupStage('verify');
         setOtp('');
         setResendIn(30);
@@ -135,7 +144,8 @@ export default function LoginPage() {
         email: normalizedEmail,
         firstName,
         lastName,
-        mobile,
+        mobile: normalizeMobile(mobile) || mobile,
+        mobileVerified: false,
         role: 'user',
         createdAt: new Date(),
       });
@@ -167,7 +177,7 @@ export default function LoginPage() {
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      await sendSignupOtp({ email: normalizedEmail });
+      await sendSignupOtp({ email: normalizedEmail, mobile: normalizeMobile(mobile) });
       setOtp('');
       setResendIn(30);
       popup.success(`Verification code sent to ${normalizedEmail}.`);
@@ -366,11 +376,14 @@ export default function LoginPage() {
                   <input
                     type="tel"
                     id="mobile"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    maxLength={16}
                     className="peer w-full border border-border rounded-xl px-4 py-2.5 focus:outline-none focus:border-ink focus:ring-1 focus:ring-brand/20 transition-all duration-200 bg-surface text-ink placeholder-transparent text-sm"
                     placeholder=" "
                     required
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => setMobile(e.target.value.replace(/[^\d+\s-]/g, ''))}
                   />
                   <label
                     htmlFor="mobile"

@@ -7,6 +7,7 @@ import type { Timestamp } from "firebase-admin/firestore";
 const adminFirestore = () => require("firebase-admin/firestore") as typeof import("firebase-admin/firestore");
 const adminAuth = () => require("firebase-admin/auth") as typeof import("firebase-admin/auth");
 const otpMailer = () => require("./mailer") as typeof import("./mailer");
+const mobileUtil = () => require("./mobileOtp") as typeof import("./mobileOtp");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -44,6 +45,12 @@ export const sendSignupOtp = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Invalid email address");
   }
 
+  const rawMobile = String((request.data as { mobile?: unknown })?.mobile || "").trim();
+  const mobile = mobileUtil().normalizeMobile(rawMobile);
+  if (!mobile) {
+    throw new HttpsError("invalid-argument", "Please enter a valid 10-digit mobile number.");
+  }
+
   const callerKey = request.rawRequest?.ip || "anonymous";
   if (isThrottled(callerKey)) {
     throw new HttpsError("resource-exhausted", "Too many requests. Please wait a minute and try again.");
@@ -61,6 +68,28 @@ export const sendSignupOtp = onCall(async (request) => {
     }
   }
 
+  // Block signup when the mobile number is already on another account.
+  // Matches the raw input as well as the normalized 10-digit form so older
+  // profile docs stored with "+91"/"0" prefixes are caught too.
+  const candidates = Array.from(new Set([rawMobile, mobile].filter(Boolean)));
+  try {
+    const dupeSnap = await adminFirestore()
+      .getFirestore()
+      .collection("users")
+      .where("mobile", "in", candidates)
+      .limit(1)
+      .get();
+    if (!dupeSnap.empty) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This mobile number is already registered with another account. Please use a different number or sign in instead."
+      );
+    }
+  } catch (err: unknown) {
+    if (err instanceof HttpsError) throw err;
+    console.error("sendSignupOtp mobile lookup error", err);
+  }
+
   const ref = otpDoc(email);
   const existing = await ref.get();
   if (existing.exists) {
@@ -73,6 +102,7 @@ export const sendSignupOtp = onCall(async (request) => {
   const code = String(Math.floor(100000 + Math.random() * 900000));
   await ref.set({
     email,
+    mobile,
     codeHash: hash(code),
     attempts: 0,
     createdAt: adminFirestore().Timestamp.now(),
@@ -126,10 +156,30 @@ export const verifySignupOtp = onCall(async (request) => {
     throw new HttpsError("not-found", "No verification code found. Please request a new one.");
   }
 
-  const doc = snap.data() as { codeHash?: string; attempts?: number; expiresAt?: Timestamp };
+  const doc = snap.data() as { codeHash?: string; attempts?: number; expiresAt?: Timestamp; mobile?: string };
   if (!doc?.expiresAt || doc.expiresAt.toMillis() < Date.now()) {
     await ref.delete().catch(() => undefined);
     throw new HttpsError("not-found", "This code has expired. Please request a new one.");
+  }
+
+  // Re-check the mobile number right before the account is created, so a
+  // number that became taken while the user was typing the email code still
+  // blocks registration.
+  const mobile = mobileUtil().normalizeMobile(doc.mobile);
+  if (mobile) {
+    const dupeSnap = await adminFirestore()
+      .getFirestore()
+      .collection("users")
+      .where("mobile", "==", mobile)
+      .limit(1)
+      .get();
+    if (!dupeSnap.empty) {
+      await ref.delete().catch(() => undefined);
+      throw new HttpsError(
+        "failed-precondition",
+        "This mobile number is already registered with another account. Please use a different number or sign in instead."
+      );
+    }
   }
 
   const attempts = Number(doc.attempts || 0);

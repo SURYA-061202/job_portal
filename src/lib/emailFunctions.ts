@@ -13,9 +13,11 @@ const sendRoundInviteFn = httpsCallable(functions, 'sendRoundInvite');
 const sendCongratulationsMailFn = httpsCallable(functions, 'sendCongratulationsMail');
 const sendVerifyDetailsFn = httpsCallable(functions, 'sendVerifyDetails');
 const sendPasswordResetMailFn = httpsCallable(functions, 'sendPasswordResetMail');
-const sendSignupOtpFn = httpsCallable<{ email: string }, { success: boolean }>(functions, 'sendSignupOtp');
+const sendSignupOtpFn = httpsCallable<{ email: string; mobile: string }, { success: boolean }>(functions, 'sendSignupOtp');
 const verifySignupOtpFn = httpsCallable<{ email: string; code: string }, { success: boolean }>(functions, 'verifySignupOtp');
 const verifyEmailExistsFn = httpsCallable<{ email: string }, { exists: boolean | null }>(functions, 'verifyEmailExists');
+const confirmMobileVerifiedFn = httpsCallable<{ mobile: string }, { success: boolean }>(functions, 'confirmMobileVerified');
+const checkMobileAvailableFn = httpsCallable<{ mobile: string }, { available: boolean }>(functions, 'checkMobileAvailable');
 
 export async function sendManagerInvite(data: { email: string; name?: string; password: string; baseUrl: string }) {
   await managerInviteFn(data);
@@ -58,11 +60,32 @@ export async function verifyEmailExists(email: string): Promise<boolean | null> 
 }
 
 /** Sends the 6-digit signup code. No auth account is created yet. */
-export async function sendSignupOtp(data: { email: string }) {
+export async function sendSignupOtp(data: { email: string; mobile: string }) {
   await sendSignupOtpFn(data);
 }
 
 /** Checks the code the user entered; on success the client completes signup. */
 export async function verifySignupOtp(data: { email: string; code: string }) {
   await verifySignupOtpFn(data);
+}
+
+/** After Firebase Phone Auth has linked the number to the signed-in account,
+ *  the backend re-checks it and sets mobileVerified. It is the sole writer of
+ *  that flag, so the client cannot forge a verified number. */
+export async function confirmMobileVerified(mobile: string) {
+  await confirmMobileVerifiedFn({ mobile });
+}
+
+/** True if no other account holds this mobile; throws functions/failed-
+ *  precondition when the number is taken. Runs before profile saves. */
+export async function checkMobileAvailable(mobile: string) {
+  await checkMobileAvailableFn({ mobile });
+}
+
+/** Normalizes an Indian mobile to its 10-digit form ("" if invalid). */
+export function normalizeMobile(raw: string): string {
+  let digits = String(raw || '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  return /^[6-9]\d{9}$/.test(digits) ? digits : '';
 }

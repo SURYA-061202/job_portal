@@ -3,6 +3,7 @@ import { getApps, initializeApp } from "firebase-admin/app";
 
 export { verifyEmailExists } from "./emailVerify";
 export { sendSignupOtp, verifySignupOtp } from "./signupOtp";
+export { confirmMobileVerified, checkMobileAvailable } from "./mobileOtp";
 
 if (getApps().length === 0) {
   initializeApp();
