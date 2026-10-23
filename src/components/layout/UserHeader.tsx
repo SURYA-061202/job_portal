@@ -48,6 +48,7 @@ export default function UserHeader() {
         { to: '/home?tab=jobs', label: 'Find Jobs' },
         { to: '/home?tab=applications', label: 'Applied Jobs' },
         { to: '/personalized-cv', label: 'CV Creation' },
+        { to: '/home?tab=subscription', label: 'Subscription' },
     ];
 
     return (

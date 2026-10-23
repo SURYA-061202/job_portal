@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds, MAX_TOTAL_ROUNDS } from '@/lib/interviewRounds';
+import { checkPostQuota } from '@/lib/subscriptions';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -119,6 +120,18 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         setLoading(true);
 
         try {
+            // New posts must fit the plan. Editing an existing post never counts.
+            if (!initialData?.id) {
+                const uid = auth.currentUser?.uid;
+                if (uid) {
+                    const quota = await checkPostQuota(uid);
+                    if (!quota.allowed) {
+                        showError(`Post limit reached (${quota.used}/${quota.limit} on the ${quota.subscription.planName} plan). Subscribe to a higher plan to add more posts.`);
+                        return;
+                    }
+                }
+            }
+
             let jdUrl = initialData?.jdUrl || '';
             if (file) {
                 console.log('Uploading JD to Firebase Storage...');

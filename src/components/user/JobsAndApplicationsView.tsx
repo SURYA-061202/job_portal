@@ -9,6 +9,10 @@ import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 import { Search, ChevronDown } from 'lucide-react';
 import popup from '@/components/ui/Popup';
+import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
+import JobLimitNotice from '@/components/subscription/JobLimitNotice';
+import { useSubscription } from '@/lib/useSubscription';
+import { FREE_USER_POST_LIMIT, isUnlimited } from '@/lib/subscriptions';
 
 interface JobsAndApplicationsViewProps {
     activeTab: 'jobs' | 'applications';
@@ -31,6 +35,9 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
+    const [upgradeOpen, setUpgradeOpen] = useState(false);
+    const [userId] = useState<string | null>(auth.currentUser?.uid ?? null);
+    const subscription = useSubscription(userId, 'user');
 
     useEffect(() => {
         setSelectedJob(null);
@@ -202,6 +209,11 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
         .sort((a, b) => newestFirst(a.createdAt, b.createdAt));
 
+    // The plan decides how many jobs can be opened; assume the free limit until it loads.
+    const jobLimit = subscription?.maxPosts ?? FREE_USER_POST_LIMIT;
+    const visiblePosts = isUnlimited(jobLimit) ? filteredPosts : filteredPosts.slice(0, jobLimit);
+    const hiddenJobs = filteredPosts.length - visiblePosts.length;
+
     // The Applications tab honours the same filters; it used to render the raw list.
     const filteredApplications = applications
         .filter(app => matchesFilters(app.recruitment_requests))
@@ -276,9 +288,10 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4">
-                                    {filteredPosts.map((post) => (
+                                    {visiblePosts.map((post) => (
                                         <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} />
                                     ))}
+                                    <JobLimitNotice limit={jobLimit} hidden={hiddenJobs} planName={subscription?.planName} onViewPlans={() => setUpgradeOpen(true)} />
                                 </div>
                             )
                         ) : (
@@ -317,6 +330,14 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     </div>
                 </div>
             </div>
+
+            <UpgradePlansModal
+                isOpen={upgradeOpen}
+                onClose={() => setUpgradeOpen(false)}
+                userId={userId}
+                subscription={subscription}
+                audience="user"
+            />
 
             {/* Mobile Filter Drawer */}
             {isFilterDrawerOpen && (

@@ -20,8 +20,11 @@ import { Menu, X } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import AdminSubscriptionTab from '@/components/subscription/AdminSubscriptionTab';
+import RecruiterSubscriptionTab from '@/components/subscription/RecruiterSubscriptionTab';
+import { useSubscription } from '@/lib/useSubscription';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('job-posts');
@@ -33,7 +36,8 @@ export default function Dashboard() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isPremium, setIsPremium] = useState<boolean>(false);
+  // Live plan + limits: updates the moment the admin approves a request.
+  const subscription = useSubscription(userId);
   const navigate = useNavigate();
   const location = useLocation();
   const skin = useSkin();
@@ -66,7 +70,6 @@ export default function Dashboard() {
           }
           setUserRole(userData.role);
           setUserId(usr.uid);
-          setIsPremium(userData.isPremium || false);
         }
       } catch (error) {
         console.error('Error checking role in Dashboard:', error);
@@ -108,7 +111,7 @@ export default function Dashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'job-posts':
-        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} isPremium={isPremium} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} subscription={subscription} />;
       case 'upload-resumes':
         // Hidden: Resume Upload module is disabled on the recruiter/admin side.
         return null;
@@ -119,6 +122,9 @@ export default function Dashboard() {
             postTitle={selectedPostTitle}
             userRole={userRole}
             userId={userId}
+            candidateLimit={subscription?.maxCandidates}
+            planName={subscription?.planName}
+            onViewPlans={() => handleTabChange('subscription')}
             onClearFilter={() => setSelectedPostId(null)}
             onBack={selectedPostId ? () => setActiveTab('job-posts') : undefined}
             onNavigateToShortlisted={(candidateId) => {
@@ -168,12 +174,17 @@ export default function Dashboard() {
         return <ProfileTab />;
       case 'assessments':
         return <AssessmentsTab />;
+      case 'subscription':
+        return userRole === 'admin'
+          ? <AdminSubscriptionTab adminId={userId} />
+          : <RecruiterSubscriptionTab userId={userId} subscription={subscription} />;
       default:
-        return <JobPostsTab onViewCandidates={handleViewCandidates} userRole={userRole} userId={userId} isPremium={isPremium} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} userRole={userRole} userId={userId} subscription={subscription} />;
     }
   };
 
-  if (loading) {
+  // Wait for the plan too, so the Candidates list never flashes the wrong limit.
+  if (loading || (userId && !subscription)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand" />

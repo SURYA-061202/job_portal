@@ -3,6 +3,7 @@
 import {
   Award,
   CheckCircle,
+  Crown,
   ChevronDown,
   ChevronUp,
   ChevronsLeft,
@@ -23,7 +24,7 @@ import { useState } from 'react';
 import { useAppStyle } from '@/lib/appStyle';
 
 interface SidebarProps {
-  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments';
+  activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
   onTabChange: (tab: any) => void;
   onLogout: () => void;
   userRole: string | null;
@@ -622,6 +623,8 @@ export default function Sidebar(props: SidebarProps) {
 
   const recruiterTabs: NavTab[] = [
     { id: 'add-members', label: 'Add Recruiters', short: 'Recruiters', icon: UserPlus, adminOnly: true },
+    // Admins manage plans and requests; recruiters see their plan and the plans on offer.
+    { id: 'subscription', label: userRole === 'admin' ? 'Subscriptions' : 'Subscription', short: 'Plans', icon: Crown },
   ];
 
   const sections: NavSection[] = [

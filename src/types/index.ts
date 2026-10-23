@@ -56,6 +56,24 @@ export interface Candidate {
 
   /** AI Ranking scores for specific job posts */
   rankings?: Record<string, CandidateRanking>;
+
+  /** Profile text of platform users (registered candidates); searched and shown by the keyword search. */
+  profileExtras?: CandidateProfileExtras;
+}
+
+/** One titled line of a candidate profile (job, project, certificate). */
+export interface ProfileEntry {
+  title: string;
+  meta?: string;
+  description?: string;
+}
+
+export interface CandidateProfileExtras {
+  location?: string;
+  experience?: ProfileEntry[];
+  projects?: ProfileEntry[];
+  certificates?: ProfileEntry[];
+  courses?: string[];
 }
 
 export interface CandidateRanking {
@@ -173,6 +191,82 @@ export interface RecruitmentRequest {
   totalRounds?: number;
   /** Names for each round; index-independent, keyed by roundNumber. */
   rounds?: InterviewRound[];
+}
+
+/* ------------------------------------------------------------------ *
+ * Subscriptions
+ * ------------------------------------------------------------------ */
+
+/** Stored in plan limit fields to mean "no limit". */
+export const UNLIMITED = -1;
+
+/** Who a plan is for. Plans saved before audiences existed have none and count as 'recruiter'. */
+export type SubscriptionAudience = 'recruiter' | 'user';
+
+/** A subscription level the admin offers to recruiters or to job seekers (users). */
+export interface SubscriptionPlan {
+  id?: string;
+  audience?: SubscriptionAudience;
+  /** 1, 2, 3 ... - higher level = bigger limits. */
+  level: number;
+  name: string;
+  description?: string;
+  /** Price in INR. 0 = free / by arrangement. */
+  price: number;
+  /** How long an approved subscription lasts. */
+  durationDays: number;
+  /** Recruiter plans: max job posts they may create. User plans: max job posts they may view. (UNLIMITED = no cap.) */
+  maxPosts: number;
+  /** Recruiter plans: max candidates visible in the Candidates module. Unused (0) on user plans. */
+  maxCandidates: number;
+  features: string[];
+  active: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+/** Snapshot of the plan a recruiter holds, stored on users/{uid}.subscription. */
+export interface UserSubscription {
+  planId: string;
+  planName: string;
+  level: number;
+  maxPosts: number;
+  maxCandidates: number;
+  startedAt: any;
+  expiresAt: any;
+}
+
+export type SubscriptionRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SubscriptionRequest {
+  id?: string;
+  audience?: SubscriptionAudience;
+  /** The requesting account's uid (a recruiter, or a user on a user plan). */
+  recruiterId: string;
+  recruiterName: string;
+  recruiterEmail: string;
+  planId: string;
+  planName: string;
+  planLevel: number;
+  status: SubscriptionRequestStatus;
+  createdAt: any;
+  resolvedAt?: any;
+  resolvedBy?: string;
+  note?: string;
+}
+
+/** What a user is entitled to right now, after expiry and legacy flags are applied. */
+export interface EffectiveSubscription {
+  source: 'free' | 'plan' | 'legacy' | 'admin';
+  planId: string | null;
+  planName: string;
+  /** 0 = free tier. */
+  level: number;
+  maxPosts: number;
+  maxCandidates: number;
+  expiresAt: Date | null;
+  /** True when a paid plan existed but has lapsed (the user is back on the free tier). */
+  expired: boolean;
 }
 
 // Ensure this file is treated as a module

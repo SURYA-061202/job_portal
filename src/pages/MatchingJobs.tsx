@@ -10,11 +10,18 @@ import { Award, ChevronLeft, Sparkles } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
+import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
+import JobLimitNotice from '@/components/subscription/JobLimitNotice';
+import { useSubscription } from '@/lib/useSubscription';
+import { FREE_USER_POST_LIMIT, isUnlimited } from '@/lib/subscriptions';
 
 export default function MatchingJobs() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [upgradeOpen, setUpgradeOpen] = useState(false);
+    const subscription = useSubscription(userId, 'user');
     const navigate = useNavigate();
     const skin = useSkin();
 
@@ -24,6 +31,7 @@ export default function MatchingJobs() {
                 navigate('/', { replace: true });
                 return;
             }
+            setUserId(user.uid);
             fetchData(user.uid);
         });
 
@@ -92,6 +100,11 @@ export default function MatchingJobs() {
         navigate(`/job/${job.id}`);
     };
 
+    // Best matches come first, so the plan limit keeps the highest-scoring jobs.
+    const jobLimit = subscription?.maxPosts ?? FREE_USER_POST_LIMIT;
+    const visiblePosts = isUnlimited(jobLimit) ? posts : posts.slice(0, jobLimit);
+    const hiddenJobs = posts.length - visiblePosts.length;
+
     return (
         <div className={`min-h-screen ${skin.canvas} flex flex-col`}>
             <UserHeader />
@@ -138,7 +151,7 @@ export default function MatchingJobs() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {posts.map((post) => {
+                        {visiblePosts.map((post) => {
                             const score = userData?.matchingScores?.[post.id!] || 0;
                             return (
                                 <div key={post.id} className="relative group">
@@ -165,8 +178,16 @@ export default function MatchingJobs() {
                                 </div>
                             );
                         })}
+                        <JobLimitNotice limit={jobLimit} hidden={hiddenJobs} planName={subscription?.planName} onViewPlans={() => setUpgradeOpen(true)} />
                     </div>
                 )}
+                <UpgradePlansModal
+                    isOpen={upgradeOpen}
+                    onClose={() => setUpgradeOpen(false)}
+                    userId={userId}
+                    subscription={subscription}
+                    audience="user"
+                />
             </main>
         </div>
     );

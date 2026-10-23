@@ -1,22 +1,82 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react';
 import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
-import { getUserEducation, getUserSkills } from '@/lib/userToCandidate';
+import { getUserCertificates, getUserCourses, getUserEducation, getUserExperience, getUserProjects, getUserSkills } from '@/lib/userToCandidate';
+import { parseKeywords, searchCandidates, type MatchMode } from '@/lib/candidateSearch';
+import { isUnlimited } from '@/lib/subscriptions';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
+import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
-import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar } from 'lucide-react';
+import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar, Lock, X } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 
-function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, isPremium }: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+interface CandidatesTabProps {
+    postId?: string | null;
+    postTitle?: string | null;
+    onClearFilter?: () => void;
+    onBack?: () => void;
+    onNavigateToShortlisted?: (candidateId: string) => void;
+    userRole?: string | null;
+    userId?: string | null;
+    /** How many candidates the recruiter's plan lets them see (UNLIMITED = no cap). */
+    candidateLimit?: number;
+    /** Name of the plan that sets candidateLimit, for the upgrade banner. */
+    planName?: string;
+    /** Opens the Subscription screen. */
+    onViewPlans?: () => void;
+}
+
+/** Builds the Candidate shape the list/detail views expect from a platform user's profile document. */
+function userDocToCandidate(
+    id: string,
+    data: Record<string, any>,
+    fallbackName: string,
+    fallbackRole: string,
+    extra: Record<string, unknown> = {}
+): Candidate {
+    return {
+        id,
+        name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || fallbackName,
+        email: data.email || '',
+        phone: data.mobile || '',
+        role: data.department || fallbackRole,
+        experience: data.yearsOfExperience || '',
+        skills: getUserSkills(data),
+        resumeUrl: data.resumeUrl || '',
+        extractedData: {
+            summary: '',
+            workExperience: [],
+            education: getUserEducation(data),
+            skills: getUserSkills(data),
+            certifications: data.certifications || [],
+            projects: data.keyProjects || data.projects || []
+        },
+        education: getUserEducation(data),
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+        rankings: data.rankings, // Include AI rankings
+        // Profile text the keyword search looks through and the result cards show.
+        profileExtras: {
+            location: data.address || data.city || data.location || '',
+            experience: getUserExperience(data),
+            projects: getUserProjects(data),
+            certificates: getUserCertificates(data),
+            courses: getUserCourses(data)
+        },
+        ...extra
+    } as unknown as Candidate;
+}
+
+function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, candidateLimit, planName, onViewPlans }: CandidatesTabProps) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -29,6 +89,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<'list' | 'history'>('list');
     const [searchTerm, setSearchTerm] = useState('');
+    const [matchMode, setMatchMode] = useState<MatchMode>('any');
+    const deferredSearch = useDeferredValue(searchTerm);
     const [filterPostId, setFilterPostId] = useState<string | null>(null);
     const [isFilteringApplicants, setIsFilteringApplicants] = useState(false);
 
@@ -243,30 +305,9 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                             const app = apps.find((a: any) => a.user_id === uid);
                             const appStatus = app?.status || 'applied';
 
-                            allCandidates.push({
-                                id: uid,
-                                name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed Candidate',
-                                email: data.email || '',
-                                phone: data.mobile || '',
-                                role: data.department || 'Applicant',
-                                experience: data.yearsOfExperience || '',
-                                skills: getUserSkills(data),
-                                resumeUrl: data.resumeUrl || '',
-                                extractedData: {
-                                    summary: '',
-                                    workExperience: [],
-                                    education: getUserEducation(data),
-                                    skills: getUserSkills(data),
-                                    certifications: data.certifications || [],
-                                    projects: data.keyProjects || data.projects || []
-                                },
-                                education: getUserEducation(data),
-                                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-                                updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-                                postId: postId,
-                                status: appStatus as any,
-                                rankings: data.rankings // Include AI rankings
-                            } as Candidate);
+                            allCandidates.push(
+                                userDocToCandidate(uid, data, 'Unnamed Candidate', 'Applicant', { postId, status: appStatus })
+                            );
                         }
                     } catch (docErr) {
                         console.error(`[DEBUG] Error fetching user doc for UID ${uid}:`, docErr);
@@ -301,29 +342,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 if (data.role !== 'user') {
                     return;
                 }
-                users.push({
-                    id: doc.id,
-                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || 'Unnamed User',
-                    email: data.email || '',
-                    phone: data.mobile || '',
-                    role: data.department || 'User',
-                    experience: data.yearsOfExperience || '',
-                    skills: getUserSkills(data),
-                    resumeUrl: data.resumeUrl || '',
-                    extractedData: {
-                        summary: '',
-                        workExperience: [],
-                        education: getUserEducation(data),
-                        skills: getUserSkills(data),
-                        certifications: data.certifications || [],
-                        projects: data.keyProjects || data.projects || []
-                    },
-                    education: getUserEducation(data),
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-                    status: 'pending' as any,
-                    rankings: data.rankings // Include AI rankings
-                } as Candidate);
+                users.push(userDocToCandidate(doc.id, data, 'Unnamed User', 'User', { status: 'pending' }));
             });
 
             setRegisteredUsers(users);
@@ -409,8 +428,12 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         }
     };
 
-    // Filter logic update to include clusters and view mode
-    const displayCandidates = useMemo(() => {
+    // Keywords typed into the search box (deferred so typing stays smooth on long lists).
+    const keywords = useMemo(() => parseKeywords(deferredSearch), [deferredSearch]);
+    const isSearching = keywords.length > 0;
+
+    // Everything the recruiter could see before the plan limit is applied.
+    const baseList = useMemo(() => {
         let list: Candidate[] = [];
 
         // 1. Determine base list: on the Posts path the post's applicants win;
@@ -432,13 +455,25 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             }
         }
 
-        // 3. Apply Premium Limit (30 Candidates) for non-premium recruiters
-        if (userRole !== 'admin' && !isPremium) {
-            list = list.slice(0, 30);
-        }
-
         return list;
-    }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters, userRole, isPremium]);
+    }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
+
+    // Keyword search runs over the FULL list and ranks by relevance; the plan
+    // limit is applied afterwards, so a keyword never reveals a hidden candidate
+    // and the best matches are the ones a limited plan still shows.
+    const searchResults = useMemo(
+        () => searchCandidates(baseList, keywords, matchMode),
+        [baseList, keywords, matchMode]
+    );
+
+    // Admins are never capped. A recruiter is capped by their plan.
+    const capped = userRole !== 'admin' && candidateLimit !== undefined && !isUnlimited(candidateLimit);
+    const visibleResults = useMemo(
+        () => (capped ? searchResults.slice(0, candidateLimit) : searchResults),
+        [searchResults, capped, candidateLimit]
+    );
+    const displayCandidates = useMemo(() => visibleResults.map(r => r.candidate), [visibleResults]);
+    const hiddenCount = searchResults.length - visibleResults.length;
 
     // The white results panel hugs the list, but fills the whole body area
     // when there is nothing to show.
@@ -504,17 +539,53 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     search; it is not offered on the Posts path. */}
                                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-                                        <div className="relative w-full sm:w-56">
+                                        <div className="relative w-full sm:w-96">
+                                            <label htmlFor="candidate-keyword-search" className="sr-only">
+                                                Search candidates by keywords
+                                            </label>
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <Search className="h-4 w-4 text-ink/40" />
                                             </div>
                                             <input
+                                                id="candidate-keyword-search"
                                                 type="text"
-                                                placeholder="Search candidates..."
-                                                className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+                                                placeholder="Keywords: skill, role, company, college... (comma separated)"
+                                                title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together.'
+                                                className={`block w-full h-9 pl-10 pr-9 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Escape' && searchTerm) {
+                                                        e.preventDefault();
+                                                        setSearchTerm('');
+                                                    }
+                                                }}
                                             />
+                                            {searchTerm && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSearchTerm('')}
+                                                    aria-label="Clear search"
+                                                    className={`absolute inset-y-0 right-0 my-auto mr-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                                                >
+                                                    <X className="h-4 w-4" aria-hidden="true" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div role="group" aria-label="Keyword match mode" className={`${skin.track} h-9`}>
+                                            {([['any', 'Any keyword'], ['all', 'All keywords']] as [MatchMode, string][]).map(([mode, label]) => (
+                                                <button
+                                                    key={mode}
+                                                    type="button"
+                                                    onClick={() => setMatchMode(mode)}
+                                                    aria-pressed={matchMode === mode}
+                                                    className={`cursor-pointer px-3 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${
+                                                        matchMode === mode ? skin.trackBtnActive : skin.trackBtnIdle
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
                                         </div>
                                         {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
                                             <button
@@ -527,7 +598,11 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         )}
                                     </div>
                                     <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-                                        Candidates: {displayCandidates.length}
+                                        {isSearching
+                                            ? `${displayCandidates.length}${hiddenCount > 0 ? ` of ${searchResults.length}` : ''} ${displayCandidates.length === 1 && hiddenCount === 0 ? 'Match' : 'Matches'}`
+                                            : hiddenCount > 0
+                                                ? `Candidates: ${displayCandidates.length} of ${searchResults.length}`
+                                                : `Candidates: ${displayCandidates.length}`}
                                     </span>
                                 </div>
                             </div>
@@ -650,18 +725,60 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     )}
                                 </div>
                             ) : (
-                                <CandidateList
-                                    candidates={displayCandidates}
-                                    onSelectCandidate={handleCandidateSelect}
-                                    loading={loading}
-                                    searchTerm={searchTerm}
-                                    onSearchTermChange={setSearchTerm}
-                                    onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
-                                    emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
-                                    onEdit={(candidate) => setEditingCandidate(candidate)}
-                                    hideHeader={true}
-                                    jobId={filterPostId}
-                                />
+                                <>
+                                    {hiddenCount > 0 && (
+                                        <div
+                                            role="status"
+                                            className={`mb-4 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-3`}
+                                        >
+                                            <p className={`flex items-center gap-2 ${skin.body}`}>
+                                                <Lock className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                                                <span>
+                                                    Your {planName || 'current'} plan shows {candidateLimit} candidates.{' '}
+                                                    {hiddenCount} more {isSearching ? (hiddenCount === 1 ? 'match is' : 'matches are') : (hiddenCount === 1 ? 'candidate is' : 'candidates are')} locked.
+                                                </span>
+                                            </p>
+                                            {onViewPlans && (
+                                                <button type="button" onClick={onViewPlans} className={`cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}>
+                                                    View plans
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                    {isSearching && !loading ? (
+                                        visibleResults.length === 0 ? (
+                                            <div className={`flex min-h-[240px] items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center`}>
+                                                <div>
+                                                    <h3 className={skin.emptyTitle}>No matching candidates</h3>
+                                                    <p className={`mt-1 ${skin.body}`}>
+                                                        {matchMode === 'all' && keywords.length > 1
+                                                            ? 'No candidate has all of these keywords. Try "Any keyword" or fewer keywords.'
+                                                            : 'Try different or fewer keywords.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <CandidateSearchResults
+                                                results={visibleResults}
+                                                keywords={keywords}
+                                                onSelectCandidate={handleCandidateSelect}
+                                            />
+                                        )
+                                    ) : (
+                                        <CandidateList
+                                            candidates={displayCandidates}
+                                            onSelectCandidate={handleCandidateSelect}
+                                            loading={loading}
+                                            searchTerm=""
+                                            onSearchTermChange={setSearchTerm}
+                                            onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
+                                            emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
+                                            onEdit={(candidate) => setEditingCandidate(candidate)}
+                                            hideHeader={true}
+                                            jobId={filterPostId}
+                                        />
+                                    )}
+                                </>
                             )}
                             </div>
                             </div>
@@ -729,7 +846,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     );
 }
 
-export default function CandidatesTab(props: { postId?: string | null; postTitle?: string | null; onClearFilter?: () => void; onBack?: () => void; onNavigateToShortlisted?: (candidateId: string) => void; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+export default function CandidatesTab(props: CandidatesTabProps) {
     return (
         <ErrorBoundary>
             <CandidatesTabContent {...props} />

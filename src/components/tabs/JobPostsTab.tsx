@@ -2,16 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, query as fsQuery, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getApplicantCounts } from '@/lib/jobApplications';
-import type { RecruitmentRequest } from '@/types';
+import type { EffectiveSubscription, RecruitmentRequest } from '@/types';
 import { timeAgo } from '@/lib/format';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import PostCard from '@/components/recruitment/PostCard';
+import PostLimitModal from '@/components/subscription/PostLimitModal';
+import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
+import { checkPostQuota, formatLimit, isUnlimited } from '@/lib/subscriptions';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
-    Search, Plus, Briefcase, Inbox, SearchX, X, LayoutGrid, List,
-    ChevronDown, ChevronRight,
+    Search, Plus, Briefcase, SearchX, X, LayoutGrid, List,
+    ChevronDown, ChevronRight, Crown,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -42,12 +45,25 @@ const toTime = (value: unknown): number => {
     return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId }: { onViewCandidates?: (postId: string, postTitle?: string) => void; initialSelectedPostId?: string | null; userRole?: string | null; userId?: string | null; isPremium?: boolean }) {
+interface JobPostsTabProps {
+    onViewCandidates?: (postId: string, postTitle?: string) => void;
+    initialSelectedPostId?: string | null;
+    userRole?: string | null;
+    userId?: string | null;
+    /** The recruiter's live plan; its maxPosts is the post limit. */
+    subscription?: EffectiveSubscription | null;
+}
+
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, subscription }: JobPostsTabProps) {
+    const postLimit = subscription?.maxPosts;
+    const planName = subscription?.planName;
     const isAdmin = userRole === 'admin';
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
     const [isRecruitmentModalOpen, setIsRecruitmentModalOpen] = useState(false);
+    const [upgradeOpen, setUpgradeOpen] = useState(false);
+    const [limitInfo, setLimitInfo] = useState<{ used: number; limit: number; planName: string } | null>(null);
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
@@ -116,6 +132,25 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         } finally {
             setLoadingPosts(false);
         }
+    };
+
+    // Add Post is gated by the plan: at the limit the recruiter is sent to the
+    // upgrade dialog instead of the form. The form re-checks on save, so a stale
+    // tab or a second browser window cannot slip past it.
+    const handleAddPost = async () => {
+        if (!isAdmin && userId) {
+            try {
+                const quota = await checkPostQuota(userId);
+                if (!quota.allowed) {
+                    setLimitInfo({ used: quota.used, limit: quota.limit, planName: quota.subscription.planName });
+                    return;
+                }
+            } catch (error) {
+                console.error('Could not check the post limit:', error);
+            }
+        }
+        setEditingPost(null);
+        setIsRecruitmentModalOpen(true);
     };
 
     // ... fetchRecruitmentRequests ...
@@ -211,15 +246,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 Create, track and manage your job posts and the candidates who apply.
                             </p>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsRecruitmentModalOpen(true)}
-                            aria-label="Add a new job post"
-                            className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
-                        >
-                            <Plus className="h-4 w-4" aria-hidden="true" />
-                            Add Post
-                        </button>
+                        {!isAdmin && postLimit !== undefined && !isUnlimited(postLimit) && (
+                            <span
+                                role="status"
+                                title={`${planName || 'Current'} plan: ${formatLimit(postLimit)} job posts`}
+                                className={`inline-flex h-9 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
+                            >
+                                {total} / {postLimit} posts used
+                            </span>
+                        )}
                     </div>
 
                     {/* Controls row: search, clear, sort, view and the posts
@@ -266,6 +301,16 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
 
                             <div className="ml-auto flex flex-wrap items-center gap-3">
+                                {!isAdmin && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setUpgradeOpen(true)}
+                                        className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${skin.secondary} ${FOCUS}`}
+                                    >
+                                        <Crown className="h-4 w-4 text-brand" aria-hidden="true" />
+                                        Upgrade
+                                    </button>
+                                )}
                                 <div className="relative">
                                     <select
                                         id="job-posts-sort"
@@ -317,6 +362,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
                                     {countBadge}
                                 </span>
+                                <button
+                                    type="button"
+                                    onClick={handleAddPost}
+                                    aria-label="Add a new job post"
+                                    className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
+                                >
+                                    <Plus className="h-4 w-4" aria-hidden="true" />
+                                    Add Post
+                                </button>
                             </div>
                     </div>
 
@@ -328,7 +382,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         top of the body bg while the posts scroll under it. */}
                     <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
                         <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
-                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4">
+                        <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4${!loadingPosts && recruitmentRequests.length === 0 ? ' flex flex-col' : ''}`}>
                         {loadingPosts ? (
                             <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                                 <span className="sr-only">Loading job posts…</span>
@@ -350,22 +404,9 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 ))}
                             </div>
                         ) : recruitmentRequests.length === 0 ? (
-                            <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
-                                <span className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center ${skin.stateIcon}`} aria-hidden="true">
-                                    <Inbox className="h-6 w-6" />
-                                </span>
-                                <h3 className={skin.emptyTitle}>No job posts yet</h3>
-                                <p className={`mx-auto mt-2 max-w-sm ${skin.body}`}>
-                                    Create your first recruitment request to start collecting candidates.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRecruitmentModalOpen(true)}
-                                    className={`mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
-                                >
-                                    <Plus className="h-4 w-4" aria-hidden="true" />
-                                    Create your first post
-                                </button>
+                            /* No posts: inside the white body, one grey section fills it with the message centred. */
+                            <div className={`flex flex-1 items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 text-center`}>
+                                <p className={skin.body}>No job posts yet. Use Add Post to create your first job post.</p>
                             </div>
                         ) : visiblePosts.length === 0 ? (
                             <div className={`border ${skin.edge} ${skin.radius} px-6 py-14 text-center`}>
@@ -404,6 +445,20 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             )}
 
             {/* Modals */}
+            <UpgradePlansModal
+                isOpen={upgradeOpen}
+                onClose={() => setUpgradeOpen(false)}
+                userId={userId ?? null}
+                subscription={subscription ?? null}
+            />
+            <PostLimitModal
+                isOpen={limitInfo !== null}
+                onClose={() => setLimitInfo(null)}
+                used={limitInfo?.used ?? 0}
+                limit={limitInfo?.limit ?? 0}
+                planName={limitInfo?.planName ?? ''}
+                onViewPlans={() => setUpgradeOpen(true)}
+            />
             <RecruitmentFormModal
                 isOpen={isRecruitmentModalOpen}
                 onClose={() => {

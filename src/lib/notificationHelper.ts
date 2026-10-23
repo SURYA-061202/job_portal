@@ -9,6 +9,10 @@ export type NotificationType =
     | 'premium_request'
     | 'premium_approved'
     | 'premium_rejected'
+    | 'subscription_request'
+    | 'subscription_request_sent'
+    | 'subscription_approved'
+    | 'subscription_rejected'
     | 'round_moved'
     | 'offer_sent'
     | 'application_rejected'
@@ -181,6 +185,67 @@ export async function createPremiumRejectedNotification(
         type: 'premium_rejected',
         title: 'Premium Access Request Declined',
         message: `Hi ${recruiterName}, your premium access request has been declined. Please contact admin for more details.`,
+    });
+}
+
+/** Tells an admin that a recruiter has asked for a subscription plan. */
+export async function createSubscriptionRequestNotification(
+    adminEmail: string,
+    recruiterName: string,
+    recruiterEmail: string,
+    planName: string
+): Promise<string> {
+    return createNotification({
+        userId: adminEmail,
+        type: 'subscription_request',
+        title: 'Subscription Request',
+        message: `${recruiterName} (${recruiterEmail}) has requested the ${planName} subscription. Please review it in Subscriptions.`,
+        metadata: { recruiterName, recruiterEmail, planName },
+    });
+}
+
+/** Confirms to the recruiter that their request reached the admin. */
+export async function createSubscriptionRequestSentNotification(
+    recruiterEmail: string,
+    recruiterName: string,
+    planName: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'subscription_request_sent',
+        title: 'Subscription Request Sent',
+        message: `Hi ${recruiterName}, your request for the ${planName} subscription has been sent to the admin. You will be notified once it is reviewed.`,
+        metadata: { planName },
+    });
+}
+
+export async function createSubscriptionApprovedNotification(
+    recruiterEmail: string,
+    recruiterName: string,
+    planName: string,
+    expiresOn: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'subscription_approved',
+        title: 'Subscription Approved',
+        message: `Congratulations ${recruiterName}! Your ${planName} subscription is active until ${expiresOn}.`,
+        metadata: { planName, expiresOn },
+    });
+}
+
+export async function createSubscriptionRejectedNotification(
+    recruiterEmail: string,
+    recruiterName: string,
+    planName: string,
+    note?: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'subscription_rejected',
+        title: 'Subscription Request Declined',
+        message: `Hi ${recruiterName}, your request for the ${planName} subscription was declined.${note ? ` Reason: ${note}` : ' Please contact admin for more details.'}`,
+        metadata: { planName },
     });
 }
 

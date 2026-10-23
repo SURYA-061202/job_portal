@@ -10,10 +10,14 @@ import UserHeader from '@/components/layout/UserHeader';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
-import { Search, History, MapPin, ChevronDown } from 'lucide-react';
+import { Search, History, MapPin, ChevronDown, Crown } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
+import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
+import JobLimitNotice from '@/components/subscription/JobLimitNotice';
+import { useSubscription } from '@/lib/useSubscription';
+import { FREE_USER_POST_LIMIT, isUnlimited } from '@/lib/subscriptions';
 
 export default function UserDashboard() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
@@ -33,6 +37,9 @@ export default function UserDashboard() {
     const [activeTab, setActiveTab] = useState<'jobs' | 'applications'>('jobs');
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [upgradeOpen, setUpgradeOpen] = useState(false);
+    const subscription = useSubscription(userId, 'user');
     const skin = useSkin();
 
     const navigate = useNavigate();
@@ -60,9 +67,11 @@ export default function UserDashboard() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
+                setUserId(null);
                 navigate('/', { replace: true });
                 return;
             }
+            setUserId(user.uid);
 
             try {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -267,6 +276,12 @@ export default function UserDashboard() {
             : dateA.getTime() - dateB.getTime();
     });
 
+    // The plan decides how many of the matching jobs this user can open.
+    // Until the plan loads, assume the free limit so nothing extra flashes up.
+    const jobLimit = subscription?.maxPosts ?? FREE_USER_POST_LIMIT;
+    const visiblePosts = isUnlimited(jobLimit) ? filteredPosts : filteredPosts.slice(0, jobLimit);
+    const hiddenJobs = filteredPosts.length - visiblePosts.length;
+
     // Extract unique departments from all posts for department filter
     const uniqueDepartments = Array.from(new Set(posts.map(post => post.department).filter(Boolean))).sort();
 
@@ -367,6 +382,16 @@ export default function UserDashboard() {
                                 </button>
                             </div>
                             <div className="flex items-center gap-3 self-end sm:self-auto">
+                                {activeTab === 'jobs' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setUpgradeOpen(true)}
+                                        className={`inline-flex cursor-pointer items-center gap-2 normal-case! tracking-normal! text-sm! font-semibold ${skin.secondary} ${FOCUS}`}
+                                    >
+                                        <Crown className="h-4 w-4 text-brand" aria-hidden="true" />
+                                        Upgrade
+                                    </button>
+                                )}
                                 {/* Department Filter */}
                                 <div className="relative group">
                                     <button className={`flex items-center gap-2 ${skin.secondary} ${FOCUS}`}>
@@ -458,7 +483,7 @@ export default function UserDashboard() {
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-6">
-                                        {filteredPosts.map((post) => (
+                                        {visiblePosts.map((post) => (
                                             <UserJobCard
                                                 key={post.id}
                                                 recruitment={post}
@@ -466,6 +491,7 @@ export default function UserDashboard() {
                                                 onViewDetails={handleViewJobDetails}
                                             />
                                         ))}
+                                        <JobLimitNotice limit={jobLimit} hidden={hiddenJobs} planName={subscription?.planName} onViewPlans={() => setUpgradeOpen(true)} />
                                     </div>
                                 )
                             ) : (
@@ -509,6 +535,14 @@ export default function UserDashboard() {
                         </div>
                     </div>
                 </div>
+
+                <UpgradePlansModal
+                    isOpen={upgradeOpen}
+                    onClose={() => setUpgradeOpen(false)}
+                    userId={userId}
+                    subscription={subscription}
+                    audience="user"
+                />
 
                 {/* Mobile Filter Drawer */}
                 {isFilterDrawerOpen && (

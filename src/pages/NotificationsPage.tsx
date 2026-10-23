@@ -74,8 +74,8 @@ export default function NotificationsPage() {
     };
 
     const getNotificationType = (type: string): 'success' | 'warning' | 'info' => {
-        if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent'].includes(type)) return 'success';
-        if (['verify_details', 'application_rejected'].includes(type)) return 'warning';
+        if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent', 'subscription_approved'].includes(type)) return 'success';
+        if (['verify_details', 'application_rejected', 'subscription_rejected'].includes(type)) return 'warning';
         return 'info';
     };
 
