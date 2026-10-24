@@ -16,6 +16,7 @@ interface MemberData {
     department: string;
     role: string;
     companyName?: string;
+    hiringRole?: string;
 }
 
 interface MemberDetailContentProps {
@@ -117,6 +118,13 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                                 </>
                             )}
                         </p>
+                        {(member.companyName || member.hiringRole) && (
+                            <p className={`mt-1 ${skin.body}`}>
+                                {member.companyName}
+                                {member.companyName && member.hiringRole && <span className="mx-2 text-ink/40">•</span>}
+                                {member.hiringRole && `Hiring: ${member.hiringRole}`}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

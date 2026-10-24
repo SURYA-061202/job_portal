@@ -233,30 +233,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 />
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
-                    {/* Masthead - one row: title, description, stats and the
-                        Add Post CTA. No internal hairline; radius comes from
-                        the active skin. The brand wash covers only this panel,
-                        never the controls or the results below it. */}
-                    <div className={`mb-3 flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                            <h2 className={skin.heading}>
-                                Job Posts
-                            </h2>
-                            <p className={`w-full ${skin.body}`}>
-                                Create, track and manage your job posts and the candidates who apply.
-                            </p>
-                        </div>
-                        {!isAdmin && postLimit !== undefined && !isUnlimited(postLimit) && (
-                            <span
-                                role="status"
-                                title={`${planName || 'Current'} plan: ${formatLimit(postLimit)} job posts`}
-                                className={`inline-flex h-9 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
-                            >
-                                {total} / {postLimit} posts used
-                            </span>
-                        )}
-                    </div>
-
                     {/* Controls row: search, clear, sort, view and the posts
                         count at the right-most end. Sits on the canvas below
                         the masthead - no panel, no tint. */}
@@ -301,6 +277,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
 
                             <div className="ml-auto flex flex-wrap items-center gap-3">
+                                {!isAdmin && postLimit !== undefined && !isUnlimited(postLimit) && (
+                                    <span
+                                        role="status"
+                                        title={`${planName || 'Current'} plan: ${formatLimit(postLimit)} job posts`}
+                                        className={`inline-flex h-9 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
+                                    >
+                                        {total} / {postLimit} posts used
+                                    </span>
+                                )}
                                 {!isAdmin && (
                                     <button
                                         type="button"

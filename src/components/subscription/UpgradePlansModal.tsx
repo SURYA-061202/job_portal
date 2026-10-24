@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Clock, Loader2, X } from 'lucide-react';
+import { Clock, Loader2, X } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { formatDate, formatLimit, formatPrice, getMyRequests, getPlans, isUnlimited, requestSubscription } from '@/lib/subscriptions';
@@ -110,7 +110,7 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                 const isCurrent = subscription?.source === 'plan' && subscription.planId === plan.id;
                                 const isRequested = pending?.planId === plan.id;
                                 return (
-                                    <article key={plan.id} className={`flex flex-col border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-5 ${isCurrent ? 'ring-2 ring-brand/60' : ''}`}>
+                                    <article key={plan.id} className={`flex flex-col border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-5`}>
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
                                                 <p className={skin.micro}>Level {plan.level}</p>
@@ -124,21 +124,18 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                         </p>
                                         {plan.description && <p className={`mt-2 ${skin.body}`}>{plan.description}</p>}
                                         <ul className="mt-4 flex-1 space-y-2 text-sm text-ink/80">
-                                            <li className="flex items-center gap-2">
-                                                <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                                            <li>
                                                 {audience === 'user'
                                                     ? isUnlimited(plan.maxPosts) ? 'View unlimited job posts' : `View up to ${formatLimit(plan.maxPosts)} job posts`
                                                     : isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `Up to ${formatLimit(plan.maxPosts)} job posts`}
                                             </li>
                                             {audience !== 'user' && (
-                                                <li className="flex items-center gap-2">
-                                                    <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                                                <li>
                                                     {isUnlimited(plan.maxCandidates) ? 'Unlimited candidate access' : `View up to ${formatLimit(plan.maxCandidates)} candidates`}
                                                 </li>
                                             )}
                                             {plan.features.filter((f) => f.trim()).map((feature, i) => (
-                                                <li key={i} className="flex items-center gap-2">
-                                                    <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                                                <li key={i}>
                                                     {feature}
                                                 </li>
                                             ))}

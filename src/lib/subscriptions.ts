@@ -36,7 +36,8 @@ import type {
  * ------------------------------------------------------------------ */
 
 export const FREE_POST_LIMIT = 10;
-export const FREE_CANDIDATE_LIMIT = 20;
+/** Everyone can view every candidate; plans unlock contact details, resumes and posts. */
+export const FREE_CANDIDATE_LIMIT = -1;
 /** Job seekers on the free tier can view this many job posts. */
 export const FREE_USER_POST_LIMIT = 5;
 

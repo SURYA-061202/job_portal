@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Search, Mail, Phone } from 'lucide-react';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { UserPlus, Search, Mail, Phone, Building2, Briefcase, Pencil } from 'lucide-react';
+import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, firebaseConfig } from '@/lib/firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -18,6 +18,8 @@ interface UserData {
     department: string;
     role: 'manager' | 'user' | 'admin' | 'recruiter';
     companyName?: string;
+    /** The role this recruiter is hiring for. */
+    hiringRole?: string;
     profileImage?: string;
 }
 
@@ -31,9 +33,13 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         lastName: '',
         email: '',
         mobile: '',
+        companyName: '',
+        hiringRole: '',
         password: ''
     });
     const [addingMember, setAddingMember] = useState(false);
+    /** Set while the modal edits an existing recruiter instead of adding one. */
+    const [editingId, setEditingId] = useState<string | null>(null);
     const skin = useSkin();
 
     useEffect(() => {
@@ -65,8 +71,55 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         }
     };
 
+    const openAdd = () => {
+        setEditingId(null);
+        setFormData({ firstName: '', lastName: '', email: '', mobile: '', companyName: '', hiringRole: '', password: '' });
+        setIsModalOpen(true);
+    };
+
+    const openEdit = (member: UserData) => {
+        setEditingId(member.id);
+        setFormData({
+            firstName: member.firstName || '',
+            lastName: member.lastName || '',
+            email: member.email || '',
+            mobile: member.mobile || '',
+            companyName: member.companyName || '',
+            hiringRole: member.hiringRole || '',
+            password: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleEditMember = async () => {
+        if (!editingId) return;
+        setAddingMember(true);
+        try {
+            await updateDoc(doc(db, 'users', editingId), {
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                mobile: formData.mobile.trim(),
+                companyName: formData.companyName.trim(),
+                hiringRole: formData.hiringRole.trim()
+            });
+            popup.success('Recruiter updated');
+            setIsModalOpen(false);
+            setEditingId(null);
+            fetchMembers();
+        } catch (error) {
+            console.error('Error updating member:', error);
+            popup.error('Failed to update recruiter');
+        } finally {
+            setAddingMember(false);
+        }
+    };
+
     const handleAddMember = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (editingId) {
+            await handleEditMember();
+            return;
+        }
         setAddingMember(true);
 
         try {
@@ -86,6 +139,8 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                 lastName: formData.lastName,
                 email: formData.email,
                 mobile: formData.mobile,
+                companyName: formData.companyName.trim(),
+                hiringRole: formData.hiringRole.trim(),
                 role: 'recruiter',
                 createdAt: new Date().toISOString()
             });
@@ -109,7 +164,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                 popup.success('Member added, but failed to send welcome email automatically.');
             }
             setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', email: '', mobile: '', password: '' });
+            setFormData({ firstName: '', lastName: '', email: '', mobile: '', companyName: '', hiringRole: '', password: '' });
             fetchMembers();
 
         } catch (error) {
@@ -123,7 +178,9 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
     const filteredMembers = members.filter(m =>
         m.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        m.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.hiringRole?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {
@@ -136,12 +193,6 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            {/* Header - title and description with no line separator. */}
-            <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-                <h2 className={skin.heading}>Team Members</h2>
-                <p className={`mt-1.5 ${skin.body}`}>Manage your recruitment team and assign manager roles</p>
-            </div>
-
             {/* Controls row below the header: search at the left end; the
                 member count followed by Add Recruiters at the right. */}
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -166,7 +217,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                         {members.length} Recruiter{members.length === 1 ? '' : 's'}
                     </span>
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={openAdd}
                         className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
                     >
                         <UserPlus className="w-4 h-4" />
@@ -184,8 +235,18 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                     <div
                         key={member.id}
                         onClick={() => onViewMember?.(member.id)}
-                        className={`p-6 border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover} group cursor-pointer ${FOCUS}`}
+                        className={`p-6 border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover} group cursor-pointer relative ${FOCUS}`}
                     >
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openEdit(member); }}
+                            aria-label={`Edit ${member.firstName} ${member.lastName}`}
+                            title="Edit"
+                            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center border ${skin.edge} bg-surface text-ink/70 rounded-lg hover:text-ink hover:border-ink/40 cursor-pointer transition-colors duration-200 ${FOCUS}`}
+                        >
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                        </button>
+
                         {/* Avatar */}
                         <div className="flex flex-col items-center mb-4">
                             <div className="w-20 h-20 overflow-hidden bg-surface rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
@@ -205,6 +266,23 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                         <div className="mb-5 text-center">
                             <h3 className={skin.cardTitle}>{member.firstName} {member.lastName}</h3>
                         </div>
+
+                        {(member.companyName || member.hiringRole) && (
+                            <div className="-mt-3 mb-4 space-y-1 text-center">
+                                {member.companyName && (
+                                    <p className={`flex items-center justify-center gap-1.5 ${skin.body}`}>
+                                        <Building2 className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                                        <span className="truncate">{member.companyName}</span>
+                                    </p>
+                                )}
+                                {member.hiringRole && (
+                                    <p className={`flex items-center justify-center gap-1.5 ${skin.meta}`}>
+                                        <Briefcase className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                                        <span className="truncate">Hiring: {member.hiringRole}</span>
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Contact Info - grey pills, the same fill as the skill
                             tags on the job post cards (no outlines). */}
@@ -229,7 +307,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className={`w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
-                        <h3 className={`${skin.heading} mb-6`}>Add New Member</h3>
+                        <h3 className={`${skin.heading} mb-6`}>{editingId ? 'Edit Recruiter' : 'Add New Member'}</h3>
 
                         <form onSubmit={handleAddMember} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -260,9 +338,11 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 <input
                                     required
                                     type="email"
+                                    disabled={!!editingId}
+                                    title={editingId ? 'The login email cannot be changed here' : undefined}
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
+                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS} disabled:opacity-60 disabled:cursor-not-allowed`}
                                 />
                             </div>
 
@@ -277,10 +357,33 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                 />
                             </div>
 
+                            <div>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Company Name</label>
+                                <input
+                                    required
+                                    type="text"
+                                    value={formData.companyName}
+                                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-ink/80 mb-1">Hiring For (Role)</label>
+                                <input
+                                    required
+                                    type="text"
+                                    value={formData.hiringRole}
+                                    onChange={e => setFormData({ ...formData, hiringRole: e.target.value })}
+                                    className={`w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`}
+                                    placeholder="e.g. Site Engineer"
+                                />
+                            </div>
+
                             <div className="pt-4 flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => { setIsModalOpen(false); setEditingId(null); }}
                                     className={`flex-1 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
                                 >
                                     Cancel
@@ -290,7 +393,7 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
                                     disabled={addingMember}
                                     className={`flex-1 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                                 >
-                                    {addingMember ? 'Adding...' : 'Add Member'}
+                                    {addingMember ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save changes' : 'Add Member')}
                                 </button>
                             </div>
                         </form>

@@ -5,10 +5,12 @@ import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } fr
 import { db } from '@/lib/firebase';
 import { getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
 import { getUserCertificates, getUserCourses, getUserEducation, getUserExperience, getUserProjects, getUserSkills } from '@/lib/userToCandidate';
-import { parseKeywords, searchCandidates, type MatchMode } from '@/lib/candidateSearch';
+import { parseKeywords, searchCandidates } from '@/lib/candidateSearch';
 import { isUnlimited } from '@/lib/subscriptions';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
+import CandidateCarousel from '@/components/resume/CandidateCarousel';
+import BackRow from '@/components/layout/BackRow';
 import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
@@ -31,6 +33,8 @@ interface CandidatesTabProps {
     candidateLimit?: number;
     /** Name of the plan that sets candidateLimit, for the upgrade banner. */
     planName?: string;
+    /** True with an active subscription (or admin): contact details and resumes are visible. */
+    canViewContact?: boolean;
     /** Opens the Subscription screen. */
     onViewPlans?: () => void;
 }
@@ -76,7 +80,7 @@ function userDocToCandidate(
     } as unknown as Candidate;
 }
 
-function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, candidateLimit, planName, onViewPlans }: CandidatesTabProps) {
+function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, candidateLimit, planName, canViewContact = false, onViewPlans }: CandidatesTabProps) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -89,7 +93,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<'list' | 'history'>('list');
     const [searchTerm, setSearchTerm] = useState('');
-    const [matchMode, setMatchMode] = useState<MatchMode>('any');
     const deferredSearch = useDeferredValue(searchTerm);
     const [filterPostId, setFilterPostId] = useState<string | null>(null);
     const [isFilteringApplicants, setIsFilteringApplicants] = useState(false);
@@ -462,8 +465,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // limit is applied afterwards, so a keyword never reveals a hidden candidate
     // and the best matches are the ones a limited plan still shows.
     const searchResults = useMemo(
-        () => searchCandidates(baseList, keywords, matchMode),
-        [baseList, keywords, matchMode]
+        () => searchCandidates(baseList, keywords, 'any'),
+        [baseList, keywords]
     );
 
     // Admins are never capped. A recruiter is capped by their plan.
@@ -477,81 +480,62 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
     // The white results panel hugs the list, but fills the whole body area
     // when there is nothing to show.
+    // Plain candidate table: the body is one screen tall and only the table scrolls.
+    const tableFill = !showPostView && !isSearching;
     const listEmpty = showPostView ? postCards.length === 0 : displayCandidates.length === 0;
+
+    // Opening a candidate from the plain list keeps the list on screen, moved to the right.
+    const splitView = !!selectedCandidate && activeView === 'list' && !showPostView && !isSearching;
+    const detailEl = selectedCandidate ? (
+        <CandidateDetail
+            candidate={selectedCandidate}
+            onBack={handleBackToList}
+            onInviteSent={handleInviteSent}
+            onRemoveCandidate={() => {
+                fetchCandidates();
+                setSelectedCandidate(null);
+            }}
+            userApplications={!postId && viewMode === 'registered-users' ? userApplications : undefined}
+            activePostId={postId}
+        />
+    ) : null;
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-            {selectedCandidate ? (
-                <CandidateDetail
-                    candidate={selectedCandidate}
-                    onBack={handleBackToList}
-                    onInviteSent={handleInviteSent}
-                    onRemoveCandidate={() => {
-                        fetchCandidates();
-                        setSelectedCandidate(null);
-                    }}
-                    userApplications={!postId && viewMode === 'registered-users' ? userApplications : undefined}
-                    activePostId={postId}
-                />
+            {selectedCandidate && !splitView ? (
+                detailEl
             ) : (
                 <>
                     {activeView === 'list' && (
                         <>
-                            {/* Unified Header - the Posts masthead recipe:
-                                 brand-washed title and description rows, with
-                                 the search and count on a controls row below
-                                 the panel. Fixed above the scrolling body.
-                                 Spacing to the body comes from the parent's
-                                 space-y-4 only - no mb here, or the flex gap
-                                 doubles up (mb + mt don't collapse). */}
+                            {(isFilteringApplicants || onBack) && (
+                                <BackRow
+                                    onBack={onBack}
+                                    label="Go back"
+                                    title={postId ? (postTitle || 'Post Applicants') : undefined}
+                                    className="mb-3"
+                                />
+                            )}
                             <div className="shrink-0">
-                                <div className={`overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}>
-                                    <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5`}>
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            {(isFilteringApplicants || onBack) && (
-                                                <button
-                                                    onClick={onBack}
-                                                    className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
-                                                    title="Back"
-                                                    aria-label="Go back"
-                                                >
-                                                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                                                </button>
-                                            )}
-                                            <div className="min-w-0">
-                                                <h2 className={skin.heading}>
-                                                    {postId ? 'Post Applicants' : (viewMode === 'registered-users' ? 'Registered Candidates' : 'Uploaded Candidates')}
-                                                </h2>
-                                                {/* Description - starts at the title's left edge. */}
-                                                {((postId && postTitle) || !postId) && (
-                                                    <p className={`mt-1.5 ${skin.body}`}>
-                                                        {postId ? postTitle : 'Review and manage candidate applications and profiles'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {/* Controls row below the header: search at the
                                     left end, candidates count at the right end.
                                     The post-based toggle rides next to the
                                     search; it is not offered on the Posts path. */}
-                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-                                        <div className="relative w-full sm:w-96">
+                                <div className="flex flex-wrap items-center justify-center gap-3">
+                                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:gap-3">
+                                        <div className="relative w-full sm:w-[36rem] max-w-full">
                                             <label htmlFor="candidate-keyword-search" className="sr-only">
                                                 Search candidates by keywords
                                             </label>
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Search className="h-4 w-4 text-ink/40" />
+                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                <Search className="h-5 w-5 text-ink/40" />
                                             </div>
                                             <input
                                                 id="candidate-keyword-search"
                                                 type="text"
-                                                placeholder="Keywords: skill, role, company, college... (comma separated)"
+                                                placeholder="Search by skill, role, company or college (comma separated)"
                                                 title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together.'
-                                                className={`block w-full h-9 pl-10 pr-9 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
+                                                className={`block w-full h-12 pl-11 pr-10 text-sm rounded-lg border border-ink/20 bg-surface text-ink placeholder:text-ink/40 shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
                                                 onKeyDown={(e) => {
@@ -572,21 +556,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 </button>
                                             )}
                                         </div>
-                                        <div role="group" aria-label="Keyword match mode" className={`${skin.track} h-9`}>
-                                            {([['any', 'Any keyword'], ['all', 'All keywords']] as [MatchMode, string][]).map(([mode, label]) => (
-                                                <button
-                                                    key={mode}
-                                                    type="button"
-                                                    onClick={() => setMatchMode(mode)}
-                                                    aria-pressed={matchMode === mode}
-                                                    className={`cursor-pointer px-3 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${
-                                                        matchMode === mode ? skin.trackBtnActive : skin.trackBtnIdle
-                                                    }`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
                                         {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
                                             <button
                                                 onClick={() => setShowPostView(!showPostView)}
@@ -597,13 +566,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             </button>
                                         )}
                                     </div>
-                                    <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-                                        {isSearching
-                                            ? `${displayCandidates.length}${hiddenCount > 0 ? ` of ${searchResults.length}` : ''} ${displayCandidates.length === 1 && hiddenCount === 0 ? 'Match' : 'Matches'}`
-                                            : hiddenCount > 0
-                                                ? `Candidates: ${displayCandidates.length} of ${searchResults.length}`
-                                                : `Candidates: ${displayCandidates.length}`}
-                                    </span>
                                 </div>
                             </div>
 
@@ -613,8 +575,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 the cards read grey-on-white. The panel hugs
                                 the list and only fills the area when empty.
                                 The masthead above stays put. */}
-                            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-                            <div className={`${listEmpty ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
+                            <div className={tableFill ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar'}>
+                            <div className={`${tableFill ? 'flex-1 min-h-0 overflow-hidden ' : listEmpty ? 'min-h-full ' : ''}${showPostView ? `border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4` : 'px-4 py-1'} flex flex-col`}>
                             {showPostView ? (
                                 /* Post Card Grid View */
                                 <div className="space-y-4 flex flex-col flex-1">
@@ -729,7 +691,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     {hiddenCount > 0 && (
                                         <div
                                             role="status"
-                                            className={`mb-4 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-3`}
+                                            className={`mb-4 shrink-0 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 py-3`}
                                         >
                                             <p className={`flex items-center gap-2 ${skin.body}`}>
                                                 <Lock className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
@@ -751,9 +713,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 <div>
                                                     <h3 className={skin.emptyTitle}>No matching candidates</h3>
                                                     <p className={`mt-1 ${skin.body}`}>
-                                                        {matchMode === 'all' && keywords.length > 1
-                                                            ? 'No candidate has all of these keywords. Try "Any keyword" or fewer keywords.'
-                                                            : 'Try different or fewer keywords.'}
+                                                        Try different or fewer keywords.
                                                     </p>
                                                 </div>
                                             </div>
@@ -765,17 +725,15 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             />
                                         )
                                     ) : (
-                                        <CandidateList
+                                        <CandidateCarousel
                                             candidates={displayCandidates}
-                                            onSelectCandidate={handleCandidateSelect}
                                             loading={loading}
-                                            searchTerm=""
-                                            onSearchTermChange={setSearchTerm}
-                                            onRefresh={isFilteringApplicants ? () => filterPostId && fetchApplicantsForPost(filterPostId) : fetchCandidates}
-                                            emptyMessage={isFilteringApplicants ? "No applicants found for this post." : undefined}
-                                            onEdit={(candidate) => setEditingCandidate(candidate)}
-                                            hideHeader={true}
-                                            jobId={filterPostId}
+                                            onSelectCandidate={handleCandidateSelect}
+                                            selected={splitView ? selectedCandidate : null}
+                                            onCloseSelected={handleBackToList}
+                                            canViewContact={canViewContact}
+                                            onViewPlans={onViewPlans}
+                                            emptyMessage={isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
                                         />
                                     )}
                                 </>

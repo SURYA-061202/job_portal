@@ -1,6 +1,7 @@
+import BackRow from '@/components/layout/BackRow';
 import type { Candidate } from '@/types';
 import React, { useMemo, useState } from 'react';
-import { Trash2, Loader2, Search, Mail, Phone, User, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Trash2, Loader2, Search, Mail, Phone, User, ChevronDown } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
@@ -96,6 +97,8 @@ interface CandidateListProps {
   postTitles?: Record<string, string>;
   /** Extra per-row actions rendered in the Actions column, before the delete button. */
   extraActions?: (candidate: Candidate) => React.ReactNode;
+  /** Fill the height the parent gives it and scroll only the table (header row included). */
+  fillHeight?: boolean;
 }
 
 export default function CandidateList({
@@ -107,8 +110,6 @@ export default function CandidateList({
   emptyMessage,
   onRefresh,
   hideHeader = false,
-  title,
-  description,
   filterValue,
   filterOptions,
   onFilterChange,
@@ -117,7 +118,8 @@ export default function CandidateList({
   hideEmptyIcon = false,
   searchWidth = 'sm:w-72',
   postTitles,
-  extraActions
+  extraActions,
+  fillHeight = false
 }: CandidateListProps & { hideHeader?: boolean }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { showSuccess, showError } = usePopup();
@@ -156,31 +158,8 @@ export default function CandidateList({
   }, [candidates, searchTerm, postTitles]);
 
   return (
-    <div className="space-y-4 flex flex-col flex-1">
-      {/* Header - title and description with no line separator. */}
-      {!hideHeader && (
-        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
-                  title="Back to posts"
-                  aria-label="Back to posts"
-                >
-                  <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-                </button>
-              )}
-              <h2 className={skin.heading}>{title || 'Candidates'}</h2>
-            </div>
-          </div>
-
-          {description && (
-            <p className={`mt-1.5 ${skin.body}`}>{description}</p>
-          )}
-        </div>
-      )}
+    <div className={`space-y-4 flex flex-col flex-1${fillHeight ? ' min-h-0' : ''}`}>
+      {!hideHeader && onBack && <BackRow onBack={onBack} label="Back to posts" className="shrink-0" />}
 
       {/* Controls row below the header: search at the left end; the candidate
           count followed by the filter dropdown at the right. */}
@@ -266,10 +245,10 @@ export default function CandidateList({
           <p className={skin.body}>No candidates match your search.</p>
         </div>
       ) : (
-      <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}`}>
-        <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+      <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} overflow-hidden transition-colors duration-200 ${skin.cardHover}${fillHeight ? ' flex-1 min-h-0 flex flex-col' : ''}`}>
+        <div className={fillHeight ? 'flex-1 min-h-0 overflow-y-auto custom-scrollbar' : 'overflow-y-auto custom-scrollbar'} style={fillHeight ? undefined : { maxHeight: 'calc(100vh - 160px)' }}>
           <table className={`min-w-full divide-y ${skin.divide}`}>
-            <thead className={`bg-ink/5 sticky top-0 z-10`}>
+            <thead className={fillHeight ? 'bg-ink/5' : 'bg-ink/5 sticky top-0 z-10'}>
               <tr>
                 <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>{hideRole ? 'Name' : 'Name / Role'}</th>
                 <th scope="col" className={`px-6 py-4 text-left ${skin.micro}`}>Contact Info</th>

@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Briefcase, Calendar, Check, IndianRupee, Loader2, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
-import { timeAgo } from '@/lib/format';
 import {
     approveRequest,
     deletePlan,
     formatDate,
-    formatLimit,
     getPlans,
     isUnlimited,
     planAudience,
@@ -20,6 +18,7 @@ import {
     subscribeAllRequests,
 } from '@/lib/subscriptions';
 import { UNLIMITED } from '@/types';
+import PlanPricingCard from './PlanPricingCard';
 import type { SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 type Section = 'requests' | 'plans' | 'subscribers';
@@ -86,7 +85,8 @@ const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
 
 export default function AdminSubscriptionTab({ adminId }: { adminId: string | null }) {
     const skin = useSkin();
-    const [audience, setAudience] = useState<SubscriptionAudience>('recruiter');
+    // Plans are for recruiters only; one subscription unlocks contact details, resumes and posts.
+    const audience = 'recruiter' as SubscriptionAudience;
     const [section, setSection] = useState<Section>('requests');
     const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
     const [allRequests, setAllRequests] = useState<SubscriptionRequest[]>([]);
@@ -187,14 +187,13 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         const price = Number(form.price || 0);
         const durationDays = parseInt(form.durationDays, 10);
         const maxPosts = form.maxPostsUnlimited ? UNLIMITED : parseInt(form.maxPosts, 10);
-        const maxCandidates = isUserSide ? 0 : form.maxCandidatesUnlimited ? UNLIMITED : parseInt(form.maxCandidates, 10);
+        const maxCandidates = UNLIMITED; // every plan can view all candidates
 
         if (!form.name.trim()) return popup.error('Plan name is required');
         if (!Number.isInteger(level) || level < 1) return popup.error('Level must be 1 or higher');
         if (!Number.isFinite(price) || price < 0) return popup.error('Price cannot be negative');
         if (!Number.isInteger(durationDays) || durationDays < 1) return popup.error('Duration must be at least 1 day');
         if (!form.maxPostsUnlimited && (!Number.isInteger(maxPosts) || maxPosts < 1)) return popup.error(`Enter a ${isUserSide ? 'job view' : 'post'} limit of 1 or more, or tick Unlimited`);
-        if (!isUserSide && !form.maxCandidatesUnlimited && (!Number.isInteger(maxCandidates) || maxCandidates < 1)) return popup.error('Enter a candidate limit of 1 or more, or tick Unlimited');
         if (plans.some((p) => p.level === level && p.id !== form.id)) return popup.error(`Level ${level} is already used by another plan`);
 
         setSaving(true);
@@ -237,28 +236,6 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            <div className={`shrink-0 flex flex-wrap items-center justify-between gap-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-                <div>
-                    <h2 className={skin.heading}>Subscriptions</h2>
-                    <p className={`mt-1.5 ${skin.body}`}>
-                        Manage subscription levels, review requests and see who is on which plan.
-                    </p>
-                </div>
-                <div role="tablist" aria-label="Subscription audience" className={`${skin.track} h-9`}>
-                    {([['recruiter', 'Recruiters'], ['user', 'Users']] as const).map(([key, label]) => (
-                        <button
-                            key={key}
-                            role="tab"
-                            aria-selected={audience === key}
-                            onClick={() => setAudience(key)}
-                            className={`cursor-pointer px-4 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${audience === key ? skin.trackBtnActive : skin.trackBtnIdle}`}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div role="tablist" aria-label="Subscription sections" className={`${skin.track} h-9`}>
                     {tabs.map((t) => (
@@ -274,15 +251,17 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                         </button>
                     ))}
                 </div>
-                {section === 'plans' && (
-                    <button
-                        type="button"
-                        onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
-                        className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
-                    >
-                        <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
-                    </button>
-                )}
+                <div className="flex flex-wrap items-center gap-3">
+                    {section === 'plans' && (
+                        <button
+                            type="button"
+                            onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
+                            className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+                        >
+                            <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* White body panel. Empty tab: a grey section fills it with the message
@@ -344,41 +323,12 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                 ) : section === 'plans' ? (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                         {plans.map((p) => (
-                            <article key={p.id} className={`flex h-full flex-col overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover}`}>
-                                <div className="flex flex-1 flex-col p-4 sm:p-5">
-                                    <h4 className={`min-w-0 line-clamp-2 min-h-[2.5em] ${skin.cardTitle} text-base!`}>{p.name}</h4>
-                                    <span className={`mt-1 block ${skin.micro}`}>Level {p.level}</span>
-
-                                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                                        <span className={`flex items-center gap-1.5 ${skin.cardValue} font-semibold!`}>
-                                            <IndianRupee className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                            {p.price > 0 ? `${p.price.toLocaleString('en-IN')} / ${p.durationDays} days` : `Free / ${p.durationDays} days`}
-                                        </span>
-                                        <span className={`flex items-center gap-1.5 ${skin.cardValue} font-semibold!`}>
-                                            <Briefcase className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                            {formatLimit(p.maxPosts)} {isUserSide ? 'jobs viewable' : 'posts'}
-                                        </span>
-                                        {!isUserSide && (
-                                            <span className={`flex items-center gap-1.5 ${skin.cardValue} font-semibold!`}>
-                                                <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                                {formatLimit(p.maxCandidates)} candidates
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-4 flex-1">
-                                        <span className={`mb-2 block ${skin.micro} font-bold!`}>Includes</span>
-                                        <p className={`line-clamp-2 ${skin.body}`}>
-                                            {p.description || p.features.filter(Boolean).join(', ') || '-'}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between gap-2">
-                                        <span className={`flex items-center gap-1.5 ${skin.meta}`}>
-                                            <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-                                            {timeAgo(p.createdAt)}
-                                        </span>
-                                        <span className="flex items-center gap-2">
+                            <PlanPricingCard
+                                key={p.id}
+                                plan={p}
+                                audience={audience}
+                                action={(
+                                    <div className="flex items-center justify-end gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => setForm(formFromPlan(p))}
@@ -398,10 +348,9 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                             >
                                                 <Trash2 className="h-4 w-4" aria-hidden="true" />
                                             </button>
-                                        </span>
                                     </div>
-                                </div>
-                            </article>
+                                )}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -494,15 +443,6 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                     <input type="checkbox" checked={form.maxPostsUnlimited} onChange={(e) => setForm({ ...form, maxPostsUnlimited: e.target.checked })} /> Unlimited
                                 </label>
                             </div>
-                            {!isUserSide && (
-                            <div>
-                                <label htmlFor="plan-cands" className="block text-xs font-bold text-ink/80 mb-1">Max candidates visible</label>
-                                <input id="plan-cands" type="number" min={1} disabled={form.maxCandidatesUnlimited} value={form.maxCandidatesUnlimited ? '' : form.maxCandidates} onChange={(e) => setForm({ ...form, maxCandidates: e.target.value })} className={`${fieldClass} disabled:opacity-50`} />
-                                <label className="mt-1.5 flex items-center gap-2 text-xs text-ink/70">
-                                    <input type="checkbox" checked={form.maxCandidatesUnlimited} onChange={(e) => setForm({ ...form, maxCandidatesUnlimited: e.target.checked })} /> Unlimited
-                                </label>
-                            </div>
-                            )}
                         </div>
 
                         <div>

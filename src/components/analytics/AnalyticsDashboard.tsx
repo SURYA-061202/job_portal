@@ -214,22 +214,6 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
     return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
                 <div className="flex-1 flex flex-col min-h-0">
-                    {/* Header Section - static, does not scroll. Posts tab
-                        masthead recipe: brand wash over the whole header,
-                        title row above a description row. No divider between
-                        the two rows and no count badges on the title. */}
-                    <div className={`mb-4 flex-shrink-0 overflow-hidden border ${skin.edge} ${skin.surface} rounded-lg ${skin.headerWash}`}>
-                        {/* Title row */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-3.5 pb-1 sm:px-5">
-                            <h2 className={skin.heading}>Analytics</h2>
-                        </div>
-
-                        {/* Description row */}
-                        <div className="px-4 py-2.5 sm:px-5">
-                            <p className={skin.body}>Insights into candidate experience and location, and post departments and skills</p>
-                        </div>
-                    </div>
-
                 {/* Content - the only scrollable region */}
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 -mx-1 pb-2 space-y-6">
                     {/* KPI Cards */}

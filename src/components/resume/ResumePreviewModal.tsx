@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
@@ -82,7 +83,8 @@ export default function ResumePreviewModal({ url, onClose }: ResumePreviewModalP
         };
     }, [url, isPdf]);
 
-    return (
+    // Portal to <body>: an ancestor stacking context (page content) would otherwise keep the overlay under the header.
+    return createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="bg-surface rounded-2xl w-full max-w-4xl p-6 relative z-10 shadow-2xl h-[90vh] max-h-[90vh] flex flex-col border border-border resume-preview-scroll">
@@ -115,6 +117,7 @@ export default function ResumePreviewModal({ url, onClose }: ResumePreviewModalP
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -1,3 +1,4 @@
+import BackRow from '@/components/layout/BackRow';
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -8,7 +9,7 @@ import type { RecruitmentRequest } from "@/types";
 import CandidateList from "@/components/resume/CandidateList";
 import InterviewCandidateDetail from "@/components/interview/InterviewCandidateDetail";
 import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab";
-import { ArrowLeft, Briefcase, MapPin, Clock, Search, ChevronDown } from "lucide-react";
+import { Briefcase, MapPin, Clock, Search, ChevronDown } from "lucide-react";
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from "@/styles/skin";
 
@@ -238,24 +239,12 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
   if (selectedPost) {
     return (
       <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-        {/* Masthead - back control beside the title block, the post named as
-            the description; no line separator. */}
-        <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
-              onClick={() => { setSelectedPost(null); setSelectedRound(null); setSearchTerm(''); }}
-              title="Back to posts"
-              aria-label="Back to posts"
-            >
-              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-            </button>
-            <div className="min-w-0">
-              <h2 className={`${skin.heading} truncate`}>Interview Rounds</h2>
-              <p className={`mt-1.5 ${skin.body}`}>{selectedPost.jobTitle}</p>
-            </div>
-          </div>
-        </div>
+        <BackRow
+          onBack={() => { setSelectedPost(null); setSelectedRound(null); setSearchTerm(''); }}
+          label="Back to posts"
+          title={selectedPost.jobTitle}
+          className="shrink-0"
+        />
 
         {/* Controls row: search at the left end; candidate count followed by
             the rounds filter at the right end. */}
@@ -331,12 +320,6 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
 
   return (
     <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      {/* Header - brand-washed title over a description line, no separator. */}
-      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-        <h2 className={skin.heading}>Interview Posts</h2>
-        <p className={`mt-1.5 ${skin.body}`}>Select a post to view interview rounds</p>
-      </div>
-
       {/* Controls row below the header: search at the left end, posts count at
           the right end - no animated indicator. */}
       <div className="flex flex-wrap items-center justify-between gap-3">

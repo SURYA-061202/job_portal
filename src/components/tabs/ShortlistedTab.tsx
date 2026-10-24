@@ -1,3 +1,4 @@
+import BackRow from '@/components/layout/BackRow';
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -213,13 +214,6 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   if (!selectedPostView) {
     return (
     <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      {/* Header - Posts masthead recipe: brand-washed title over a
-          description line, with no separator between them. */}
-      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-        <h2 className={skin.heading}>Shortlisted</h2>
-        <p className={`mt-1.5 ${skin.body}`}>Select a job post to view its shortlisted candidates.</p>
-      </div>
-
       {/* Controls row below the header: search at the left end, posts count at
           the right end — the same row the Candidates module uses. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -296,34 +290,12 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   return (
     <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      {/* Masthead - back control beside a title block; the job title sits
-          beside the title and the description starts at the title's left
-          edge. No line separator between rows. The back arrow uses the same
-          rounded-lg as the buttons. */}
-      <div className={`shrink-0 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-        <div className="flex min-w-0 items-center gap-3">
-          <button
-            onClick={() => { setSelectedPostView(null); setSearch(''); }}
-            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
-            title="Back to posts"
-            aria-label="Back to posts"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-          </button>
-          <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className={`${skin.heading} min-w-0 truncate`}>Shortlisted</h2>
-              {selectedPostView.jobTitle && (
-                <>
-                  <span aria-hidden="true" className={skin.subtle}>·</span>
-                  <span className={`${skin.heading} min-w-0 truncate`}>{selectedPostView.jobTitle}</span>
-                </>
-              )}
-            </div>
-            <p className={`mt-1.5 ${skin.body}`}>Review and manage the candidates you have shortlisted for this post.</p>
-          </div>
-        </div>
-      </div>
+      <BackRow
+        onBack={() => { setSelectedPostView(null); setSearch(''); }}
+        label="Back to posts"
+        title={selectedPostView.jobTitle}
+        className="shrink-0"
+      />
 
       {/* Controls row below the header: search at the left end, shortlisted
           count at the right end — no animated indicator. */}

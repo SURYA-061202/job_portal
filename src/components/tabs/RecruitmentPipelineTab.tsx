@@ -1,3 +1,4 @@
+import BackRow from '@/components/layout/BackRow';
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -16,7 +17,7 @@ import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
 import PostCard from '@/components/recruitment/PostCard';
 import popup from '@/components/ui/Popup';
-import { X, ArrowRight, Search, Briefcase as BriefcaseIcon, SearchX, ChevronDown, ChevronUp, ChevronLeft, CalendarCheck, CalendarX, Clock } from 'lucide-react';
+import { X, ArrowRight, Search, Briefcase as BriefcaseIcon, SearchX, ChevronDown, ChevronUp, CalendarCheck, CalendarX, Clock } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 type PipelineColumn = {
@@ -377,12 +378,6 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
     if (loading) {
         return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-                {/* Header skeleton: same masthead shape as the loaded view. */}
-                <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`} role="status" aria-busy="true">
-                    <span className="sr-only">Loading posts…</span>
-                    <div className={`h-6 w-44 animate-pulse ${skin.skeleton}`} />
-                    <div className={`mt-3 h-4 w-1/2 max-w-md animate-pulse ${skin.skeleton}`} />
-                </div>
                 {/* Controls-row skeleton: search left, count right. */}
                 <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
                     <div className={`h-9 w-full sm:w-72 animate-pulse ${skin.skeleton}`} />
@@ -431,12 +426,6 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
         return (
             <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-                {/* Header - title and description only. */}
-                <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-                    <h2 className={skin.heading}>Recruitment Pipeline</h2>
-                    <p className={`mt-1.5 ${skin.body}`}>Select a job post to manage its candidates through each stage.</p>
-                </div>
-
                 {/* Controls row below the header: search at the left end, the
                     posts count at the right end. Sits on the canvas. */}
                 <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
@@ -511,25 +500,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col overflow-hidden`}>
-            {/* Header - back button with the title and description only. */}
-            <div className={`shrink-0 mb-3 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash} px-4 py-3.5 sm:px-5`}>
-                <div className="flex min-w-0 items-center gap-2">
-                    <button
-                        onClick={closePost}
-                        className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${skin.iconTile} rounded-lg cursor-pointer transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
-                        title="Back to posts"
-                        aria-label="Back to posts"
-                    >
-                        <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
-                    </button>
-                    <div className="min-w-0">
-                        <h2 className={`${skin.heading} truncate`}>{selectedPost.jobTitle}</h2>
-                        <p className={`mt-1.5 ${skin.body}`}>
-                            Move candidates through each stage, review their responses and track their progress across the interview rounds.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <BackRow onBack={closePost} label="Back to posts" title={selectedPost.jobTitle} className="mb-3 shrink-0" />
 
             {/* Controls row below the header: search at the left end, the
                 round count at the right end. Sits on the canvas. */}

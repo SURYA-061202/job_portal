@@ -1,14 +1,21 @@
-import { useMemo, type ReactNode } from 'react';
-import { Mail, Phone, MapPin, Briefcase, GraduationCap, FolderGit2, Award, BookOpen, ChevronRight, type LucideIcon } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Mail, Phone, FileText, Lock, X, Clock, MapPin, Briefcase, GraduationCap, FolderGit2, Award, ChevronRight, type LucideIcon } from 'lucide-react';
 import type { Candidate } from '@/types';
 import { buildHighlightRegex, type CandidateMatch } from '@/lib/candidateSearch';
 import { useSkin, FOCUS } from '@/styles/skin';
 import Highlight from './Highlight';
+import ResumePreviewModal from './ResumePreviewModal';
 
 interface CandidateSearchResultsProps {
     results: CandidateMatch[];
     keywords: string[];
     onSelectCandidate: (candidate: Candidate) => void;
+    /** Single-profile mode: no keyword badge, not clickable, with a close button. */
+    detail?: boolean;
+    onClose?: () => void;
+    /** Detail mode only: show email, phone and the resume (subscribers). */
+    canViewContact?: boolean;
+    onViewPlans?: () => void;
 }
 
 const toTitleCase = (s?: string) =>
@@ -66,13 +73,14 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
  * (summary, skills, work, education, projects, certifications) and the keywords
  * highlighted wherever they occur.
  */
-export default function CandidateSearchResults({ results, keywords, onSelectCandidate }: CandidateSearchResultsProps) {
+export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans }: CandidateSearchResultsProps) {
     const skin = useSkin();
+    const [resumeUrl, setResumeUrl] = useState<string | null>(null);
     const regex = useMemo(() => buildHighlightRegex(keywords), [keywords]);
     const hl = (text: string) => <Highlight text={text} regex={regex} />;
 
     return (
-        <ul className="space-y-4" aria-label="Matching candidates">
+        <ul className={detail ? 'h-full' : 'space-y-4'} aria-label="Matching candidates">
             {results.map(({ candidate: c, matched }) => {
                 const skills = txtList(c.skills?.length ? c.skills : c.extractedData?.skills);
                 const asList = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
@@ -107,50 +115,72 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                 const name = txt(c.name);
 
                 return (
-                    <li key={c.id}>
+                    <li key={c.id} className={detail ? 'h-full' : undefined}>
                         <article
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => onSelectCandidate(c)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    onSelectCandidate(c);
-                                }
-                            }}
-                            className={`group cursor-pointer border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-6 transition-colors duration-200 ${skin.cardHover} ${FOCUS}`}
+                            {...(detail
+                                ? {}
+                                : {
+                                    role: 'button',
+                                    tabIndex: 0,
+                                    onClick: () => onSelectCandidate(c),
+                                    onKeyDown: (e: React.KeyboardEvent) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            onSelectCandidate(c);
+                                        }
+                                    },
+                                })}
+                            className={`group ${detail ? 'flex h-full flex-col overflow-hidden' : 'cursor-pointer'} border ${skin.edge} bg-surface ${skin.radius} p-4 sm:p-6 transition-colors duration-200 ${skin.cardHover} ${FOCUS}`}
                         >
                             {/* Header */}
-                            <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-4">
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand/20 text-lg font-bold text-brand">
-                                        {name.charAt(0).toUpperCase() || 'U'}
-                                    </div>
                                     <div className="min-w-0">
                                         <h3 className={`${skin.cardTitle} break-words`}>{hl(toTitleCase(name))}</h3>
-                                        <p className={`mt-0.5 ${skin.body}`}>
-                                            {role ? hl(toTitleCase(role)) : 'No role'}
-                                            {experience ? <> &middot; {hl(/^[\d.]+$/.test(experience) ? `${experience} yrs` : experience)}</> : null}
-                                        </p>
+                                        {role && (
+                                            <p className={`mt-1.5 flex items-center gap-1.5 ${skin.body}`}>
+                                                <Briefcase className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                                                <span>{hl(toTitleCase(role))}</span>
+                                            </p>
+                                        )}
+                                        {experience && (
+                                            <p className={`mt-1 flex items-center gap-1.5 ${skin.body}`}>
+                                                <Clock className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                                                <span>{hl(/^[\d.]+$/.test(experience) ? `${experience} yrs` : experience)}</span>
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={`${skin.count} rounded-lg`}>
-                                        {matched.length} of {keywords.length} keyword{keywords.length === 1 ? '' : 's'}
-                                    </span>
-                                    <ChevronRight className={`h-4 w-4 ${skin.subtle} group-hover:text-ink`} aria-hidden="true" />
-                                </div>
+                                {detail ? (
+                                    onClose && (
+                                        <button
+                                            type="button"
+                                            onClick={onClose}
+                                            aria-label="Close details"
+                                            className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                                        >
+                                            <X className="h-4 w-4" aria-hidden="true" />
+                                        </button>
+                                    )
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <span className={`${skin.count} rounded-lg`}>
+                                            {matched.length} of {keywords.length} keyword{keywords.length === 1 ? '' : 's'}
+                                        </span>
+                                        <ChevronRight className={`h-4 w-4 ${skin.subtle} group-hover:text-ink`} aria-hidden="true" />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Contact */}
-                            <div className={`mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-ink/70`}>
-                                {txt(c.email) && (
+                            <div className={`${detail ? 'mt-1 shrink-0' : 'mt-4'} flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-ink/70`}>
+                                {detail && canViewContact && txt(c.email) && (
                                     <span className="inline-flex items-center gap-1.5">
                                         <Mail className="h-3.5 w-3.5 text-ink/40" aria-hidden="true" />
                                         {txt(c.email)}
                                     </span>
                                 )}
-                                {txt(c.phone) && (
+                                {detail && canViewContact && txt(c.phone) && (
                                     <span className="inline-flex items-center gap-1.5">
                                         <Phone className="h-3.5 w-3.5 text-ink/40" aria-hidden="true" />
                                         {txt(c.phone)}
@@ -164,6 +194,36 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                 )}
                             </div>
 
+                            {detail && (
+                                <div className="mt-3 flex shrink-0 flex-wrap items-center gap-3">
+                                    {canViewContact ? (
+                                        c.resumeUrl && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setResumeUrl(c.resumeUrl as string)}
+                                                className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
+                                            >
+                                                <FileText className="h-4 w-4" aria-hidden="true" />
+                                                Resume
+                                            </button>
+                                        )
+                                    ) : (
+                                        <>
+                                            <span className={`inline-flex items-center gap-1.5 ${skin.meta}`}>
+                                                <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                                                Subscribe to view contact details and resume
+                                            </span>
+                                            {onViewPlans && (
+                                                <button type="button" onClick={onViewPlans} className={`cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}>
+                                                    View plans
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className={detail ? 'thin-scrollbar mt-1 min-h-0 flex-1 overflow-y-auto pr-1' : undefined}>
                             {summary && <p className={`mt-4 ${skin.body}`}>{hl(summary)}</p>}
 
                             {skills.length > 0 && (
@@ -171,7 +231,7 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                     <p className={`mb-2 ${skin.micro}`}>Skills</p>
                                     <div className="flex flex-wrap gap-1.5">
                                         {skills.map((skill, i) => (
-                                            <span key={`${skill}-${i}`} className={`${skin.tag} rounded-lg`}>
+                                            <span key={`${skill}-${i}`} className="rounded-lg bg-ink/5 px-2.5 py-1 text-xs font-medium text-ink/80">
                                                 {hl(skill)}
                                             </span>
                                         ))}
@@ -179,9 +239,22 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                 </div>
                             )}
 
+                            {courses.length > 0 && (
+                                <div className="mt-4">
+                                    <p className={`mb-2 ${skin.micro}`}>Courses completed</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {courses.map((course, i) => (
+                                            <span key={`${course}-${i}`} className="rounded-lg bg-ink/5 px-2.5 py-1 text-xs font-medium text-ink/80">
+                                                {hl(course)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Two independent columns, so a tall Education list never leaves a gap under Experience. */}
-                            <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2 lg:items-start">
-                                <div className="space-y-5">
+                            <div className={`mt-5 grid grid-cols-1 gap-x-8 gap-y-5 ${detail ? '' : 'lg:grid-cols-2 lg:items-start'}`}>
+                                <div className="space-y-5 empty:hidden">
                                     {work.length > 0 && (
                                         <section>
                                             <SectionTitle icon={Briefcase}>Experience</SectionTitle>
@@ -213,7 +286,7 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                     )}
                                 </div>
 
-                                <div className="space-y-5">
+                                <div className="space-y-5 empty:hidden">
                                     {education.length > 0 && (
                                         <section>
                                             <SectionTitle icon={GraduationCap}>Education</SectionTitle>
@@ -245,21 +318,11 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                         </section>
                                     )}
 
-                                    {courses.length > 0 && (
-                                        <section>
-                                            <SectionTitle icon={BookOpen}>Courses completed</SectionTitle>
-                                            <ul className="space-y-3">
-                                                {courses.map((course, i) => (
-                                                    <li key={i} className="border-l-2 border-brand/40 pl-3">
-                                                        <p className="text-sm font-semibold text-ink">{hl(course)}</p>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </section>
-                                    )}
                                 </div>
                             </div>
+                            </div>
                         </article>
+                        {resumeUrl && <ResumePreviewModal url={resumeUrl} onClose={() => setResumeUrl(null)} />}
                     </li>
                 );
             })}

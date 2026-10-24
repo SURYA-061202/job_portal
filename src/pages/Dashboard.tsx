@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import Sidebar from '@/components/layout/Sidebar';
+import RecruiterHeader from '@/components/layout/RecruiterHeader';
 import JobPostsTab from '@/components/tabs/JobPostsTab';
 // import UploadResumesTab from '@/components/tabs/UploadResumesTab'; // hidden: Resume Upload module disabled on recruiter/admin side
 import CandidatesTab from '@/components/tabs/CandidatesTab';
@@ -16,8 +16,7 @@ import MemberDetailContent from '@/components/tabs/MemberDetailContent';
 import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
 import AssessmentsTab from '@/components/tabs/AssessmentsTab';
-import { Menu, X } from 'lucide-react';
-import { useSkin, FOCUS } from '@/styles/skin';
+import { useSkin } from '@/styles/skin';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import AdminSubscriptionTab from '@/components/subscription/AdminSubscriptionTab';
@@ -27,13 +26,12 @@ import { useSubscription } from '@/lib/useSubscription';
 export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<TabType>('job-posts');
+  const [activeTab, setActiveTab] = useState<TabType>('candidates');
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedPostTitle, setSelectedPostTitle] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   // Live plan + limits: updates the moment the admin approves a request.
@@ -98,7 +96,6 @@ export default function Dashboard() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    setIsMobileSidebarOpen(false);
     if (tab === 'candidates' || tab === 'job-posts') {
       setSelectedPostId(null);
       setSelectedPostTitle(null);
@@ -124,6 +121,7 @@ export default function Dashboard() {
             userId={userId}
             candidateLimit={subscription?.maxCandidates}
             planName={subscription?.planName}
+            canViewContact={!!subscription && subscription.source !== 'free'}
             onViewPlans={() => handleTabChange('subscription')}
             onClearFilter={() => setSelectedPostId(null)}
             onBack={selectedPostId ? () => setActiveTab('job-posts') : undefined}
@@ -198,46 +196,16 @@ export default function Dashboard() {
   const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'candidates' || activeTab === 'notifications';
 
   return (
-    <div className={`flex h-screen ${skin.canvas} relative`}>
-      {/* Mobile Hamburger Menu Button */}
-      <button
-        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        className={`md:hidden fixed top-4 left-4 z-50 ${skin.surface} p-2.5 ${skin.radius} ${skin.shadow} border ${skin.edge} hover:bg-ink/5 transition-colors ${FOCUS}`}
-        aria-label="Toggle menu"
-      >
-        {isMobileSidebarOpen ? (
-          <X className="w-6 h-6 text-ink" />
-        ) : (
-          <Menu className="w-6 h-6 text-ink" />
-        )}
-      </button>
+    <div className={`flex h-screen flex-col ${skin.canvas}`}>
+      <RecruiterHeader
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onLogout={handleLogout}
+        userRole={userRole}
+      />
 
-      {/* Mobile Sidebar Backdrop */}
-      {isMobileSidebarOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Hidden on mobile by default, overlay when open */}
-      <div className={`
-        ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
-        fixed md:relative
-        z-40
-        transition-transform duration-300 ease-in-out
-      `}>
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          onLogout={handleLogout}
-          userRole={userRole}
-        />
-      </div>
-
-      <main className={`flex-1 ${isSelfScrollingTab ? 'overflow-hidden' : 'overflow-auto'} thin-scrollbar flex flex-col relative w-full md:w-auto pl-0 md:pl-0`}>
-        <div className={`p-4 md:p-6 flex-1 flex flex-col relative z-10 pt-16 md:pt-6 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
+      <main className={`flex-1 min-h-0 ${isSelfScrollingTab ? 'overflow-hidden' : 'overflow-auto'} thin-scrollbar flex flex-col relative w-full`}>
+        <div className={`mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:py-6 flex-1 flex flex-col relative z-10 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
       </main>
     </div>
   );
