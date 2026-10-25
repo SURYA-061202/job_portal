@@ -1,0 +1,169 @@
+rules_version = '2';
+
+// Indian Infra Jobs - Firestore security rules.
+// Roles live in users/{uid}.role: 'user' (job seeker), 'recruiter', 'manager', 'admin'.
+// Cloud Functions use the Admin SDK and are not affected by these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myRole() {
+      return hasProfile() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
+    }
+    function isAdmin() {
+      return myRole() == 'admin';
+    }
+    function isStaff() {
+      return myRole() in ['recruiter', 'manager', 'admin'];
+    }
+    function isStaffRole(r) {
+      return r in ['recruiter', 'manager', 'admin'];
+    }
+    function myEmail() {
+      return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : '';
+    }
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------- users ----------
+    match /users/{uid} {
+      // TEMPORARY: the public interview-response page reads the candidate's name
+      // without signing in. Single-document reads only; listing stays locked.
+      // Remove once that page goes through a Cloud Function.
+      allow get: if true;
+
+      // Staff browse every user (candidates list). Anyone signed in can query
+      // recruiter/admin profiles (job cards, "notify the admins").
+      allow list: if isStaff()
+                  || (signedIn() && isStaffRole(resource.data.role))
+                  || (signedIn() && resource.data.uid == request.auth.uid);
+
+      // Self sign-up can only ever create a plain 'user'. Admins create recruiters.
+      allow create: if signedIn() && (
+                      (request.auth.uid == uid && request.resource.data.role == 'user')
+                      || isAdmin()
+                    );
+
+      // Nobody but an admin can change role, plan or premium flag.
+      allow update: if isAdmin()
+                    || (request.auth.uid == uid
+                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid']));
+
+      allow delete: if isAdmin();
+
+      match /testResults/{testId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+        allow write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // ---------- subscriptions ----------
+    match /subscription_plans/{planId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /subscription_requests/{requestId} {
+      allow read: if signedIn() && (resource.data.recruiterId == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.recruiterId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- job posts ----------
+    match /recruits/{postId} {
+      // Single posts are readable by id (the signed-out candidate pages look up
+      // the post to notify the recruiter); browsing the list needs a sign-in.
+      allow get: if true;
+      allow list: if signedIn();
+      allow create: if isStaff() && request.resource.data.recruiterId == request.auth.uid;
+      // Owner or admin edits/deletes; any signed-in user may only record that they viewed it.
+      allow update: if (isStaff() && (isAdmin() || resource.data.recruiterId == request.auth.uid))
+                    || (signedIn() && changedKeys().hasOnly(['viewedBy']));
+      allow delete: if isStaff() && (isAdmin() || resource.data.recruiterId == request.auth.uid);
+    }
+
+    // ---------- applications ----------
+    match /job_applications/{appId} {
+      allow get: if signedIn() && (resource == null || isStaff() || resource.data.user_id == request.auth.uid);
+      allow list: if signedIn() && (isStaff() || resource.data.user_id == request.auth.uid);
+      allow create: if signedIn() && (
+                      isStaff()
+                      || (request.resource.data.user_id == request.auth.uid)
+                    );
+      allow update: if signedIn() && (
+                      isStaff()
+                      || (resource.data.user_id == request.auth.uid
+                          && request.resource.data.user_id == resource.data.user_id
+                          && request.resource.data.post_id == resource.data.post_id)
+                    );
+      allow delete: if signedIn() && (isStaff() || resource.data.user_id == request.auth.uid);
+    }
+
+    // ---------- candidates (recruiter side) ----------
+    match /candidates/{candidateId} {
+      // TEMPORARY: public interview-response page reads the candidate by id (see users).
+      allow get: if true;
+      allow list: if isStaff();
+      allow write: if isStaff();
+    }
+
+    // ---------- interviews ----------
+    match /interviews/{candidateId} {
+      // Candidates answer invites from an emailed link without signing in.
+      // They may read their own invite (by its unguessable id) and write only
+      // the response / verify-details fields below. Everything else is staff-only.
+      allow get: if true;
+      allow list: if isStaff();
+      allow write: if isStaff();
+
+      allow create: if request.resource.data.keys().hasOnly([
+        'candidateId', 'response', 'selectedDate', 'respondedAt',
+        'dateOfJoining', 'currentSalary', 'expectedSalary', 'expectedSalaryPeriod',
+        'yearsExperience', 'experienceIn', 'readyToRelocate', 'laptop',
+        'detailsSubmitted', 'submittedAt'
+      ]);
+      allow update: if changedKeys().hasOnly([
+        'candidateId', 'response', 'selectedDate', 'respondedAt',
+        'dateOfJoining', 'currentSalary', 'expectedSalary', 'expectedSalaryPeriod',
+        'yearsExperience', 'experienceIn', 'readyToRelocate', 'laptop',
+        'detailsSubmitted', 'submittedAt'
+      ]);
+    }
+
+    // ---------- notifications (addressed by email in userId) ----------
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.userId == myEmail();
+      // Signed-in users create notifications for others (invites, approvals...).
+      // The signed-out candidate pages may only send these two types.
+      allow create: if signedIn()
+                    || request.resource.data.type in ['interview_response', 'details_submitted'];
+      allow update: if signedIn() && resource.data.userId == myEmail()
+                    && changedKeys().hasOnly(['read', 'viewed']);
+      allow delete: if signedIn() && resource.data.userId == myEmail();
+    }
+
+    // ---------- training / clustering ----------
+    match /assessments/{id} {
+      allow read: if signedIn();
+      allow write: if isStaff();
+    }
+
+    match /candidate_clusters/{id} {
+      allow read, write: if isStaff();
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

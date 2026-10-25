@@ -477,15 +477,22 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     );
     const displayCandidates = useMemo(() => visibleResults.map(r => r.candidate), [visibleResults]);
     const hiddenCount = searchResults.length - visibleResults.length;
+    // Beside an opened profile during a search: the matches first, then everyone else.
+    const splitCandidates = useMemo(() => {
+        const matchedIds = new Set(visibleResults.map((r) => r.candidate.id));
+        const rest = baseList.filter((c) => !matchedIds.has(c.id));
+        const all = [...visibleResults.map((r) => r.candidate), ...rest];
+        return capped ? all.slice(0, candidateLimit) : all;
+    }, [visibleResults, baseList, capped, candidateLimit]);
 
     // The white results panel hugs the list, but fills the whole body area
     // when there is nothing to show.
     // Plain candidate table: the body is one screen tall and only the table scrolls.
-    const tableFill = !showPostView && !isSearching;
+    const tableFill = !showPostView && (!isSearching || !!selectedCandidate);
     const listEmpty = showPostView ? postCards.length === 0 : displayCandidates.length === 0;
 
     // Opening a candidate from the plain list keeps the list on screen, moved to the right.
-    const splitView = !!selectedCandidate && activeView === 'list' && !showPostView && !isSearching;
+    const splitView = !!selectedCandidate && activeView === 'list' && !showPostView;
     const detailEl = selectedCandidate ? (
         <CandidateDetail
             candidate={selectedCandidate}
@@ -717,6 +724,19 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                     </p>
                                                 </div>
                                             </div>
+                                        ) : selectedCandidate ? (
+                                            /* Opened from search: same layout as the plain list - the profile on the left,
+                                               the other matches as cards beside it, sliding for more. */
+                                            <CandidateCarousel
+                                                candidates={splitCandidates}
+                                                loading={false}
+                                                onSelectCandidate={handleCandidateSelect}
+                                                selected={selectedCandidate}
+                                                onCloseSelected={handleBackToList}
+                                                canViewContact={canViewContact}
+                                                onViewPlans={onViewPlans}
+                                                keywords={keywords}
+                                            />
                                         ) : (
                                             <CandidateSearchResults
                                                 results={visibleResults}

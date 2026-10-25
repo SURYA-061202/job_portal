@@ -11,10 +11,12 @@ interface PlanPricingCardProps {
     badge?: string;
     /** The call-to-action area under the price: a button, or admin actions. */
     action?: ReactNode;
+    /** Small controls pinned to the top right corner (admin edit / delete). */
+    corner?: ReactNode;
 }
 
 /** Pricing card: name, description, price, action, then an "Includes" tick list. */
-export default function PlanPricingCard({ plan, audience = 'recruiter', badge, action }: PlanPricingCardProps) {
+export default function PlanPricingCard({ plan, audience = 'recruiter', badge, action, corner }: PlanPricingCardProps) {
     const skin = useSkin();
     const isUser = audience === 'user';
     const items = [
@@ -26,8 +28,9 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
     ];
 
     return (
-        <article className={`flex h-full flex-col border ${skin.edge} bg-surface ${skin.radius} p-6`}>
-            <div className="flex items-center gap-2">
+        <article className={`relative flex h-full flex-col border ${skin.edge} bg-surface ${skin.radius} p-6`}>
+            {corner && <div className="absolute right-3 top-3 flex items-center gap-1">{corner}</div>}
+            <div className="flex items-center gap-2 pr-16">
                 <h4 className="text-2xl font-bold text-ink">{plan.name}</h4>
                 {badge && <span className={`${skin.chip} rounded-lg`}>{badge}</span>}
             </div>

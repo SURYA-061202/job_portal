@@ -14,6 +14,8 @@ interface CandidateCarouselProps {
   onCloseSelected?: () => void;
   canViewContact?: boolean;
   onViewPlans?: () => void;
+  /** Active search keywords, highlighted in the opened profile. */
+  keywords?: string[];
 }
 
 const toTitleCase = (s?: string) =>
@@ -23,7 +25,7 @@ const toTitleCase = (s?: string) =>
  * Candidates as cards in two rows. When there are more than fit on screen the
  * cards slide sideways: the arrows move one screenful at a time.
  */
-export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans }: CandidateCarouselProps) {
+export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [] }: CandidateCarouselProps) {
   const skin = useSkin();
   const trackRef = useRef<HTMLDivElement>(null);
   const selectedId = selected?.id;
@@ -94,7 +96,7 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
           <div className="snap-start row-span-2 min-h-0 min-w-0 sm:col-span-2">
             <CandidateSearchResults
               results={[{ candidate: selected, matched: [], score: 0 }]}
-              keywords={[]}
+              keywords={keywords}
               onSelectCandidate={onSelectCandidate}
               detail
               onClose={onCloseSelected}

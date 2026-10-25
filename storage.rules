@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// Indian Infra Jobs - Cloud Storage security rules.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function myRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isStaff() {
+      return signedIn() && myRole() in ['recruiter', 'manager', 'admin'];
+    }
+    function okFile() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches('application/pdf')
+            || request.resource.contentType.matches('image/.*')
+            || request.resource.contentType.matches('application/vnd.openxmlformats.*')
+            || request.resource.contentType == 'application/msword');
+    }
+
+    // Resumes uploaded by recruiters: resumes/<file>
+    match /resumes/{file} {
+      allow read: if isStaff();
+      allow write: if isStaff() && (request.method == 'delete' || okFile());
+    }
+
+    // Resumes and certificates owned by a job seeker: <folder>/<uid>/<file>
+    match /resumes/{uid}/{file} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow write: if signedIn() && request.auth.uid == uid && (request.method == 'delete' || okFile());
+    }
+    match /certificates/{uid}/{file} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow write: if signedIn() && request.auth.uid == uid && (request.method == 'delete' || okFile());
+    }
+
+    // Job descriptions attached to posts
+    match /jd/{file} {
+      allow read: if signedIn();
+      allow write: if isStaff() && (request.method == 'delete' || okFile());
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

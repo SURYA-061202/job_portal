@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Check, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, ClipboardList, Loader2, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -19,9 +19,9 @@ import {
 } from '@/lib/subscriptions';
 import { UNLIMITED } from '@/types';
 import PlanPricingCard from './PlanPricingCard';
+import PlanSlider from './PlanSlider';
+import ExpandingModal from './ExpandingModal';
 import type { SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
-
-type Section = 'requests' | 'plans' | 'subscribers';
 
 interface Recruiter {
     id: string;
@@ -71,12 +71,6 @@ const formFromPlan = (p: SubscriptionPlan): PlanForm => ({
     features: p.features.join('\n'),
 });
 
-const emptyMessage = (section: Section, audience: SubscriptionAudience): string => {
-    if (section === 'requests') return 'No subscription requests yet.';
-    if (section === 'plans') return 'No subscription plans yet. Use Add plan to create one.';
-    return audience === 'user' ? 'No users yet.' : 'No recruiters yet. Add them from Add Recruiters.';
-};
-
 const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
     pending: 'Pending',
     approved: 'Approved',
@@ -87,7 +81,12 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
     const skin = useSkin();
     // Plans are for recruiters only; one subscription unlocks contact details, resumes and posts.
     const audience = 'recruiter' as SubscriptionAudience;
-    const [section, setSection] = useState<Section>('requests');
+    // Requests and Recruiters open in a modal that grows out of their header icon.
+    const [panel, setPanel] = useState<{ kind: 'requests' | 'recruiters'; x: number; y: number } | null>(null);
+    const openPanel = (kind: 'requests' | 'recruiters', el: HTMLElement) => {
+        const r = el.getBoundingClientRect();
+        setPanel({ kind, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    };
     const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
     const [allRequests, setAllRequests] = useState<SubscriptionRequest[]>([]);
     const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
@@ -222,121 +221,72 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         }
     };
 
-    const tabs: { key: Section; label: string; count?: number }[] = [
-        { key: 'requests', label: 'Requests', count: pending.length },
-        { key: 'plans', label: 'Plans', count: plans.length },
-        { key: 'subscribers', label: isUserSide ? 'Users' : 'Recruiters' },
-    ];
-
-    const isEmpty = !loading && (
-        section === 'requests' ? requests.length === 0 : section === 'plans' ? plans.length === 0 : recruiters.length === 0
-    );
 
     const fieldClass = `w-full p-2.5 rounded-lg ${skin.field} ${FOCUS}`;
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div role="tablist" aria-label="Subscription sections" className={`${skin.track} h-9`}>
-                    {tabs.map((t) => (
-                        <button
-                            key={t.key}
-                            role="tab"
-                            aria-selected={section === t.key}
-                            onClick={() => setSection(t.key)}
-                            className={`cursor-pointer px-4 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${section === t.key ? skin.trackBtnActive : skin.trackBtnIdle}`}
-                        >
-                            {t.label}
-                            {t.count !== undefined && t.count > 0 ? ` (${t.count})` : ''}
-                        </button>
-                    ))}
-                </div>
+            <div className="flex flex-wrap items-center justify-end gap-3">
                 <div className="flex flex-wrap items-center gap-3">
-                    {section === 'plans' && (
-                        <button
-                            type="button"
-                            onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
-                            className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
-                        >
-                            <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={(e) => openPanel('requests', e.currentTarget)}
+                        aria-label={`Requests${pending.length ? ` (${pending.length} pending)` : ''}`}
+                        title="Requests"
+                        className={`relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                    >
+                        <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                        {pending.length > 0 && (
+                            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">
+                                {pending.length}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={(e) => openPanel('recruiters', e.currentTarget)}
+                        aria-label="Recruiters"
+                        title="Recruiters"
+                        className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                    >
+                        <Users className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
+                        className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+                    >
+                        <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
+                    </button>
                 </div>
             </div>
 
-            {/* White body panel. Empty tab: a grey section fills it with the message
-                centred. With a list: the panel hugs its content. */}
-            <div
-                className={
-                    loading || isEmpty
-                        ? `border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4 flex-1 flex flex-col`
-                        : `border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4`
-                }
-            >
+            <div className="flex flex-1 flex-col">
                 {loading ? (
                     <div className="flex min-h-[260px] items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-brand" aria-label="Loading" />
                     </div>
-                ) : isEmpty ? (
-                    <div className={`flex flex-1 items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 text-center`}>
-                        <p className={skin.body}>{emptyMessage(section, audience)}</p>
+                ) : plans.length === 0 ? (
+                    <div className={`flex min-h-[200px] flex-1 items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 text-center`}>
+                        <p className={skin.body}>No plans yet. Use Add plan to create one.</p>
                     </div>
-                ) : section === 'requests' ? (
-                    /* One grey list section inside the white body panel; open requests first. */
-                    <ul className={`divide-y ${skin.divide} overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius}`}>
-                        {[...pending, ...history].map((r) => (
-                            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-ink">{r.recruiterName}</p>
-                                    <p className={`truncate ${skin.meta}`}>{r.recruiterEmail}</p>
-                                    <p className={`mt-1 ${skin.body}`}>
-                                        {r.status === 'pending' ? 'Wants' : 'Requested'} <strong className="text-ink">{r.planName}</strong> (Level {r.planLevel}) &middot; {formatDate(r.createdAt)}
-                                        {r.status !== 'pending' && <> &middot; Resolved {formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</>}
-                                    </p>
-                                </div>
-                                {r.status === 'pending' ? (
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            disabled={busyId === `req-${r.id}`}
-                                            onClick={() => handleReject(r)}
-                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS} disabled:opacity-50`}
-                                        >
-                                            <X className="h-4 w-4" aria-hidden="true" /> Decline
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled={busyId === `req-${r.id}`}
-                                            onClick={() => handleApprove(r)}
-                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
-                                        >
-                                            {busyId === `req-${r.id}` ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />}
-                                            Approve
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <span className={`${skin.chip} rounded-lg`}>{STATUS_LABEL[r.status]}</span>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                ) : section === 'plans' ? (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                ) : (
+                    <PlanSlider>
                         {plans.map((p) => (
                             <PlanPricingCard
                                 key={p.id}
                                 plan={p}
                                 audience={audience}
-                                action={(
-                                    <div className="flex items-center justify-end gap-2">
+                                corner={(
+                                    <>
                                             <button
                                                 type="button"
                                                 onClick={() => setForm(formFromPlan(p))}
                                                 aria-label={`Edit ${p.name}`}
                                                 title="Edit"
-                                                className={`p-2 border ${skin.edge} bg-surface text-ink/70 ${skin.radius} hover:text-ink hover:border-ink/40 cursor-pointer transition-colors duration-200 ${FOCUS}`}
+                                                className={`p-1 text-ink/50 rounded-md hover:bg-ink/5 hover:text-ink cursor-pointer transition-colors duration-200 ${FOCUS}`}
                                             >
-                                                <Pencil className="h-4 w-4" aria-hidden="true" />
+                                                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                                             </button>
                                             <button
                                                 type="button"
@@ -344,59 +294,15 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                                 onClick={() => handleDeletePlan(p)}
                                                 aria-label={`Delete ${p.name}`}
                                                 title="Delete"
-                                                className={`p-2 border border-destructive bg-surface text-destructive ${skin.radius} hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS} disabled:opacity-50`}
+                                                className={`p-1 text-destructive/80 rounded-md hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS} disabled:opacity-50`}
                                             >
-                                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                             </button>
-                                    </div>
+                                    </>
                                 )}
                             />
                         ))}
-                    </div>
-                ) : (
-                    <div className={`overflow-x-auto border ${skin.edge} ${skin.cardSurface} ${skin.radius}`}>
-                        <table className={`min-w-full divide-y ${skin.divide}`}>
-                            <thead className="bg-ink/5">
-                                <tr>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>{isUserSide ? 'User' : 'Recruiter'}</th>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Plan</th>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Valid until</th>
-                                    <th scope="col" className={`px-4 py-3 text-center ${skin.micro}`}>Delete</th>
-                                </tr>
-                            </thead>
-                            <tbody className={`divide-y ${skin.divide}`}>
-                                {recruiters.map((r) => {
-                                    const sub = resolveSubscription(r.data);
-                                    const hasPlan = sub.source === 'plan' || sub.source === 'legacy';
-                                    return (
-                                        <tr key={r.id}>
-                                            <td className="px-4 py-3">
-                                                <p className="text-sm font-semibold text-ink">{r.name}</p>
-                                                <p className={skin.meta}>{r.email}</p>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">
-                                                {sub.planName}
-                                                {sub.expired && <span className="ml-2 text-xs text-destructive">expired</span>}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">{sub.expiresAt ? formatDate(sub.expiresAt) : '-'}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                <button
-                                                    type="button"
-                                                    disabled={!hasPlan || busyId === `rec-${r.id}`}
-                                                    onClick={() => handleRevoke(r)}
-                                                    aria-label={hasPlan ? `Remove ${r.name}'s subscription` : `${r.name} is on the Free plan`}
-                                                    title={hasPlan ? 'Remove subscription' : 'Free plan - nothing to remove'}
-                                                    className={`p-2 border border-destructive bg-surface text-destructive ${skin.radius} hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface`}
-                                                >
-                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                    </PlanSlider>
                 )}
             </div>
 
@@ -460,6 +366,116 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                         </div>
                     </form>
                 </div>
+            )}
+            {panel && (
+                <ExpandingModal
+                    origin={{ x: panel.x, y: panel.y }}
+                    title={panel.kind === 'requests' ? 'Subscription requests' : 'Recruiters'}
+                    onClose={() => setPanel(null)}
+                >
+                    {panel.kind === 'requests' ? (
+                        requests.length === 0 ? (
+                            <p className={`px-6 py-12 text-center ${skin.body}`}>No subscription requests yet.</p>
+                        ) : (
+                            <table className={`min-w-full divide-y ${skin.divide}`}>
+                                <thead className="sticky top-0 bg-surface">
+                                    <tr>
+                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Plan</th>
+                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Requested</th>
+                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Status</th>
+                                        <th scope="col" className={`px-4 py-3 text-right ${skin.micro}`}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${skin.divide}`}>
+                                    {[...pending, ...history].map((r) => (
+                                        <tr key={r.id}>
+                                            <td className="px-4 py-3">
+                                                <p className="text-sm font-semibold text-ink">{r.recruiterName}</p>
+                                                <p className={skin.meta}>{r.recruiterEmail}</p>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-ink/80">{r.planName} <span className="text-ink/40">(Level {r.planLevel})</span></td>
+                                            <td className="px-4 py-3 text-sm text-ink/80">{formatDate(r.createdAt)}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`${skin.chip} rounded-lg`}>{STATUS_LABEL[r.status]}</span>
+                                                {r.status !== 'pending' && (
+                                                    <p className={`mt-1 ${skin.meta}`}>{formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {r.status === 'pending' && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            type="button"
+                                                            disabled={busyId === `req-${r.id}`}
+                                                            onClick={() => handleReject(r)}
+                                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS} disabled:opacity-50`}
+                                                        >
+                                                            <X className="h-4 w-4" aria-hidden="true" /> Decline
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={busyId === `req-${r.id}`}
+                                                            onClick={() => handleApprove(r)}
+                                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
+                                                        >
+                                                            {busyId === `req-${r.id}` ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />}
+                                                            Approve
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )
+                    ) : recruiters.length === 0 ? (
+                        <p className={`px-6 py-12 text-center ${skin.body}`}>No recruiters yet. Add them from Add Recruiters.</p>
+                    ) : (
+                        <table className={`min-w-full divide-y ${skin.divide}`}>
+                            <thead className="sticky top-0 bg-surface">
+                                <tr>
+                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Plan</th>
+                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Valid until</th>
+                                    <th scope="col" className={`px-4 py-3 text-center ${skin.micro}`}>Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody className={`divide-y ${skin.divide}`}>
+                                {recruiters.map((r) => {
+                                    const sub = resolveSubscription(r.data);
+                                    const hasPlan = sub.source === 'plan' || sub.source === 'legacy';
+                                    return (
+                                        <tr key={r.id}>
+                                            <td className="px-4 py-3">
+                                                <p className="text-sm font-semibold text-ink">{r.name}</p>
+                                                <p className={skin.meta}>{r.email}</p>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-ink/80">
+                                                {sub.planName}
+                                                {sub.expired && <span className="ml-2 text-xs text-destructive">expired</span>}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-ink/80">{sub.expiresAt ? formatDate(sub.expiresAt) : '-'}</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    type="button"
+                                                    disabled={!hasPlan || busyId === `rec-${r.id}`}
+                                                    onClick={() => handleRevoke(r)}
+                                                    aria-label={hasPlan ? `Remove ${r.name}'s subscription` : `${r.name} is on the Free plan`}
+                                                    title={hasPlan ? 'Remove subscription' : 'Free plan - nothing to remove'}
+                                                    className={`p-2 border border-destructive bg-surface text-destructive ${skin.radius} hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface`}
+                                                >
+                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    )}
+                </ExpandingModal>
             )}
         </div>
     );

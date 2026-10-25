@@ -43,7 +43,7 @@ interface NavSection {
  * now and is brought back one at a time: add its id here to show it again.
  */
 const ENABLED_TABS: RecruiterNavTab[] = ['candidates', 'subscription'];
-const SHOW_BELL = ENABLED_TABS.includes('notifications');
+const SHOW_BELL = true; // notifications bell sits before Logout, like the job seeker header
 const SHOW_PROFILE = ENABLED_TABS.includes('profile');
 
 /**
