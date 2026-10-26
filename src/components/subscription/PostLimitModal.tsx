@@ -27,18 +27,26 @@ export default function PostLimitModal({ isOpen, onClose, used, limit, planName,
         >
             <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-md`}>
                 <div className={`flex items-center justify-between border-b ${skin.edge} px-6 py-5`}>
-                    <h3 id="post-limit-title" className={skin.heading}>Post limit reached</h3>
+                    <h3 id="post-limit-title" className={skin.heading}>{limit === 0 ? 'Subscription required' : 'Post limit reached'}</h3>
                     <button onClick={onClose} aria-label="Close" className={`shrink-0 cursor-pointer rounded-lg p-1 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}>
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="p-6 text-center">
-                    <p className="text-4xl font-black text-ink">{used}<span className="text-ink/40"> / {limit}</span></p>
-                    <p className={`mt-1 ${skin.micro}`}>Job posts used on the {planName} plan</p>
-                    <p className={`mt-4 ${skin.body}`}>
-                        You cannot add more job posts on your current plan. Subscribe to a higher plan to post more jobs.
-                    </p>
+                    {limit === 0 ? (
+                        <p className={skin.body}>
+                            The {planName} plan cannot add job posts. Subscribe to a plan to start posting jobs.
+                        </p>
+                    ) : (
+                        <>
+                            <p className="text-4xl font-black text-ink">{used}<span className="text-ink/40"> / {limit}</span></p>
+                            <p className={`mt-1 ${skin.micro}`}>Job posts used on the {planName} plan</p>
+                            <p className={`mt-4 ${skin.body}`}>
+                                You cannot add more job posts on your current plan. Subscribe to a higher plan to post more jobs.
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 <div className="flex gap-3 px-6 pb-6">

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Briefcase, Clock, ArrowRight } from 'lucide-react';
 import type { Candidate } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 import CandidateSearchResults from './CandidateSearchResults';
+import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 
 interface CandidateCarouselProps {
   candidates: Candidate[];
@@ -16,17 +17,42 @@ interface CandidateCarouselProps {
   onViewPlans?: () => void;
   /** Active search keywords, highlighted in the opened profile. */
   keywords?: string[];
+  /** Post applicants: show each candidate's pipeline status (Applied, Shortlisted, Interview Round n...). */
+  showStatus?: boolean;
 }
 
 const toTitleCase = (s?: string) =>
   (s || '').split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
+const expLabel = (e?: string) => {
+  const t = (e || '').toString().trim();
+  if (!t) return '';
+  return /^\d+(\.\d+)?$/.test(t) ? `${t} ${Number(t) === 1 ? 'yr' : 'yrs'}` : t;
+};
+
+/** Columns on screen at the current width; mirrors the auto-cols breakpoints of the track. */
+function useColumns() {
+  const calc = () => {
+    if (typeof window === 'undefined') return 4;
+    const w = window.innerWidth;
+    return w >= 1280 ? 4 : w >= 1024 ? 3 : w >= 640 ? 2 : 1;
+  };
+  const [cols, setCols] = useState(calc);
+  useEffect(() => {
+    const onResize = () => setCols(calc());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return cols;
+}
+
 /**
  * Candidates as cards in two rows. When there are more than fit on screen the
  * cards slide sideways: the arrows move one screenful at a time.
  */
-export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [] }: CandidateCarouselProps) {
+export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [], showStatus = false }: CandidateCarouselProps) {
   const skin = useSkin();
+  const cols = useColumns();
   const trackRef = useRef<HTMLDivElement>(null);
   const selectedId = selected?.id;
   useEffect(() => {
@@ -102,10 +128,29 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
               onClose={onCloseSelected}
               canViewContact={canViewContact}
               onViewPlans={onViewPlans}
+              showStatus={showStatus}
             />
           </div>
         )}
-        {candidates.filter((c) => c.id !== selected?.id).map((c) => {
+        {(() => {
+          // The track fills column by column (two rows). Reorder each screenful so the
+          // cards read left to right across the first row, then the second row.
+          const list = candidates.filter((c) => c.id !== selected?.id);
+          if (selected) return list;
+          const page = cols * 2;
+          const out: (Candidate | null)[] = [];
+          for (let start = 0; start < list.length; start += page) {
+            const slots: (Candidate | null)[] = new Array(page).fill(null);
+            list.slice(start, start + page).forEach((c, i) => {
+              slots[(i % cols) * 2 + Math.floor(i / cols)] = c;
+            });
+            let last = slots.length - 1;
+            while (last >= 0 && slots[last] === null) last--;
+            out.push(...slots.slice(0, last + 1));
+          }
+          return out;
+        })().map((c, idx) => {
+          if (!c) return <div key={`gap-${idx}`} aria-hidden="true" />;
           const skills = Array.isArray(c.skills) ? c.skills : [];
           const location = typeof c.profileExtras?.location === 'string' ? c.profileExtras.location.trim() : '';
           return (
@@ -120,13 +165,27 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
                   onSelectCandidate(c);
                 }
               }}
-              className={`snap-start flex min-h-0 min-w-0 cursor-pointer overflow-hidden flex-col border ${skin.edge} bg-surface ${skin.radius} p-4 transition-colors duration-200 hover:border-ink/40 ${FOCUS}`}
+              className={`snap-start flex min-h-0 min-w-0 cursor-pointer overflow-hidden flex-col border ${skin.edge} bg-surface ${skin.radius} p-4 transition-all duration-200 hover:border-ink/40 hover:shadow-md ${FOCUS}`}
             >
-              <h3 className={`${skin.cardTitle} truncate`}>{toTitleCase(c.name) || 'Unnamed'}</h3>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className={`${skin.cardTitle} truncate`}>{toTitleCase(c.name) || 'Unnamed'}</h3>
+                {showStatus && (() => {
+                  const info = getApplicationStatusInfo(c.status || 'applied');
+                  return info ? (
+                    <span className={`shrink-0 whitespace-nowrap rounded-lg border px-2 py-0.5 text-[10px] font-bold ${info.label === 'Selected' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-orange-300 bg-orange-50 text-orange-700'}`}>{info.label}</span>
+                  ) : null;
+                })()}
+              </div>
               <p className={`mt-2 flex items-center gap-1.5 ${skin.body}`}>
                 <Briefcase className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
                 <span className="truncate">{toTitleCase(c.role) || 'No role'}</span>
               </p>
+              {expLabel(c.experience) && (
+                <p className={`mt-1 flex items-center gap-1.5 ${skin.body}`}>
+                  <Clock className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                  <span className="truncate">{expLabel(c.experience)}</span>
+                </p>
+              )}
               {location && (
                 <p className={`mt-1 flex items-center gap-1.5 ${skin.body}`}>
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
@@ -135,12 +194,19 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
               )}
 
               {skills.length > 0 && (
-                <p className="mt-4 line-clamp-2 text-xs leading-7">
+                <p className="mt-3 line-clamp-2 text-[11px] leading-6">
                   {skills.map((s, i) => (
-                    <span key={`${s}-${i}`} className="mr-1.5 inline-block rounded-lg bg-ink/5 px-2.5 py-0.5 align-middle font-medium leading-5 text-ink/80">{s}</span>
+                    <span key={`${s}-${i}`} className="mr-1 inline-block rounded-md bg-ink/5 px-2 align-middle text-[11px] font-medium leading-[18px] text-ink/80">{s}</span>
                   ))}
                 </p>
               )}
+
+              <div className="mt-auto flex items-center justify-between pt-2.5 text-xs">
+                <span className="text-ink/50">{skills.length} {skills.length === 1 ? 'skill' : 'skills'}</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-ink">
+                  View profile <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </div>
             </article>
           );
         })}

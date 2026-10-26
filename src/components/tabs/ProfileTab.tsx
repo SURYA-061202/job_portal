@@ -15,7 +15,15 @@ interface UserData {
     role: string;
 }
 
-export default function ProfileTab() {
+interface ProfileTabProps {
+    embedded?: boolean;
+    onLogout?: () => void;
+    /** Edit mode driven from outside (the edit icon beside the panel title). */
+    editing?: boolean;
+    onEditingChange?: (editing: boolean) => void;
+}
+
+export default function ProfileTab({ embedded = false, onLogout, editing, onEditingChange }: ProfileTabProps) {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [formData, setFormData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -26,6 +34,19 @@ export default function ProfileTab() {
     const [imageUploading, setImageUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
+
+    // Keep edit mode in step with the parent's edit icon, and tell it when it changes here.
+    useEffect(() => {
+        if (editing !== undefined && editing !== isEditing) {
+            if (!editing) setFormData(userData);
+            setIsEditing(editing);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editing]);
+    useEffect(() => {
+        onEditingChange?.(isEditing);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -208,9 +229,103 @@ export default function ProfileTab() {
         return <div className="text-center p-8">Profile not found.</div>;
     }
 
+    if (embedded) {
+        const fullName = `${userData.firstName} ${userData.lastName}`.trim() || 'Your name';
+        const fieldLabel = 'text-xs font-bold text-ink';
+        const inputCls = `mt-1 w-full rounded-lg px-3 py-2 text-sm ${skin.field} ${FOCUS}`;
+        const readOnly = (value: string) => (
+            <p className="mt-0.5 break-words text-sm text-ink/80">{value}</p>
+        );
+        const addLink = (
+            <button type="button" onClick={() => setIsEditing(true)} className={`mt-0.5 cursor-pointer text-sm font-medium text-ink underline underline-offset-2 ${FOCUS}`}>
+                + Add
+            </button>
+        );
+        return (
+            <div className="flex min-h-full flex-col">
+                <div className="flex flex-col items-center px-6 pb-5 pt-6">
+                    <div className="relative">
+                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-ink/10">
+                            {profileImage ? (
+                                <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
+                            ) : (
+                                <User className="h-10 w-10 text-ink/50" aria-hidden="true" />
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => !imageUploading && profileImageInputRef.current?.click()}
+                            aria-label="Change profile photo"
+                            title="Change profile photo"
+                            className={`absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-surface bg-ink text-surface shadow-sm ${FOCUS}`}
+                        >
+                            {imageUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" aria-hidden="true" />}
+                        </button>
+                        <input ref={profileImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfileImageChange} />
+                    </div>
+                    <h2 className="mt-3 text-center text-xl font-bold text-ink">{fullName}</h2>
+                    {isEditing && profileImage && (
+                        <button type="button" onClick={handleRemoveProfileImage} disabled={imageUploading} className={`mt-2 cursor-pointer text-xs font-medium text-destructive ${FOCUS}`}>
+                            Remove photo
+                        </button>
+                    )}
+                </div>
+
+                <div className={`space-y-4 border-t ${skin.edge} px-6 py-5`}>
+                    <div>
+                        <p className={fieldLabel}>First name</p>
+                        {isEditing ? <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className={inputCls} /> : (userData.firstName ? readOnly(userData.firstName) : addLink)}
+                    </div>
+                    <div>
+                        <p className={fieldLabel}>Last name</p>
+                        {isEditing ? <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className={inputCls} /> : (userData.lastName ? readOnly(userData.lastName) : addLink)}
+                    </div>
+                    <div>
+                        <p className={fieldLabel}>Mobile number</p>
+                        {isEditing ? <input type="tel" name="mobile" value={formData.mobile || ''} onChange={handleInputChange} placeholder="+91..." className={inputCls} /> : (userData.mobile ? readOnly(userData.mobile) : addLink)}
+                    </div>
+                    <div>
+                        <p className={fieldLabel}>Email address</p>
+                        {readOnly(userData.email || '-')}
+                        {isEditing && <p className="mt-0.5 text-xs text-ink/50">Email can't be changed.</p>}
+                    </div>
+                    <div>
+                        <p className={fieldLabel}>Department</p>
+                        {isEditing ? <input type="text" name="department" value={formData.department || ''} onChange={handleInputChange} className={inputCls} /> : (userData.department ? readOnly(userData.department) : addLink)}
+                    </div>
+
+                    {isEditing ? (
+                        <div className="flex gap-3 pt-1">
+                            <button type="button" onClick={handleCancel} disabled={saving} className={`flex-1 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}>
+                                Cancel
+                            </button>
+                            <button type="button" onClick={handleSave} disabled={saving} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}>
+                                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Save
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="button" onClick={handleChangePassword} disabled={sendingReset} className={`inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-ink underline underline-offset-2 ${FOCUS}`}>
+                            {sendingReset ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" aria-hidden="true" />}
+                            Change password
+                        </button>
+                    )}
+                </div>
+
+                {onLogout && !isEditing && (
+                    <div className={`mt-auto border-t ${skin.edge}`}>
+                        <button type="button" onClick={onLogout} className={`w-full cursor-pointer px-6 py-4 text-center text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 ${FOCUS}`}>
+                            Log out
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className="w-full h-full flex items-center justify-center p-4 sm:p-6">
-            <div className={`w-full max-w-[60rem] p-4 sm:p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
+        <div className={embedded ? 'w-full p-4' : 'w-full h-full flex items-center justify-center p-4 sm:p-6'}>
+            <div className={embedded ? 'w-full' : `w-full max-w-[60rem] p-4 sm:p-6 border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}>
 
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 border-b border-brand/10 pb-5">

@@ -461,6 +461,27 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         return list;
     }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
 
+    // Most common skills across the list, offered as one-click search chips.
+    const topSkills = useMemo(() => {
+        const counts = new Map<string, { label: string; n: number }>();
+        for (const c of baseList) {
+            for (const raw of Array.isArray(c.skills) ? c.skills : []) {
+                const label = String(raw).trim();
+                if (!label) continue;
+                const key = label.toLowerCase();
+                const cur = counts.get(key);
+                if (cur) cur.n += 1; else counts.set(key, { label, n: 1 });
+            }
+        }
+        return [...counts.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8).map(([key, v]) => ({ key, label: v.label }));
+    }, [baseList]);
+
+    const toggleSkill = (skill: string) => {
+        const parts = searchTerm.split(',').map((p) => p.trim()).filter(Boolean);
+        const has = parts.some((p) => p.toLowerCase() === skill.toLowerCase());
+        setSearchTerm((has ? parts.filter((p) => p.toLowerCase() !== skill.toLowerCase()) : [...parts, skill]).join(', '));
+    };
+
     // Keyword search runs over the FULL list and ranks by relevance; the plan
     // limit is applied afterwards, so a keyword never reveals a hidden candidate
     // and the best matches are the ones a limited plan still shows.
@@ -515,7 +536,20 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 <>
                     {activeView === 'list' && (
                         <>
-                            {(isFilteringApplicants || onBack) && (
+                            {postId && onBack ? (
+                                <div className="mb-3 flex items-center gap-3 px-4">
+                                    <button
+                                        type="button"
+                                        onClick={onBack}
+                                        aria-label="Back to posts"
+                                        title="Back to posts"
+                                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 shadow-sm transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                                    >
+                                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                                    </button>
+                                    <h2 className="min-w-0 text-2xl font-bold leading-tight text-ink sm:text-3xl">{postTitle || 'Post Applicants'}</h2>
+                                </div>
+                            ) : (isFilteringApplicants || onBack) && (
                                 <BackRow
                                     onBack={onBack}
                                     label="Go back"
@@ -523,6 +557,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     className="mb-3"
                                 />
                             )}
+                            {!postId && (
                             <div className="shrink-0">
                                 {/* Controls row below the header: search at the
                                     left end, candidates count at the right end.
@@ -540,7 +575,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             <input
                                                 id="candidate-keyword-search"
                                                 type="text"
-                                                placeholder="Search by skill, role, company or college (comma separated)"
+                                                placeholder="Search by skill, role, company or college"
                                                 title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together.'
                                                 className={`block w-full h-12 pl-11 pr-10 text-sm rounded-lg border border-ink/20 bg-surface text-ink placeholder:text-ink/40 shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
                                                 value={searchTerm}
@@ -574,7 +609,31 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         )}
                                     </div>
                                 </div>
+                                {!showPostView && !loading && (
+                                    <div className="mx-auto mt-3 w-full max-w-[72rem] px-4">
+                                        {topSkills.length > 0 && (
+                                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                                <span className="text-xs font-medium text-ink/50">Popular skills:</span>
+                                                {topSkills.map((t) => {
+                                                    const active = keywords.some((k) => k.toLowerCase() === t.key);
+                                                    return (
+                                                        <button
+                                                            key={t.key}
+                                                            type="button"
+                                                            onClick={() => toggleSkill(t.label)}
+                                                            aria-pressed={active}
+                                                            className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${active ? 'border-ink bg-ink text-surface' : 'border-ink/15 bg-surface text-ink/70 hover:border-ink/40'} ${FOCUS}`}
+                                                        >
+                                                            {t.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                            )}
 
 
                             {/* Body - the only scrollable area, on the same
@@ -736,6 +795,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 canViewContact={canViewContact}
                                                 onViewPlans={onViewPlans}
                                                 keywords={keywords}
+                                                showStatus={!!postId}
                                             />
                                         ) : (
                                             <CandidateSearchResults
@@ -754,6 +814,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             canViewContact={canViewContact}
                                             onViewPlans={onViewPlans}
                                             emptyMessage={isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
+                                            showStatus={!!postId}
                                         />
                                     )}
                                 </>

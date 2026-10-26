@@ -16,7 +16,7 @@ interface Notification {
   type?: string;
 }
 
-export default function NotificationsTab() {
+export default function NotificationsTab({ embedded = false }: { embedded?: boolean }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const skin = useSkin();
@@ -70,6 +70,24 @@ export default function NotificationsTab() {
     );
     return () => unsub();
   }, [currentUserEmail]);
+
+  if (embedded) {
+    return notifications.length === 0 ? (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <p className={skin.body}>No notifications.</p>
+      </div>
+    ) : (
+      <ul className={`divide-y ${skin.divide}`}>
+        {notifications.map((n) => (
+          <li key={n.id} className={`px-5 py-4 ${skin.rowHover}`}>
+            {n.title && <p className="text-sm font-medium text-ink">{stripEmoji(n.title)}</p>}
+            <p className="mt-0.5 text-sm text-ink/80">{stripEmoji(n.message)}</p>
+            <p className={`mt-1 ${skin.meta}`}>{n.createdAt?.seconds ? new Date(n.createdAt.seconds * 1000).toLocaleString() : ''}</p>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>

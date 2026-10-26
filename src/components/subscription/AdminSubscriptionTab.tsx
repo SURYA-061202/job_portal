@@ -7,6 +7,7 @@ import { useSkin, FOCUS } from '@/styles/skin';
 import {
     approveRequest,
     deletePlan,
+    deleteRequest,
     formatDate,
     getPlans,
     isUnlimited,
@@ -82,6 +83,8 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
     // Plans are for recruiters only; one subscription unlocks contact details, resumes and posts.
     const audience = 'recruiter' as SubscriptionAudience;
     // Requests and Recruiters open in a modal that grows out of their header icon.
+    const [reqFilter, setReqFilter] = useState<'all' | 'pending' | 'resolved'>('all');
+    const [recSearch, setRecSearch] = useState('');
     const [panel, setPanel] = useState<{ kind: 'requests' | 'recruiters'; x: number; y: number } | null>(null);
     const openPanel = (kind: 'requests' | 'recruiters', el: HTMLElement) => {
         const r = el.getBoundingClientRect();
@@ -173,6 +176,11 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         return run(`plan-${p.id}`, () => deletePlan(p.id as string), 'Plan deleted');
     };
 
+    const handleDeleteRequest = (r: SubscriptionRequest) => {
+        if (!r.id || !window.confirm(`Delete ${r.recruiterName}'s request for ${r.planName}?${r.status === 'pending' ? ' It has not been answered yet.' : ''}`)) return;
+        return run(`req-${r.id}`, () => deleteRequest(r.id as string), 'Request deleted');
+    };
+
     const handleRevoke = (recruiter: Recruiter) => {
         if (!window.confirm(`Remove ${recruiter.name}'s subscription? They go back to the free tier.`)) return;
         return run(`rec-${recruiter.id}`, () => revokeSubscription(recruiter.id), 'Subscription removed');
@@ -226,35 +234,41 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0">
+                    <h2 className={skin.heading}>Subscription plans</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
                     <button
                         type="button"
                         onClick={(e) => openPanel('requests', e.currentTarget)}
                         aria-label={`Requests${pending.length ? ` (${pending.length} pending)` : ''}`}
-                        title="Requests"
-                        className={`relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
                     >
-                        <ClipboardList className="h-4 w-4" aria-hidden="true" />
-                        {pending.length > 0 && (
-                            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">
-                                {pending.length}
-                            </span>
-                        )}
+                        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                            <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+                            {pending.length > 0 && (
+                                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">
+                                    {pending.length}
+                                </span>
+                            )}
+                        </span>
+                        Requests
                     </button>
                     <button
                         type="button"
                         onClick={(e) => openPanel('recruiters', e.currentTarget)}
-                        aria-label="Recruiters"
-                        title="Recruiters"
-                        className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
                     >
-                        <Users className="h-4 w-4" aria-hidden="true" />
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                            <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                        </span>
+                        Recruiters
                     </button>
                     <button
                         type="button"
                         onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
-                        className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-brand pl-3 pr-5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-px hover:opacity-90 hover:shadow-md ${FOCUS}`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
                     </button>
@@ -374,106 +388,173 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     onClose={() => setPanel(null)}
                 >
                     {panel.kind === 'requests' ? (
-                        requests.length === 0 ? (
-                            <p className={`px-6 py-12 text-center ${skin.body}`}>No subscription requests yet.</p>
-                        ) : (
-                            <table className={`min-w-full divide-y ${skin.divide}`}>
-                                <thead className="sticky top-0 bg-surface">
-                                    <tr>
-                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Recruiter</th>
-                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Plan</th>
-                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Requested</th>
-                                        <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Status</th>
-                                        <th scope="col" className={`px-4 py-3 text-right ${skin.micro}`}>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className={`divide-y ${skin.divide}`}>
-                                    {[...pending, ...history].map((r) => (
-                                        <tr key={r.id}>
-                                            <td className="px-4 py-3">
-                                                <p className="text-sm font-semibold text-ink">{r.recruiterName}</p>
-                                                <p className={skin.meta}>{r.recruiterEmail}</p>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">{r.planName} <span className="text-ink/40">(Level {r.planLevel})</span></td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">{formatDate(r.createdAt)}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`${skin.chip} rounded-lg`}>{STATUS_LABEL[r.status]}</span>
-                                                {r.status !== 'pending' && (
-                                                    <p className={`mt-1 ${skin.meta}`}>{formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {r.status === 'pending' && (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            type="button"
-                                                            disabled={busyId === `req-${r.id}`}
-                                                            onClick={() => handleReject(r)}
-                                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS} disabled:opacity-50`}
-                                                        >
-                                                            <X className="h-4 w-4" aria-hidden="true" /> Decline
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={busyId === `req-${r.id}`}
-                                                            onClick={() => handleApprove(r)}
-                                                            className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
-                                                        >
-                                                            {busyId === `req-${r.id}` ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />}
-                                                            Approve
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )
-                    ) : recruiters.length === 0 ? (
-                        <p className={`px-6 py-12 text-center ${skin.body}`}>No recruiters yet. Add them from Add Recruiters.</p>
+                        <>
+                            <div className={`flex shrink-0 gap-2 border-b ${skin.edge} px-5 py-3`}>
+                                {([['all', 'All', requests.length], ['pending', 'Pending', pending.length], ['resolved', 'Resolved', history.length]] as const).map(([key, label, n]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setReqFilter(key)}
+                                        aria-pressed={reqFilter === key}
+                                        className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${reqFilter === key ? 'bg-ink text-surface' : 'bg-ink/5 text-ink/70 hover:bg-ink/10'}`}
+                                    >
+                                        {label} ({n})
+                                    </button>
+                                ))}
+                            </div>
+                            {(() => {
+                                const rows = reqFilter === 'pending' ? pending : reqFilter === 'resolved' ? history : [...pending, ...history];
+                                if (rows.length === 0) {
+                                    return <p className={`px-6 py-16 text-center ${skin.body}`}>{requests.length === 0 ? 'No subscription requests yet.' : 'Nothing in this view.'}</p>;
+                                }
+                                return (
+                                    <table className="min-w-full">
+                                        <thead className={`sticky top-0 z-10 border-b ${skin.edge} bg-surface`}>
+                                            <tr>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Status</th>
+                                                <th scope="col" className={`px-3 py-3 text-right ${skin.micro}`}>Actions</th>
+                                                <th scope="col" className={`px-5 py-3 text-center ${skin.micro}`}>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className={`divide-y ${skin.divide}`}>
+                                            {rows.map((r) => {
+                                                const busy = busyId === `req-${r.id}`;
+                                                const chip =
+                                                    r.status === 'approved' ? 'bg-green-500/10 text-green-700'
+                                                    : r.status === 'rejected' ? 'bg-destructive/10 text-destructive'
+                                                    : 'bg-amber-500/15 text-amber-700';
+                                                return (
+                                                    <tr key={r.id} className="transition-colors duration-150 hover:bg-ink/[0.03]">
+                                                        <td className="px-5 py-3.5">
+                                                            <p className="text-sm font-semibold text-ink">{r.recruiterName}</p>
+                                                            <p className={skin.meta}>{r.recruiterEmail}</p>
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <p className="text-sm text-ink">{r.planName}</p>
+                                                            <p className={skin.meta}>{formatDate(r.createdAt)}</p>
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{STATUS_LABEL[r.status]}</span>
+                                                            {r.status !== 'pending' && (
+                                                                <p className={`mt-1 ${skin.meta}`}>{formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {r.status === 'pending' && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={busy}
+                                                                            onClick={() => handleReject(r)}
+                                                                            className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg border ${skin.edge} bg-surface px-2.5 text-xs font-semibold text-ink/80 hover:border-ink/40 ${FOCUS} disabled:opacity-50`}
+                                                                        >
+                                                                            <X className="h-3.5 w-3.5" aria-hidden="true" /> Decline
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={busy}
+                                                                            onClick={() => handleApprove(r)}
+                                                                            className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-brand px-2.5 text-xs font-semibold text-white hover:opacity-90 ${FOCUS} disabled:opacity-50`}
+                                                                        >
+                                                                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                                                                            Approve
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
+                                                            <div className="flex justify-center">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={busy}
+                                                                    onClick={() => handleDeleteRequest(r)}
+                                                                    aria-label={`Delete ${r.recruiterName}'s request`}
+                                                                    title="Delete request"
+                                                                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-destructive/60 bg-surface text-destructive hover:bg-destructive/10 ${FOCUS} disabled:opacity-50`}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                );
+                            })()}
+                        </>
                     ) : (
-                        <table className={`min-w-full divide-y ${skin.divide}`}>
-                            <thead className="sticky top-0 bg-surface">
-                                <tr>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Recruiter</th>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Plan</th>
-                                    <th scope="col" className={`px-4 py-3 text-left ${skin.micro}`}>Valid until</th>
-                                    <th scope="col" className={`px-4 py-3 text-center ${skin.micro}`}>Remove</th>
-                                </tr>
-                            </thead>
-                            <tbody className={`divide-y ${skin.divide}`}>
-                                {recruiters.map((r) => {
-                                    const sub = resolveSubscription(r.data);
-                                    const hasPlan = sub.source === 'plan' || sub.source === 'legacy';
-                                    return (
-                                        <tr key={r.id}>
-                                            <td className="px-4 py-3">
-                                                <p className="text-sm font-semibold text-ink">{r.name}</p>
-                                                <p className={skin.meta}>{r.email}</p>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">
-                                                {sub.planName}
-                                                {sub.expired && <span className="ml-2 text-xs text-destructive">expired</span>}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-ink/80">{sub.expiresAt ? formatDate(sub.expiresAt) : '-'}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                <button
-                                                    type="button"
-                                                    disabled={!hasPlan || busyId === `rec-${r.id}`}
-                                                    onClick={() => handleRevoke(r)}
-                                                    aria-label={hasPlan ? `Remove ${r.name}'s subscription` : `${r.name} is on the Free plan`}
-                                                    title={hasPlan ? 'Remove subscription' : 'Free plan - nothing to remove'}
-                                                    className={`p-2 border border-destructive bg-surface text-destructive ${skin.radius} hover:bg-destructive/10 cursor-pointer transition-colors duration-200 ${FOCUS} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface`}
-                                                >
-                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        <>
+                            <div className={`flex shrink-0 items-center justify-between gap-3 border-b ${skin.edge} px-5 py-3`}>
+                                <label htmlFor="recruiter-search" className="sr-only">Search recruiters</label>
+                                <input
+                                    id="recruiter-search"
+                                    type="text"
+                                    value={recSearch}
+                                    onChange={(e) => setRecSearch(e.target.value)}
+                                    placeholder="Search recruiters"
+                                    className={`h-9 w-52 max-w-[60%] rounded-lg border border-ink/20 bg-surface px-3 text-sm text-ink placeholder:text-ink/40 ${FOCUS}`}
+                                />
+                                <span className={`shrink-0 ${skin.meta}`}>{recruiters.length} recruiter{recruiters.length === 1 ? '' : 's'}</span>
+                            </div>
+                            {(() => {
+                                const q = recSearch.trim().toLowerCase();
+                                const rows = q ? recruiters.filter((r) => `${r.name} ${r.email}`.toLowerCase().includes(q)) : recruiters;
+                                if (rows.length === 0) {
+                                    return <p className={`px-6 py-16 text-center ${skin.body}`}>{recruiters.length === 0 ? 'No recruiters yet. Add them from Add Recruiters.' : 'No recruiter matches your search.'}</p>;
+                                }
+                                return (
+                                    <table className="min-w-full">
+                                        <thead className={`sticky top-0 z-10 border-b ${skin.edge} bg-surface`}>
+                                            <tr>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Valid until</th>
+                                                <th scope="col" className={`px-5 py-3 text-center ${skin.micro}`}>Remove</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className={`divide-y ${skin.divide}`}>
+                                            {rows.map((r) => {
+                                                const sub = resolveSubscription(r.data);
+                                                const hasPlan = sub.source === 'plan' || sub.source === 'legacy';
+                                                return (
+                                                    <tr key={r.id} className="transition-colors duration-150 hover:bg-ink/[0.03]">
+                                                        <td className="px-5 py-3.5">
+                                                            <p className="text-sm font-semibold text-ink">{r.name}</p>
+                                                            <p className={skin.meta}>{r.email}</p>
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${hasPlan ? 'bg-brand/10 text-brand' : 'bg-ink/5 text-ink/60'}`}>{sub.planName}</span>
+                                                            {sub.expired && <span className="ml-2 text-xs font-medium text-destructive">expired</span>}
+                                                        </td>
+                                                        <td className="px-3 py-3.5 text-sm text-ink/80">{sub.expiresAt ? formatDate(sub.expiresAt) : '-'}</td>
+                                                        <td className="px-5 py-3.5">
+                                                            <div className="flex justify-center">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!hasPlan || busyId === `rec-${r.id}`}
+                                                                    onClick={() => handleRevoke(r)}
+                                                                    aria-label={hasPlan ? `Remove ${r.name}'s subscription` : `${r.name} is on the Free plan`}
+                                                                    title={hasPlan ? 'Remove subscription' : 'Free plan - nothing to remove'}
+                                                                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-destructive/60 bg-surface text-destructive hover:bg-destructive/10 ${FOCUS} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface`}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                );
+                            })()}
+                        </>
                     )}
                 </ExpandingModal>
             )}

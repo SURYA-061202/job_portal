@@ -32,6 +32,8 @@ export default function Dashboard() {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // True when the recruiter arrived via a "View plans" link: the Subscription tab then opens on the plans.
+  const [openPlans, setOpenPlans] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   // Live plan + limits: updates the moment the admin approves a request.
@@ -96,6 +98,7 @@ export default function Dashboard() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    setOpenPlans(false);
     if (tab === 'candidates' || tab === 'job-posts') {
       setSelectedPostId(null);
       setSelectedPostTitle(null);
@@ -122,7 +125,10 @@ export default function Dashboard() {
             candidateLimit={subscription?.maxCandidates}
             planName={subscription?.planName}
             canViewContact={!!subscription && subscription.source !== 'free'}
-            onViewPlans={() => handleTabChange('subscription')}
+            onViewPlans={() => {
+              handleTabChange('subscription');
+              setOpenPlans(true);
+            }}
             onClearFilter={() => setSelectedPostId(null)}
             onBack={selectedPostId ? () => setActiveTab('job-posts') : undefined}
             onNavigateToShortlisted={(candidateId) => {
@@ -175,7 +181,7 @@ export default function Dashboard() {
       case 'subscription':
         return userRole === 'admin'
           ? <AdminSubscriptionTab adminId={userId} />
-          : <RecruiterSubscriptionTab userId={userId} subscription={subscription} />;
+          : <RecruiterSubscriptionTab userId={userId} subscription={subscription} startOnPlans={openPlans} />;
       default:
         return <JobPostsTab onViewCandidates={handleViewCandidates} userRole={userRole} userId={userId} subscription={subscription} />;
     }

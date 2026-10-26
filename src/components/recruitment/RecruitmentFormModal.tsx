@@ -226,8 +226,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm overflow-y-auto">
-            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-4xl max-h-[90vh] flex flex-col`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pb-4 pt-24 bg-black/30 backdrop-blur-sm overflow-y-auto">
+            <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-4xl max-h-[calc(100vh-7rem)] flex flex-col`}>
                 <div className={`px-6 py-4 border-b ${skin.edge} ${skin.surface} flex justify-between items-center flex-shrink-0 rounded-t-2xl`}>
                     <h2 className={`${skin.heading} font-outfit`}>{initialData?.id ? 'Update Post' : 'Add Post'}</h2>
                     <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} cursor-pointer transition-colors ${FOCUS}`}>
@@ -246,7 +246,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="jobTitle"
                                 value={formData.jobTitle}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. Senior Frontend Developer"
                             />
                         </div>
@@ -258,7 +258,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="urgencyLevel"
                                 value={formData.urgencyLevel}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             >
                                 <option value="Immediate">Immediate</option>
                                 <option value="Moderate">Moderate</option>
@@ -274,7 +274,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="department"
                                 value={formData.department}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. Engineering"
                             />
                         </div>
@@ -287,7 +287,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="candidateType"
                                 value={formData.candidateType}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             >
                                 <option value="Permanent">Permanent</option>
                                 <option value="Contract">Contract</option>
@@ -303,7 +303,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="positionLevel"
                                 value={formData.positionLevel}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             >
                                 <option value="Entry">Entry</option>
                                 <option value="Junior">Junior</option>
@@ -321,7 +321,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="yearsExperience"
                                 value={formData.yearsExperience}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. 5+ years"
                             />
                         </div>
@@ -333,7 +333,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="modeOfWork"
                                 value={formData.modeOfWork}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             >
                                 <option value="Office">Office</option>
                                 <option value="Hybrid">Hybrid</option>
@@ -349,7 +349,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="location"
                                 value={formData.location}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. Bangalore, Karnataka"
                             />
                         </div>
@@ -363,7 +363,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="candidatesCount"
                                 value={formData.candidatesCount}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             />
                         </div>
 
@@ -375,7 +375,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="qualification"
                                 value={formData.qualification}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. B.Tech / MCA"
                             />
                         </div>
@@ -388,14 +388,14 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="skills"
                                 value={formData.skills}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. React, Node.js, AWS"
                             />
                         </div>
                     </div>
 
                     {/* Interview Rounds — these become the pipeline stages for this post */}
-                    <div className={`border ${skin.edge} ${skin.canvas} ${skin.radius} p-4 space-y-4`}>
+                    <div className="space-y-4">
                         <div>
                             <h3 className="text-sm font-bold text-ink mb-1">Interview Rounds</h3>
                             <input
@@ -405,7 +405,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="totalRounds"
                                 value={formData.totalRounds}
                                 onChange={(e) => handleTotalRoundsChange(e.target.value)}
-                                className={`w-full sm:w-40 px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full sm:w-40 px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                             />
                         </div>
 
@@ -418,7 +418,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                             type="text"
                                             value={formData.roundNames[i] || ''}
                                             onChange={(e) => handleRoundNameChange(i, e.target.value)}
-                                            className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                            className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                             placeholder={ROUND_NAME_PLACEHOLDERS[i] || `e.g. Round ${i + 1}`}
                                         />
                                     </div>
@@ -438,7 +438,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                             value={formData.description}
                             onChange={handleChange}
                             rows={6}
-                            className={`w-full px-3 py-2 rounded-lg ${skin.field} font-mono ${FOCUS}`}
+                            className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal font-mono ${FOCUS}`}
                             placeholder="Paste the full job description here (Roles, Responsibilities, Requirements)..."
                         />
                     </div>
@@ -476,7 +476,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="budgetPay"
                                 value={formData.budgetPay}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. 10L - 15L"
                             />
                         </div>
@@ -489,7 +489,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                                 name="salaryBreakup"
                                 value={formData.salaryBreakup}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 rounded-lg ${skin.field} ${FOCUS}`}
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
                                 placeholder="e.g. Fixed + Performance Bonus"
                             />
                         </div>

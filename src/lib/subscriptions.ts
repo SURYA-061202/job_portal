@@ -35,7 +35,8 @@ import type {
  * Free tier. Recruiters without an active plan get exactly this.
  * ------------------------------------------------------------------ */
 
-export const FREE_POST_LIMIT = 10;
+/** Free recruiters cannot add job posts; a plan is needed. */
+export const FREE_POST_LIMIT = 0;
 /** Everyone can view every candidate; plans unlock contact details, resumes and posts. */
 export const FREE_CANDIDATE_LIMIT = -1;
 /** Job seekers on the free tier can view this many job posts. */
@@ -329,6 +330,11 @@ export async function approveRequest(request: SubscriptionRequest, adminId: stri
     } catch (error) {
         console.error('Failed to send approval notification:', error);
     }
+}
+
+/** Admin: removes a request from the list (pending, approved or declined). */
+export async function deleteRequest(requestId: string): Promise<void> {
+    await deleteDoc(doc(db, REQUESTS, requestId));
 }
 
 export async function rejectRequest(request: SubscriptionRequest, adminId: string, note?: string): Promise<void> {

@@ -1,20 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, query as fsQuery, where } from 'firebase/firestore';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { collection, getDocs, query as fsQuery, where, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { parseKeywords, keywordPattern } from '@/lib/candidateSearch';
 import { getApplicantCounts } from '@/lib/jobApplications';
 import type { EffectiveSubscription, RecruitmentRequest } from '@/types';
-import { timeAgo } from '@/lib/format';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
-import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
-import PostCard from '@/components/recruitment/PostCard';
+import RecruiterPostDetail from '@/components/recruitment/RecruiterPostDetail';
+import UserJobCard from '@/components/recruitment/UserJobCard';
 import PostLimitModal from '@/components/subscription/PostLimitModal';
 import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
 import { checkPostQuota, formatLimit, isUnlimited } from '@/lib/subscriptions';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
-    Search, Plus, Briefcase, SearchX, X, LayoutGrid, List,
-    ChevronDown, ChevronRight, Crown,
+    Search, Plus, SearchX, X, Crown,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -27,14 +26,6 @@ import {
    near-black - so it only ever appears as a fill or an aria-hidden accent. */
 
 type SortKey = 'newest' | 'oldest' | 'applicants' | 'title';
-type ViewKey = 'grid' | 'list';
-
-const SORT_LABELS: Record<SortKey, string> = {
-    newest: 'Newest first',
-    oldest: 'Oldest first',
-    applicants: 'Most applicants',
-    title: 'Title A–Z',
-};
 
 /** Firestore Timestamp | Date | ISO string | number -> epoch ms. */
 const toTime = (value: unknown): number => {
@@ -67,8 +58,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sort, setSort] = useState<SortKey>('newest');
-    const [view, setView] = useState<ViewKey>('grid');
+    const [sort] = useState<SortKey>('newest');
     const searchRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
 
@@ -153,7 +143,22 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         setIsRecruitmentModalOpen(true);
     };
 
-    // ... fetchRecruitmentRequests ...
+    const handleEditPost = (post: RecruitmentRequest) => {
+        setEditingPost(post);
+        setIsRecruitmentModalOpen(true);
+    };
+
+    const handleDeletePost = async (post: RecruitmentRequest) => {
+        if (!post.id) return;
+        try {
+            await deleteDoc(doc(db, 'recruits', post.id));
+            popup.success('Recruitment post deleted successfully');
+            fetchRecruitmentRequests();
+        } catch (err) {
+            console.error('Delete error:', err);
+            popup.error(`Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+    };
     useEffect(() => {
         fetchRecruitmentRequests();
     }, []);
@@ -172,6 +177,9 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         }
     }, [loadingPosts, initialSelectedPostId, recruitmentRequests, isRestoring]);
 
+    // Hooks must run before the early return below, on every render.
+    const keywords = useMemo(() => parseKeywords(searchTerm), [searchTerm]);
+
     if (isRestoring) {
         return (
             <div className="flex justify-center items-center h-full min-h-[500px]">
@@ -180,20 +188,40 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         );
     }
 
-    // Filter by the search term
-    const term = searchTerm.trim().toLowerCase();
-    const filteredRecruitmentRequests = recruitmentRequests.filter(post => {
-        if (!term) return true;
-        return (
-            post.jobTitle?.toLowerCase().includes(term) ||
-            post.department?.toLowerCase().includes(term) ||
-            post.location?.toLowerCase().includes(term)
-        );
-    });
+    // Same keyword search as the Candidates tab: commas split phrases, otherwise each
+    // word is its own keyword ("quoted" keeps a phrase). Any keyword may hit; posts
+    // that match more keywords (and in more important fields) come first.
+    const matchScore = new Map<string, { count: number; score: number }>();
+    const filteredRecruitmentRequests = keywords.length === 0
+        ? recruitmentRequests
+        : recruitmentRequests.filter((post) => {
+            const fields: [string | undefined, number][] = [
+                [post.jobTitle, 5], [post.skills, 5], [post.department, 3], [post.location, 3],
+                [post.positionLevel, 2], [post.modeOfWork, 2], [post.candidateType, 2],
+                [post.qualification, 2], [post.description, 1],
+            ];
+            let count = 0;
+            let score = 0;
+            for (const kw of keywords) {
+                const re = new RegExp(keywordPattern(kw), 'iu');
+                let best = 0;
+                for (const [text, w] of fields) if (text && re.test(text)) best = Math.max(best, w);
+                if (best > 0) { count++; score += best; }
+            }
+            if (count === 0) return false;
+            matchScore.set(post.id ?? '', { count, score });
+            return true;
+        });
 
     // Sort never changes the result set, only its order, so the count badge can
     // stay bound to the filtered length.
     const visiblePosts = [...filteredRecruitmentRequests].sort((a, b) => {
+        if (keywords.length > 0) {
+            const ma = matchScore.get(a.id ?? '') ?? { count: 0, score: 0 };
+            const mb = matchScore.get(b.id ?? '') ?? { count: 0, score: 0 };
+            if (mb.count !== ma.count) return mb.count - ma.count;
+            if (mb.score !== ma.score) return mb.score - ma.score;
+        }
         switch (sort) {
             case 'oldest':
                 return toTime(a.createdAt) - toTime(b.createdAt);
@@ -208,50 +236,37 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     });
 
     const total = recruitmentRequests.length;
-    const countBadge = term
-        ? `${visiblePosts.length} of ${total} ${total === 1 ? 'Post' : 'Posts'}`
-        : `${total} ${total === 1 ? 'Post' : 'Posts'}`;
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 flex-1 min-h-0 flex flex-col overflow-hidden ${skin.canvas}`}>
             {selectedPost ? (
-                <RecruitmentDetailView
+                <RecruiterPostDetail
                     recruitment={selectedPost}
                     onBack={() => setSelectedPost(null)}
                     onViewCandidates={(postId) => {
                         setSelectedPost(null);
                         onViewCandidates?.(postId, selectedPost.jobTitle);
                     }}
-                    onEdit={(post) => {
-                        setEditingPost(post);
-                        setIsRecruitmentModalOpen(true);
-                    }}
-                    onDelete={() => {
-                        setSelectedPost(null);
-                        fetchRecruitmentRequests();
-                    }}
                 />
             ) : (
                 <div className="flex-1 flex flex-col min-h-0">
-                    {/* Controls row: search, clear, sort, view and the posts
-                        count at the right-most end. Sits on the canvas below
+                    {/* Controls row: search at the left edge, add post at the right. Sits on the canvas below
                         the masthead - no panel, no tint. */}
-                    <div className="mb-4 flex flex-shrink-0 flex-wrap items-center gap-3">
-                            <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+                    <div className="mb-1 flex flex-shrink-0 flex-col gap-3">
+                            <div className="relative mx-auto min-w-0 w-full max-w-[36rem]">
                                 <label htmlFor="job-posts-search" className="sr-only">
                                     Search job posts by title, department or location
                                 </label>
-                                <Search
-                                    aria-hidden="true"
-                                    className={`pointer-events-none absolute inset-y-0 left-0 my-auto ml-3 h-4 w-4 ${skin.subtle}`}
-                                />
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                    <Search aria-hidden="true" className="h-5 w-5 text-ink/40" />
+                                </div>
                                 <input
                                     id="job-posts-search"
                                     ref={searchRef}
                                     type="text"
-                                    placeholder="Title, department or location..."
+                                    placeholder="Search posts by title, department or location"
                                     aria-describedby="job-posts-search-hint"
-                                    className={`block w-full h-9 pl-9 pr-9 rounded-lg ${skin.field} ${FOCUS}`}
+                                    className={`block w-full h-12 pl-11 pr-10 text-sm rounded-lg border border-ink/20 bg-surface text-ink placeholder:text-ink/40 shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyDown={(e) => {
@@ -269,19 +284,20 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         type="button"
                                         onClick={() => setSearchTerm('')}
                                         aria-label="Clear search"
-                                        className={`absolute inset-y-0 right-0 my-auto ml-3 flex h-6 w-6 cursor-pointer items-center rounded-full transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                                        className={`absolute inset-y-0 right-0 my-auto mr-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
                                     >
                                         <X className="h-4 w-4" aria-hidden="true" />
                                     </button>
                                 )}
                             </div>
 
-                            <div className="ml-auto flex flex-wrap items-center gap-3">
+                            {/* Actions row under the search, right-aligned: plan usage, Upgrade, then Add Post. */}
+                            <div className="flex flex-wrap items-center justify-end gap-2.5">
                                 {!isAdmin && postLimit !== undefined && !isUnlimited(postLimit) && (
                                     <span
                                         role="status"
                                         title={`${planName || 'Current'} plan: ${formatLimit(postLimit)} job posts`}
-                                        className={`inline-flex h-9 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
+                                        className={`inline-flex h-10 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
                                     >
                                         {total} / {postLimit} posts used
                                     </span>
@@ -290,71 +306,22 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     <button
                                         type="button"
                                         onClick={() => setUpgradeOpen(true)}
-                                        className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${skin.secondary} ${FOCUS}`}
+                                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${skin.secondary} ${FOCUS}`}
                                     >
                                         <Crown className="h-4 w-4 text-brand" aria-hidden="true" />
                                         Upgrade
                                     </button>
                                 )}
-                                <div className="relative">
-                                    <select
-                                        id="job-posts-sort"
-                                        value={sort}
-                                        onChange={(e) => setSort(e.target.value as SortKey)}
-                                        className={`cursor-pointer appearance-none h-9 pl-3 pr-8 rounded-lg ${skin.field} ${FOCUS}`}
-                                    >
-                                        {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                                            <option key={key} value={key}>{SORT_LABELS[key]}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown
-                                        aria-hidden="true"
-                                        className={`pointer-events-none absolute inset-y-0 right-2 my-auto h-4 w-4 ${skin.subtle}`}
-                                    />
-                                </div>
-
-                                <div
-                                    role="group"
-                                    aria-label="Post view"
-                                    className={`${skin.track} h-9`}
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('grid')}
-                                        aria-pressed={view === 'grid'}
-                                        aria-label="Grid view"
-                                        title="Grid view"
-                                        className={`flex cursor-pointer items-center justify-center px-2.5 transition-colors duration-200 ${FOCUS} ${
-                                            view === 'grid' ? skin.trackBtnActive : skin.trackBtnIdle
-                                        }`}
-                                    >
-                                        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('list')}
-                                        aria-pressed={view === 'list'}
-                                        aria-label="List view"
-                                        title="List view"
-                                        className={`flex cursor-pointer items-center justify-center px-2.5 transition-colors duration-200 ${FOCUS} ${
-                                            view === 'list' ? skin.trackBtnActive : skin.trackBtnIdle
-                                        }`}
-                                    >
-                                        <List className="h-4 w-4" aria-hidden="true" />
-                                    </button>
-                                </div>
-
-                                <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-                                    {countBadge}
-                                </span>
                                 <button
                                     type="button"
                                     onClick={handleAddPost}
                                     aria-label="Add a new job post"
-                                    className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${skin.ctaLift} ${FOCUS}`}
+                                    className={`group inline-flex h-8 cursor-pointer items-stretch overflow-hidden rounded-md border border-ink/70 bg-ink/70 text-[11px] font-bold uppercase tracking-wider text-surface shadow-sm transition-colors duration-200 hover:bg-ink/60 active:scale-95 ${FOCUS}`}
                                 >
-                                    <Plus className="h-4 w-4" aria-hidden="true" />
-                                    Add Post
+                                    <span className="flex items-center px-3">Add Post</span>
+                                    <span className="flex w-8 items-center justify-center border-l border-surface/30 bg-surface/10 transition-colors duration-200 group-hover:bg-surface/20">
+                                        <Plus className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" aria-hidden="true" />
+                                    </span>
                                 </button>
                             </div>
                     </div>
@@ -365,26 +332,33 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         gap never scrolls in. The panel's top padding is a
                         pinned strip on the panel itself, so it stays at the
                         top of the body bg while the posts scroll under it. */}
-                    <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden border ${skin.edge} ${skin.radius} ${skin.resultsPanel}`}>
-                        <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
-                        <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 md:px-4${!loadingPosts && recruitmentRequests.length === 0 ? ' flex flex-col' : ''}`}>
+                    <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden`}>
+                        <div className="h-1 shrink-0" aria-hidden="true" />
+                        <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ${!loadingPosts && recruitmentRequests.length === 0 ? ' flex flex-col' : ''}`}>
                         {loadingPosts ? (
-                            <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                            <div role="status" aria-busy="true" className="flex flex-col gap-4">
                                 <span className="sr-only">Loading job posts…</span>
-                                {Array.from({ length: 8 }).map((_, i) => (
-                                    <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
-                                        <div className={`h-5 w-2/3 ${skin.skeleton}`} />
-                                        <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
-                                        <div className="mt-6 grid grid-cols-2">
-                                            <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
-                                            <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <div key={i} aria-hidden="true" className={`animate-pulse rounded-lg border ${skin.edge} bg-surface p-4 md:p-6`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className={`h-6 w-1/3 ${skin.skeleton}`} />
+                                            <div className={`h-6 w-20 ${skin.skeleton}`} />
                                         </div>
-                                        <div className="mt-6 flex gap-1.5">
-                                            <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
-                                            <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
-                                            <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
+                                        <div className="mt-4 flex flex-wrap gap-4">
+                                            <div className={`h-3.5 w-28 ${skin.skeleton}`} />
+                                            <div className={`h-3.5 w-20 ${skin.skeleton}`} />
+                                            <div className={`h-3.5 w-24 ${skin.skeleton}`} />
                                         </div>
-                                        <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
+                                        <div className={`mt-4 h-3.5 w-full ${skin.skeleton}`} />
+                                        <div className={`mt-2 h-3.5 w-2/3 ${skin.skeleton}`} />
+                                        <div className="mt-5 flex items-center justify-between gap-4">
+                                            <div className="flex gap-1.5">
+                                                <div className={`h-6 w-16 ${skin.skeleton}`} />
+                                                <div className={`h-6 w-20 ${skin.skeleton}`} />
+                                                <div className={`h-6 w-14 ${skin.skeleton}`} />
+                                            </div>
+                                            <div className={`h-8 w-20 ${skin.skeleton}`} />
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -414,14 +388,12 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                     </button>
                                 )}
                             </div>
-                        ) : view === 'grid' ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                        ) : (
+                            <div className="flex flex-col gap-4">
                                 {visiblePosts.map((post) => (
-                                    <PostCard key={post.id} post={post} onOpen={setSelectedPost} />
+                                    <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
                                 ))}
                             </div>
-                        ) : (
-                            <PostList posts={visiblePosts} onOpen={setSelectedPost} />
                         )}
                         </div>
                         <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
@@ -453,64 +425,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 }}
                 initialData={editingPost}
             />
-        </div>
-    );
-}
-
-/* Dense comparison view - one row per post, everything needed to choose one
-   without opening it. Every child is a <span>: <button> only accepts phrasing
-   content, and block children there break the focus outline and hit area. */
-function PostList({ posts, onOpen }: { posts: RecruitmentRequest[]; onOpen: (post: RecruitmentRequest) => void }) {
-    const skin = useSkin();
-
-    return (
-        <div className={`divide-y ${skin.divide} overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius}`}>
-            {posts.map((post) => (
-                <button
-                    key={post.id}
-                    type="button"
-                    onClick={() => onOpen(post)}
-                    aria-label={`Open job post: ${post.jobTitle}`}
-                    className={`group flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors duration-200 ${skin.rowHover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40`}
-                >
-                    <span
-                        aria-hidden="true"
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center ${skin.iconTile} ${skin.radius}`}
-                    >
-                        <Briefcase className="h-4 w-4" />
-                    </span>
-
-                    <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2">
-                            <span className={skin.rowTitle}>{post.jobTitle}</span>
-                            {post.positionLevel && (
-                                <span className={`hidden shrink-0 ${skin.chip} rounded-lg sm:inline`}>
-                                    {post.positionLevel}
-                                </span>
-                            )}
-                        </span>
-                        <span className={`mt-0.5 block truncate ${skin.meta}`}>
-                            {post.department} &middot; {post.location}
-                        </span>
-                    </span>
-
-                    <span className={`hidden w-24 shrink-0 md:block ${skin.meta}`}>
-                        {post.yearsExperience} yrs exp
-                    </span>
-                    <span className={`hidden w-28 shrink-0 lg:block ${skin.meta}`}>
-                        {timeAgo(post.createdAt)}
-                    </span>
-
-                    <span className={`inline-flex w-28 shrink-0 justify-center ${skin.count} rounded-lg`}>
-                        {post.applicantCount ?? 0} {post.applicantCount === 1 ? 'applicant' : 'applicants'}
-                    </span>
-
-                    <ChevronRight
-                        aria-hidden="true"
-                        className={`h-4 w-4 shrink-0 transition-colors duration-200 ${skin.subtle} group-hover:text-ink`}
-                    />
-                </button>
-            ))}
         </div>
     );
 }

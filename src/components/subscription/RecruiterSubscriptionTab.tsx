@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, Lock } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
@@ -14,6 +14,7 @@ import {
     requestSubscription,
 } from '@/lib/subscriptions';
 import PlanPricingCard from './PlanPricingCard';
+import PlanSlider from './PlanSlider';
 import type { EffectiveSubscription, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface RecruiterSubscriptionTabProps {
@@ -21,6 +22,8 @@ interface RecruiterSubscriptionTabProps {
     subscription: EffectiveSubscription | null;
     /** 'user' shows the job seeker version of the page. Defaults to recruiter. */
     audience?: SubscriptionAudience;
+    /** Open straight on the available plans (used by "View plans" links). */
+    startOnPlans?: boolean;
 }
 
 const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
@@ -29,13 +32,14 @@ const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
     rejected: 'Declined',
 };
 
-export default function RecruiterSubscriptionTab({ userId, subscription, audience = 'recruiter' }: RecruiterSubscriptionTabProps) {
+export default function RecruiterSubscriptionTab({ userId, subscription, audience = 'recruiter', startOnPlans = false }: RecruiterSubscriptionTabProps) {
     const skin = useSkin();
     const isUser = audience === 'user';
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
     const [postsUsed, setPostsUsed] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const [plansOpen, setPlansOpen] = useState(startOnPlans);
     const [requestingId, setRequestingId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
@@ -90,136 +94,199 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
         ? Math.min(100, Math.round((postsUsed / postLimit) * 100))
         : 0;
 
+    const isPaid = !!sub && sub.source !== 'free';
+    const matchedPlan = sub?.source === 'plan' ? plans.find((p) => p.id === sub.planId) : undefined;
+    const statusText = sub?.expired ? 'Your subscription has expired.' : isPaid ? 'Your active subscription.' : 'The free tier. Subscribe to unlock more.';
+    const statusLabel = sub?.expired ? 'Expired' : isPaid ? 'Active' : 'Free';
+
     return (
-        <div className={isUser ? 'space-y-6' : `-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            {isUser && (
+        <div className={isUser ? 'space-y-6' : `-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-5 flex-1 flex flex-col`}>
+            {isUser && !plansOpen && (
                 <div>
                     <h1 className="text-3xl font-extrabold text-ink tracking-tight">Subscription</h1>
                     <p className="text-ink/60 mt-2 text-sm md:text-base">See your plan and limits, and request an upgrade from the admin.</p>
                 </div>
             )}
 
-            {/* One white body: each section is a title followed by a grey block. */}
-            <div className={`border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4 space-y-6`}>
-                {loading ? (
-                    <div className="flex min-h-[260px] items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-brand" aria-label="Loading" />
-                    </div>
-                ) : (
-                    <>
-                        <section aria-label="Current plan">
-                            <h3 className={`mb-3 ${skin.cardTitle}`}>Current plan</h3>
-                            <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} ${isUser ? 'p-4 sm:p-6' : 'p-3 sm:p-4'}`}>
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                    <div>
-                                        <p className="text-2xl font-black text-ink">{sub?.planName ?? 'Free'}</p>
-                                        {sub?.source !== 'free' && (
-                                            <p className={`mt-1 ${skin.body}`}>
-                                                {sub?.expiresAt ? `Active until ${formatDate(sub.expiresAt)}` : 'No expiry'}
-                                            </p>
+            {(!isUser || plansOpen) && (
+                <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-2xl font-bold text-ink">{plansOpen ? 'Available Plans' : 'Subscription'}</h1>
+                    {plansOpen && (
+                        <button
+                            type="button"
+                            onClick={() => setPlansOpen(false)}
+                            className={`group inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-3 pr-5 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                        >
+                            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+                            Back
+                        </button>
+                    )}
+                </div>
+            )}
+            {pending && (
+                <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700">
+                        <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {pending.planName} request pending
+                    </span>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex min-h-[260px] items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-brand" aria-label="Loading" />
+                </div>
+            ) : plansOpen ? (
+                <section aria-label="Available plans" className="space-y-4">
+                    {plans.length === 0 ? (
+                        <div className={`flex min-h-[200px] items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 text-center`}>
+                            <p className={skin.body}>No plans are available yet. Please check back soon.</p>
+                        </div>
+                    ) : (
+                        <PlanSlider>
+                            {plans.map((plan) => {
+                                const isCurrent = sub?.source === 'plan' && sub.planId === plan.id;
+                                const isRequested = pending?.planId === plan.id;
+                                return (
+                                    <PlanPricingCard
+                                        key={plan.id}
+                                        plan={plan}
+                                        audience={audience}
+                                        badge={isCurrent ? 'Current' : undefined}
+                                        action={(
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRequest(plan)}
+                                                disabled={!!pending || requestingId !== null}
+                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                            >
+                                                {requestingId === plan.id ? (
+                                                    <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>
+                                                ) : isRequested ? (
+                                                    <><Clock className="h-4 w-4" aria-hidden="true" /> Request pending</>
+                                                ) : isCurrent ? (
+                                                    'Renew plan'
+                                                ) : (
+                                                    'Request subscription'
+                                                )}
+                                            </button>
                                         )}
-                                    </div>
-                                    {pending && (
-                                        <span className={`${skin.count} rounded-lg`}>{pending.planName} request pending</span>
-                                    )}
-                                </div>
-
-                                {sub?.expired && (
-                                    <p role="alert" className="mt-4 border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive rounded-lg">
-                                        Your previous subscription has expired and you are back on the free tier. Request a plan to restore your limits.
-                                    </p>
-                                )}
-
-                                {isUser ? (
-                                    <p className="mt-1 text-sm text-ink/70">
-                                        Job posts you can view: <span className="text-base font-bold text-ink">{formatLimit(postLimit)}</span>
-                                    </p>
-                                ) : (
-                                    <div className="mt-5 grid grid-cols-1 gap-4">
-                                        <div className={`border ${skin.edge} bg-surface ${skin.radius} p-4`}>
-                                            <p className={skin.micro}>Job posts</p>
-                                            <p className="mt-1 text-xl font-bold text-ink">
-                                                {postsUsed ?? 0} <span className="text-ink/40">/ {formatLimit(postLimit)}</span>
-                                            </p>
-                                            {!isUnlimited(postLimit) && (
-                                                <div
-                                                    role="progressbar"
-                                                    aria-label="Job posts used"
-                                                    aria-valuemin={0}
-                                                    aria-valuemax={100}
-                                                    aria-valuenow={postPct}
-                                                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
-                                                >
-                                                    <div className={`h-full ${postPct >= 100 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${postPct}%` }} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        <section aria-label="Available plans">
-                            <h3 className={`mb-3 ${skin.cardTitle}`}>Available plans</h3>
-                            <div className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-3 sm:p-4 ${plans.length === 0 ? 'flex min-h-[160px] items-center justify-center text-center' : ''}`}>
-                                {plans.length === 0 ? (
-                                    <p className={skin.body}>No plans are available yet. Please check back soon.</p>
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                        {plans.map((plan) => {
-                                            const isCurrent = sub?.source === 'plan' && sub.planId === plan.id;
-                                            const isRequested = pending?.planId === plan.id;
-                                            return (
-                                                <PlanPricingCard
-                                                    key={plan.id}
-                                                    plan={plan}
-                                                    audience={audience}
-                                                    badge={isCurrent ? 'Current' : undefined}
-                                                    action={(
-                            <button
-                                type="button"
-                                onClick={() => handleRequest(plan)}
-                                disabled={!!pending || requestingId !== null}
-                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
-                            >
-                                {requestingId === plan.id ? (
-                                    <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>
-                                ) : isRequested ? (
-                                    <><Clock className="h-4 w-4" aria-hidden="true" /> Request pending</>
-                                ) : isCurrent ? (
-                                    'Renew plan'
-                                ) : (
-                                    'Request subscription'
-                                )}
-                            </button>
-                                                    )}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {isUser && requests.length > 0 && (
-                            <section aria-label="Request history">
-                                <h3 className={`mb-3 ${skin.cardTitle}`}>Your requests</h3>
-                                <ul className={`divide-y ${skin.divide} border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-4 sm:px-6`}>
-                                    {requests.map((r) => (
-                                        <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                                    />
+                                );
+                            })}
+                        </PlanSlider>
+                    )}
+                </section>
+            ) : (
+                <section aria-label="Current plan" className="space-y-4">
+                    {sub?.expired && (
+                        <p role="alert" className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive rounded-lg">
+                            Your previous subscription has expired and you are back on the free tier. Request a plan to restore your limits.
+                        </p>
+                    )}
+                    {/* Same vertical card as the available plans, one column wide. */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {!isUser && !isPaid ? (
+                            <article className={`flex h-full flex-col border ${skin.edge} bg-surface ${skin.radius} p-6 transition-all duration-200 hover:border-black hover:shadow-md`}>
+                                <h4 className="text-2xl font-bold text-ink">{sub?.planName ?? 'Free'}</h4>
+                                <p className={`mt-3 ${skin.body}`}>Subscribe to unlock the following features.</p>
+                                <ul className="mt-6 space-y-6">
+                                    {[
+                                        ['Add Posts', 'Publish job posts and reach job seekers across the platform.'],
+                                        ['Access Contacts', 'View the email address and phone number of every candidate.'],
+                                        ['Access Resume', 'Open and preview candidates\u2019 resumes right from their profile.'],
+                                        ['And more features', 'Get new recruiter features as soon as they are released.'],
+                                    ].map(([title, text]) => (
+                                        <li key={title} className="flex items-start gap-3">
+                                            <Lock className="mt-1 h-4 w-4 shrink-0 text-ink/50" aria-hidden="true" />
                                             <div>
-                                                <p className="text-sm font-semibold text-ink">{r.planName}</p>
-                                                <p className={skin.meta}>Requested {formatDate(r.createdAt)}{r.note ? ` · ${r.note}` : ''}</p>
+                                                <p className="text-sm font-semibold text-ink">{title}</p>
+                                                <p className={`mt-1 ${skin.body}`}>{text}</p>
                                             </div>
-                                            <span className={`${skin.chip} rounded-lg`}>{STATUS_LABEL[r.status]}</span>
                                         </li>
                                     ))}
                                 </ul>
-                            </section>
+                                <button
+                                    type="button"
+                                    onClick={() => setPlansOpen(true)}
+                                    className={`mt-8 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
+                                >
+                                    Subscribe
+                                </button>
+                            </article>
+                        ) : (
+                        <PlanPricingCard
+                            plan={{
+                                ...(matchedPlan ?? {}),
+                                name: sub?.planName ?? 'Free',
+                                description: statusText,
+                                price: matchedPlan?.price ?? 0,
+                                durationDays: matchedPlan?.durationDays ?? 0,
+                                level: matchedPlan?.level ?? 0,
+                                maxPosts: postLimit,
+                                maxCandidates: sub?.maxCandidates ?? -1,
+                                features: matchedPlan?.features ?? [],
+                                active: true,
+                            } as SubscriptionPlan}
+                            audience={audience}
+                            badge={statusLabel}
+                            includeContact={isPaid && !sub?.expired}
+                            restrictions={!isUser && !isPaid ? ['You cannot add job posts on the Free plan', 'Candidate contact details and resumes are locked'] : []}
+                            priceNode={
+                                <p className="mt-5 text-3xl font-bold text-ink">
+                                    {isPaid ? (sub?.expiresAt ? formatDate(sub.expiresAt) : 'No expiry') : 'Free'}
+                                    <span className="text-sm font-medium text-ink/60">{isPaid && sub?.expiresAt ? (sub.expired ? ' \u00B7 expired' : ' \u00B7 valid until') : ''}</span>
+                                </p>
+                            }
+                            extra={!isUser && postLimit !== 0 ? (
+                                <div>
+                                    <p className="text-sm text-ink/80">
+                                        Job posts used: <span className="font-semibold text-ink">{postsUsed ?? 0} / {formatLimit(postLimit)}</span>
+                                    </p>
+                                    {!isUnlimited(postLimit) && (
+                                        <div
+                                            role="progressbar"
+                                            aria-label="Job posts used"
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                            aria-valuenow={postPct}
+                                            className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
+                                        >
+                                            <div className={`h-full ${postPct >= 100 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${postPct}%` }} />
+                                        </div>
+                                    )}
+                                </div>
+                            ) : undefined}
+                            action={(
+                                <button
+                                    type="button"
+                                    onClick={() => setPlansOpen(true)}
+                                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
+                                >
+                                    {isPaid && !sub?.expired ? 'View available plans' : 'Choose a plan'}
+                                </button>
+                            )}
+                        />
                         )}
-                    </>
-                )}
-            </div>
+                    </div>
+
+                    {isUser && requests.length > 0 && (
+                        <div className={`border ${skin.edge} bg-surface ${skin.radius} p-6`}>
+                            <h3 className={`mb-3 ${skin.cardTitle}`}>Your requests</h3>
+                            <ul className={`divide-y ${skin.divide}`}>
+                                {requests.map((r) => (
+                                    <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-ink">{r.planName}</p>
+                                            <p className={skin.meta}>Requested {formatDate(r.createdAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
+                                        </div>
+                                        <span className={`${skin.chip} rounded-lg`}>{STATUS_LABEL[r.status]}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </section>
+            )}
         </div>
     );
 }

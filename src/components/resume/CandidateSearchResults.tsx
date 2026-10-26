@@ -4,6 +4,7 @@ import type { Candidate } from '@/types';
 import { buildHighlightRegex, type CandidateMatch } from '@/lib/candidateSearch';
 import { useSkin, FOCUS } from '@/styles/skin';
 import Highlight from './Highlight';
+import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import ResumePreviewModal from './ResumePreviewModal';
 
 interface CandidateSearchResultsProps {
@@ -16,6 +17,8 @@ interface CandidateSearchResultsProps {
     /** Detail mode only: show email, phone and the resume (subscribers). */
     canViewContact?: boolean;
     onViewPlans?: () => void;
+    /** Post applicants: show the pipeline status (Applied, Shortlisted, Interview Round n...). */
+    showStatus?: boolean;
 }
 
 const toTitleCase = (s?: string) =>
@@ -73,7 +76,7 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
  * (summary, skills, work, education, projects, certifications) and the keywords
  * highlighted wherever they occur.
  */
-export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans }: CandidateSearchResultsProps) {
+export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans, showStatus = false }: CandidateSearchResultsProps) {
     const skin = useSkin();
     const [resumeUrl, setResumeUrl] = useState<string | null>(null);
     const regex = useMemo(() => buildHighlightRegex(keywords), [keywords]);
@@ -81,7 +84,7 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
 
     return (
         <ul className={detail ? 'h-full' : 'space-y-4'} aria-label="Matching candidates">
-            {results.map(({ candidate: c, matched }) => {
+            {results.map(({ candidate: c }) => {
                 const skills = txtList(c.skills?.length ? c.skills : c.extractedData?.skills);
                 const asList = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
                 const work = [
@@ -136,7 +139,15 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                             <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-4">
                                     <div className="min-w-0">
-                                        <h3 className={`${skin.cardTitle} break-words`}>{hl(toTitleCase(name))}</h3>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h3 className={`${skin.cardTitle} break-words`}>{hl(toTitleCase(name))}</h3>
+                                            {showStatus && (() => {
+                                                const info = getApplicationStatusInfo(c.status || 'applied');
+                                                return info ? (
+                                                    <span className={`shrink-0 whitespace-nowrap rounded-lg border px-2 py-0.5 text-[10px] font-bold ${info.label === 'Selected' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-orange-300 bg-orange-50 text-orange-700'}`}>{info.label}</span>
+                                                ) : null;
+                                            })()}
+                                        </div>
                                         {role && (
                                             <p className={`mt-1.5 flex items-center gap-1.5 ${skin.body}`}>
                                                 <Briefcase className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
@@ -164,9 +175,6 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                     )
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <span className={`${skin.count} rounded-lg`}>
-                                            {matched.length} of {keywords.length} keyword{keywords.length === 1 ? '' : 's'}
-                                        </span>
                                         <ChevronRight className={`h-4 w-4 ${skin.subtle} group-hover:text-ink`} aria-hidden="true" />
                                     </div>
                                 )}
@@ -195,7 +203,7 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                             </div>
 
                             {detail && (
-                                <div className="mt-3 flex shrink-0 flex-wrap items-center gap-3">
+                                <div className="mt-3 flex shrink-0 flex-col items-start gap-2">
                                     {canViewContact ? (
                                         c.resumeUrl && (
                                             <button
@@ -214,7 +222,11 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                                 Subscribe to view contact details and resume
                                             </span>
                                             {onViewPlans && (
-                                                <button type="button" onClick={onViewPlans} className={`cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}>
+                                                <button
+                                                    type="button"
+                                                    onClick={onViewPlans}
+                                                    className={`ml-5 cursor-pointer rounded-md border border-black bg-transparent px-2.5 py-0.5 text-xs font-semibold text-black transition-colors duration-200 hover:bg-black/5 ${FOCUS}`}
+                                                >
                                                     View plans
                                                 </button>
                                             )}

@@ -23,7 +23,7 @@ interface Props {
   className?: string;
 }
 
-export default function NotificationBell({ className = '', simpleMode = false }: Props & { simpleMode?: boolean }) {
+export default function NotificationBell({ className = '', simpleMode = false, filled = false }: Props & { simpleMode?: boolean; filled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -138,7 +138,14 @@ export default function NotificationBell({ className = '', simpleMode = false }:
     return (
       <div className={`relative flex items-center justify-center ${className}`}>
         {/* The parent button already carries the accessible name and colour. */}
-        <Bell aria-hidden="true" className="icon-lg" />
+        {filled ? (
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-6 w-6" fill="currentColor">
+            <path d="M12 2.4c-.95 0-1.7.75-1.7 1.65v.4C7.5 5.15 5.9 7.5 5.9 10.4v3.2l-1.75 3c-.45.75.1 1.7.95 1.7h13.8c.85 0 1.4-.95.95-1.7l-1.75-3v-3.2c0-2.9-1.6-5.25-4.4-5.95v-.4c0-.9-.75-1.65-1.7-1.65Z" />
+            <path d="M9.4 19.7a2.6 2.6 0 0 0 5.2 0Z" />
+          </svg>
+        ) : (
+          <Bell aria-hidden="true" className="icon-lg" />
+        )}
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-xs font-semibold text-surface">
             {unreadCount}

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Search, Mail, Phone, Building2, Briefcase, Pencil } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Users, X } from 'lucide-react';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, firebaseConfig } from '@/lib/firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { sendManagerInvite } from '@/lib/emailFunctions';
 import popup from '@/components/ui/Popup';
+import ExpandingModal from '@/components/subscription/ExpandingModal';
+import { timeAgo } from '@/lib/format';
+import type { RecruitmentRequest } from '@/types';
 import { createManagerInviteNotification } from '@/lib/notificationHelper';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -23,11 +26,17 @@ interface UserData {
     profileImage?: string;
 }
 
-export default function AddMembersTab({ onViewMember }: { onViewMember?: (memberId: string) => void }) {
+export default function AddMembersTab(_props: { onViewMember?: (memberId: string) => void }) {
     const [members, setMembers] = useState<UserData[]>([]);
+    /** Posts each recruiter has published, keyed by recruiter uid. */
+    const [postCounts, setPostCounts] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    /** Recruiter whose posts are open in the side panel, with where the click happened. */
+    const [postsFor, setPostsFor] = useState<{ member: UserData; origin: { x: number; y: number } } | null>(null);
+    const [memberPosts, setMemberPosts] = useState<RecruitmentRequest[]>([]);
+    const [postsLoading, setPostsLoading] = useState(false);
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -53,6 +62,17 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
             const snapshot = await getDocs(q);
             const membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
             setMembers(membersData);
+            try {
+                const postsSnap = await getDocs(collection(db, 'recruits'));
+                const counts: Record<string, number> = {};
+                postsSnap.forEach((d) => {
+                    const rid = d.data().recruiterId;
+                    if (rid) counts[rid] = (counts[rid] || 0) + 1;
+                });
+                setPostCounts(counts);
+            } catch (err) {
+                console.error('Error counting posts:', err);
+            }
         } catch (error) {
             console.error('Error fetching members:', error);
             popup.error('Failed to load members');
@@ -71,23 +91,32 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         }
     };
 
+    const openPosts = async (member: UserData, e: React.MouseEvent) => {
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setPostsFor({ member, origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 } });
+        setMemberPosts([]);
+        setPostsLoading(true);
+        try {
+            const snap = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', member.id)));
+            const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as RecruitmentRequest));
+            const t = (p: RecruitmentRequest) => {
+                const c = p.createdAt as unknown as { toDate?: () => Date; seconds?: number } | Date | undefined;
+                if (!c) return 0;
+                if (c instanceof Date) return c.getTime();
+                return c.toDate ? c.toDate().getTime() : (c.seconds ?? 0) * 1000;
+            };
+            setMemberPosts(list.sort((a, b) => t(b) - t(a)));
+        } catch (error) {
+            console.error('Error loading posts:', error);
+            popup.error('Failed to load posts');
+        } finally {
+            setPostsLoading(false);
+        }
+    };
+
     const openAdd = () => {
         setEditingId(null);
         setFormData({ firstName: '', lastName: '', email: '', mobile: '', companyName: '', hiringRole: '', password: '' });
-        setIsModalOpen(true);
-    };
-
-    const openEdit = (member: UserData) => {
-        setEditingId(member.id);
-        setFormData({
-            firstName: member.firstName || '',
-            lastName: member.lastName || '',
-            email: member.email || '',
-            mobile: member.mobile || '',
-            companyName: member.companyName || '',
-            hiringRole: member.hiringRole || '',
-            password: ''
-        });
         setIsModalOpen(true);
     };
 
@@ -191,118 +220,171 @@ export default function AddMembersTab({ onViewMember }: { onViewMember?: (member
         );
     }
 
+    const cols = 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.5fr)_4rem_6rem]';
+
     return (
-        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 flex flex-col`}>
-            {/* Controls row below the header: search at the left end; the
-                member count followed by Add Recruiters at the right. */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="relative w-full sm:w-72">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-ink/40" />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Search members..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`block w-full pl-10 pr-3 py-2 leading-5 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-                    />
+        <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col`}>
+            {/* Toolbar: title on the left, search and add on the right. */}
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-xl font-bold text-ink">Recruiters</h2>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <span
-                        role="status"
-                        aria-atomic="true"
-                        className="inline-flex shrink-0 items-center justify-center whitespace-nowrap px-4 py-2 rounded-lg border border-ink text-ink text-xs font-semibold uppercase tracking-wider"
-                    >
-                        {members.length} Recruiter{members.length === 1 ? '' : 's'}
-                    </span>
+                <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+                    <div className="relative w-full sm:w-52">
+                        <label htmlFor="recruiter-search" className="sr-only">Search recruiters</label>
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <Search className="h-4 w-4 text-ink/40" aria-hidden="true" />
+                        </div>
+                        <input
+                            id="recruiter-search"
+                            type="text"
+                            placeholder="Search"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className={`block h-9 w-full rounded-lg border border-ink/20 bg-surface pl-10 pr-9 text-sm text-ink shadow-sm transition-colors placeholder:text-ink/40 hover:border-ink/40 ${FOCUS}`}
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                aria-label="Clear search"
+                                className={`absolute inset-y-0 right-0 my-auto mr-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                            >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                        )}
+                    </div>
                     <button
                         onClick={openAdd}
-                        className={`flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
+                        className={`group inline-flex h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-ink/20 bg-surface px-4 text-sm font-semibold text-ink shadow-sm transition-colors duration-200 hover:border-ink/40 hover:bg-ink/5 active:scale-95 ${FOCUS}`}
                     >
-                        <UserPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">Add Recruiters</span>
-                        <span className="sm:hidden">Add Member</span>
+                        <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" aria-hidden="true" />
+                        Add Recruiter
                     </button>
                 </div>
             </div>
 
-            {/* Body - white results panel with the grey member cards inside. */}
-            <div className={`border ${skin.edge} ${skin.resultsPanel} ${skin.radius} p-3 md:p-4`}>
-            {/* Member Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredMembers.map(member => (
-                    <div
-                        key={member.id}
-                        onClick={() => onViewMember?.(member.id)}
-                        className={`p-6 border ${skin.edge} ${skin.cardSurface} ${skin.radius} transition-colors duration-200 ${skin.cardHover} group cursor-pointer relative ${FOCUS}`}
-                    >
-                        <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); openEdit(member); }}
-                            aria-label={`Edit ${member.firstName} ${member.lastName}`}
-                            title="Edit"
-                            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center border ${skin.edge} bg-surface text-ink/70 rounded-lg hover:text-ink hover:border-ink/40 cursor-pointer transition-colors duration-200 ${FOCUS}`}
-                        >
-                            <Pencil className="h-4 w-4" aria-hidden="true" />
-                        </button>
-
-                        {/* Avatar */}
-                        <div className="flex flex-col items-center mb-4">
-                            <div className="w-20 h-20 overflow-hidden bg-surface rounded-full flex items-center justify-center text-ink/70 font-bold text-2xl group-hover:scale-105 transition-transform duration-200">
-                                {member.profileImage ? (
-                                    <img
-                                        src={member.profileImage}
-                                        alt={`${member.firstName} ${member.lastName}`}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <>{member.firstName?.[0]}{member.lastName?.[0]}</>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Name */}
-                        <div className="mb-5 text-center">
-                            <h3 className={skin.cardTitle}>{member.firstName} {member.lastName}</h3>
-                        </div>
-
-                        {(member.companyName || member.hiringRole) && (
-                            <div className="-mt-3 mb-4 space-y-1 text-center">
-                                {member.companyName && (
-                                    <p className={`flex items-center justify-center gap-1.5 ${skin.body}`}>
-                                        <Building2 className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
-                                        <span className="truncate">{member.companyName}</span>
-                                    </p>
-                                )}
-                                {member.hiringRole && (
-                                    <p className={`flex items-center justify-center gap-1.5 ${skin.meta}`}>
-                                        <Briefcase className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
-                                        <span className="truncate">Hiring: {member.hiringRole}</span>
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Contact Info - grey pills, the same fill as the skill
-                            tags on the job post cards (no outlines). */}
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            <span
-                                title={member.email}
-                                className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-border px-2.5 py-1.5 text-sm font-medium text-ink/70"
-                            >
-                                <Mail className="h-3.5 w-3.5 flex-shrink-0 text-ink/40" />
-                                <span className="truncate">{member.email}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-border px-2.5 py-1.5 text-sm font-medium text-ink/70">
-                                <Phone className="h-3.5 w-3.5 flex-shrink-0 text-ink/40" />
-                                <span>{member.mobile || 'N/A'}</span>
-                            </span>
-                        </div>
+            {/* Directory: one row per recruiter in a single white panel. */}
+            <div className={`min-h-0 flex-1 overflow-y-auto scrollbar-hide border ${skin.edge} bg-surface ${skin.radius}`}>
+                {filteredMembers.length > 0 && (
+                    <div className={`hidden items-center gap-4 border-b ${skin.edge} px-5 py-3 lg:grid ${cols}`}>
+                        <span className={skin.micro}>Recruiter</span>
+                        <span className={skin.micro}>Company</span>
+                        <span className={skin.micro}>Contact</span>
+                        <span className={skin.micro}>Posts</span>
+                        <span className={skin.micro}>View Posts</span>
                     </div>
-                ))}
+                )}
+
+                {filteredMembers.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                        <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-ink/5 text-ink/50" aria-hidden="true">
+                            <Users className="h-6 w-6" />
+                        </span>
+                        <h3 className={skin.emptyTitle}>{members.length === 0 ? 'No recruiters yet' : 'No matching recruiters'}</h3>
+                        <p className={`mt-1 max-w-sm ${skin.body}`}>
+                            {members.length === 0
+                                ? 'Use Add Recruiter to invite the first one.'
+                                : `Nothing matches “${searchTerm}”. Try a name, email, company or role.`}
+                        </p>
+                    </div>
+                ) : (
+                    <ul className={`divide-y ${skin.divide}`}>
+                        {filteredMembers.map((member) => (
+                            <li key={member.id}>
+                                <div
+                                    className={`grid grid-cols-1 items-center gap-x-4 gap-y-3 px-5 py-4 ${cols}`}
+                                >
+                                    {/* Recruiter */}
+                                    <div className="flex min-w-0 items-center">
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-ink">{member.firstName} {member.lastName}</p>
+                                            <p className={`truncate ${skin.meta}`}>{member.hiringRole ? `Hiring: ${member.hiringRole}` : 'No role set'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Company */}
+                                    <div className="min-w-0 space-y-0.5">
+                                        <p className={`truncate ${skin.body}`}>{member.companyName || '-'}</p>
+                                        {/* Invisible second line: keeps the name level with the email beside it. */}
+                                        <p aria-hidden="true" className={`invisible hidden lg:block ${skin.meta}`}>&nbsp;</p>
+                                    </div>
+
+                                    {/* Contact */}
+                                    <div className="min-w-0 space-y-0.5">
+                                        <p className={`flex items-center gap-1.5 ${skin.body}`} title={member.email}>
+                                            <Mail className="h-3.5 w-3.5 shrink-0 text-ink/40" aria-hidden="true" />
+                                            <span className="truncate">{member.email}</span>
+                                        </p>
+                                        <p className={`flex items-center gap-1.5 ${skin.meta}`}>
+                                            <Phone className="h-3 w-3 shrink-0 text-ink/40" aria-hidden="true" />
+                                            <span>{member.mobile || 'N/A'}</span>
+                                        </p>
+                                    </div>
+
+                                    {/* Posts published by this recruiter */}
+                                    <p className={`text-sm font-semibold text-ink`}>
+                                        <span className={`mr-1 font-normal lg:hidden ${skin.meta}`}>Posts:</span>
+                                        {postCounts[member.id] ?? 0}
+                                    </p>
+
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => openPosts(member, e)}
+                                            disabled={(postCounts[member.id] ?? 0) === 0}
+                                            className={`inline-flex h-6 cursor-pointer items-center rounded-md border border-ink/70 bg-ink/70 px-2.5 text-[11px] font-bold text-surface transition-colors duration-200 hover:bg-ink/60 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
+                                        >
+                                            View
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
-            </div>
+
+            {postsFor && (
+                <ExpandingModal
+                    title={`${postsFor.member.firstName} ${postsFor.member.lastName}`.trim() || 'Recruiter'}
+                    subtitle={`${memberPosts.length || postCounts[postsFor.member.id] || 0} posts`}
+                    origin={postsFor.origin}
+                    onClose={() => setPostsFor(null)}
+                    widthClass="max-w-[34rem]"
+                >
+                    {postsLoading ? (
+                        <div className="flex flex-1 items-center justify-center p-10">
+                            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand" />
+                        </div>
+                    ) : memberPosts.length === 0 ? (
+                        <div className="flex flex-1 items-center justify-center p-6">
+                            <p className={skin.body}>No posts yet.</p>
+                        </div>
+                    ) : (
+                        <ul className={`divide-y ${skin.divide}`}>
+                            {memberPosts.map((post) => (
+                                <li key={post.id} className="px-5 py-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <p className="min-w-0 break-words text-sm font-semibold text-ink">{post.jobTitle}</p>
+                                        <span className={`shrink-0 ${skin.meta}`}>{timeAgo(post.createdAt as never)}</span>
+                                    </div>
+                                    <p className={`mt-1 ${skin.meta}`}>
+                                        {[post.department, post.location, post.positionLevel].filter(Boolean).join(' · ') || 'No details'}
+                                    </p>
+                                    {post.skills && (
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                            {post.skills.split(',').slice(0, 5).map((sk, i) => (
+                                                <span key={i} className="rounded-lg bg-border px-2 py-0.5 text-xs font-medium text-ink/70">{sk.trim()}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </ExpandingModal>
+            )}
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

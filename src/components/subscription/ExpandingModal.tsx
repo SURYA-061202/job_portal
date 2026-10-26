@@ -5,14 +5,19 @@ import { useSkin, FOCUS } from '@/styles/skin';
 
 interface ExpandingModalProps {
     title: string;
+    subtitle?: string;
     /** Screen point (the clicked button's centre) the dialog grows out of. */
     origin: { x: number; y: number };
     onClose: () => void;
+    /** Tailwind max-width class for the panel; defaults to the wide table size. */
+    widthClass?: string;
+    /** Small control shown right beside the title (for example an edit icon). */
+    titleAction?: ReactNode;
     children: ReactNode;
 }
 
-/** Dialog that scales up from the button that opened it. Rendered on <body> so nothing can sit over it. */
-export default function ExpandingModal({ title, origin, onClose, children }: ExpandingModalProps) {
+/** Tall panel on the right side that scales up from the button that opened it. Rendered on <body> so nothing can sit over it. */
+export default function ExpandingModal({ title, subtitle, origin, onClose, widthClass = 'max-w-[46rem]', titleAction, children }: ExpandingModalProps) {
     const skin = useSkin();
     const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -37,17 +42,23 @@ export default function ExpandingModal({ title, origin, onClose, children }: Exp
     }, []);
 
     return createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-[200] flex items-stretch justify-end bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
             <div
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-label={title}
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}
+                className={`flex h-full w-full ${widthClass} flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}
             >
                 <div className={`flex shrink-0 items-center justify-between border-b ${skin.edge} px-5 py-4`}>
-                    <h3 className={skin.heading}>{title}</h3>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <h3 className={skin.heading}>{title}</h3>
+                            {titleAction}
+                        </div>
+                        {subtitle && <p className={`mt-0.5 ${skin.meta}`}>{subtitle}</p>}
+                    </div>
                     <button
                         type="button"
                         onClick={onClose}
@@ -57,7 +68,7 @@ export default function ExpandingModal({ title, origin, onClose, children }: Exp
                         <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                 </div>
-                <div className="thin-scrollbar min-h-0 flex-1 overflow-auto">{children}</div>
+                <div className="thin-scrollbar flex min-h-0 flex-1 flex-col overflow-auto">{children}</div>
             </div>
         </div>,
         document.body

@@ -1,7 +1,10 @@
 import type { RecruitmentRequest } from '@/types';
-import { MapPin, Briefcase, Clock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { MapPin, Briefcase, Clock, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { buildHighlightRegex } from '@/lib/candidateSearch';
+import Highlight from '@/components/resume/Highlight';
 
 interface UserJobCardProps {
     recruitment: RecruitmentRequest;
@@ -10,18 +13,34 @@ interface UserJobCardProps {
     hideNewBadge?: boolean;
     /** Raw job_applications status (e.g. 'shortlisted', 'round2', 'selected'). Shown as a pill when present. */
     applicationStatus?: string;
+    /** Recruiter side: shows the applicant count in place of an application status. */
+    applicantCount?: number;
+    /** White card instead of the page grey. */
+    whiteCard?: boolean;
+    /** Recruiter side: tiny edit and delete icons beside the title. */
+    /** Search keywords to highlight in the card text. */
+    keywords?: string[];
+    onEdit?: (recruitment: RecruitmentRequest) => void;
+    onDelete?: (recruitment: RecruitmentRequest) => Promise<void> | void;
 }
 
-export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus }: UserJobCardProps) {
+export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, keywords, onEdit, onDelete }: UserJobCardProps) {
+    const regex = useMemo(() => buildHighlightRegex(keywords ?? []), [keywords]);
+    const hl = (t?: string) => <Highlight text={t ?? ''} regex={regex} />;
+    const [confirming, setConfirming] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const tiny = `flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-ink/50 transition-colors duration-200 hover:bg-ink/5 hover:text-ink disabled:opacity-50 ${FOCUS}`;
     const isNew = !hideNewBadge && currentUserId && !recruitment.viewedBy?.includes(currentUserId);
     const statusInfo = getApplicationStatusInfo(applicationStatus);
-    const pillInfo = statusInfo && statusInfo.className.includes('brand')
-        ? { label: statusInfo.label, className: 'bg-ink/5 text-ink/80 border-ink/20' }
-        : statusInfo;
+    const pillInfo = applicantCount !== undefined
+        ? { label: `${applicantCount} ${applicantCount === 1 ? 'applicant' : 'applicants'}`, className: 'bg-ink/5 text-ink/80 border-ink/20' }
+        : statusInfo && statusInfo.className.includes('brand')
+            ? { label: statusInfo.label, className: 'bg-ink/5 text-ink/80 border-ink/20' }
+            : statusInfo;
     const skin = useSkin();
 
     return (
-        <div className={`border ${skin.edge} ${skin.canvas} rounded-lg p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 relative group transition-colors duration-200 ${skin.cardHover}`}>
+        <div className={`border ${skin.edge} ${whiteCard ? 'bg-surface' : skin.canvas} rounded-lg p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 relative group transition-colors duration-200 ${skin.cardHover}`}>
             {/* New Badge */}
             {isNew && (
                 <div className="absolute -top-2 -left-2 z-10">
@@ -34,9 +53,44 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
             {/* Content Section */}
             <div className="flex-1">
                 <div className="mb-3 flex items-start justify-between gap-2">
-                    <h3 className="text-base md:text-xl font-bold leading-tight text-ink transition-colors duration-200">
-                        {recruitment.jobTitle}
-                    </h3>
+                    <div className="flex min-w-0 items-center gap-2">
+                        <h3 className="text-base md:text-xl font-bold leading-tight text-ink transition-colors duration-200">
+                            {hl(recruitment.jobTitle)}
+                        </h3>
+                        {(onEdit || onDelete) && (
+                            <div className="flex shrink-0 items-center gap-0.5">
+                                {onEdit && !confirming && (
+                                    <button type="button" onClick={() => onEdit(recruitment)} className={tiny} title="Edit post" aria-label={`Edit ${recruitment.jobTitle}`}>
+                                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </button>
+                                )}
+                                {onDelete && (confirming ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            disabled={deleting}
+                                            onClick={async () => {
+                                                setDeleting(true);
+                                                try { await onDelete(recruitment); } finally { setDeleting(false); setConfirming(false); }
+                                            }}
+                                            className={`${tiny} text-destructive hover:text-destructive`}
+                                            title="Confirm delete"
+                                            aria-label="Confirm delete"
+                                        >
+                                            {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                                        </button>
+                                        <button type="button" disabled={deleting} onClick={() => setConfirming(false)} className={tiny} title="Cancel" aria-label="Cancel delete">
+                                            <X className="h-3.5 w-3.5" aria-hidden="true" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button type="button" onClick={() => setConfirming(true)} className={`${tiny} hover:text-destructive`} title="Delete post" aria-label={`Delete ${recruitment.jobTitle}`}>
+                                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     {pillInfo && (
                         <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[9px] md:text-[11px] font-bold border ${pillInfo.className}`}>
                             {pillInfo.label}
@@ -48,11 +102,11 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                 <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 text-ink/70">
                     <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        {recruitment.location}
+                        {hl(recruitment.location)}
                     </div>
                     <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
                         <Briefcase className="w-3 h-3 shrink-0" />
-                        {recruitment.positionLevel || 'Full Time'}
+                        {hl(recruitment.positionLevel || 'Full Time')}
                     </div>
                     <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
                         <Clock className="w-3 h-3 shrink-0" />
@@ -63,7 +117,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                 {/* Job description */}
                 {recruitment.description && (
                     <p className="mb-4 text-xs md:text-sm leading-relaxed text-ink/60 line-clamp-2">
-                        {recruitment.description}
+                        {hl(recruitment.description)}
                     </p>
                 )}
 
@@ -73,7 +127,7 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                         <span className={`mr-1 ${skin.micro}`}>Skills:</span>
                         {recruitment.skills?.split(',').slice(0, 3).map((skill, i) => (
                             <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
-                                {skill.trim()}
+                                {hl(skill.trim())}
                             </span>
                         ))}
                     </div>

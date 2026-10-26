@@ -137,7 +137,7 @@ export function parseKeywords(input: string): string[] {
 const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** One-or-two character keywords ("c", "r", "qa") must be whole words, or "c" would hit every line. */
-function keywordPattern(keyword: string): string {
+export function keywordPattern(keyword: string): string {
     const body = escapeRegExp(keyword).replace(/ /g, '\\s+');
     return keyword.length <= 2 ? `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])` : body;
 }
