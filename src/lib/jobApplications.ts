@@ -7,6 +7,8 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  updateDoc,
+  arrayUnion,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
@@ -19,6 +21,15 @@ export interface JobApplication {
   user_id: string;
   status: string;
   created_at: Timestamp;
+}
+
+/** Notes that a job seeker opened a post (feeds the recruiter's Job Views tab). Never throws. */
+export async function recordJobView(postId: string, userId: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'recruits', postId), { viewedBy: arrayUnion(userId) });
+  } catch (err) {
+    console.warn('Could not record job view:', err);
+  }
 }
 
 function applicationId(postId: string, userId: string) {

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Mail, Phone, FileText, Lock, X, Clock, MapPin, Briefcase, GraduationCap, FolderGit2, Award, ChevronRight, type LucideIcon } from 'lucide-react';
+import { Mail, Phone, Lock, X, Clock, MapPin, Briefcase, GraduationCap, FolderGit2, Award, ChevronRight, type LucideIcon } from 'lucide-react';
 import type { Candidate } from '@/types';
 import { buildHighlightRegex, type CandidateMatch } from '@/lib/candidateSearch';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -19,6 +19,10 @@ interface CandidateSearchResultsProps {
     onViewPlans?: () => void;
     /** Post applicants: show the pipeline status (Applied, Shortlisted, Interview Round n...). */
     showStatus?: boolean;
+    /** Detail mode: shows the Interview Invite button before the close icon. */
+    onInvite?: (candidate: Candidate) => void;
+    /** Detail mode: the candidate applied to one of the recruiter's posts. */
+    isApplied?: (candidate: Candidate) => boolean;
 }
 
 const toTitleCase = (s?: string) =>
@@ -76,7 +80,7 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
  * (summary, skills, work, education, projects, certifications) and the keywords
  * highlighted wherever they occur.
  */
-export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans, showStatus = false }: CandidateSearchResultsProps) {
+export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans, showStatus = false, onInvite, isApplied }: CandidateSearchResultsProps) {
     const skin = useSkin();
     const [resumeUrl, setResumeUrl] = useState<string | null>(null);
     const regex = useMemo(() => buildHighlightRegex(keywords), [keywords]);
@@ -141,6 +145,9 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className={`${skin.cardTitle} break-words`}>{hl(toTitleCase(name))}</h3>
+                                            {detail && !showStatus && isApplied?.(c) && (
+                                                <span className="shrink-0 whitespace-nowrap rounded-lg border border-orange-300 bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700">Applied</span>
+                                            )}
                                             {showStatus && (() => {
                                                 const info = getApplicationStatusInfo(c.status || 'applied');
                                                 return info ? (
@@ -163,15 +170,28 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                     </div>
                                 </div>
                                 {detail ? (
-                                    onClose && (
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            aria-label="Close details"
-                                            className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
-                                        >
-                                            <X className="h-4 w-4" aria-hidden="true" />
-                                        </button>
+                                    (onClose || onInvite) && (
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            {onInvite && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onInvite(c)}
+                                                    className={`inline-flex h-8 cursor-pointer items-center rounded-lg border border-current px-3 text-xs font-semibold text-ink transition-colors hover:bg-ink/5 ${FOCUS}`}
+                                                >
+                                                    Interview Invite
+                                                </button>
+                                            )}
+                                            {onClose && (
+                                                <button
+                                                    type="button"
+                                                    onClick={onClose}
+                                                    aria-label="Close details"
+                                                    className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                                                >
+                                                    <X className="h-4 w-4" aria-hidden="true" />
+                                                </button>
+                                            )}
+                                        </div>
                                     )
                                 ) : (
                                     <div className="flex items-center gap-2">
@@ -209,9 +229,8 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                             <button
                                                 type="button"
                                                 onClick={() => setResumeUrl(c.resumeUrl as string)}
-                                                className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
+                                                className={`ml-5 inline-flex items-center cursor-pointer rounded-lg ${skin.secondary} !border-current ${FOCUS}`}
                                             >
-                                                <FileText className="h-4 w-4" aria-hidden="true" />
                                                 Resume
                                             </button>
                                         )

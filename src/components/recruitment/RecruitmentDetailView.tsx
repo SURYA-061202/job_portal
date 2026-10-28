@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { hasUserApplied, applyForJob, getApplicationStatus } from '@/lib/jobApplications';
+import { hasUserApplied, applyForJob, getApplicationStatus, recordJobView } from '@/lib/jobApplications';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import popup from '@/components/ui/Popup';
 import type { RecruitmentRequest } from '@/types';
@@ -47,6 +47,15 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     useEffect(() => {
         checkStatus();
     }, [recruitment.id]);
+
+    // A job seeker opening a post counts as a view, whichever screen they came from.
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (isUserView && recruitment.id && uid && !recruitment.viewedBy?.includes(uid)) {
+            void recordJobView(recruitment.id, uid);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isUserView, recruitment.id]);
 
     const checkStatus = async () => {
         const user = auth.currentUser;

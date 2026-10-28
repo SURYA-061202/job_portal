@@ -1,8 +1,9 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Candidate } from "@/types";
-import CandidateList from "@/components/resume/CandidateList";
+import type { Candidate, RecruitmentRequest } from "@/types";
+import StageCandidateTable from "@/components/recruitment/StageCandidateTable";
+import PostStageList from "@/components/recruitment/PostStageList";
 import popup from '@/components/ui/Popup';
 import { ArrowLeft, Mail, Loader2 } from "lucide-react";
 import { sendCongratulationsMail } from "@/lib/emailFunctions";
@@ -250,9 +251,10 @@ export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 }
 
 /** Row-level action: sends the congratulations mail without leaving the list. */
-function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
+function SendCongratulationsButton({ candidate, labelled = false }: { candidate: Candidate; labelled?: boolean }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(() => (candidate.interviewDetails as { successmail?: boolean } | undefined)?.successmail === true);
+  const [checked, setChecked] = useState(false);
   const skin = useSkin();
 
   // The interview doc is the source of truth for whether the mail already went out.
@@ -264,6 +266,8 @@ function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
         if (!cancelled && snap.exists() && snap.data()?.successmail === true) setSent(true);
       } catch (err) {
         console.error("Failed to fetch interview details", err);
+      } finally {
+        if (!cancelled) setChecked(true);
       }
     })();
     return () => { cancelled = true; };
@@ -271,9 +275,16 @@ function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
 
   const send = async (e: MouseEvent) => {
     e.stopPropagation();
-    if (sending || sent) return;
+    if (sending || sent || !checked) return;
     setSending(true);
     try {
+      // Re-check right before sending so a mail sent from another tab/session isn't repeated.
+      const latest = await getDoc(doc(db, 'interviews', candidate.id));
+      if (latest.exists() && latest.data()?.successmail === true) {
+        setSent(true);
+        popup.success('Congratulations mail was already sent');
+        return;
+      }
       await sendCongratulationsMail({
         candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
       });
@@ -314,16 +325,17 @@ function SendCongratulationsButton({ candidate }: { candidate: Candidate }) {
     <button
       type="button"
       onClick={send}
-      disabled={sending || sent}
+      disabled={sending || sent || !checked}
       title={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
       aria-label={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
-      className={`p-2 border border-border bg-surface cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${sent ? 'text-ink/40' : 'text-brand hover:bg-brand/10'} ${skin.radius} ${FOCUS}`}
+      className={`${labelled ? 'inline-flex h-9 items-center gap-2 px-4 text-sm font-semibold' : 'p-2'} border border-border bg-surface cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${sent ? 'text-ink/40' : 'text-brand hover:bg-brand/10'} ${skin.radius} ${FOCUS}`}
     >
       {sending ? (
         <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
       ) : (
         <Mail className="w-4 h-4" aria-hidden="true" />
       )}
+      {labelled && (sent ? 'Mail sent' : sending ? 'Sending…' : 'Send congratulations')}
     </button>
   );
 }
@@ -332,8 +344,6 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [postTitles, setPostTitles] = useState<Record<string, string>>({});
-  const [search, setSearch] = useState("");
-  const [view, setView] = useState<'selected' | 'rejected'>('selected');
   const skin = useSkin();
 
   useEffect(() => {
@@ -463,38 +473,66 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
     load();
   }, []);
 
-  const filtered = candidates.filter((c) => {
-    const st = (c as any).status || '';
-    if (view === 'selected') return st === 'selected';
-    if (view === 'rejected') return st.endsWith('rejected');
-    return false;
-  });
+  const filtered = candidates.filter((c) => ((c as any).status || '') === 'selected');
+
+  const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
+  const [openPost, setOpenPost] = useState<RecruitmentRequest | null>(null);
+  const [postSearch, setPostSearch] = useState("");
+
+  // Posts this user can see, loaded once; the counts come from `filtered`.
+  useEffect(() => {
+    (async () => {
+      try {
+        const isAdmin = userRole === 'admin';
+        const q = (!isAdmin && userId)
+          ? query(collection(db, 'recruits'), where('recruiterId', '==', userId))
+          : query(collection(db, 'recruits'));
+        const snap = await getDocs(q);
+        setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest)));
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [userRole, userId]);
+
+  const items = posts
+    .map(p => ({ post: p, count: filtered.filter(c => (c as any).postId === p.id).length }))
+    .filter(i => i.count > 0)
+    .filter(i => {
+      const term = postSearch.trim().toLowerCase();
+      if (!term) return true;
+      return (
+        i.post.jobTitle?.toLowerCase().includes(term) ||
+        i.post.department?.toLowerCase().includes(term) ||
+        i.post.location?.toLowerCase().includes(term)
+      );
+    });
+  const forPost = openPost ? filtered.filter(c => (c as any).postId === openPost.id) : [];
 
   return (
-    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-6 flex-1 min-h-0 flex flex-col`}>
-      <CandidateList
-        candidates={filtered}
-        loading={loading}
-        searchTerm={search}
-        onSearchTermChange={setSearch}
-        emptyMessage="No candidates found."
-        title={view === 'selected' ? 'Selected Candidates' : 'Rejected Candidates'}
-        description={
-          view === 'selected'
-            ? 'Candidates who cleared all interview rounds and were selected for the role.'
-            : 'Candidates who were rejected during the hiring process.'
-        }
-        hideEmptyIcon
-        filterValue={view}
-        filterOptions={[
-          { value: 'selected', label: 'Selected Candidates' },
-          { value: 'rejected', label: 'Rejected Candidates' }
-        ]}
-        onFilterChange={(value) => setView(value as 'selected' | 'rejected')}
-        searchWidth="sm:w-52"
-        postTitles={postTitles}
-        extraActions={(candidate) => <SendCongratulationsButton candidate={candidate} />}
-      />
-    </div>
+    <PostStageList
+      title="Selected"
+      plain
+      items={items}
+      countNoun="selected"
+      loading={loading}
+      search={postSearch}
+      onSearch={setPostSearch}
+      selectedId={openPost?.id ?? null}
+      onOpen={(p) => setOpenPost(openPost?.id === p.id ? null : p)}
+      emptyTitle="No selected candidates yet"
+      emptyText="Candidates will appear here under their post."
+      detail={openPost ? (
+        <StageCandidateTable
+          candidates={forPost}
+          loading={loading}
+          search={postSearch}
+          onClose={() => setOpenPost(null)}
+          emptyText="No candidates found."
+          showStatus={false}
+          footer={(c) => <SendCongratulationsButton candidate={c} labelled />}
+        />
+      ) : undefined}
+    />
   );
-} 
+}

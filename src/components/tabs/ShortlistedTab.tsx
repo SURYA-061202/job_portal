@@ -1,12 +1,11 @@
-import BackRow from '@/components/layout/BackRow';
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Candidate, RecruitmentRequest } from "@/types";
-import CandidateList from "@/components/resume/CandidateList";
+import StageCandidateTable from "@/components/recruitment/StageCandidateTable";
 import popup from '@/components/ui/Popup';
-import { ArrowLeft, Calendar, Search } from "lucide-react";
-import PostCard from "@/components/recruitment/PostCard";
+import { ArrowLeft, Calendar } from "lucide-react";
+import PostStageList from "@/components/recruitment/PostStageList";
 import { sendRoundInvite } from "@/lib/emailFunctions";
 import { getAllApplications, setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
@@ -26,7 +25,6 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   const [selectedPostView, setSelectedPostView] = useState<RecruitmentRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
-  const [search, setSearch] = useState("");
   const [postSearch, setPostSearch] = useState("");
   const skin = useSkin();
 
@@ -211,132 +209,80 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       );
     });
 
-  if (!selectedPostView) {
-    return (
-    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      {/* Controls row below the header: search at the left end, posts count at
-          the right end — the same row the Candidates module uses. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full sm:w-56">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-ink/40" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search posts..."
-            className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-            value={postSearch}
-            onChange={(e) => setPostSearch(e.target.value)}
-          />
-        </div>
-        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-          Posts: {postsWithCounts.length}
-        </span>
-      </div>
+  const moveCandidateToRound = async (candidate: Candidate, roundName: string) => {
+    try {
+      const applicantPostId = (candidate as any).postId as string | undefined;
+      if (applicantPostId) {
+        await setApplicationStatus(applicantPostId, candidate.id, 'round1');
+      } else {
+        await updateDoc(doc(db, "candidates", candidate.id), { status: "round1", updatedAt: new Date() });
+      }
+      const interviewRef = doc(db, "interviews", candidate.id);
+      const intSnap = await getDoc(interviewRef);
+      if (intSnap.exists()) {
+        const updateData: any = { roundType: roundName, status: 'round1', updatedAt: new Date() };
+        if (applicantPostId) updateData.postId = applicantPostId;
+        await updateDoc(interviewRef, updateData);
+      } else {
+        const { setDoc } = await import('firebase/firestore');
+        const createData: any = { roundType: roundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
+        if (applicantPostId) createData.postId = applicantPostId;
+        await setDoc(interviewRef, createData);
+      }
+      try {
+        await sendRoundInvite({
+          candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+          roundName,
+          roundNumber: 1,
+          role: candidate.role || 'the position',
+          baseUrl: window.location.origin,
+        });
+      } catch (emailErr) {
+        console.error('Failed to send round email:', emailErr);
+      }
+      void notifyCandidateOfStatusChange({
+        candidateId: candidate.id,
+        postId: applicantPostId,
+        status: 'round1',
+        roundLabel: roundName,
+      });
+      popup.success("Moved to Round 1");
+      loadCandidates();
+    } catch (err: any) {
+      popup.error(err.message || "Failed to update status");
+    }
+  };
 
-      {/* Body - the white results panel the Posts module uses, so the grey
-          cards read grey-on-white. The scroll container takes the remaining
-          height, but the panel hugs the grid when it is short and only fills
-          the area while loading or empty. */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-      <div className={`${loading || postsWithCounts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
-      {loading ? (
-        <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-          <span className="sr-only">Loading shortlisted posts…</span>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
-              <div className={`h-5 w-2/3 ${skin.skeleton}`} />
-              <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
-              <div className="mt-6 grid grid-cols-2">
-                <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
-              </div>
-              <div className="mt-6 flex gap-1.5">
-                <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
-              </div>
-              <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
-            </div>
-          ))}
-        </div>
-      ) : postsWithCounts.length === 0 ? (
-        <div className={`flex-1 flex items-center justify-center border border-dashed ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center`}>
-          <div>
-            <h3 className={skin.emptyTitle}>No shortlisted candidates yet</h3>
-            <p className={`mt-1 ${skin.body}`}>Candidates you shortlist for your posts will appear here.</p>
-          </div>
-        </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 content-start">
-            {postsWithCounts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onOpen={(p) => setSelectedPostView(p)}
-                count={post.shortlistedCount}
-                countLabel="Shortlisted"
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      </div>
-      </div>
-    );
-  }
-
-  const shortlistedForPost = candidates.filter(c => (c as any).postId === selectedPostView.id);
+  const shortlistedForPost = selectedPostView
+    ? candidates.filter(c => (c as any).postId === selectedPostView.id)
+    : [];
 
   return (
-    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      <BackRow
-        onBack={() => { setSelectedPostView(null); setSearch(''); }}
-        label="Back to posts"
-        title={selectedPostView.jobTitle}
-        className="shrink-0"
-      />
-
-      {/* Controls row below the header: search at the left end, shortlisted
-          count at the right end — no animated indicator. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full sm:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-ink/40" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search candidates..."
-            className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-          Shortlisted: {shortlistedForPost.length}
-        </span>
-      </div>
-
-      {/* Body - the white results panel the Candidates module uses, so the grey
-          candidate list reads grey-on-white. The scroll container takes the
-          remaining height, but the panel hugs the list when it is short and
-          only fills the area when there is nothing to show. */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-        <div className={`${loading || shortlistedForPost.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
-          <CandidateList
-            candidates={shortlistedForPost}
-            onSelectCandidate={setSelected}
-            loading={loading}
-            searchTerm={search}
-            onSearchTermChange={setSearch}
-            emptyMessage="No shortlisted candidates found."
-            hideHeader
-            hideRole
-            hideEmptyIcon
-          />
-        </div>
-      </div>
-    </div>
+    <PostStageList
+      title="Shortlisted"
+      plain
+      items={postsWithCounts.map((p) => ({ post: p, count: p.shortlistedCount }))}
+      countNoun="shortlisted"
+      loading={loading}
+      search={postSearch}
+      onSearch={setPostSearch}
+      selectedId={selectedPostView?.id ?? null}
+      onOpen={(p) => {  setSelectedPostView(selectedPostView?.id === p.id ? null : p); }}
+      emptyTitle="No shortlisted candidates yet"
+      emptyText="Candidates you shortlist for your posts will appear here."
+      detail={selectedPostView ? (
+        <StageCandidateTable
+          candidates={shortlistedForPost}
+          loading={loading}
+          search={postSearch}
+          defaultRound={firstRoundName(selectedPostView)}
+          onMove={moveCandidateToRound}
+          onClose={() => { setSelectedPostView(null);  }}
+          emptyText="No shortlisted candidates found."
+          onRefresh={loadCandidates}
+        />
+      ) : undefined}
+    />
   );
 }
 

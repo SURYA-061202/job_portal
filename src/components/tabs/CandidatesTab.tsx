@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react';
 import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
+import { getAllApplications, getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
 import { getUserCertificates, getUserCourses, getUserEducation, getUserExperience, getUserProjects, getUserSkills } from '@/lib/userToCandidate';
 import { parseKeywords, searchCandidates } from '@/lib/candidateSearch';
 import { isUnlimited } from '@/lib/subscriptions';
@@ -12,6 +12,7 @@ import CandidateList from '@/components/resume/CandidateList';
 import CandidateCarousel from '@/components/resume/CandidateCarousel';
 import BackRow from '@/components/layout/BackRow';
 import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
+import InviteFlow from '@/components/resume/InviteFlow';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
@@ -105,6 +106,33 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [showPostView, setShowPostView] = useState(false);
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
     const skin = useSkin();
+    const [inviteFor, setInviteFor] = useState<Candidate | null>(null);
+    // candidate id -> ids of this recruiter's posts they applied to
+    const [appliedPosts, setAppliedPosts] = useState<Record<string, string[]>>({});
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const isAdmin = userRole === 'admin';
+                let owned: Set<string> | null = null;
+                if (!isAdmin && userId) {
+                    const snap = await getDocs(fsQuery(collection(db, 'recruits'), where('recruiterId', '==', userId)));
+                    owned = new Set(snap.docs.map(d => d.id));
+                }
+                const apps = await getAllApplications();
+                const map: Record<string, string[]> = {};
+                apps.forEach(a => {
+                    if (owned && !owned.has(a.post_id)) return;
+                    (map[a.user_id] ||= []).push(a.post_id);
+                });
+                setAppliedPosts(map);
+            } catch (err) {
+                console.error('Failed to load applicants', err);
+            }
+        })();
+    }, [userId, userRole]);
+    // Same rule as contact details: no plan, no Interview Invite.
+    const inviteHandler = canViewContact ? (c: Candidate) => setInviteFor(c) : undefined;
 
     const isFilteringRef = useRef(false);
 
@@ -796,6 +824,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 onViewPlans={onViewPlans}
                                                 keywords={keywords}
                                                 showStatus={!!postId}
+ onInvite={inviteHandler}
                                             />
                                         ) : (
                                             <CandidateSearchResults
@@ -815,6 +844,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             onViewPlans={onViewPlans}
                                             emptyMessage={isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
                                             showStatus={!!postId}
+ onInvite={inviteHandler}
                                         />
                                     )}
                                 </>
@@ -879,6 +909,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                             }
                         }
                     }}
+                />
+            )}
+            {inviteFor && (
+                <InviteFlow
+                    candidate={inviteFor}
+                    userRole={userRole}
+                    userId={userId}
+                    appliedPostIds={appliedPosts[inviteFor.id] ?? []}
+                    postId={postId}
+                    onClose={() => setInviteFor(null)}
+                    onSent={() => { setInviteFor(null); handleInviteSent(); }}
                 />
             )}
         </div>

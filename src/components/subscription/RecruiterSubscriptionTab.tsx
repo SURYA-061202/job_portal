@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Loader2, Lock } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
+    canRenewPlan,
     countRecruiterPosts,
     formatDate,
     formatLimit,
@@ -146,13 +147,16 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                             {plans.map((plan) => {
                                 const isCurrent = sub?.source === 'plan' && sub.planId === plan.id;
                                 const isRequested = pending?.planId === plan.id;
+                                const renewable = canRenewPlan(sub, plan.id);
+                                const activeNoEnd = isCurrent && !renewable && !isRequested;
                                 return (
                                     <PlanPricingCard
                                         key={plan.id}
                                         plan={plan}
                                         audience={audience}
-                                        badge={isCurrent ? 'Current' : undefined}
-                                        action={(
+                                        action={activeNoEnd ? (
+                                            <span className="inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                        ) : (
                                             <button
                                                 type="button"
                                                 onClick={() => handleRequest(plan)}
@@ -163,7 +167,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                                     <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>
                                                 ) : isRequested ? (
                                                     <><Clock className="h-4 w-4" aria-hidden="true" /> Request pending</>
-                                                ) : isCurrent ? (
+                                                ) : renewable ? (
                                                     'Renew plan'
                                                 ) : (
                                                     'Request subscription'

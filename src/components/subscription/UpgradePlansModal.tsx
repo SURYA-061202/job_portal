@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Clock, Loader2, X } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
-import { formatDate, formatLimit, formatPrice, getMyRequests, getPlans, isUnlimited, requestSubscription } from '@/lib/subscriptions';
+import { canRenewPlan, formatDate, formatLimit, formatPrice, getMyRequests, getPlans, isUnlimited, requestSubscription } from '@/lib/subscriptions';
 import type { EffectiveSubscription, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface UpgradePlansModalProps {
@@ -108,6 +108,8 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {plans.map((plan) => {
                                 const isCurrent = subscription?.source === 'plan' && subscription.planId === plan.id;
+                                const renewable = canRenewPlan(subscription, plan.id);
+                                const activeNoEnd = isCurrent && !renewable && pending?.planId !== plan.id;
                                 const isRequested = pending?.planId === plan.id;
                                 return (
                                     <article key={plan.id} className={`flex flex-col border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-5`}>
@@ -116,7 +118,6 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                                 <p className={skin.micro}>Level {plan.level}</p>
                                                 <h4 className="text-lg font-bold text-ink">{plan.name}</h4>
                                             </div>
-                                            {isCurrent && <span className={`${skin.chip} rounded-lg`}>Current</span>}
                                         </div>
                                         <p className="mt-3 text-3xl font-black text-ink">
                                             {formatPrice(plan.price)}
@@ -140,6 +141,9 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                                 </li>
                                             ))}
                                         </ul>
+                                        {activeNoEnd ? (
+                                            <span className="mt-5 inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                        ) : (
                                         <button
                                             type="button"
                                             onClick={() => handleRequest(plan)}
@@ -150,12 +154,13 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                                 <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>
                                             ) : isRequested ? (
                                                 <><Clock className="h-4 w-4" aria-hidden="true" /> Request pending</>
-                                            ) : isCurrent ? (
+                                            ) : renewable ? (
                                                 'Renew plan'
                                             ) : (
                                                 'Request subscription'
                                             )}
                                         </button>
+                                        )}
                                     </article>
                                 );
                             })}

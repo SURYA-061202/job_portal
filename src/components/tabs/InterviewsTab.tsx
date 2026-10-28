@@ -1,4 +1,6 @@
-import BackRow from '@/components/layout/BackRow';
+import AppliedTab from '@/components/tabs/AppliedTab';
+import PostStageList from '@/components/recruitment/PostStageList';
+import StageHeader from '@/components/recruitment/StageHeader';
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -6,10 +8,10 @@ import { getAllApplications } from "@/lib/jobApplications";
 import { getPostRounds, getRoundLabel } from "@/lib/interviewRounds";
 import type { Candidate } from "@/types";
 import type { RecruitmentRequest } from "@/types";
-import CandidateList from "@/components/resume/CandidateList";
+import StageCandidateGrid from "@/components/recruitment/StageCandidateGrid";
 import InterviewCandidateDetail from "@/components/interview/InterviewCandidateDetail";
 import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab";
-import { Briefcase, MapPin, Clock, Search, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from "@/styles/skin";
 
@@ -31,7 +33,34 @@ interface PostWithCount extends RecruitmentRequest {
   interviewCount: number;
 }
 
-export default function InterviewsTab({ userRole, userId, onCandidateSelected }: { userRole?: string | null; userId?: string | null; onCandidateSelected?: () => void }) {
+type InterviewsTabProps = { userRole?: string | null; userId?: string | null; onCandidateSelected?: () => void; canViewContact?: boolean };
+
+/** Interview: the running pipeline, plus an Applied section for people who applied and haven't been invited. */
+export default function InterviewsTab(props: InterviewsTabProps) {
+  const [section, setSection] = useState<'pipeline' | 'applied'>('pipeline');
+  const skin = useSkin();
+  const switcher = (
+    <div role="tablist" aria-label="Interview sections" className={`inline-flex h-9 items-center rounded-lg border ${skin.edge} bg-surface p-0.5`}>
+      {([['pipeline', 'Interview'], ['applied', 'Applied']] as const).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={section === key}
+          onClick={() => setSection(key)}
+          className={`h-8 cursor-pointer rounded-md px-3 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${section === key ? 'bg-ink/70 text-surface' : 'text-ink/60 hover:text-ink'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  return section === 'applied'
+    ? <AppliedTab userRole={props.userRole} userId={props.userId} canViewContact={props.canViewContact} switcher={switcher} />
+    : <InterviewPipeline {...props} switcher={switcher} />;
+}
+
+function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: InterviewsTabProps & { switcher?: React.ReactNode }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [posts, setPosts] = useState<PostWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,70 +267,42 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
   // dropdown to filter them - the rounds-cards step in between is gone.
   if (selectedPost) {
     return (
-      <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-        <BackRow
-          onBack={() => { setSelectedPost(null); setSelectedRound(null); setSearchTerm(''); }}
-          label="Back to posts"
+      <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col`}>
+        <StageHeader
           title={selectedPost.jobTitle}
-          className="shrink-0"
-        />
-
-        {/* Controls row: search at the left end; candidate count followed by
-            the rounds filter at the right end. */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-ink/40" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search candidates..."
-              className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          onBack={() => { setSelectedPost(null); setSelectedRound(null); setSearchTerm(''); }}
+          search={searchTerm}
+          onSearch={setSearchTerm}
+        >
+          <div className="relative">
+            <select
+              value={selectedRound ?? ''}
+              onChange={(e) => setSelectedRound(e.target.value || null)}
+              className={`h-9 w-48 cursor-pointer appearance-none rounded-lg border border-ink/20 bg-surface pl-3 pr-8 text-sm text-ink shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
+              aria-label="Filter by round"
+            >
+              {roundOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
             />
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-              {postCandidates.length} Candidate{postCandidates.length === 1 ? '' : 's'}
-            </span>
-            <div className="relative">
-              <select
-                value={selectedRound ?? ''}
-                onChange={(e) => setSelectedRound(e.target.value || null)}
-                className={`cursor-pointer appearance-none h-9 pl-3 pr-8 w-52 rounded-lg ${skin.field} ${FOCUS}`}
-                aria-label="Filter by round"
-              >
-                {roundOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                aria-hidden="true"
-                className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
-              />
-            </div>
-          </div>
-        </div>
+        </StageHeader>
 
-        {/* Body - the white results panel, so the grey candidate list reads
-            grey-on-white like the Shortlisted and Candidates modules. */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-          <div className={`${loading || postCandidates.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
-            <CandidateList
-              candidates={postCandidates}
-              onSelectCandidate={setSelectedCandidate}
-              loading={loading}
-              searchTerm={searchTerm}
-              onSearchTermChange={setSearchTerm}
-              emptyMessage={selectedRound ? 'No candidates found in this round.' : 'No candidates in the interview pipeline for this post yet.'}
-              hideHeader
-              hideEmptyIcon
-              onRefresh={fetchData}
-            />
-          </div>
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide">
+          <StageCandidateGrid
+            candidates={postCandidates}
+            onSelect={setSelectedCandidate}
+            loading={loading}
+            search={searchTerm}
+            emptyText={selectedRound ? 'No candidates found in this round.' : 'No candidates in the interview pipeline for this post yet.'}
+            onRefresh={fetchData}
+          />
         </div>
       </div>
     );
@@ -319,137 +320,20 @@ export default function InterviewsTab({ userRole, userId, onCandidateSelected }:
   });
 
   return (
-    <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} space-y-4 flex-1 min-h-0 flex flex-col`}>
-      {/* Controls row below the header: search at the left end, posts count at
-          the right end - no animated indicator. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full sm:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-ink/40" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search posts..."
-            className={`block w-full h-9 pl-10 pr-3 sm:text-sm rounded-lg ${skin.field} ${FOCUS}`}
-            value={postSearch}
-            onChange={(e) => setPostSearch(e.target.value)}
-          />
-        </div>
-        <span role="status" aria-atomic="true" className={`inline-flex h-9 min-w-24 shrink-0 items-center justify-center gap-1.5 ${skin.count} rounded-lg`}>
-          Posts: {visiblePosts.length}
-        </span>
-      </div>
-
-      {/* Body - the white results panel, so the grey post cards read
-          grey-on-white like the Shortlisted module. The panel hugs the grid
-          and only fills the area while loading or empty. */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden thin-scrollbar">
-      <div className={`${loading || visiblePosts.length === 0 ? 'min-h-full ' : ''}border ${skin.edge} ${skin.radius} ${skin.resultsPanel} p-3 md:p-4 flex flex-col`}>
-      {loading ? (
-        <div role="status" aria-busy="true" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <span className="sr-only">Loading interview posts…</span>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} aria-hidden="true" className={`animate-pulse border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-4 sm:p-5`}>
-              <div className={`h-5 w-2/3 ${skin.skeleton}`} />
-              <div className={`mt-3 h-3 w-1/3 ${skin.skeleton}`} />
-              <div className="mt-6 grid grid-cols-2">
-                <div className={`h-14 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-14 border-l ${skin.edge} ${skin.skeleton}`} />
-              </div>
-              <div className="mt-6 flex gap-1.5">
-                <div className={`h-6 w-16 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-6 w-20 border ${skin.edge} ${skin.skeleton}`} />
-                <div className={`h-6 w-14 border ${skin.edge} ${skin.skeleton}`} />
-              </div>
-              <div className={`mt-6 h-4 w-1/2 ${skin.skeleton}`} />
-            </div>
-          ))}
-        </div>
-      ) : visiblePosts.length === 0 ? (
-        <div className={`flex-1 flex items-center justify-center border border-dashed ${skin.edge} ${skin.cardSurface} ${skin.radius} p-12 text-center`}>
-          <div>
-            <h3 className={skin.emptyTitle}>{postSearch ? 'No matching posts' : 'No interview posts'}</h3>
-            <p className={`mt-1 ${skin.body}`}>Posts will appear here once candidates enter the interview pipeline.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
-          {visiblePosts.map((post) => {
-            const totalRounds = getPostRounds(post).length;
-            return (
-            <button
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className={`border ${skin.edge} ${skin.cardSurface} ${skin.radius} p-6 text-left transition-colors duration-200 ${skin.cardHover} group ${FOCUS}`}
-            >
-              <div className="space-y-1 flex-1 min-w-0">
-                <h4 className={`${skin.cardTitle} truncate`}>
-                  {post.jobTitle}
-                </h4>
-                {post.department && (
-                  <p className={`${skin.meta} truncate`}>{post.department}</p>
-                )}
-              </div>
-
-              <div className={`mt-3 flex flex-wrap gap-3 ${skin.meta}`}>
-                {post.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {post.location}
-                  </span>
-                )}
-                {post.positionLevel && (
-                  <span className="flex items-center gap-1">
-                    <Briefcase className="h-3 w-3" /> {post.positionLevel}
-                  </span>
-                )}
-                {post.createdAt && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {
-                      (() => {
-                        const d = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date(post.createdAt);
-                        const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
-                        if (diff === 0) return 'Today';
-                        if (diff === 1) return 'Yesterday';
-                        return `${diff}d ago`;
-                      })()
-                    }
-                  </span>
-                )}
-              </div>
-
-              {post.skills && (
-                <div className="mt-3">
-                  <span className={`mb-2 block ${skin.micro}`}>Skills</span>
-                  <div className="flex flex-wrap gap-1">
-                    {post.skills.split(',').slice(0, 3).map((skill, i) => (
-                      <span key={i} className={`rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70`}>
-                        {skill.trim()}
-                      </span>
-                    ))}
-                    {post.skills.split(',').length > 3 && (
-                      <span className={`rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70`}>
-                        +{post.skills.split(',').length - 3}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className={`mt-4 flex flex-wrap items-center justify-between gap-2 border-t ${skin.edge} pt-3`}>
-                <span className={`${skin.statChip} rounded-lg`}>
-                  {totalRounds} {totalRounds === 1 ? 'Round' : 'Rounds'}
-                </span>
-                <span className={`${skin.count} rounded-lg`}>
-                  {post.interviewCount} {post.interviewCount === 1 ? 'Candidate' : 'Candidates'}
-                </span>
-              </div>
-            </button>
-            );
-          })}
-        </div>
-      )}
-      </div>
-      </div>
-    </div>
+    <PostStageList
+      title="Interview"
+      items={visiblePosts.map((post) => {
+        const totalRounds = getPostRounds(post).length;
+        return { post, count: post.interviewCount, note: `${totalRounds} ${totalRounds === 1 ? 'round' : 'rounds'}` };
+      })}
+      countNoun="candidate"
+      loading={loading}
+      search={postSearch}
+      onSearch={setPostSearch}
+      actions={switcher}
+      onOpen={(post) => setSelectedPost(post as PostWithCount)}
+      emptyTitle="No interview posts"
+      emptyText="Posts will appear here once candidates enter the interview pipeline."
+    />
   );
 }

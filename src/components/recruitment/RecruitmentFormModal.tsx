@@ -185,6 +185,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 await addDoc(collection(db, 'recruits'), {
                     ...payload,
                     recruiterId: user?.uid || '',
+                    // Kept on the post so applicant notifications can reach the owner without reading user profiles.
+                    recruiterEmail: (user?.email || '').trim().toLowerCase(),
                     recruiterName: `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim(),
                     companyName: userProfile?.companyName || '',
                     createdAt: serverTimestamp()

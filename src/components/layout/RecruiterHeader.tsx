@@ -13,6 +13,7 @@ export type RecruiterNavTab =
   | 'shortlisted'
   | 'interviews'
   | 'selected'
+  | 'guidelines'
   | 'notifications'
   | 'add-members'
   | 'member-detail'
@@ -48,7 +49,7 @@ interface NavSection {
  * Tabs switched on for recruiters and admins. Everything else is hidden for
  * now and is brought back one at a time: add its id here to show it again.
  */
-const ENABLED_TABS: RecruiterNavTab[] = ['job-posts', 'candidates', 'shortlisted', 'interviews', 'selected', 'add-members', 'subscription'];
+const ENABLED_TABS: RecruiterNavTab[] = ['job-posts', 'candidates', 'shortlisted', 'interviews', 'selected', 'guidelines', 'add-members', 'subscription'];
 const SHOW_BELL = true; // notifications bell sits before Logout, like the job seeker header
 const SHOW_PROFILE = true; // profile icon after the bell opens the profile panel; Logout lives inside it
 
@@ -116,6 +117,11 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
         { id: 'interviews', label: 'Interview', icon: CalendarClock, hint: 'Schedule and track interview rounds' },
         { id: 'selected', label: 'Selected', icon: BadgeCheck, hint: 'Candidates who got the offer' },
       ],
+    },
+    {
+      key: 'guidelines',
+      label: 'Insights',
+      links: [{ id: 'guidelines', label: 'Insights' }],
     },
     {
       key: 'recruiters',

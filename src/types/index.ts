@@ -267,6 +267,8 @@ export interface EffectiveSubscription {
   expiresAt: Date | null;
   /** True when a paid plan existed but has lapsed (the user is back on the free tier). */
   expired: boolean;
+  /** The plan that lapsed, when `expired`; lets the UI offer to renew it. */
+  lapsedPlanId?: string | null;
 }
 
 // Ensure this file is treated as a module

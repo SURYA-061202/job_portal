@@ -19,6 +19,9 @@ interface CandidateCarouselProps {
   keywords?: string[];
   /** Post applicants: show each candidate's pipeline status (Applied, Shortlisted, Interview Round n...). */
   showStatus?: boolean;
+  /** Opened profile: Interview Invite action (omit to hide it). */
+  onInvite?: (candidate: Candidate) => void;
+  isApplied?: (candidate: Candidate) => boolean;
 }
 
 const toTitleCase = (s?: string) =>
@@ -50,7 +53,7 @@ function useColumns() {
  * Candidates as cards in two rows. When there are more than fit on screen the
  * cards slide sideways: the arrows move one screenful at a time.
  */
-export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [], showStatus = false }: CandidateCarouselProps) {
+export default function CandidateCarousel({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [], showStatus = false, onInvite, isApplied }: CandidateCarouselProps) {
   const skin = useSkin();
   const cols = useColumns();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -129,6 +132,8 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
               canViewContact={canViewContact}
               onViewPlans={onViewPlans}
               showStatus={showStatus}
+              onInvite={onInvite}
+              isApplied={isApplied}
             />
           </div>
         )}

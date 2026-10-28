@@ -37,7 +37,7 @@ function formatExperience(exp?: string) {
 }
 
 // Helper to decide if a candidate matches the current search term
-function candidateMatchesSearch(candidate: Candidate, term: string, postTitles?: Record<string, string>) {
+export function candidateMatchesSearch(candidate: Candidate, term: string, postTitles?: Record<string, string>) {
   if (!term) return true;
   const q = term.toLowerCase();
 

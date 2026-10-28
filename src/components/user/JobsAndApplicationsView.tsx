@@ -9,16 +9,22 @@ import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 import { Search, ChevronDown } from 'lucide-react';
 import popup from '@/components/ui/Popup';
-import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
-import JobLimitNotice from '@/components/subscription/JobLimitNotice';
-import { useSubscription } from '@/lib/useSubscription';
-import { FREE_USER_POST_LIMIT, isUnlimited } from '@/lib/subscriptions';
 
 interface JobsAndApplicationsViewProps {
     activeTab: 'jobs' | 'applications';
     /** Kept for callers; the filter sidebar no longer shows a profile prompt. */
     onCompleteProfile?: () => void;
 }
+
+/** Applicant counts are a nice-to-have; job seekers may not be allowed to read every application, so a denial just means no counts. */
+const safeApplicantCounts = async (): Promise<Record<string, number>> => {
+    try {
+        return await getApplicantCounts();
+    } catch (err) {
+        console.warn('Applicant counts unavailable:', err);
+        return {};
+    }
+};
 
 export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicationsViewProps) {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
@@ -35,9 +41,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
-    const [upgradeOpen, setUpgradeOpen] = useState(false);
     const [userId] = useState<string | null>(auth.currentUser?.uid ?? null);
-    const subscription = useSubscription(userId, 'user');
 
     useEffect(() => {
         setSelectedJob(null);
@@ -79,7 +83,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
             setApplications(detailedApplications.filter(Boolean));
 
-            const counts = await getApplicantCounts();
+            const counts = await safeApplicantCounts();
             setApplicantCounts(counts);
 
         } catch (error: any) {
@@ -102,7 +106,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 ...docSnap.data()
             })) as RecruitmentRequest[];
 
-            const counts = await getApplicantCounts();
+            const counts = await safeApplicantCounts();
             setApplicantCounts(counts);
 
             const merged = postsData.map(post => ({
@@ -210,9 +214,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         .sort((a, b) => newestFirst(a.createdAt, b.createdAt));
 
     // The plan decides how many jobs can be opened; assume the free limit until it loads.
-    const jobLimit = subscription?.maxPosts ?? FREE_USER_POST_LIMIT;
-    const visiblePosts = isUnlimited(jobLimit) ? filteredPosts : filteredPosts.slice(0, jobLimit);
-    const hiddenJobs = filteredPosts.length - visiblePosts.length;
+    const visiblePosts = filteredPosts;
 
     // The Applications tab honours the same filters; it used to render the raw list.
     const filteredApplications = applications
@@ -291,7 +293,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                     {visiblePosts.map((post) => (
                                         <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} />
                                     ))}
-                                    <JobLimitNotice limit={jobLimit} hidden={hiddenJobs} planName={subscription?.planName} onViewPlans={() => setUpgradeOpen(true)} />
                                 </div>
                             )
                         ) : (
@@ -330,14 +331,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     </div>
                 </div>
             </div>
-
-            <UpgradePlansModal
-                isOpen={upgradeOpen}
-                onClose={() => setUpgradeOpen(false)}
-                userId={userId}
-                subscription={subscription}
-                audience="user"
-            />
 
             {/* Mobile Filter Drawer */}
             {isFilterDrawerOpen && (

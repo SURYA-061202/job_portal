@@ -122,6 +122,7 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
 
     const sub = userData.subscription as UserSubscription | undefined;
     let expired = false;
+    let lapsedPlanId: string | null = null;
     if (sub?.planId) {
         const expiresAt = toDate(sub.expiresAt);
         if (!expiresAt || expiresAt.getTime() > Date.now()) {
@@ -137,6 +138,7 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
             };
         }
         expired = true;
+        lapsedPlanId = sub.planId;
     }
 
     // Recruiters approved under the old single "premium" flag keep unlimited access.
@@ -153,7 +155,19 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
         };
     }
 
-    return { ...freeTier, expired };
+    return { ...freeTier, expired, lapsedPlanId };
+}
+
+const RENEW_WINDOW_DAYS = 7;
+
+/** Renewal is offered only for a plan that has lapsed or is about to end by date; otherwise it is simply active. */
+export function canRenewPlan(sub: EffectiveSubscription | null | undefined, planId: string): boolean {
+    if (!sub) return false;
+    if (sub.expired && sub.lapsedPlanId === planId) return true;
+    if (sub.source === 'plan' && sub.planId === planId && sub.expiresAt) {
+        return sub.expiresAt.getTime() - Date.now() <= RENEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    }
+    return false;
 }
 
 export async function getUserSubscription(userId: string): Promise<EffectiveSubscription> {

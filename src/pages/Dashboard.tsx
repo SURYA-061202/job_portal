@@ -11,6 +11,7 @@ import InterviewsTab from '@/components/tabs/InterviewsTab';
 import SelectedCandidatesTab from '@/components/tabs/SelectedCandidatesTab';
 import NotificationsTab from '@/components/tabs/NotificationsTab';
 import ShortlistedTab from '@/components/tabs/ShortlistedTab.tsx';
+import InsightsTab from '@/components/tabs/InsightsTab';
 import AddMembersTab from '@/components/tabs/AddMembersTab';
 import MemberDetailContent from '@/components/tabs/MemberDetailContent';
 import RecruitmentPipelineTab from '@/components/tabs/RecruitmentPipelineTab';
@@ -23,7 +24,7 @@ import AdminSubscriptionTab from '@/components/subscription/AdminSubscriptionTab
 import RecruiterSubscriptionTab from '@/components/subscription/RecruiterSubscriptionTab';
 import { useSubscription } from '@/lib/useSubscription';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'guidelines' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('candidates');
@@ -111,7 +112,10 @@ export default function Dashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'job-posts':
-        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} subscription={subscription} />;
+        return <JobPostsTab onViewCandidates={handleViewCandidates} initialSelectedPostId={selectedPostId} userRole={userRole} userId={userId} subscription={subscription} onViewPlans={() => {
+          handleTabChange('subscription');
+          setOpenPlans(true);
+        }} />;
       case 'upload-resumes':
         // Hidden: Resume Upload module is disabled on the recruiter/admin side.
         return null;
@@ -150,7 +154,9 @@ export default function Dashboard() {
           />
         );
       case 'interviews':
-        return <InterviewsTab userRole={userRole} userId={userId} onCandidateSelected={() => setActiveTab('selected')} />;
+        return <InterviewsTab userRole={userRole} userId={userId} canViewContact={!!subscription && subscription.source !== 'free'} onCandidateSelected={() => setActiveTab('selected')} />;
+      case 'guidelines':
+        return <InsightsTab userRole={userRole} userId={userId} canViewContact={!!subscription && subscription.source !== 'free'} />;
       case 'selected':
         return <SelectedCandidatesTab userRole={userRole} userId={userId} />;
       case 'notifications':
@@ -199,7 +205,7 @@ export default function Dashboard() {
   // Tabs that manage their own internal scrolling (fixed header + scrollable body).
   // For these, <main> must not scroll, and the content wrapper needs min-h-0 so the
   // flex chain resolves to a bounded height instead of growing with its content.
-  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'candidates' || activeTab === 'notifications';
+  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'guidelines' || activeTab === 'candidates' || activeTab === 'notifications';
 
   return (
     <div className={`flex h-screen flex-col ${skin.canvas}`}>

@@ -414,7 +414,6 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                                 <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Status</th>
-                                                <th scope="col" className={`px-3 py-3 text-right ${skin.micro}`}>Actions</th>
                                                 <th scope="col" className={`px-5 py-3 text-center ${skin.micro}`}>Delete</th>
                                             </tr>
                                         </thead>
@@ -436,35 +435,35 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                                             <p className={skin.meta}>{formatDate(r.createdAt)}</p>
                                                         </td>
                                                         <td className="px-3 py-3.5">
-                                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{STATUS_LABEL[r.status]}</span>
-                                                            {r.status !== 'pending' && (
-                                                                <p className={`mt-1 ${skin.meta}`}>{formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-3.5">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                {r.status === 'pending' && (
+                                                            {r.status === 'pending' ? (
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{STATUS_LABEL[r.status]}</span>
                                                                     <>
                                                                         <button
                                                                             type="button"
                                                                             disabled={busy}
                                                                             onClick={() => handleReject(r)}
-                                                                            className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg border ${skin.edge} bg-surface px-2.5 text-xs font-semibold text-ink/80 hover:border-ink/40 ${FOCUS} disabled:opacity-50`}
+                                                                            className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md border ${skin.edge} bg-surface px-2 text-[11px] font-semibold text-ink/80 hover:border-ink/40 ${FOCUS} disabled:opacity-50`}
                                                                         >
-                                                                            <X className="h-3.5 w-3.5" aria-hidden="true" /> Decline
+                                                                            <X className="h-3 w-3" aria-hidden="true" /> Decline
                                                                         </button>
                                                                         <button
                                                                             type="button"
                                                                             disabled={busy}
                                                                             onClick={() => handleApprove(r)}
-                                                                            className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-brand px-2.5 text-xs font-semibold text-white hover:opacity-90 ${FOCUS} disabled:opacity-50`}
+                                                                            className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md bg-brand px-2 text-[11px] font-semibold text-white hover:opacity-90 ${FOCUS} disabled:opacity-50`}
                                                                         >
-                                                                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                                                                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Check className="h-3 w-3" aria-hidden="true" />}
                                                                             Approve
                                                                         </button>
                                                                     </>
-                                                                )}
-                                                            </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{STATUS_LABEL[r.status]}</span>
+                                                                    <p className={`mt-1 ${skin.meta}`}>{formatDate(r.resolvedAt)}{r.note ? ` \u00B7 ${r.note}` : ''}</p>
+                                                                </>
+                                                            )}
                                                         </td>
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex justify-center">

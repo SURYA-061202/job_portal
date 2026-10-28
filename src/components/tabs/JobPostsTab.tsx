@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, getDocs, query as fsQuery, where, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, getDocs, query as fsQuery, where, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import { parseKeywords, keywordPattern } from '@/lib/candidateSearch';
 import { getApplicantCounts } from '@/lib/jobApplications';
 import type { EffectiveSubscription, RecruitmentRequest } from '@/types';
@@ -8,12 +8,11 @@ import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal'
 import RecruiterPostDetail from '@/components/recruitment/RecruiterPostDetail';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import PostLimitModal from '@/components/subscription/PostLimitModal';
-import UpgradePlansModal from '@/components/subscription/UpgradePlansModal';
-import { checkPostQuota, formatLimit, isUnlimited } from '@/lib/subscriptions';
+import { checkPostQuota } from '@/lib/subscriptions';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
-    Search, Plus, SearchX, X, Crown,
+    Search, Plus, SearchX, X,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -43,9 +42,11 @@ interface JobPostsTabProps {
     userId?: string | null;
     /** The recruiter's live plan; its maxPosts is the post limit. */
     subscription?: EffectiveSubscription | null;
+    /** Opens the Subscription tab on its available plans. */
+    onViewPlans?: () => void;
 }
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, subscription }: JobPostsTabProps) {
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, subscription, onViewPlans }: JobPostsTabProps) {
     const postLimit = subscription?.maxPosts;
     const planName = subscription?.planName;
     const isAdmin = userRole === 'admin';
@@ -53,7 +54,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
     const [isRecruitmentModalOpen, setIsRecruitmentModalOpen] = useState(false);
-    const [upgradeOpen, setUpgradeOpen] = useState(false);
     const [limitInfo, setLimitInfo] = useState<{ used: number; limit: number; planName: string } | null>(null);
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
@@ -87,6 +87,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
                 return Number(dateB) - Number(dateA);
             });
+
+            // Older posts have no owner email on them; store it so applicant notifications can find the owner.
+            const ownEmail = auth.currentUser?.email?.trim().toLowerCase();
+            if (ownEmail && userId) {
+                recruits.filter(r => r.recruiterId === userId && !r.recruiterEmail).forEach(r => {
+                    updateDoc(doc(db, 'recruits', r.id), { recruiterEmail: ownEmail }).catch(err => console.warn('Could not store owner email on post', err));
+                    r.recruiterEmail = ownEmail;
+                });
+            }
 
             // 2. Fetch application counts (Firestore job_applications)
             const counts: Record<string, number> = await getApplicantCounts();
@@ -291,27 +300,8 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 )}
                             </div>
 
-                            {/* Actions row under the search, right-aligned: plan usage, Upgrade, then Add Post. */}
+                            {/* Actions row under the search, right-aligned. */}
                             <div className="flex flex-wrap items-center justify-end gap-2.5">
-                                {!isAdmin && postLimit !== undefined && !isUnlimited(postLimit) && (
-                                    <span
-                                        role="status"
-                                        title={`${planName || 'Current'} plan: ${formatLimit(postLimit)} job posts`}
-                                        className={`inline-flex h-10 shrink-0 items-center justify-center px-3 ${skin.chip} rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${total >= postLimit ? 'text-destructive' : ''}`}
-                                    >
-                                        {total} / {postLimit} posts used
-                                    </span>
-                                )}
-                                {!isAdmin && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setUpgradeOpen(true)}
-                                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg normal-case! tracking-normal! text-sm! font-semibold ${skin.secondary} ${FOCUS}`}
-                                    >
-                                        <Crown className="h-4 w-4 text-brand" aria-hidden="true" />
-                                        Upgrade
-                                    </button>
-                                )}
                                 <button
                                     type="button"
                                     onClick={handleAddPost}
@@ -402,19 +392,13 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             )}
 
             {/* Modals */}
-            <UpgradePlansModal
-                isOpen={upgradeOpen}
-                onClose={() => setUpgradeOpen(false)}
-                userId={userId ?? null}
-                subscription={subscription ?? null}
-            />
             <PostLimitModal
                 isOpen={limitInfo !== null}
                 onClose={() => setLimitInfo(null)}
                 used={limitInfo?.used ?? 0}
                 limit={limitInfo?.limit ?? 0}
                 planName={limitInfo?.planName ?? ''}
-                onViewPlans={() => setUpgradeOpen(true)}
+                onViewPlans={() => onViewPlans?.()}
             />
             <RecruitmentFormModal
                 isOpen={isRecruitmentModalOpen}

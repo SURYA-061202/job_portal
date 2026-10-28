@@ -1,5 +1,6 @@
 import { collection, addDoc, doc, getDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { resolveSubscription } from './subscriptions';
 
 export type NotificationType =
     | 'interview_invite'
@@ -311,6 +312,8 @@ async function getPostContext(postId: string): Promise<{ jobTitle: string; recru
         if (!postSnap.exists()) return { jobTitle: '', recruiterEmail: null };
         const post = postSnap.data();
         const jobTitle = post.jobTitle || '';
+        // Stored on the post, so a job seeker (who can't read other users' profiles) can still reach the owner.
+        if (post.recruiterEmail) return { jobTitle, recruiterEmail: String(post.recruiterEmail) };
         if (!post.recruiterId) return { jobTitle, recruiterEmail: null };
         const recruiterSnap = await getDoc(doc(db, 'users', post.recruiterId));
         return { jobTitle, recruiterEmail: recruiterSnap.exists() ? (recruiterSnap.data()?.email ?? null) : null };
@@ -432,20 +435,58 @@ async function getRecruiterRecipients(postId?: string | null): Promise<string[]>
     return [...recipients].filter(Boolean);
 }
 
-/** Tells the post owner (and admins) that someone applied. Never throws. */
+/** Email and phone of a candidate, from their user profile or uploaded-candidate record. */
+async function getPersonContact(personId: string): Promise<{ email: string; phone: string }> {
+    try {
+        const userSnap = await getDoc(doc(db, 'users', personId));
+        if (userSnap.exists()) {
+            const d = userSnap.data();
+            return { email: d.email || '', phone: d.mobile || d.phone || '' };
+        }
+        const candSnap = await getDoc(doc(db, 'candidates', personId));
+        if (candSnap.exists()) {
+            const d = candSnap.data();
+            return { email: d.email || '', phone: d.phone || '' };
+        }
+    } catch (err) {
+        console.error('Error resolving candidate contact for notification:', err);
+    }
+    return { email: '', phone: '' };
+}
+
+/** Whether the recipient (by email) is on a paid plan, the same rule that unlocks contact details in Candidates. */
+async function recipientHasPlan(email: string): Promise<boolean> {
+    try {
+        const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
+        if (snap.empty) return false;
+        return resolveSubscription(snap.docs[0].data()).source !== 'free';
+    } catch (err) {
+        console.error('Error resolving recipient plan for notification:', err);
+        return false;
+    }
+}
+
+/**
+ * Tells the post owner (and admins) that someone applied. The applicant's name
+ * always shows; their contact details only for recipients on a subscription plan.
+ * Never throws.
+ */
 export async function notifyRecruiterOfApplication(postId: string, candidateId: string): Promise<void> {
     try {
         const { jobTitle } = await getPostContext(postId);
         const recipients = await getRecruiterRecipients(postId);
         if (recipients.length === 0) return;
         const candidateName = await getPersonName(candidateId);
+        const contact = await getPersonContact(candidateId);
+        const contactText = [contact.email, contact.phone].filter(Boolean).join(' \u00B7 ');
 
         for (const recipient of recipients) {
+            const withContact = contactText && (await recipientHasPlan(recipient));
             await createNotification({
                 userId: recipient,
                 type: 'job_application',
                 title: 'New Application',
-                message: `${candidateName} applied for ${jobTitle || 'one of your posts'}.`,
+                message: `${candidateName} applied for ${jobTitle || 'one of your posts'}.${withContact ? ` Contact: ${contactText}.` : ''}`,
                 metadata: { candidateId, postId, role: jobTitle },
             });
         }
