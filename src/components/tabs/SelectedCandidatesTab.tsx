@@ -343,8 +343,7 @@ function SendCongratulationsButton({ candidate, labelled = false }: { candidate:
 export default function SelectedCandidatesTab({ userRole, userId }: { userRole?: string | null; userId?: string | null }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [postTitles, setPostTitles] = useState<Record<string, string>>({});
-  const skin = useSkin();
+  const [, setPostTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {

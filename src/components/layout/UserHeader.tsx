@@ -47,6 +47,7 @@ export default function UserHeader() {
         { to: '/home?tab=profile', label: 'Profile' },
         { to: '/home?tab=jobs', label: 'Find Jobs' },
         { to: '/home?tab=applications', label: 'Applied Jobs' },
+        { to: '/home?tab=recommendations', label: 'Recommendations' },
         { to: '/personalized-cv', label: 'CV Creation' },
         { to: '/home?tab=subscription', label: 'Subscription' },
     ];

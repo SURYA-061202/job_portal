@@ -15,7 +15,7 @@ export default function MatchingJobs() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+    const [, setUserId] = useState<string | null>(null);
     const navigate = useNavigate();
     const skin = useSkin();
 

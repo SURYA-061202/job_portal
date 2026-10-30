@@ -10,6 +10,7 @@ import UserHeader from '@/components/layout/UserHeader';
 
 import ProfileDetailsView from './ProfileDetailsView';
 import JobsAndApplicationsView from './JobsAndApplicationsView';
+import RecommendationsView from './RecommendationsView';
 import UserSubscriptionView from '@/components/subscription/UserSubscriptionView';
 import { ProfileCardSkeleton, ContentCardSkeleton } from './SkeletonLoaders';
 import { sendPasswordResetMail, confirmMobileVerified, checkMobileAvailable, normalizeMobile } from '@/lib/emailFunctions';
@@ -18,7 +19,7 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [searchParams] = useSearchParams();
-    const activeTab = (searchParams.get('tab') || 'profile') as 'profile' | 'jobs' | 'applications' | 'subscription';
+    const activeTab = (searchParams.get('tab') || 'profile') as 'profile' | 'jobs' | 'applications' | 'recommendations' | 'subscription';
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [verifyingEmail, setVerifyingEmail] = useState(false);
     const [sendingResetLink, setSendingResetLink] = useState(false);
@@ -872,6 +873,7 @@ export default function UserProfile() {
                                     setFormData={setFormData}
                                 />
                             )}
+                            {activeTab === 'recommendations' && <RecommendationsView />}
                             {activeTab === 'subscription' && <UserSubscriptionView />}
                             {(activeTab === 'jobs' || activeTab === 'applications') && (
                                 /* key forces a fresh mount on tab switch so filters,

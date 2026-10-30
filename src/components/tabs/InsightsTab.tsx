@@ -193,7 +193,6 @@ function PostPanel({ post, people, appliedSet, canViewContact, onInvite }: Panel
  * well their skills fit, and registered candidates who fit but haven't seen it.
  */
 export default function InsightsTab({ userRole, userId, canViewContact = false }: { userRole?: string | null; userId?: string | null; canViewContact?: boolean }) {
-  const skin = useSkin();
   const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
   const [people, setPeople] = useState<Record<string, Person>>({});
   const [applied, setApplied] = useState<Record<string, Set<string>>>({}); // postId -> user ids

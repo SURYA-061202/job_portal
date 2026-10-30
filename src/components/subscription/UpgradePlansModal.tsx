@@ -108,7 +108,7 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {plans.map((plan) => {
                                 const isCurrent = subscription?.source === 'plan' && subscription.planId === plan.id;
-                                const renewable = canRenewPlan(subscription, plan.id);
+                                const renewable = canRenewPlan(subscription, plan.id ?? '');
                                 const activeNoEnd = isCurrent && !renewable && pending?.planId !== plan.id;
                                 const isRequested = pending?.planId === plan.id;
                                 return (

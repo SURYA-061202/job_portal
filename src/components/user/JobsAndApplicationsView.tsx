@@ -41,7 +41,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
-    const [userId] = useState<string | null>(auth.currentUser?.uid ?? null);
 
     useEffect(() => {
         setSelectedJob(null);

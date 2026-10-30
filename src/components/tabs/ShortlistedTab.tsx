@@ -26,7 +26,6 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [postSearch, setPostSearch] = useState("");
-  const skin = useSkin();
 
   const loadCandidates = async () => {
     try {

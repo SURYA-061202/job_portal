@@ -147,7 +147,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                             {plans.map((plan) => {
                                 const isCurrent = sub?.source === 'plan' && sub.planId === plan.id;
                                 const isRequested = pending?.planId === plan.id;
-                                const renewable = canRenewPlan(sub, plan.id);
+                                const renewable = canRenewPlan(sub, plan.id ?? '');
                                 const activeNoEnd = isCurrent && !renewable && !isRequested;
                                 return (
                                     <PlanPricingCard

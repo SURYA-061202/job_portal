@@ -46,9 +46,7 @@ interface JobPostsTabProps {
     onViewPlans?: () => void;
 }
 
-export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, subscription, onViewPlans }: JobPostsTabProps) {
-    const postLimit = subscription?.maxPosts;
-    const planName = subscription?.planName;
+export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, userRole, userId, onViewPlans }: JobPostsTabProps) {
     const isAdmin = userRole === 'admin';
     const [recruitmentRequests, setRecruitmentRequests] = useState<RecruitmentRequest[]>([]);
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
@@ -243,8 +241,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 return toTime(b.createdAt) - toTime(a.createdAt);
         }
     });
-
-    const total = recruitmentRequests.length;
 
     return (
         <div className={`-m-4 md:-m-6 p-4 md:p-6 flex-1 min-h-0 flex flex-col overflow-hidden ${skin.canvas}`}>

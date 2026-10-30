@@ -33,7 +33,7 @@ export default function UserDashboard() {
     const [activeTab, setActiveTab] = useState<'jobs' | 'applications'>('jobs');
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+    const [, setUserId] = useState<string | null>(null);
     const skin = useSkin();
 
     const navigate = useNavigate();
