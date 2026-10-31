@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { companySlug } from '@/lib/reviews';
 import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
 import { ArrowRight, Briefcase, CircleCheck, Compass, Eye, MapPin, Plus, TrendingUp, X, type LucideIcon } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
@@ -328,7 +329,9 @@ export default function RecommendationsView() {
                                             </p>
                                             <h4 className="mt-0.5 truncate text-base font-bold text-ink">{post.jobTitle}</h4>
                                             <p className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 ${skin.meta}`}>
-                                                {post.companyName && <span>{post.companyName}</span>}
+                                                {post.companyName && (
+                                                    <Link to={`/company/${companySlug(post.companyName)}`} className="font-semibold hover:text-brand hover:underline">{post.companyName}</Link>
+                                                )}
                                                 {post.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />{post.location}</span>}
                                                 {post.yearsExperience && <span className="inline-flex items-center gap-1"><Briefcase className="h-3 w-3" aria-hidden="true" />{post.yearsExperience} yrs</span>}
                                             </p>

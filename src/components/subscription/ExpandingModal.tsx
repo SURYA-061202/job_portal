@@ -11,13 +11,15 @@ interface ExpandingModalProps {
     onClose: () => void;
     /** Tailwind max-width class for the panel; defaults to the wide table size. */
     widthClass?: string;
+    /** Tailwind height classes for the panel; defaults to the full height of the screen. */
+    heightClass?: string;
     /** Small control shown right beside the title (for example an edit icon). */
     titleAction?: ReactNode;
     children: ReactNode;
 }
 
 /** Tall panel on the right side that scales up from the button that opened it. Rendered on <body> so nothing can sit over it. */
-export default function ExpandingModal({ title, subtitle, origin, onClose, widthClass = 'max-w-[46rem]', titleAction, children }: ExpandingModalProps) {
+export default function ExpandingModal({ title, subtitle, origin, onClose, widthClass = 'max-w-[46rem]', heightClass = 'h-full', titleAction, children }: ExpandingModalProps) {
     const skin = useSkin();
     const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +51,7 @@ export default function ExpandingModal({ title, subtitle, origin, onClose, width
                 aria-modal="true"
                 aria-label={title}
                 onClick={(e) => e.stopPropagation()}
-                className={`flex h-full w-full ${widthClass} flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}
+                className={`flex ${heightClass} w-full ${widthClass} flex-col overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}
             >
                 <div className={`flex shrink-0 items-center justify-between border-b ${skin.edge} px-5 py-4`}>
                     <div className="min-w-0">

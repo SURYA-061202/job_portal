@@ -7,8 +7,12 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, BellPlus, BellRing } from 'lucide-react';
 import popup from '@/components/ui/Popup';
+import ExpandingModal from '@/components/subscription/ExpandingModal';
+import JobAlertsPanel from '@/components/user/JobAlertsPanel';
+import { MAX_SAVED_SEARCHES, createSavedSearch, listSavedSearches } from '@/lib/jobAlerts';
+import { FOCUS as FOCUS_RING } from '@/styles/skin';
 
 interface JobsAndApplicationsViewProps {
     activeTab: 'jobs' | 'applications';
@@ -41,6 +45,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
+    const [alertsOrigin, setAlertsOrigin] = useState<{ x: number; y: number } | null>(null);
 
     useEffect(() => {
         setSelectedJob(null);
@@ -132,6 +137,26 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     : [...current, option]
             };
         });
+    };
+
+    // What is typed in the search box and ticked as a city becomes a job alert.
+    const searchCity = selectedFilters.location?.[0] ?? '';
+    const canSaveSearch = searchTerm.trim().length > 0 || searchCity.length > 0;
+    const saveCurrentSearch = async () => {
+        const user = auth.currentUser;
+        if (!user || !canSaveSearch) return;
+        try {
+            const existing = await listSavedSearches(user.uid);
+            if (existing.length >= MAX_SAVED_SEARCHES) {
+                popup.warning(`You can keep up to ${MAX_SAVED_SEARCHES} job alerts. Delete one under "My job alerts" first.`);
+                return;
+            }
+            await createSavedSearch(user.uid, { keywords: searchTerm, city: searchCity, skills: [] });
+            popup.success("Search saved. We'll notify you when a matching job is posted.");
+        } catch (err) {
+            console.error('Error saving search:', err);
+            popup.error('Failed to save this search');
+        }
     };
 
     const clearAllFilters = () => {
@@ -266,6 +291,30 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             </button>
                         </div>
                     </div>
+                    {/* Job alerts: save what is typed or ticked as an alert, or manage saved ones */}
+                    {activeTab === 'jobs' && (
+                        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                            <button
+                                type="button"
+                                onClick={saveCurrentSearch}
+                                disabled={!canSaveSearch}
+                                title={canSaveSearch ? 'Get notified when a job like this is posted' : 'Type a keyword or tick a city first'}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold text-ink transition-colors hover:text-brand disabled:cursor-not-allowed disabled:text-ink/40 disabled:hover:text-ink/40 ${FOCUS_RING}`}
+                            >
+                                <BellPlus className="h-4 w-4" aria-hidden="true" />Save this search
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    const r = e.currentTarget.getBoundingClientRect();
+                                    setAlertsOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+                                }}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold text-ink transition-colors hover:text-brand ${FOCUS_RING}`}
+                            >
+                                <BellRing className="h-4 w-4" aria-hidden="true" />My job alerts
+                            </button>
+                        </div>
+                    )}
                     {/* Mobile-only filter trigger; on desktop the sidebar covers filtering */}
                     <div className="flex justify-end mb-3 lg:hidden">
                         <button
@@ -330,6 +379,12 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                     </div>
                 </div>
             </div>
+
+            {alertsOrigin && (
+                <ExpandingModal title="Job alerts" subtitle="Get notified when a new job matches your search" origin={alertsOrigin} onClose={() => setAlertsOrigin(null)} widthClass="max-w-[34rem]">
+                    <JobAlertsPanel />
+                </ExpandingModal>
+            )}
 
             {/* Mobile Filter Drawer */}
             {isFilterDrawerOpen && (

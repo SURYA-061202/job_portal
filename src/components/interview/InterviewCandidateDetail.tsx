@@ -1,3 +1,4 @@
+import { useRecordProfileView } from '@/lib/profileViews';
 import type { Candidate, RecruitmentRequest } from "@/types";
 import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil, Loader2 } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
@@ -45,6 +46,7 @@ interface Props {
 export default function InterviewCandidateDetail({ candidate, post, onBack, onStatusUpdated, onCandidateSelected }: Props) {
   const interview = (candidate as any).interviewDetails || {};
   const status = (candidate as any).status;
+  useRecordProfileView(candidate.id);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);

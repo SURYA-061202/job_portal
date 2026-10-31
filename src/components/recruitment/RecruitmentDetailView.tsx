@@ -13,7 +13,6 @@ import { getPostRounds } from '@/lib/interviewRounds';
 import ShareJobModal from './ShareJobModal';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
-
 interface RecruitmentDetailViewProps {
     recruitment: RecruitmentRequest;
     onBack: () => void;

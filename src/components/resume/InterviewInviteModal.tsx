@@ -7,6 +7,7 @@ import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { createInterviewInviteNotification } from '@/lib/notificationHelper';
+import { recordProfileInvite } from '@/lib/profileViews';
 import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -217,6 +218,9 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
       } catch (err) {
         console.error('Failed to create notification', err);
       }
+
+      // Shows up under "Who viewed me" on the candidate's profile.
+      void recordProfileInvite(candidate.id, role);
 
       popup.success('Email sent successfully');
       onSent?.();

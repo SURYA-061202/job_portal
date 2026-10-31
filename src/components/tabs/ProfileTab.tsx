@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { User, Loader2, KeyRound, Camera, X } from 'lucide-react';
+import { User, Loader2, KeyRound, Camera, X, Building2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { companySlug } from '@/lib/reviews';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { sendPasswordResetMail } from '@/lib/emailFunctions';
@@ -31,6 +33,7 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
     const [saving, setSaving] = useState(false);
     const [sendingReset, setSendingReset] = useState(false);
     const [profileImage, setProfileImage] = useState('');
+    const [companyName, setCompanyName] = useState('');
     const [imageUploading, setImageUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
@@ -54,7 +57,8 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                 try {
                     const docSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
                     if (docSnap.exists()) {
-                        const raw = docSnap.data() as Partial<UserData> & { profileImage?: string };
+                        const raw = docSnap.data() as Partial<UserData> & { profileImage?: string; companyName?: string };
+                        setCompanyName(raw.companyName || '');
                         // Normalize: docs created at signup/invite may be missing
                         // fields, and updateDoc rejects undefined values.
                         const data: UserData = {
@@ -311,6 +315,14 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                         </button>
                     )}
                 </div>
+
+                {companyName && !isEditing && (
+                    <div className={`border-t ${skin.edge} px-6 py-4`}>
+                        <Link to={`/company/${companySlug(companyName)}`} className={`inline-flex items-center gap-2 text-sm font-bold text-ink transition-colors hover:text-brand ${FOCUS}`}>
+                            <Building2 className="h-4 w-4" aria-hidden="true" />Company page &amp; reviews
+                        </Link>
+                    </div>
+                )}
 
                 {onLogout && !isEditing && (
                     <div className={`mt-auto border-t ${skin.edge}`}>

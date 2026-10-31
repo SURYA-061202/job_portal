@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Menu, Pencil, X, UserCheck, CalendarClock, BadgeCheck, type LucideIcon } from 'lucide-react';
+import MessagesButton from '@/components/messages/MessagesButton';
 import NotificationBell from './NotificationBell';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
 import ProfileTab from '@/components/tabs/ProfileTab';
@@ -269,6 +270,7 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
 
           {/* Actions (desktop) */}
           <div className="hidden md:flex items-center gap-3">
+            {SHOW_BELL && <MessagesButton variant="recruiter" />}
             {SHOW_BELL && (
             <button
               type="button"
@@ -304,6 +306,7 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-1">
+            {SHOW_BELL && <MessagesButton variant="user" />}
             {SHOW_BELL && (
             <button
               type="button"

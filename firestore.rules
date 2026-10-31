@@ -151,6 +151,71 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userId == myEmail();
     }
 
+    // ---------- saved searches (job alerts) ----------
+    // Private to the job seeker who made them.
+    match /saved_searches/{id} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------- profile views ("who viewed me") ----------
+    // One document per recruiter + candidate pair, id = candidateId_recruiterId.
+    // Recruiters write their own activity; the candidate reads what is about them.
+    match /profile_views/{id} {
+      allow read: if signedIn() && (resource.data.candidateId == request.auth.uid
+                                    || resource.data.viewerId == request.auth.uid
+                                    || isAdmin());
+      allow create: if isStaff()
+                    && request.resource.data.viewerId == request.auth.uid
+                    && id == request.resource.data.candidateId + '_' + request.auth.uid;
+      allow update: if isStaff()
+                    && resource.data.viewerId == request.auth.uid
+                    && request.resource.data.viewerId == resource.data.viewerId
+                    && request.resource.data.candidateId == resource.data.candidateId;
+      allow delete: if isAdmin();
+    }
+
+    // ---------- company reviews (hiring process ratings) ----------
+    // One review per person per company (id = companySlug_userId), and only from
+    // someone who applied to a job: the application document must exist.
+    match /company_reviews/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && id == request.resource.data.companySlug + '_' + request.auth.uid
+                    && exists(/databases/$(database)/documents/job_applications/$(request.resource.data.postId + '_' + request.auth.uid))
+                    && request.resource.data.overall is number
+                    && request.resource.data.overall >= 1 && request.resource.data.overall <= 5
+                    && request.resource.data.comment.size() <= 1500;
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ---------- messaging (users <-> admin) ----------
+    // Everyone except the admin has one thread with the admin, keyed by their own
+    // user id, and may write to it at any time. The admin can read and answer all.
+    match /support_threads/{threadId} {
+      allow get: if signedIn() && (threadId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && !isAdmin()
+                    && threadId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && (threadId == request.auth.uid || isAdmin())
+                    && changedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'lastSenderId', 'lastSenderRole', 'readAt', 'adminReadAt']);
+
+      match /messages/{mid} {
+        allow read: if signedIn() && (threadId == request.auth.uid || isAdmin());
+        allow create: if signedIn() && (threadId == request.auth.uid || isAdmin())
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.senderRole == (isAdmin() ? 'admin' : 'user')
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000;
+      }
+    }
+
     // ---------- training / clustering ----------
     match /assessments/{id} {
       allow read: if signedIn();

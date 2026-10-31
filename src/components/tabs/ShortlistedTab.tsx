@@ -1,3 +1,4 @@
+import { useRecordProfileView } from '@/lib/profileViews';
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -311,6 +312,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
   const candidateId = candidate.id;
   const candidatePostId = (candidate as any).postId as string | undefined;
   const skin = useSkin();
+  useRecordProfileView(candidateId);
 
   // Keep the round name in sync with the post's first round (the detail can be
   // re-used across candidates without remounting).

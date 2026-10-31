@@ -1,3 +1,4 @@
+import { useRecordProfileView } from '@/lib/profileViews';
 import { useEffect, useState, type MouseEvent } from "react";
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -19,6 +20,7 @@ const normalizeSkills = (skills: any): string[] => {
 };
 
 export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
+  useRecordProfileView(candidate.id);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<boolean>(false);
   const skin = useSkin();

@@ -21,6 +21,7 @@ import popup from '@/components/ui/Popup';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { useRecordProfileView } from '@/lib/profileViews';
 
 interface CandidatesTabProps {
     postId?: string | null;
@@ -85,6 +86,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+    // Opening a candidate, from the cards or the detail page, shows on their Profile Visibility.
+    useRecordProfileView(selectedCandidate?.id);
     const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
 
     // Clustering State
@@ -371,6 +374,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 const data = doc.data();
                 // Only include users with role 'user'
                 if (data.role !== 'user') {
+                    return;
+                }
+                // Job seekers can switch off "Show me to recruiters" on their profile.
+                if (data.searchable === false) {
                     return;
                 }
                 users.push(userDocToCandidate(doc.id, data, 'Unnamed User', 'User', { status: 'pending' }));

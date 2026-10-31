@@ -27,6 +27,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showResumePreview, setShowResumePreview] = useState(false);
   const [removing, setRemoving] = useState(false);
+
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
   const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);

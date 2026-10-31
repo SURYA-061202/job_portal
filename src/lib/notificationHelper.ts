@@ -20,7 +20,9 @@ export type NotificationType =
     | 'job_application'
     | 'interview_response'
     | 'shortlisted'
-    | 'details_submitted';
+    | 'details_submitted'
+    | 'job_alert'
+    | 'new_message';
 
 export interface NotificationData {
     userId: string; // Recipient email — addressed by email so any device's bell matches

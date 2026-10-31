@@ -1,6 +1,8 @@
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { checkJobAlerts } from '@/lib/jobAlerts';
+import MessagesButton from '@/components/messages/MessagesButton';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import popup from '@/components/ui/Popup';
@@ -22,6 +24,28 @@ export default function UserHeader() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Signed-in id, kept in state so the job alert check works after a hard refresh too.
+    const [uid, setUid] = useState<string | null>(auth.currentUser?.uid ?? null);
+
+    useEffect(() => onAuthStateChanged(auth, (user) => {
+        setUid(user?.uid ?? null);
+        // Leaves a notification for any saved search that has new matching jobs.
+        if (user) void checkJobAlerts();
+    }), []);
+
+    // Keep looking while the page stays open: every couple of minutes, and the
+    // moment the person comes back to this tab.
+    useEffect(() => {
+        if (!uid) return;
+        const run = () => { if (document.visibilityState === 'visible') void checkJobAlerts(); };
+        const timer = window.setInterval(run, 2 * 60 * 1000);
+        document.addEventListener('visibilitychange', run);
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', run);
+        };
+    }, [uid]);
 
     const isActive = (path: string) => {
         const [pathName, query = ''] = path.split('?');
@@ -80,7 +104,7 @@ export default function UserHeader() {
                             </div>
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-8">
+                        <nav className="hidden md:flex items-center gap-5 xl:gap-8">
                             {navLinks.map((link) => (
                                 <div key={link.to} className="relative group/nav">
                                     <Link
@@ -106,6 +130,7 @@ export default function UserHeader() {
 
                     {/* Right Side - Actions (Desktop) */}
                     <div className="hidden md:flex items-center gap-2">
+                        <MessagesButton variant="user" />
                         <NotificationBell />
                         <button
                             onClick={handleLogout}
@@ -143,10 +168,13 @@ export default function UserHeader() {
                                 : 'text-ink/60 hover:bg-ink/5'
                             }`}
                         >
-                            <span className="text-base">{link.label}</span>
-                        </Link>
+                            <span className="text-base">{link.label}</span>                        </Link>
                     ))}
                     <div className="h-px bg-border my-2"></div>
+                    <div className={`flex items-center gap-3 p-4 ${skin.radius} text-ink/60`}>
+                        <MessagesButton variant="user" />
+                        <span className="text-base font-medium">Messages</span>
+                    </div>
                     <div className={`flex items-center gap-3 p-4 ${skin.radius} text-ink/60`}>
                         <NotificationBell />
                         <span className="text-base font-medium">Notifications</span>

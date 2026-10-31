@@ -16,6 +16,10 @@ export default function JobDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const skin = useSkin();
 
+    // Arriving from a page that was scrolled down would otherwise open this one
+    // part-way down, with the header and title cut off.
+    useEffect(() => { window.scrollTo(0, 0); }, [jobId]);
+
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (!user) {
@@ -96,11 +100,14 @@ export default function JobDetailPage() {
     return (
         <div className={`min-h-screen flex flex-col ${skin.canvas}`}>
             <UserHeader />
-            <RecruitmentDetailView
-                recruitment={job}
-                onBack={() => navigate(-1)}
-                isUserView
-            />
+            {/* Same spacing the Find Jobs page gives the detail view */}
+            <div className="flex-1 w-full px-6 lg:px-12 py-8">
+                <RecruitmentDetailView
+                    recruitment={job}
+                    onBack={() => navigate(-1)}
+                    isUserView
+                />
+            </div>
         </div>
     );
 }
