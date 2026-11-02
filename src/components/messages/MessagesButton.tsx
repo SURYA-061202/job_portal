@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useMessagingProfile, useUnreadMessages } from '@/lib/messaging';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
-import MessagesPanel from '@/components/messages/MessagesPanel';
+import HelpPanel from '@/components/messages/HelpPanel';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 interface MessagesButtonProps {
@@ -61,7 +61,7 @@ export default function MessagesButton({ variant }: MessagesButtonProps) {
                     widthClass="max-w-[24rem]"
                     heightClass="h-[34rem] max-h-full"
                 >
-                    <MessagesPanel profile={profile} />
+                    <HelpPanel profile={profile} />
                 </ExpandingModal>
             )}
         </>

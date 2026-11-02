@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
@@ -7,11 +7,14 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
-import { Search, ChevronDown, BellPlus, BellRing } from 'lucide-react';
+import { Search, ChevronDown, BellRing, Building2, X, Undo2 } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
 import JobAlertsPanel from '@/components/user/JobAlertsPanel';
-import { MAX_SAVED_SEARCHES, createSavedSearch, listSavedSearches } from '@/lib/jobAlerts';
+import TopCompaniesPanel from '@/components/user/TopCompaniesPanel';
+import { parseKeywords } from '@/lib/candidateSearch';
+import { byRelevance, compileKeywords, searchJob } from '@/lib/jobSearch';
+import { companySlug } from '@/lib/reviews';
 import { FOCUS as FOCUS_RING } from '@/styles/skin';
 
 interface JobsAndApplicationsViewProps {
@@ -46,6 +49,11 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
     const [selectedJob, setSelectedJob] = useState<RecruitmentRequest | null>(null);
     const [alertsOrigin, setAlertsOrigin] = useState<{ x: number; y: number } | null>(null);
+    // Top companies replaces the post list with company cards; opening one shows its posts.
+    const [showCompanies, setShowCompanies] = useState(false);
+    const [activeCompany, setActiveCompany] = useState<string | null>(null);
+    // Typing stays smooth on long lists: the search runs on a slightly lagging copy.
+    const deferredSearch = useDeferredValue(searchTerm);
 
     useEffect(() => {
         setSelectedJob(null);
@@ -139,26 +147,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         });
     };
 
-    // What is typed in the search box and ticked as a city becomes a job alert.
-    const searchCity = selectedFilters.location?.[0] ?? '';
-    const canSaveSearch = searchTerm.trim().length > 0 || searchCity.length > 0;
-    const saveCurrentSearch = async () => {
-        const user = auth.currentUser;
-        if (!user || !canSaveSearch) return;
-        try {
-            const existing = await listSavedSearches(user.uid);
-            if (existing.length >= MAX_SAVED_SEARCHES) {
-                popup.warning(`You can keep up to ${MAX_SAVED_SEARCHES} job alerts. Delete one under "My job alerts" first.`);
-                return;
-            }
-            await createSavedSearch(user.uid, { keywords: searchTerm, city: searchCity, skills: [] });
-            popup.success("Search saved. We'll notify you when a matching job is posted.");
-        } catch (err) {
-            console.error('Error saving search:', err);
-            popup.error('Failed to save this search');
-        }
-    };
-
     const clearAllFilters = () => {
         setSelectedFilters({
             jobType: [], experience: [], salary: [], department: [], location: []
@@ -173,10 +161,6 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
      */
     const matchesFilters = (post?: Partial<RecruitmentRequest> | null) => {
         if (!post) return false;
-
-        const term = searchTerm.trim().toLowerCase();
-        const matchesSearch = !term || [post.jobTitle, post.department, post.skills, post.companyName]
-            .some(field => String(field || '').toLowerCase().includes(term));
 
         const matchesJobType = selectedFilters.jobType.length === 0 ||
             selectedFilters.jobType.includes(post.candidateType || 'Permanent');
@@ -212,7 +196,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 return forms.some(form => place.includes(form));
             });
 
-        return matchesSearch && matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesLocation;
+        return matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesLocation;
     };
 
     /** Firestore Timestamp, Date, or anything Date can parse. */
@@ -232,23 +216,49 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     /** Newest first, the order the sort dropdown used to default to. */
     const newestFirst = (aDate: SortableDate, bDate: SortableDate) => toMillis(bDate) - toMillis(aDate);
 
-    const filteredPosts = posts
-        // Jobs already applied to live on the Applications tab instead.
-        .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
-        .sort((a, b) => newestFirst(a.createdAt, b.createdAt));
+    // Keyword search, the same rules as the recruiter's candidate search: commas
+    // separate phrases, quotes keep a phrase together, and a job needs to match at
+    // least one keyword. Better matches come first; with nothing typed, newest first.
+    const keywords = useMemo(() => parseKeywords(deferredSearch), [deferredSearch]);
+    const compiled = useMemo(() => compileKeywords(keywords), [keywords]);
+    const rankByKeywords = <T,>(items: T[], postOf: (item: T) => Partial<RecruitmentRequest> | undefined): T[] => {
+        if (keywords.length === 0) return items;
+        return items
+            .map(item => ({ item, hit: searchJob(postOf(item) ?? {}, compiled) }))
+            .filter((x): x is { item: T; hit: NonNullable<typeof x.hit> } => x.hit !== null)
+            .sort((a, b) => byRelevance(a.hit, b.hit))
+            .map(x => x.item);
+    };
+
+    const filteredPosts = rankByKeywords(
+        posts
+            // Jobs already applied to live on the Applications tab instead.
+            .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
+            .sort((a, b) => newestFirst(a.createdAt, b.createdAt)),
+        post => post,
+    );
 
     // The plan decides how many jobs can be opened; assume the free limit until it loads.
     const visiblePosts = filteredPosts;
 
     // The Applications tab honours the same filters; it used to render the raw list.
-    const filteredApplications = applications
-        .filter(app => matchesFilters(app.recruitment_requests))
-        .sort((a, b) => newestFirst(a.created_at || a.recruitment_requests?.createdAt, b.created_at || b.recruitment_requests?.createdAt));
+    const filteredApplications = rankByKeywords(
+        applications
+            .filter(app => matchesFilters(app.recruitment_requests))
+            .sort((a, b) => newestFirst(a.created_at || a.recruitment_requests?.createdAt, b.created_at || b.recruitment_requests?.createdAt)),
+        app => app.recruitment_requests,
+    );
 
+    // Open jobs the person can still apply to, and the ones inside the company they opened.
+    const openPosts = posts.filter(post => !applications.some(app => app.post_id === post.id));
+    const companyPosts = activeCompany
+        ? openPosts.filter(p => companySlug(p.companyName || '') === companySlug(activeCompany)).sort((a, b) => newestFirst(a.createdAt, b.createdAt))
+        : [];
+    const closeCompanies = () => { setShowCompanies(false); setActiveCompany(null); };
 
     if (selectedJob) {
         return (
-            <div className="min-h-[500px]">
+            <div className="min-h-[500px] px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
                 <RecruitmentDetailView
                     recruitment={selectedJob}
                     onBack={() => setSelectedJob(null)}
@@ -273,36 +283,74 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 {/* Right Content - Search field at the top, posts below it */}
                 <div className="lg:col-span-3 flex flex-col">
                     <div className="mb-3">
-                        <div className="w-full bg-surface border border-border rounded-lg p-1.5 flex items-center gap-2 transition-all duration-300 focus-within:border-ink">
-                            <div className="relative flex-1 w-full group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ink/40 group-focus-within:text-brand transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Job title, keywords, or company"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full font-inter pl-12 pr-4 py-3 bg-transparent rounded-lg focus:outline-none text-ink text-sm md:text-base placeholder:text-ink/40"
-                                />
+                        <div className="relative w-full">
+                            <label htmlFor="job-keyword-search" className="sr-only">Search jobs by keywords</label>
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                <Search className="h-5 w-5 text-ink/40" />
                             </div>
-                            <button
-                                className="w-full md:w-auto px-6 py-2.5 border border-ink/70 bg-ink/70 text-surface rounded-lg font-semibold text-sm hover:bg-ink/60 hover:border-ink/60 hover:scale-[1.02] active:scale-95 transition-all"
-                            >
-                                Search
-                            </button>
+                            <input
+                                id="job-keyword-search"
+                                type="text"
+                                placeholder="Search by job title, skill, company or city"
+                                title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together.'
+                                className={`block h-12 w-full rounded-lg border border-ink/20 bg-surface pl-11 pr-10 text-sm text-ink shadow-sm transition-colors placeholder:text-ink/40 hover:border-ink/40 ${FOCUS_RING}`}
+                                value={searchTerm}
+                                onChange={(e) => { setSearchTerm(e.target.value); if (showCompanies) closeCompanies(); }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Escape' && searchTerm) {
+                                        e.preventDefault();
+                                        setSearchTerm('');
+                                    }
+                                }}
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm('')}
+                                    aria-label="Clear search"
+                                    className={`absolute inset-y-0 right-0 my-auto mr-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-ink/50 transition-colors duration-200 hover:bg-ink/5 hover:text-ink ${FOCUS_RING}`}
+                                >
+                                    <X className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            )}
                         </div>
                     </div>
-                    {/* Job alerts: save what is typed or ticked as an alert, or manage saved ones */}
+                    {/* My job alerts, then the companies hiring the most */}
                     {activeTab === 'jobs' && (
-                        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-                            <button
-                                type="button"
-                                onClick={saveCurrentSearch}
-                                disabled={!canSaveSearch}
-                                title={canSaveSearch ? 'Get notified when a job like this is posted' : 'Type a keyword or tick a city first'}
-                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold text-ink transition-colors hover:text-brand disabled:cursor-not-allowed disabled:text-ink/40 disabled:hover:text-ink/40 ${FOCUS_RING}`}
-                            >
-                                <BellPlus className="h-4 w-4" aria-hidden="true" />Save this search
-                            </button>
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+                            {showCompanies && activeCompany ? (
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveCompany(null)}
+                                        aria-label="Back to companies"
+                                        title="Back to companies"
+                                        className={`inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-ink bg-transparent text-ink ${FOCUS_RING}`}
+                                    >
+                                        <Undo2 className="h-4 w-4 -scale-x-100" aria-hidden="true" />
+                                    </button>
+                                    <h3 className="min-w-0 truncate text-base font-bold leading-none text-ink">{activeCompany}</h3>
+                                </div>
+                            ) : showCompanies ? (
+                                <button
+                                    type="button"
+                                    onClick={closeCompanies}
+                                    aria-label="Back to posts"
+                                    title="Back to posts"
+                                    className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-ink bg-transparent pl-2.5 pr-3.5 text-sm font-bold text-ink ${FOCUS_RING}`}
+                                >
+                                    <Undo2 className="h-4 w-4 -scale-x-100" aria-hidden="true" />Back to posts
+                                </button>
+                            ) : (
+                                <p aria-live="polite">
+                                    {!loading && (
+                                        <span className={`inline-flex h-8 items-center rounded-lg border border-ink px-3.5 text-xs font-bold text-ink`}>
+                                            {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'}
+                                        </span>
+                                    )}
+                                </p>
+                            )}
+                            <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
                             <button
                                 type="button"
                                 onClick={(e) => {
@@ -313,6 +361,15 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             >
                                 <BellRing className="h-4 w-4" aria-hidden="true" />My job alerts
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => (!showCompanies ? setShowCompanies(true) : activeCompany ? setActiveCompany(null) : closeCompanies())}
+                                aria-pressed={showCompanies}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold transition-colors hover:text-brand ${showCompanies ? 'text-brand' : 'text-ink'} ${FOCUS_RING}`}
+                            >
+                                <Building2 className="h-4 w-4" aria-hidden="true" />Top companies
+                            </button>
+                            </div>
                         </div>
                     )}
                     {/* Mobile-only filter trigger; on desktop the sidebar covers filtering */}
@@ -325,11 +382,30 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                         </button>
                     </div>
 
-                    {/* White panel holding the cards, height matched to the filter sidebar */}
-                    <div className="bg-surface border border-border rounded-lg p-3 md:p-4 flex flex-col overflow-hidden max-h-[calc(100vh-7rem)]">
+                    {/* The cards sit straight on the page, each on its own white card; height matched to the filter sidebar */}
+                    <div className="flex flex-col overflow-hidden max-h-[calc(100vh-7rem)]">
                         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                         {loading ? (
                             <JobListSkeleton count={3} />
+                        ) : activeTab === 'jobs' && showCompanies ? (
+                            activeCompany ? (
+                                <div>
+                                    {companyPosts.length === 0 ? (
+                                        <div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
+                                            <h3 className="text-lg font-bold text-ink mb-2">No open jobs here right now</h3>
+                                            <p className="text-ink/60 max-w-sm mx-auto">Check another company, or come back later.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-4">
+                                            {companyPosts.map((post) => (
+                                                <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} whiteCard plainSkills />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <TopCompaniesPanel posts={openPosts} onSelect={setActiveCompany} />
+                            )
                         ) : activeTab === 'jobs' ? (
                             filteredPosts.length === 0 ? (
                                 <div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
@@ -339,7 +415,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             ) : (
                                 <div className="flex flex-col gap-4">
                                     {visiblePosts.map((post) => (
-                                        <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} />
+                                        <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} whiteCard plainSkills keywords={keywords} />
                                     ))}
                                 </div>
                             )
@@ -369,6 +445,9 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                                 applicantCount: applicantCounts[app.recruitment_requests.id] || 0
                                             }}
                                             applicationStatus={app.status}
+                                            whiteCard
+                                            plainSkills
+                                            keywords={keywords}
                                             onViewDetails={(j) => setSelectedJob(j)}
                                         />
                                     ))}

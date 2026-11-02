@@ -1,5 +1,5 @@
 import type { RecruitmentRequest } from '@/types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { MapPin, Briefcase, Clock, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -17,6 +17,8 @@ interface UserJobCardProps {
     applicantCount?: number;
     /** White card instead of the page grey. */
     whiteCard?: boolean;
+    /** Skills as plain comma-separated text instead of grey chips. */
+    plainSkills?: boolean;
     /** Recruiter side: tiny edit and delete icons beside the title. */
     /** Search keywords to highlight in the card text. */
     keywords?: string[];
@@ -24,7 +26,7 @@ interface UserJobCardProps {
     onDelete?: (recruitment: RecruitmentRequest) => Promise<void> | void;
 }
 
-export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, keywords, onEdit, onDelete }: UserJobCardProps) {
+export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, plainSkills, keywords, onEdit, onDelete }: UserJobCardProps) {
     const regex = useMemo(() => buildHighlightRegex(keywords ?? []), [keywords]);
     const hl = (t?: string) => <Highlight text={t ?? ''} regex={regex} />;
     const [confirming, setConfirming] = useState(false);
@@ -38,6 +40,17 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
             ? { label: statusInfo.label, className: 'bg-ink/5 text-ink/80 border-ink/20' }
             : statusInfo;
     const skin = useSkin();
+
+    // Skills that match the search come first, so a hit is never hidden past the third chip.
+    const shownSkills = plainSkills ? 6 : 3;
+    const { skillChips, skillTotal } = useMemo(() => {
+        const all = (recruitment.skills || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (!regex) return { skillChips: all.slice(0, shownSkills), skillTotal: all.length };
+        const hit = new RegExp(regex.source, 'iu');
+        return { skillChips: [...all.filter(s => hit.test(s)), ...all.filter(s => !hit.test(s))].slice(0, shownSkills), skillTotal: all.length };
+    }, [recruitment.skills, regex, shownSkills]);
+    // The company is not on the card, so it only appears when the search matched it.
+    const companyHit = !!regex && !!recruitment.companyName && new RegExp(regex.source, 'iu').test(recruitment.companyName);
 
     return (
         <div className={`border ${skin.edge} ${whiteCard ? 'bg-surface' : skin.canvas} rounded-lg p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 relative group transition-colors duration-200 ${skin.cardHover}`}>
@@ -98,6 +111,8 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                     )}
                 </div>
 
+                {companyHit && <p className="mb-2 text-xs font-medium text-ink/60 md:text-sm">{hl(recruitment.companyName)}</p>}
+
                 {/* Key facts - plain text, no pills */}
                 <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 text-ink/70">
                     <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
@@ -125,9 +140,14 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                         <span className={`mr-1 ${skin.micro}`}>Skills:</span>
-                        {recruitment.skills?.split(',').slice(0, 3).map((skill, i) => (
+                        {plainSkills ? (
+                            <span className="text-xs font-medium text-ink/70 md:text-sm">
+                                {skillChips.map((skill, i) => <Fragment key={i}>{i > 0 && ', '}{hl(skill)}</Fragment>)}
+                                {skillTotal > skillChips.length && <span className="ml-1.5 font-bold text-ink">+{skillTotal - skillChips.length}</span>}
+                            </span>
+                        ) : skillChips.map((skill, i) => (
                             <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
-                                {hl(skill.trim())}
+                                {hl(skill)}
                             </span>
                         ))}
                     </div>

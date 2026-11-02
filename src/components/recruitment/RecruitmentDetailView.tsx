@@ -157,8 +157,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     /* Requirements values render as plain emphasis - no border or chip
        chrome on either view. */
     const requirementValue = 'inline-flex items-center font-semibold text-ink';
-    /* Panels: grey sections on the common white page, both views. */
-    const panelClass = `overflow-hidden border ${skin.edge} ${skin.cardSurface} ${skin.radius}`;
+    /* Panels: each section is its own white card straight on the page canvas, both views. */
+    const panelClass = `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius}`;
     /* Candidate view reuses the post-card grey: the back button gets a grey
        tile with the button radius, and the skill tags copy the post-card pill
        (padding, size and weight included) so they read identically. */
@@ -319,15 +319,11 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                     </div>
                 </div>
             )}
-            {/* Content. The header sits on the page canvas; the white body
-                starts below it (both views), with the sections inset a little
-                so they read narrower than full bleed. The body's top and
-                bottom padding are pinned strips on the panel itself, so they
-                stay at the top and bottom of the body bg while the sections
-                scroll between them. */}
-            <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden ${skin.resultsPanel ? `${skin.resultsPanel} ${skin.radius}` : ''}`}>
+            {/* Content. The header and the sections all sit on the page canvas;
+                each section is its own white card, flush with the title row on both sides. */}
+            <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">
                 <div className="h-6 shrink-0" aria-hidden="true" />
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 sm:px-5">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                     <div className="space-y-4 min-h-full">
 
                     {/* At a glance - this section's own style: uppercase header

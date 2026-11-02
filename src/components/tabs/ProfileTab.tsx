@@ -3,7 +3,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { User, Loader2, KeyRound, Camera, X, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { companySlug } from '@/lib/reviews';
+import { REVIEWS_ENABLED, companySlug } from '@/lib/reviews';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { sendPasswordResetMail } from '@/lib/emailFunctions';
@@ -316,7 +316,7 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                     )}
                 </div>
 
-                {companyName && !isEditing && (
+                {REVIEWS_ENABLED && companyName && !isEditing && (
                     <div className={`border-t ${skin.edge} px-6 py-4`}>
                         <Link to={`/company/${companySlug(companyName)}`} className={`inline-flex items-center gap-2 text-sm font-bold text-ink transition-colors hover:text-brand ${FOCUS}`}>
                             <Building2 className="h-4 w-4" aria-hidden="true" />Company page &amp; reviews

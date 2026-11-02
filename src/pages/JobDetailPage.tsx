@@ -100,13 +100,15 @@ export default function JobDetailPage() {
     return (
         <div className={`min-h-screen flex flex-col ${skin.canvas}`}>
             <UserHeader />
-            {/* Same spacing the Find Jobs page gives the detail view */}
-            <div className="flex-1 w-full px-6 lg:px-12 py-8">
-                <RecruitmentDetailView
-                    recruitment={job}
-                    onBack={() => navigate(-1)}
-                    isUserView
-                />
+            {/* Same column and side spacing as the Find Jobs list */}
+            <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+                <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
+                    <RecruitmentDetailView
+                        recruitment={job}
+                        onBack={() => navigate(-1)}
+                        isUserView
+                    />
+                </div>
             </div>
         </div>
     );

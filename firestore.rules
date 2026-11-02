@@ -216,6 +216,22 @@ service cloud.firestore {
       }
     }
 
+    // ---------- reviews of the portal itself ----------
+    // One review per account (id = user id): five stars and a few words. The
+    // admin reads them all; a person can read, change or delete only their own.
+    match /platform_reviews/{uid} {
+      allow get: if signedIn() && (uid == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if signedIn() && !isAdmin()
+                    && uid == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.rating is number
+                    && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+                    && request.resource.data.comment is string
+                    && request.resource.data.comment.size() <= 1000;
+      allow delete: if signedIn() && (uid == request.auth.uid || isAdmin());
+    }
+
     // ---------- training / clustering ----------
     match /assessments/{id} {
       allow read: if signedIn();

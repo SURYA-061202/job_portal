@@ -6,7 +6,7 @@ import { ArrowLeft, Briefcase, Building2, Loader2, MapPin, Star, Trash2 } from '
 import { auth, db } from '@/lib/firebase';
 import { listRecentPosts } from '@/lib/jobAlerts';
 import {
-    MAX_COMMENT, OUTCOMES, RATING_ASPECTS, companySlug, deleteReview, fetchCompanyReviews, findAppliedPostAt,
+    REVIEWS_ENABLED, MAX_COMMENT, OUTCOMES, RATING_ASPECTS, companySlug, deleteReview, fetchCompanyReviews, findAppliedPostAt,
     reviewId, saveReview, summarize, type AspectKey, type CompanyReview,
 } from '@/lib/reviews';
 import { timeAgo, toMillis } from '@/lib/profileViews';
@@ -152,15 +152,15 @@ export default function CompanyPage() {
                     <div className="min-w-0 flex-1">
                         <h1 className={`${skin.heading} truncate`}>{companyName}</h1>
                         <div className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 ${skin.meta}`}>
-                            {summary.count > 0 ? (
+                            {REVIEWS_ENABLED && (summary.count > 0 ? (
                                 <span className="inline-flex items-center gap-1.5"><Stars value={summary.overall} label="Overall rating" /><span className="font-bold text-ink">{summary.overall.toFixed(1)}</span>({summary.count} {summary.count === 1 ? 'review' : 'reviews'})</span>
-                            ) : <span>No reviews yet</span>}
+                            ) : <span>No reviews yet</span>)}
                             <span className="inline-flex items-center gap-1"><Briefcase className="h-3 w-3" aria-hidden="true" />{posts.length} open {posts.length === 1 ? 'job' : 'jobs'}</span>
                         </div>
                     </div>
                 </div>
 
-                {summary.count > 0 && (
+                {REVIEWS_ENABLED && summary.count > 0 && (
                     <div className={`mt-5 grid grid-cols-1 gap-x-8 gap-y-3 border-t ${skin.edge} pt-5 sm:grid-cols-2`}>
                         {RATING_ASPECTS.map(a => (
                             <div key={a.key}>
@@ -201,7 +201,7 @@ export default function CompanyPage() {
             </section>
 
             {/* Write or edit a review */}
-            {role === 'user' && (
+            {REVIEWS_ENABLED && role === 'user' && (
                 <section className={`rounded-2xl border ${skin.edge} bg-surface p-5 sm:p-6`}>
                     <h2 className={skin.micro}>{myReview ? 'Your review' : 'Rate the hiring process'}</h2>
                     {!canReview ? (
@@ -250,7 +250,7 @@ export default function CompanyPage() {
             )}
 
             {/* Reviews */}
-            <section className={`overflow-hidden rounded-2xl border ${skin.edge} bg-surface`}>
+            {REVIEWS_ENABLED && <section className={`overflow-hidden rounded-2xl border ${skin.edge} bg-surface`}>
                 <div className={`border-b ${skin.edge} px-5 py-3`}><h2 className={skin.micro}>Reviews {reviews.length > 0 && <span className="font-medium text-ink/40">{reviews.length}</span>}</h2></div>
                 {reviews.length === 0 ? (
                     <p className="px-5 py-8 text-center text-sm text-ink/60">No reviews yet. Be the first to share how hiring went.</p>
@@ -274,7 +274,7 @@ export default function CompanyPage() {
                         ))}
                     </ul>
                 )}
-            </section>
+            </section>}
         </>,
     );
 }

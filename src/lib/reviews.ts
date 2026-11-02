@@ -3,6 +3,9 @@ import { db } from './firebase';
 import { getUserApplications } from './jobApplications';
 import type { RecruitmentRequest } from '@/types';
 
+/** Reviews and ratings are switched off for now: set to true to show them everywhere again. */
+export const REVIEWS_ENABLED = false;
+
 /** URL-safe id for a company, derived from the name recruiters typed. */
 export const companySlug = (name: string) =>
     name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

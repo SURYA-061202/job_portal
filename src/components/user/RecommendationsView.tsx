@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { companySlug } from '@/lib/reviews';
+import { REVIEWS_ENABLED, companySlug } from '@/lib/reviews';
 import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
-import { ArrowRight, Briefcase, CircleCheck, Compass, Eye, MapPin, Plus, TrendingUp, X, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Briefcase, CircleCheck, Compass, Eye, MapPin, Plus, TrendingUp, User, X, type LucideIcon } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { getUserApplications, recordJobView } from '@/lib/jobApplications';
 import { assessJob, normSkill, type JobFit, type Readiness, type SeekerProfile } from '@/lib/jobMatch';
@@ -35,6 +35,9 @@ const TIER_STYLE: Record<Readiness, { stroke: string; text: string; label: strin
     explore: { stroke: 'stroke-ink/40', text: 'text-ink/70', label: 'Explore' },
 };
 
+/** Profile ring: three quarters of a circle, open at the bottom. */
+const RING_LENGTH = 2 * Math.PI * 55;
+const RING_ARC = 0.75;
 const MAX_SIM_SKILLS = 8;
 const FRESH_DAYS = 7;
 const CARDS_PER_TAB = 8;
@@ -195,7 +198,7 @@ export default function RecommendationsView() {
 
     if (selectedJob) {
         return (
-            <div className="min-h-[500px]">
+            <div className="min-h-[500px] px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
                 <RecruitmentDetailView recruitment={selectedJob} onBack={() => setSelectedJob(null)} isUserView />
             </div>
         );
@@ -208,6 +211,7 @@ export default function RecommendationsView() {
     const doneCount = checklist.filter(c => c.done).length;
     const strength = checklist.length ? Math.round((doneCount / checklist.length) * 100) : 0;
     const todo = checklist.filter(c => !c.done);
+    const photo = String(profile?.profileImage || '');
     const topGap = gaps.find(g => g.unlocks > 0);
     const goProfile = () => navigate('/home?tab=profile');
 
@@ -229,43 +233,41 @@ export default function RecommendationsView() {
             {/* Hero: where you stand and the one thing to do next */}
             <section className={`rounded-2xl border ${skin.edge} bg-surface p-4 sm:p-5`}>
                 <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-5">
-                    <div className="relative h-20 w-20 shrink-0">
-                        <svg viewBox="0 0 120 120" className="-rotate-90" aria-hidden="true">
-                            <circle cx="60" cy="60" r="52" fill="none" strokeWidth="9" className="stroke-ink/10" />
-                            <circle cx="60" cy="60" r="52" fill="none" strokeWidth="9" strokeLinecap="round" className="stroke-brand transition-all duration-700"
-                                strokeDasharray={2 * Math.PI * 52} strokeDashoffset={2 * Math.PI * 52 * (1 - strength / 100)} />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-lg font-black leading-none text-ink">{strength}%</span>
-                            <span className="mt-0.5 text-[10px] font-medium text-ink/60">profile</span>
+                    {/* An open-bottomed ring that fills clockwise from the bottom left; the percentage sits in its gap */}
+                    <div className="shrink-0" role="img" aria-label={`Profile ${strength}% complete`}>
+                        <div className="relative h-28 w-28">
+                            <svg viewBox="0 0 120 120" className="absolute inset-0" aria-hidden="true">
+                                <g transform="rotate(135 60 60)" fill="none" strokeWidth="5" strokeLinecap="round">
+                                    <circle cx="60" cy="60" r="55" className="stroke-ink/10" strokeDasharray={`${RING_ARC * RING_LENGTH} ${RING_LENGTH}`} />
+                                    <circle cx="60" cy="60" r="55" className="stroke-brand transition-all duration-700" strokeDasharray={`${(strength / 100) * RING_ARC * RING_LENGTH} ${RING_LENGTH}`} />
+                                </g>
+                            </svg>
+                            <div className="absolute left-3.5 top-3 flex h-[5.25rem] w-[5.25rem] items-start justify-center overflow-hidden rounded-full bg-ink/[0.07]">
+                                {photo
+                                    ? <img src={photo} alt="" className="h-full w-full object-cover" />
+                                    : <User className="mt-3.5 h-11 w-11 text-ink/25" strokeWidth={1.5} aria-hidden="true" />}
+                            </div>
+                            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-sm font-bold leading-none text-brand">{strength}%</span>
                         </div>
                     </div>
 
                     <div className="min-w-0 flex-1 text-center md:text-left">
                         <h2 className="text-lg font-black leading-tight text-ink sm:text-xl">{move.title}</h2>
                         <p className={`mt-1 max-w-xl ${skin.body}`}>{move.body}</p>
-                        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-6 gap-y-1.5 md:justify-start">
-                            <button type="button" onClick={move.run}
-                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold text-ink transition-colors hover:text-brand ${FOCUS}`}>
-                                {move.cta}<ArrowRight className="h-4 w-4 animate-nudge-x" aria-hidden="true" />
-                            </button>
-                            {cities.length > 0 && (
-                                <button type="button" onClick={() => setShowOpenings(true)}
-                                    className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold text-ink transition-colors hover:text-brand ${FOCUS}`}>
-                                    Where the openings are<ArrowRight className="h-4 w-4 animate-nudge-x" aria-hidden="true" />
-                                </button>
-                            )}
-                        </div>
                     </div>
 
-                    <dl className={`grid w-full shrink-0 grid-cols-3 divide-x ${skin.divide} rounded-xl border ${skin.edge} md:w-auto`}>
-                        {([['Ready', baseReady.length], ['Within reach', base.filter(a => a.fit.tier === 'reach').length], [`New (${FRESH_DAYS}d)`, base.filter(a => a.fit.tier && (a.fit.ageDays ?? 99) <= FRESH_DAYS).length]] as const).map(([label, n]) => (
-                            <div key={label} className="px-4 py-2.5 text-center">
-                                <dd className="text-xl font-black leading-none text-ink">{n}</dd>
-                                <dt className={`mt-1 whitespace-nowrap ${skin.meta}`}>{label}</dt>
-                            </div>
-                        ))}
-                    </dl>
+                    <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
+                        <button type="button" onClick={move.run}
+                            className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-ink/70 bg-ink/70 px-5 text-sm font-bold text-surface transition-all hover:bg-ink/60 active:scale-95 ${FOCUS}`}>
+                            {move.cta}<ArrowRight className="h-4 w-4 animate-nudge-x" aria-hidden="true" />
+                        </button>
+                        {cities.length > 0 && (
+                            <button type="button" onClick={() => setShowOpenings(true)}
+                                className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-ink px-5 text-sm font-bold text-ink transition-colors hover:bg-ink/5 ${FOCUS}`}>
+                                <MapPin className="h-4 w-4" aria-hidden="true" />Openings In
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {todo.length > 0 && (
@@ -329,9 +331,9 @@ export default function RecommendationsView() {
                                             </p>
                                             <h4 className="mt-0.5 truncate text-base font-bold text-ink">{post.jobTitle}</h4>
                                             <p className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 ${skin.meta}`}>
-                                                {post.companyName && (
-                                                    <Link to={`/company/${companySlug(post.companyName)}`} className="font-semibold hover:text-brand hover:underline">{post.companyName}</Link>
-                                                )}
+                                                {post.companyName && (REVIEWS_ENABLED
+                                                    ? <Link to={`/company/${companySlug(post.companyName)}`} className="font-semibold hover:text-brand hover:underline">{post.companyName}</Link>
+                                                    : <span>{post.companyName}</span>)}
                                                 {post.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />{post.location}</span>}
                                                 {post.yearsExperience && <span className="inline-flex items-center gap-1"><Briefcase className="h-3 w-3" aria-hidden="true" />{post.yearsExperience} yrs</span>}
                                             </p>
@@ -372,12 +374,12 @@ export default function RecommendationsView() {
 
             {/* Where the openings are, opened from the link in the header card */}
             {showOpenings && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Where the openings are">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Openings In">
                     <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => setShowOpenings(false)} />
                     <div className={`relative w-full max-w-md animate-pop-in rounded-2xl border ${skin.edge} bg-surface p-6 shadow-2xl`}>
                         <div className="mb-5 flex items-start justify-between gap-4">
                             <div>
-                                <h3 className="text-lg font-black text-ink">Where the openings are</h3>
+                                <h3 className="text-lg font-black text-ink">Openings In</h3>
                                 <p className={`mt-0.5 ${skin.meta}`}>Cities with the most open jobs you haven't applied to.</p>
                             </div>
                             <button type="button" onClick={() => setShowOpenings(false)} aria-label="Close"
