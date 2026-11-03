@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
-    Users, CheckCircle2, Loader2, FilePlus2, ChevronLeft, Edit, Trash2, Share2,
+    Users, CheckCircle2, Loader2, FilePlus2, Redo2, Edit, Trash2, Share2,
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -162,11 +162,10 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     /* Candidate view reuses the post-card grey: the back button gets a grey
        tile with the button radius, and the skill tags copy the post-card pill
        (padding, size and weight included) so they read identically. */
-    const greySurface = isUserView ? `bg-border text-ink ${r}` : null;
     /* Skills tags and interview-round tiles share one grey, both views - the
        same fill the user side uses inside its white body. */
+    const roundPanel = `flex items-center ${skin.radius} p-3 border border-border text-ink`;
     const greyTag = `${r} bg-border px-2 py-1 text-xs font-medium text-ink/70`;
-    const roundPanel = `flex items-center ${skin.radius} p-3 bg-border text-ink`;
 
     /* At-a-glance facts, rendered as a horizontal strip: label above the bold
        figure, no dividers between cells, swipes on small screens. */
@@ -195,17 +194,17 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 on the page canvas. The recruiter/admin view keeps the
                 Posts-tab masthead recipe: hairline edge, surface, radius, wash
                 and the controls row. */}
-            <div className={`shrink-0 mb-4 z-10 ${isUserView ? '' : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
+            <div className={`shrink-0 mb-3 z-10 ${isUserView ? '' : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
                 {/* Title row */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? 'py-1' : 'px-4 py-3.5 sm:px-5'}`}>
+                <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? '' : 'px-4 py-3.5 sm:px-5'}`}>
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             onClick={onBack}
-                            className={`group inline-flex h-8 w-8 shrink-0 items-center justify-center ${greySurface ?? `${skin.iconTile} rounded-lg`} cursor-pointer transition-colors duration-200 hover:bg-ink/10 ${FOCUS}`}
+                            className={`group inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors duration-200 hover:text-brand ${FOCUS}`}
                             title="Go Back"
                             aria-label="Go back to job posts"
                         >
-                            <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
+                            <Redo2 className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" strokeWidth={3} aria-hidden="true" />
                         </button>
                         <div className="min-w-0">
                             <div className="flex min-w-0 flex-wrap items-center gap-2">

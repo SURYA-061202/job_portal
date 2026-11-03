@@ -264,7 +264,7 @@ export default function RecommendationsView() {
                         {cities.length > 0 && (
                             <button type="button" onClick={() => setShowOpenings(true)}
                                 className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-ink px-5 text-sm font-bold text-ink transition-colors hover:bg-ink/5 ${FOCUS}`}>
-                                <MapPin className="h-4 w-4" aria-hidden="true" />Openings In
+                                <MapPin className="h-4 w-4" aria-hidden="true" />Openings
                             </button>
                         )}
                     </div>
@@ -348,7 +348,14 @@ export default function RecommendationsView() {
 
                                     {(fit.missing.length > 0 || fit.experienceGap > 0) && tier !== 'ready' && (
                                         <p className={`mt-3 ${skin.meta}`}>
-                                            {fit.missing.length > 0 && <>To move up, learn <span className="font-bold text-ink">{fit.missing.slice(0, 3).join(', ')}</span>{fit.missing.length > 3 && ` +${fit.missing.length - 3}`}. </>}
+                                            {fit.missing.length > 0 && <>To move up, learn <span className="font-bold text-ink">{fit.missing.slice(0, 3).join(', ')}</span>{fit.missing.length > 3 && (
+                                                <span tabIndex={0} className={`group/more relative cursor-help rounded ${FOCUS}`}>
+                                                    {` +${fit.missing.length - 3}`}
+                                                    <span role="tooltip" className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 w-max max-w-[16rem] rounded-lg bg-ink px-3 py-2 text-xs font-semibold leading-relaxed text-surface opacity-0 shadow-lg transition-opacity group-hover/more:visible group-hover/more:opacity-100 group-focus/more:visible group-focus/more:opacity-100">
+                                                        {fit.missing.join(', ')}
+                                                    </span>
+                                                </span>
+                                            )}. </>}
                                             {fit.experienceGap > 0 && <>Asks for {fit.experienceGap} more {fit.experienceGap === 1 ? 'year' : 'years'} of experience.</>}
                                         </p>
                                     )}
@@ -374,12 +381,12 @@ export default function RecommendationsView() {
 
             {/* Where the openings are, opened from the link in the header card */}
             {showOpenings && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Openings In">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Openings">
                     <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => setShowOpenings(false)} />
                     <div className={`relative w-full max-w-md animate-pop-in rounded-2xl border ${skin.edge} bg-surface p-6 shadow-2xl`}>
                         <div className="mb-5 flex items-start justify-between gap-4">
                             <div>
-                                <h3 className="text-lg font-black text-ink">Openings In</h3>
+                                <h3 className="text-lg font-black text-ink">Openings</h3>
                                 <p className={`mt-0.5 ${skin.meta}`}>Cities with the most open jobs you haven't applied to.</p>
                             </div>
                             <button type="button" onClick={() => setShowOpenings(false)} aria-label="Close"

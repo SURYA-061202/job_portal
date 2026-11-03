@@ -59,7 +59,6 @@ export default function MessagesButton({ variant }: MessagesButtonProps) {
                     origin={origin}
                     onClose={() => setOrigin(null)}
                     widthClass="max-w-[24rem]"
-                    heightClass="h-[34rem] max-h-full"
                 >
                     <HelpPanel profile={profile} />
                 </ExpandingModal>

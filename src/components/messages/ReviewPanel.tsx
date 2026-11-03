@@ -101,7 +101,8 @@ function WriteReview({ profile }: { profile: MessagingProfile }) {
     if (loading) return <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink/60"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Loading…</div>;
 
     return (
-        <form onSubmit={submit} className="thin-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <div className="thin-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div>
                 <h4 className="text-base font-bold text-ink">{existing ? 'Your review' : 'How is your experience?'}</h4>
                 <p className={`mt-0.5 ${skin.meta}`}>Rate the portal and tell us what works and what doesn't.</p>
@@ -124,14 +125,17 @@ function WriteReview({ profile }: { profile: MessagingProfile }) {
                 <span className={`mt-1 block text-right ${skin.meta}`}>{comment.length}/{MAX_FEEDBACK}</span>
             </label>
 
+          </div>
+
+          <div className={`shrink-0 space-y-3 border-t ${skin.edge} p-4`}>
             {notice && (
                 <p role={notice.ok ? 'status' : 'alert'} className={`rounded-lg px-3 py-2 text-sm font-medium ${notice.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-destructive/10 text-destructive'}`}>{notice.text}</p>
             )}
-
-            <button type="submit" disabled={saving} className={`inline-flex cursor-pointer items-center gap-2 ${skin.cta} ${FOCUS} disabled:opacity-50`}>
+            <button type="submit" disabled={saving} className={`inline-flex cursor-pointer w-full items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
                 {existing ? 'Update review' : 'Submit review'}
             </button>
+          </div>
         </form>
     );
 }

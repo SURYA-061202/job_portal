@@ -258,7 +258,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
     if (selectedJob) {
         return (
-            <div className="min-h-[500px] px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
+            <div className="min-h-[500px] px-4 sm:px-6 lg:px-8">
                 <RecruitmentDetailView
                     recruitment={selectedJob}
                     onBack={() => setSelectedJob(null)}

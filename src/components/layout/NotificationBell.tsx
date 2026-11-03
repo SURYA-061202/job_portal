@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { stripEmoji } from '@/lib/format';
+import ExpandingModal from '@/components/subscription/ExpandingModal';
 
 interface Notification {
   id: string;
@@ -24,15 +25,14 @@ interface Props {
 }
 
 export default function NotificationBell({ className = '', simpleMode = false, filled = false }: Props & { simpleMode?: boolean; filled?: boolean }) {
-  const [open, setOpen] = useState(false);
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const open = !!origin;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   // Ids marked read in this session. Held locally so the badge clears the moment
   // the panel opens and can't be resurrected by the next snapshot — the write to
   // Firestore may be rejected by rules, which used to leave the badge stuck.
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const panelRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const skin = useSkin();
 
   const unreadCount = notifications.filter(n => !n.viewed && !dismissedIds.has(n.id)).length;
@@ -107,31 +107,10 @@ export default function NotificationBell({ className = '', simpleMode = false, f
       });
   }, [open, notifications, dismissedIds]);
 
-  // While the pointer is over the panel, a wheel that runs out of notification
-  // list must not scroll the page underneath. Native non-passive listener:
-  // React's synthetic onWheel is passive, so preventDefault() there is ignored.
-  useEffect(() => {
-    if (!open) return;
-    const panel = panelRef.current;
-    const scrollArea = scrollAreaRef.current;
-    if (!panel || !scrollArea) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      const atTop = scrollArea.scrollTop <= 0;
-      const atBottom = scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 1;
-      if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
-        e.preventDefault();
-      }
-    };
-
-    panel.addEventListener('wheel', handleWheel, { passive: false });
-    return () => panel.removeEventListener('wheel', handleWheel);
-  }, [open]);
-
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent click
-    setOpen((prev) => !prev);
+    const r = e.currentTarget.getBoundingClientRect();
+    setOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
   };
 
   if (simpleMode) {
@@ -164,48 +143,28 @@ export default function NotificationBell({ className = '', simpleMode = false, f
         )}
       </button>
 
-      {/* mt-4 clears the header's bottom edge — mt-2 parked the panel right on it.
-          85vh leaves room for the header plus four rows on short viewports. */}
-      {open && (
-        <div ref={panelRef} className={`absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-[28rem] border ${skin.edge} ${skin.surface} ${skin.radius} z-50 flex flex-col max-h-[85vh]`}>
-          {/* Header stays put while the list below it scrolls */}
-          <div className={`px-4 py-3 border-b ${skin.edge} flex justify-between items-center gap-3 flex-shrink-0`}>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-ink">Notifications</span>
-              <span className={`${skin.count} rounded-lg`}>
-                {notifications.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpen(false); }}
-                className={`p-1.5 ${skin.radius} text-ink/60 hover:text-ink hover:bg-ink/5 transition-colors ${FOCUS}`}
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Exactly four rows fit before it scrolls: each li is a fixed 106px
-              (py-3 24 + title 22 + two clamped message lines 40 + time 20), so
-              4 × 106 = 424px = 26.5rem. Below that the list shrinks naturally. */}
-          <div ref={scrollAreaRef} className="overflow-y-auto overscroll-contain custom-scrollbar max-h-[26.5rem]">
-            {notifications.length === 0 ? (
-              <p className={`p-4 ${skin.body}`}>No notifications</p>
-            ) : (
-              <ul>
-                {notifications.map((n) => (
-                  <li key={n.id} className={`h-[106px] overflow-hidden px-4 py-3 text-sm text-ink/80 ${skin.rowHover}`}>
-                    {n.title && <p className="font-semibold text-ink mb-0.5 truncate">{stripEmoji(n.title)}</p>}
-                    <p className="line-clamp-2">{stripEmoji(n.message)}</p>
-                    <div className={`mt-1 ${skin.meta}`}>{n.createdAt?.seconds ? new Date(n.createdAt.seconds * 1000).toLocaleString() : ''}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+      {origin && (
+        <ExpandingModal
+          title="Notifications"
+          subtitle={`${notifications.length} in total`}
+          origin={origin}
+          onClose={() => setOrigin(null)}
+          widthClass="max-w-[28rem]"
+        >
+          {notifications.length === 0 ? (
+            <p className={`p-4 ${skin.body}`}>No notifications</p>
+          ) : (
+            <ul className={`divide-y ${skin.divide}`}>
+              {notifications.map((n) => (
+                <li key={n.id} className={`px-5 py-3 text-sm text-ink/80 ${skin.rowHover}`}>
+                  {n.title && <p className="mb-0.5 font-semibold text-ink">{stripEmoji(n.title)}</p>}
+                  <p>{stripEmoji(n.message)}</p>
+                  <div className={`mt-1 ${skin.meta}`}>{n.createdAt?.seconds ? new Date(n.createdAt.seconds * 1000).toLocaleString() : ''}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ExpandingModal>
       )}
     </div>
   );

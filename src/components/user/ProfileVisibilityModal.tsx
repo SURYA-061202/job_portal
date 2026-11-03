@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarCheck, Eye, Loader2 } from 'lucide-react';
+import { CalendarCheck, Eye, Loader2, Users } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { lastActivityAt, listProfileActivity, setSearchable, timeAgo, toMillis, type ProfileActivity } from '@/lib/profileViews';
@@ -8,6 +8,15 @@ import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 const WEEK_MS = 7 * 86_400_000;
+
+/** "Abc" -> "Abc Company", leaving names that already say so alone. */
+const companyLabel = (name: string) => (/\bcompany$/i.test(name.trim()) ? name.trim() : `${name.trim()} Company`);
+
+const STATS = (thisWeek: number, totalViews: number, invites: number) => [
+    { label: 'Recruiters this week', value: thisWeek, Icon: Users, accent: { icon: 'text-brand' } },
+    { label: 'Total views', value: totalViews, Icon: Eye, accent: { icon: 'text-sky-600' } },
+    { label: 'Interview invites', value: invites, Icon: CalendarCheck, accent: { icon: 'text-emerald-600' } },
+];
 
 interface ProfileVisibilityModalProps {
     origin: { x: number; y: number };
@@ -25,6 +34,7 @@ export default function ProfileVisibilityModal({ origin, onClose }: ProfileVisib
     const [activity, setActivity] = useState<ProfileActivity[] | null>(null);
     const [error, setError] = useState('');
     const [searchable, setSearchableState] = useState(true);
+    const [photos, setPhotos] = useState<Record<string, string>>({});
 
     // Read fresh every time the panel opens, so a view from a minute ago is counted.
     useEffect(() => {
@@ -37,6 +47,18 @@ export default function ProfileVisibilityModal({ origin, onClose }: ProfileVisib
                 if (cancelled) return;
                 setActivity(list);
                 setSearchableState(me.exists() ? me.data().searchable !== false : true);
+
+                // Recruiter photos live on their own profile; a missing one just falls back to initials.
+                const viewerIds = [...new Set(list.map(a => a.viewerId).filter(Boolean))];
+                const entries = await Promise.all(viewerIds.map(async id => {
+                    try {
+                        const snap = await getDoc(doc(db, 'users', id));
+                        return [id, snap.exists() ? String(snap.data().profileImage || '') : ''] as const;
+                    } catch {
+                        return [id, ''] as const;
+                    }
+                }));
+                if (!cancelled) setPhotos(Object.fromEntries(entries));
             } catch (err) {
                 console.error('Error loading profile activity:', err);
                 if (cancelled) return;
@@ -74,11 +96,14 @@ export default function ProfileVisibilityModal({ origin, onClose }: ProfileVisib
                 <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink/60"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Loading…</div>
             ) : (
                 <>
-                    <div className={`grid grid-cols-3 divide-x ${skin.divide} border-b ${skin.edge}`}>
-                        {([['Recruiters this week', thisWeek], ['Total views', totalViews], ['Interview invites', invites]] as const).map(([label, n]) => (
-                            <div key={label} className="px-4 py-4 text-center">
-                                <p className="text-2xl font-black leading-none text-ink">{n}</p>
-                                <p className={`mt-1.5 ${skin.meta}`}>{label}</p>
+                    <div className={`grid grid-cols-3 gap-3 border-b ${skin.edge} p-4`}>
+                        {STATS(thisWeek, totalViews, invites).map(({ label, value, Icon, accent }) => (
+                            <div key={label} className={`rounded-xl border ${skin.edge} bg-surface px-3 py-3 shadow-sm`}>
+                                <div className="flex items-start justify-between gap-2">
+                                    <p className="text-3xl font-black leading-none tabular-nums text-ink">{value}</p>
+                                    <Icon className={`h-4 w-4 shrink-0 ${accent.icon}`} aria-hidden="true" />
+                                </div>
+                                <p className="mt-2 text-xs font-medium leading-tight text-ink/60">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -106,11 +131,20 @@ export default function ProfileVisibilityModal({ origin, onClose }: ProfileVisib
                                 const invited = toMillis(a.lastInvitedAt) > 0;
                                 return (
                                     <li key={a.id} className="flex items-start gap-3 px-5 py-4">
-                                        <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${invited ? 'bg-emerald-100 text-emerald-700' : 'bg-ink/5 text-ink/60'}`}>
-                                            {invited ? <CalendarCheck className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                                        <span className="relative mt-0.5 h-10 w-10 shrink-0">
+                                            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-ink/10 text-sm font-bold text-ink/70">
+                                                {photos[a.viewerId]
+                                                    ? <img src={photos[a.viewerId]} alt="" className="h-full w-full object-cover" />
+                                                    : (a.viewerName || 'R').trim().charAt(0).toUpperCase()}
+                                            </span>
+                                            {invited && (
+                                                <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white ring-2 ring-surface" title="Invited you to interview">
+                                                    <CalendarCheck className="h-2.5 w-2.5" aria-hidden="true" />
+                                                </span>
+                                            )}
                                         </span>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-ink">{a.viewerName || 'A recruiter'}{a.companyName && <span className="font-medium text-ink/60"> · {a.companyName}</span>}</p>
+                                            <p className="text-sm font-semibold text-ink">{a.viewerName || 'A recruiter'}{a.companyName && <span className="font-medium text-ink/60"> · {companyLabel(a.companyName)}</span>}</p>
                                             <p className={`mt-0.5 ${skin.meta}`}>
                                                 {invited
                                                     ? <>Invited you to interview{a.inviteRole ? <> for <span className="font-semibold text-ink">{a.inviteRole}</span></> : ''}</>

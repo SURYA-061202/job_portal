@@ -118,10 +118,10 @@ export default function JobAlertsPanel() {
                     </label>
                 </div>
                 <label className="block">
-                    <span className={`mb-1 block ${skin.meta}`}>Skills (any of these, comma separated)</span>
+                    <span className={`mb-1 block ${skin.meta}`}>Skills</span>
                     <input value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} placeholder="e.g. AutoCAD, Revit" className={input} />
                 </label>
-                <button type="submit" disabled={saving || atLimit} className={`inline-flex cursor-pointer items-center gap-2 ${skin.cta} ${FOCUS} disabled:opacity-50`}>
+                <button type="submit" disabled={saving || atLimit} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
                     Save alert
                 </button>
