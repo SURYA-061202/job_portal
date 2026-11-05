@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import popup from '@/components/ui/Popup';
-import { notifyRecruiterOfDetailsSubmitted } from '@/lib/notificationHelper';
+import { callableMessage, getInterviewInvite, submitVerifyDetails } from '@/lib/candidatePortal';
 
 export default function VerifyDetailsPage() {
   const [searchParams] = useSearchParams();
@@ -28,16 +26,11 @@ export default function VerifyDetailsPage() {
         setLoading(false);
         return;
       }
-      const snap = await getDoc(doc(db, 'interviews', candidateId));
-      if (!snap.exists()) {
-        popup.error('Invalid candidate link');
-        setLoading(false);
-        return;
-      }
-      const data: any = snap.data();
-      if (data.readyToRelocate) {
-        // already submitted
-        setSubmitted(true);
+      try {
+        const invite = await getInterviewInvite(candidateId);
+        if (invite.detailsSubmitted) setSubmitted(true);
+      } catch (err) {
+        popup.error(callableMessage(err, 'Invalid candidate link'));
       }
       setLoading(false);
     };
@@ -52,25 +45,13 @@ export default function VerifyDetailsPage() {
   const handleSubmit = async () => {
     if (!candidateId) return;
     try {
-      const intSnap = await getDoc(doc(db, 'interviews', candidateId));
-      await updateDoc(doc(db, 'interviews', candidateId), {
-        ...form,
-        submittedAt: new Date(),
-      });
-
-      // Tell the recruiter/admin the candidate verified their details. (This used
-      // to write to candidates/{id}/notifications — a subcollection no screen
-      // ever read, so the response never reached anyone.)
-      void notifyRecruiterOfDetailsSubmitted({
-        postId: intSnap.exists() ? (intSnap.data()?.postId ?? null) : null,
-        candidateId,
-      });
+      await submitVerifyDetails(candidateId, form);
 
       popup.success('Details submitted successfully');
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      popup.error('Failed to submit');
+      popup.error(callableMessage(err, 'Failed to submit'));
     }
   };
 

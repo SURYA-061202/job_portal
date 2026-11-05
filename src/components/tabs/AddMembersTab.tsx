@@ -81,9 +81,9 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
         }
     };
 
-    const sendWelcomeEmail = async (email: string, name: string, password: string) => {
+    const sendWelcomeEmail = async (email: string, name: string) => {
         try {
-            await sendManagerInvite({ email, name, password, baseUrl: window.location.origin });
+            await sendManagerInvite({ email, name, baseUrl: window.location.origin });
             return true;
         } catch (error) {
             console.error('Error sending email:', error);
@@ -152,8 +152,10 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
         setAddingMember(true);
 
         try {
-            // Generate a temporary password
-            const tempPassword = Math.random().toString(36).slice(-8);
+            // Throwaway password nobody ever sees: the member sets their own
+            // through the emailed link.
+            const bytes = crypto.getRandomValues(new Uint8Array(18));
+            const tempPassword = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 
             // Create user in Firebase Auth using a secondary app instance
             // This prevents logging out the current admin user
@@ -178,7 +180,7 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
             await signOut(secondaryAuth);
 
             // Send welcome email
-            const emailSent = await sendWelcomeEmail(formData.email, formData.firstName, tempPassword);
+            const emailSent = await sendWelcomeEmail(formData.email, formData.firstName);
 
             if (emailSent) {
                 // Create notification for the new manager

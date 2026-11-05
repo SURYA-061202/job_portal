@@ -34,10 +34,12 @@ service cloud.firestore {
 
     // ---------- users ----------
     match /users/{uid} {
-      // TEMPORARY: the public interview-response page reads the candidate's name
-      // without signing in. Single-document reads only; listing stays locked.
-      // Remove once that page goes through a Cloud Function.
-      allow get: if true;
+      // Your own profile, anything for staff, and recruiter/admin profiles for
+      // any signed-in user (job cards, company pages). Job seekers' profiles are
+      // never readable by other job seekers or by signed-out visitors.
+      allow get: if signedIn() && (request.auth.uid == uid
+                                   || isStaff()
+                                   || isStaffRole(resource.data.role));
 
       // Staff browse every user (candidates list). Anyone signed in can query
       // recruiter/admin profiles (job cards, "notify the admins").
@@ -80,10 +82,9 @@ service cloud.firestore {
 
     // ---------- job posts ----------
     match /recruits/{postId} {
-      // Single posts are readable by id (the signed-out candidate pages look up
-      // the post to notify the recruiter); browsing the list needs a sign-in.
-      allow get: if true;
-      allow list: if signedIn();
+      // Signed-in users only. The signed-out candidate pages go through Cloud
+      // Functions (see functions/src/candidatePortal.ts) instead of reading posts.
+      allow get, list: if signedIn();
       allow create: if isStaff() && request.resource.data.recruiterId == request.auth.uid;
       // Owner or admin edits/deletes; any signed-in user may only record that they viewed it.
       allow update: if (isStaff() && (isAdmin() || resource.data.recruiterId == request.auth.uid))
@@ -110,42 +111,24 @@ service cloud.firestore {
 
     // ---------- candidates (recruiter side) ----------
     match /candidates/{candidateId} {
-      // TEMPORARY: public interview-response page reads the candidate by id (see users).
-      allow get: if true;
-      allow list: if isStaff();
-      allow write: if isStaff();
+      allow get, list, write: if isStaff();
     }
 
     // ---------- interviews ----------
     match /interviews/{candidateId} {
-      // Candidates answer invites from an emailed link without signing in.
-      // They may read their own invite (by its unguessable id) and write only
-      // the response / verify-details fields below. Everything else is staff-only.
-      allow get: if true;
-      allow list: if isStaff();
-      allow write: if isStaff();
-
-      allow create: if request.resource.data.keys().hasOnly([
-        'candidateId', 'response', 'selectedDate', 'respondedAt',
-        'dateOfJoining', 'currentSalary', 'expectedSalary', 'expectedSalaryPeriod',
-        'yearsExperience', 'experienceIn', 'readyToRelocate', 'laptop',
-        'detailsSubmitted', 'submittedAt'
-      ]);
-      allow update: if changedKeys().hasOnly([
-        'candidateId', 'response', 'selectedDate', 'respondedAt',
-        'dateOfJoining', 'currentSalary', 'expectedSalary', 'expectedSalaryPeriod',
-        'yearsExperience', 'experienceIn', 'readyToRelocate', 'laptop',
-        'detailsSubmitted', 'submittedAt'
-      ]);
+      // Staff only. Candidates answer invites from an emailed link without
+      // signing in; that page talks to the getInterviewInvite /
+      // submitInterviewResponse / submitVerifyDetails Cloud Functions, which
+      // expose only the offered dates and validate every write.
+      allow get, list, write: if isStaff();
     }
 
     // ---------- notifications (addressed by email in userId) ----------
     match /notifications/{id} {
       allow read: if signedIn() && resource.data.userId == myEmail();
       // Signed-in users create notifications for others (invites, approvals...).
-      // The signed-out candidate pages may only send these two types.
-      allow create: if signedIn()
-                    || request.resource.data.type in ['interview_response', 'details_submitted'];
+      // Candidate replies from the signed-out pages are written by Cloud Functions.
+      allow create: if signedIn();
       allow update: if signedIn() && resource.data.userId == myEmail()
                     && changedKeys().hasOnly(['read', 'viewed']);
       allow delete: if signedIn() && resource.data.userId == myEmail();

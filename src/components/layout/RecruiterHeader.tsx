@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Menu, Pencil, X, UserCheck, CalendarClock, BadgeCheck, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Menu, Pencil, X, UserCheck, CalendarClock, BadgeCheck, BarChart3, type LucideIcon } from 'lucide-react';
 import MessagesButton from '@/components/messages/MessagesButton';
 import NotificationBell from './NotificationBell';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
@@ -20,6 +20,7 @@ export type RecruiterNavTab =
   | 'member-detail'
   | 'pipeline'
   | 'analytics'
+  | 'admin-analytics'
   | 'profile'
   | 'assessments'
   | 'subscription';
@@ -50,7 +51,7 @@ interface NavSection {
  * Tabs switched on for recruiters and admins. Everything else is hidden for
  * now and is brought back one at a time: add its id here to show it again.
  */
-const ENABLED_TABS: RecruiterNavTab[] = ['job-posts', 'candidates', 'shortlisted', 'interviews', 'selected', 'guidelines', 'add-members', 'subscription'];
+const ENABLED_TABS: RecruiterNavTab[] = ['job-posts', 'candidates', 'shortlisted', 'interviews', 'selected', 'guidelines', 'add-members', 'admin-analytics', 'subscription'];
 const SHOW_BELL = true; // notifications bell sits before Logout, like the job seeker header
 const SHOW_PROFILE = true; // profile icon after the bell opens the profile panel; Logout lives inside it
 
@@ -128,6 +129,11 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
       key: 'recruiters',
       label: 'Recruiters',
       links: [{ id: 'add-members', label: 'Recruiters', adminOnly: true }],
+    },
+    {
+      key: 'admin-analytics',
+      label: 'Analytics',
+      links: [{ id: 'admin-analytics', label: 'Analytics', adminOnly: true, icon: BarChart3, hint: 'Recruiters and job seekers overview' }],
     },
     {
       key: 'subscription',

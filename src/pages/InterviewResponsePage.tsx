@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, setDoc, Timestamp } from 'firebase/firestore';
 import popup from '@/components/ui/Popup';
-import { notifyRecruiterOfInterviewResponse } from '@/lib/notificationHelper';
+import { callableMessage, getInterviewInvite, submitInterviewResponse } from '@/lib/candidatePortal';
 
 /**
  * Single candidate-facing step for an interview invite: the candidate confirms
@@ -40,29 +38,17 @@ export default function InterviewResponsePage() {
         return;
       }
       try {
-        let snapshot = await getDoc(doc(db, 'candidates', candidateId));
-        if (!snapshot.exists()) {
-          snapshot = await getDoc(doc(db, 'users', candidateId));
-        }
-
-        if (!snapshot.exists()) {
-          popup.error('Invalid candidate ID');
-        }
-
-        // Always fetch interview details from 'interviews' collection
-        const respSnap = await getDoc(doc(db, 'interviews', candidateId));
-        if (respSnap.exists()) {
-          const intData = respSnap.data();
-          setDates(intData?.dates || []);
-
-          if (intData?.response) {
-            setExistingResponse(intData);
-            setSubmitted(true);
-          }
+        // The invite is read through a Cloud Function: this page is opened
+        // without signing in, and the interview data is not publicly readable.
+        const invite = await getInterviewInvite(candidateId);
+        setDates(invite.dates);
+        if (invite.responded) {
+          setExistingResponse(invite);
+          setSubmitted(true);
         }
       } catch (err) {
         console.error(err);
-        popup.error('Failed to load details');
+        popup.error(callableMessage(err, 'Failed to load details'));
       } finally {
         setLoading(false);
       }
@@ -83,59 +69,20 @@ export default function InterviewResponsePage() {
     }
     setSaving(true);
     try {
-      const ref = doc(collection(db, 'interviews'), candidateId);
-      const snap = await getDoc(ref);
-      if (snap.exists() && snap.data()?.response) {
-        popup.error('Already submitted');
-        setExistingResponse(snap.data());
-        setSaving(false);
-        return;
-      }
-
       const accepted = interest === 'interested';
-      // Merge so the invite details written by the recruiter (role, dates,
-      // roundType, interviewers, postId) survive this write.
-      await setDoc(
-        ref,
-        {
-          candidateId,
-          response: accepted ? 'accept' : 'decline',
-          selectedDate: accepted ? `${selectedDate} ${selectedTime}` : null,
-          respondedAt: Timestamp.now(),
-          ...(accepted
-            ? { ...form, detailsSubmitted: true, submittedAt: Timestamp.now() }
-            : {}),
-        },
-        { merge: true }
-      );
-
-      // Resolve the post this invite was raised against: the interview doc is
-      // the primary source, the candidate's own record the fallback for older
-      // invites written before postId existed.
-      let postId: string | null = snap.exists() ? (snap.data()?.postId ?? null) : null;
-      if (!postId) {
-        try {
-          const candSnap = await getDoc(doc(db, 'candidates', candidateId));
-          postId = candSnap.exists() ? (candSnap.data()?.postId ?? null) : null;
-        } catch (err) {
-          console.error('Failed to resolve post for response notification:', err);
-        }
-      }
-
-      // Let the recruiter who raised the invite know how the candidate answered
-      // (falls back to the admin when the post/owner cannot be resolved).
-      void notifyRecruiterOfInterviewResponse({
-        postId,
+      await submitInterviewResponse({
         candidateId,
         accepted,
-        slot: accepted ? `${selectedDate} ${selectedTime}` : null,
+        slotDate: accepted ? selectedDate : undefined,
+        slotTime: accepted ? selectedTime : undefined,
+        details: accepted ? form : undefined,
       });
 
       popup.success('Response recorded. Thank you!');
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      popup.error('Failed to record response');
+      popup.error(callableMessage(err, 'Failed to record response'));
     } finally {
       setSaving(false);
     }

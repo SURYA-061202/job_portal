@@ -19,7 +19,8 @@ const verifyEmailExistsFn = httpsCallable<{ email: string }, { exists: boolean |
 const confirmMobileVerifiedFn = httpsCallable<{ mobile: string }, { success: boolean }>(functions, 'confirmMobileVerified');
 const checkMobileAvailableFn = httpsCallable<{ mobile: string }, { available: boolean }>(functions, 'checkMobileAvailable');
 
-export async function sendManagerInvite(data: { email: string; name?: string; password: string; baseUrl: string }) {
+/** Emails the new member a one-time link to set their own password (admin only). */
+export async function sendManagerInvite(data: { email: string; name?: string; baseUrl: string }) {
   await managerInviteFn(data);
 }
 

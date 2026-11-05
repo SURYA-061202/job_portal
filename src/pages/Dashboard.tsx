@@ -20,11 +20,12 @@ import AssessmentsTab from '@/components/tabs/AssessmentsTab';
 import { useSkin } from '@/styles/skin';
 
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import AdminAnalyticsTab from '@/components/analytics/AdminAnalyticsTab';
 import AdminSubscriptionTab from '@/components/subscription/AdminSubscriptionTab';
 import RecruiterSubscriptionTab from '@/components/subscription/RecruiterSubscriptionTab';
 import { useSubscription } from '@/lib/useSubscription';
 
-export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'guidelines' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
+export type TabType = 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'guidelines' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'admin-analytics' | 'profile' | 'assessments' | 'subscription';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('candidates');
@@ -180,6 +181,8 @@ export default function Dashboard() {
         return <RecruitmentPipelineTab userRole={userRole} userId={userId} />;
       case 'analytics':
         return <AnalyticsDashboard userRole={userRole} userId={userId} />;
+      case 'admin-analytics':
+        return userRole === 'admin' ? <AdminAnalyticsTab /> : null;
       case 'profile':
         return <ProfileTab />;
       case 'assessments':
@@ -205,7 +208,7 @@ export default function Dashboard() {
   // Tabs that manage their own internal scrolling (fixed header + scrollable body).
   // For these, <main> must not scroll, and the content wrapper needs min-h-0 so the
   // flex chain resolves to a bounded height instead of growing with its content.
-  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'guidelines' || activeTab === 'candidates' || activeTab === 'notifications';
+  const isSelfScrollingTab = activeTab === 'job-posts' || activeTab === 'analytics' || activeTab === 'admin-analytics' || activeTab === 'pipeline' || activeTab === 'shortlisted' || activeTab === 'interviews' || activeTab === 'selected' || activeTab === 'guidelines' || activeTab === 'candidates' || activeTab === 'notifications';
 
   return (
     <div className={`flex h-screen flex-col ${skin.canvas}`}>

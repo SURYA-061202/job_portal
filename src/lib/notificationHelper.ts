@@ -497,62 +497,6 @@ export async function notifyRecruiterOfApplication(postId: string, candidateId: 
     }
 }
 
-/** Tells the recruiter how a candidate answered their interview invite. Never throws. */
-export async function notifyRecruiterOfInterviewResponse(params: {
-    postId?: string | null;
-    candidateId: string;
-    accepted: boolean;
-    slot?: string | null;
-}): Promise<void> {
-    try {
-        // Without a post there is no owner to look up — the admins still hear
-        // about the response rather than it vanishing.
-        const recipients = await getRecruiterRecipients(params.postId);
-        if (recipients.length === 0) return;
-
-        const jobTitle = params.postId ? (await getPostContext(params.postId)).jobTitle : '';
-        const candidateName = await getPersonName(params.candidateId);
-        const forRole = jobTitle ? ` for ${jobTitle}` : '';
-
-        for (const recipient of recipients) {
-            await createNotification({
-                userId: recipient,
-                type: 'interview_response',
-                title: params.accepted ? 'Interview Confirmed' : 'Interview Declined',
-                message: params.accepted
-                    ? `${candidateName} accepted the interview${forRole}${params.slot ? ` and chose ${params.slot}` : ''}, and submitted their details.`
-                    : `${candidateName} declined the interview invitation${forRole}.`,
-                metadata: { candidateId: params.candidateId, postId: params.postId ?? undefined, role: jobTitle },
-            });
-        }
-    } catch (err) {
-        console.error('Failed to notify recruiter of interview response:', err);
-    }
-}
-
-/** Tells the recruiter a candidate filled in the verify-details form. Never throws. */
-export async function notifyRecruiterOfDetailsSubmitted(params: {
-    postId?: string | null;
-    candidateId: string;
-}): Promise<void> {
-    try {
-        const recipients = await getRecruiterRecipients(params.postId);
-        if (recipients.length === 0) return;
-
-        const jobTitle = params.postId ? (await getPostContext(params.postId)).jobTitle : '';
-        const candidateName = await getPersonName(params.candidateId);
-        const forRole = jobTitle ? ` for ${jobTitle}` : '';
-
-        for (const recipient of recipients) {
-            await createNotification({
-                userId: recipient,
-                type: 'details_submitted',
-                title: 'Details Submitted',
-                message: `${candidateName} submitted their verification details${forRole}.`,
-                metadata: { candidateId: params.candidateId, postId: params.postId ?? undefined, role: jobTitle },
-            });
-        }
-    } catch (err) {
-        console.error('Failed to notify recruiter of submitted details:', err);
-    }
-}
+// Interview-response and details-submitted notifications are written by the
+// submitInterviewResponse / submitVerifyDetails Cloud Functions, because the
+// candidate pages that trigger them are opened without signing in.
