@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
-    Users, CheckCircle2, Loader2, FilePlus2, Redo2, Edit, Trash2, Share2,
+    Users, CheckCircle2, Loader2, FilePlus2, Redo2, Edit, Trash2, Share2, Bookmark, BookmarkCheck,
 } from 'lucide-react';
+import { getSavedJobIds, setJobSaved } from '@/lib/savedJobs';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { hasUserApplied, applyForJob, getApplicationStatus, recordJobView } from '@/lib/jobApplications';
@@ -36,6 +37,8 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     const [userProfile, setUserProfile] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [savingJob, setSavingJob] = useState(false);
     const { showSuccess, showError } = usePopup();
     const skin = useSkin();
 
@@ -55,6 +58,39 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isUserView, recruitment.id]);
+
+    // Whether this job seeker has already saved the post being shown.
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        setIsSaved(false);
+        if (!isUserView || !uid || !recruitment.id) return;
+        let cancelled = false;
+        getSavedJobIds(uid).then((ids) => {
+            if (!cancelled) setIsSaved(ids.includes(recruitment.id!));
+        });
+        return () => { cancelled = true; };
+    }, [isUserView, recruitment.id]);
+
+    const handleToggleSave = async () => {
+        const uid = auth.currentUser?.uid;
+        if (!uid || !recruitment.id) {
+            popup.error('Please log in to save jobs');
+            return;
+        }
+        const next = !isSaved;
+        setSavingJob(true);
+        setIsSaved(next); // optimistic; reverted below if the write fails
+        try {
+            await setJobSaved(uid, recruitment.id, next);
+            popup.success(next ? 'Job saved' : 'Removed from saved jobs');
+        } catch (err) {
+            console.error('Save job error:', err);
+            setIsSaved(!next);
+            popup.error('Could not update saved jobs. Please try again.');
+        } finally {
+            setSavingJob(false);
+        }
+    };
 
     const checkStatus = async () => {
         const user = auth.currentUser;
@@ -226,6 +262,26 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                         controls row below the header. */}
                     {isUserView && (
                         <div className="flex shrink-0 items-center gap-2">
+                            <button
+                                onClick={handleToggleSave}
+                                disabled={savingJob}
+                                aria-pressed={isSaved}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 border border-ink bg-transparent px-3 text-ink transition-colors duration-200 hover:bg-ink/5 disabled:opacity-60 ${FOCUS}`}
+                                title={isSaved ? 'Remove from saved jobs' : 'Save job'}
+                                aria-label={isSaved ? 'Remove this job from saved jobs' : 'Save this job'}
+                            >
+                                {isSaved ? <BookmarkCheck className="h-4 w-4" aria-hidden="true" /> : <Bookmark className="h-4 w-4" aria-hidden="true" />}
+                                <span className="text-xs font-bold uppercase tracking-wider">{isSaved ? 'Saved' : 'Save'}</span>
+                            </button>
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 border border-ink bg-transparent px-3 text-ink transition-colors duration-200 hover:bg-ink/5 ${FOCUS}`}
+                                title="Share job"
+                                aria-label="Share this job"
+                            >
+                                <Share2 className="h-4 w-4" aria-hidden="true" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Share</span>
+                            </button>
                             {!hasApplied && !checkingProfile ? (
                                 <button
                                     onClick={handleApply}
@@ -240,15 +296,6 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     {statusInfo.label}
                                 </div>
                             ) : null}
-                            <button
-                                onClick={() => setShowShareModal(true)}
-                                className={`inline-flex h-8 shrink-0 rounded-lg cursor-pointer items-center gap-1.5 bg-ink/70 px-3 text-surface transition-colors duration-200 hover:bg-ink/60 ${FOCUS}`}
-                                title="Share job"
-                                aria-label="Share this job"
-                            >
-                                <Share2 className="h-4 w-4" aria-hidden="true" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Share</span>
-                            </button>
                         </div>
                     )}
                 </div>

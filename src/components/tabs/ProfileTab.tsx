@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { User, Loader2, KeyRound, Camera, X, Building2 } from 'lucide-react';
+import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { User, Loader2, KeyRound, Camera, X, Building2, BadgeCheck, Clock, ShieldAlert, ShieldQuestion } from 'lucide-react';
+import type { VerificationStatus } from '@/lib/companyVerification';
 import { Link } from 'react-router-dom';
 import { REVIEWS_ENABLED, companySlug } from '@/lib/reviews';
 import popup from '@/components/ui/Popup';
@@ -34,6 +35,8 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
     const [sendingReset, setSendingReset] = useState(false);
     const [profileImage, setProfileImage] = useState('');
     const [companyName, setCompanyName] = useState('');
+    // Live, so it flips the moment the recruiter submits or an admin approves/declines.
+    const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('none');
     const [imageUploading, setImageUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
@@ -85,7 +88,20 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
         fetchProfile();
     }, []);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        return onSnapshot(
+            doc(db, 'users', uid),
+            (snap) => {
+                const status = snap.data()?.companyVerification?.status as VerificationStatus | undefined;
+                setVerificationStatus(status ?? 'none');
+            },
+            (err) => console.error('Could not watch company verification status:', err)
+        );
+    }, []);
+
+    const handleInputChange =(e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => prev ? { ...prev, [name]: value } : null);
     };
@@ -237,6 +253,12 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
         const fullName = `${userData.firstName} ${userData.lastName}`.trim() || 'Your name';
         const fieldLabel = 'text-xs font-bold text-ink';
         const inputCls = `mt-1 w-full rounded-lg px-3 py-2 text-sm ${skin.field} ${FOCUS}`;
+        const verificationLook: Record<VerificationStatus, { label: string; className: string; icon: React.ReactNode }> = {
+            verified: { label: 'Verified', className: 'text-brand', icon: <BadgeCheck className="h-4 w-4" aria-hidden="true" /> },
+            pending: { label: 'Under review', className: 'text-ink/70', icon: <Clock className="h-4 w-4" aria-hidden="true" /> },
+            rejected: { label: 'Declined', className: 'text-destructive', icon: <ShieldAlert className="h-4 w-4" aria-hidden="true" /> },
+            none: { label: 'Not verified', className: 'text-ink/60', icon: <ShieldQuestion className="h-4 w-4" aria-hidden="true" /> },
+        };
         const readOnly = (value: string) => (
             <p className="mt-0.5 break-words text-sm text-ink/80">{value}</p>
         );
@@ -297,6 +319,16 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                         <p className={fieldLabel}>Department</p>
                         {isEditing ? <input type="text" name="department" value={formData.department || ''} onChange={handleInputChange} className={inputCls} /> : (userData.department ? readOnly(userData.department) : addLink)}
                     </div>
+                    {/* Admins and job seekers have no company to verify. */}
+                    {(userData.role === 'recruiter' || userData.role === 'manager') && (
+                        <div>
+                            <p className={fieldLabel}>Company verification</p>
+                            <p className={`mt-0.5 inline-flex items-center gap-1.5 text-sm font-medium ${verificationLook[verificationStatus].className}`}>
+                                {verificationLook[verificationStatus].icon}
+                                {verificationLook[verificationStatus].label}
+                            </p>
+                        </div>
+                    )}
 
                     {isEditing ? (
                         <div className="flex gap-3 pt-1">

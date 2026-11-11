@@ -3,13 +3,17 @@ import type { Candidate, RecruitmentRequest } from "@/types";
 import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil, Loader2 } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendRoundInvite } from "@/lib/emailFunctions";
+import { sendRoundInvite, sendRejectionMail } from "@/lib/emailFunctions";
 import { setApplicationStatus } from "@/lib/jobApplications";
 import { notifyCandidateOfStatusChange } from '@/lib/notificationHelper';
 import { getPostRounds } from '@/lib/interviewRounds';
 import popup from '@/components/ui/Popup';
 import { useEffect, useState } from "react";
 import { useSkin, FOCUS } from '@/styles/skin';
+
+/** Shortest rejection reason accepted; the email function enforces the same floor. */
+const MIN_REASON = 10;
+const MAX_REASON = 1000;
 
 /** Dynamic: determine next round from current status */
 function getNextRound(current?: string): string | null {
@@ -59,6 +63,9 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
   const [feedback, setFeedback] = useState<string>(interview.feedback ?? 'Good');
   const [roundName, setRoundName] = useState<string>(() => defaultRoundName(status, post));
   const [moving, setMoving] = useState(false);
+  const [showReject, setShowReject] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
   const [editCurSal, setEditCurSal] = useState(false);
   const [editExpSal, setEditExpSal] = useState(false);
   const [editJoinDate, setEditJoinDate] = useState(false);
@@ -222,36 +229,66 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
     }
   };
 
+  const closeRejectDialog = () => {
+    if (rejecting) return;
+    setShowReject(false);
+    setRejectReason('');
+  };
+
   const handleReject = async () => {
-    if (!confirm("Reject this candidate?")) return;
+    const reason = rejectReason.trim();
+    if (reason.length < MIN_REASON) {
+      popup.error(`Please give a reason (at least ${MIN_REASON} characters)`);
+      return;
+    }
+    setRejecting(true);
     try {
       const newStatus = `${status ?? 'round1'}rejected`;
       const applicantPostId = (candidate as any).postId;
+      const rejectionFields = { rejectionReason: reason, rejectedAt: new Date() };
 
       if (applicantPostId) {
-        await setApplicationStatus(applicantPostId, candidate.id, newStatus);
+        await setApplicationStatus(applicantPostId, candidate.id, newStatus, rejectionFields);
       } else {
-        await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, updatedAt: new Date() });
+        await updateDoc(doc(db, "candidates", candidate.id), { status: newStatus, ...rejectionFields, updatedAt: new Date() });
       }
 
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       if (intSnap.exists()) {
-        await updateDoc(interviewRef, { status: newStatus, updatedAt: new Date() });
+        await updateDoc(interviewRef, { status: newStatus, ...rejectionFields, updatedAt: new Date() });
       }
 
       void notifyCandidateOfStatusChange({
         candidateId: candidate.id,
         postId: applicantPostId || interview.postId,
         status: newStatus,
+        reason,
       });
 
-      popup.success("Candidate rejected");
+      // The status change is already saved, so a failed mail must not undo it.
+      let mailed = true;
+      try {
+        await sendRejectionMail({
+          candidate: { id: candidate.id, name: candidate.name, email: candidate.email },
+          role: interview.role || candidate.role || post?.jobTitle || '',
+          roundName: isRound ? (presentRoundName !== '-' ? presentRoundName : `Round ${presentRoundNum}`) : '',
+          reason,
+        });
+      } catch (emailErr) {
+        mailed = false;
+        console.error('Failed to send rejection email:', emailErr);
+      }
+
+      if (mailed) popup.success("Candidate rejected and emailed");
+      else popup.warning("Candidate rejected, but the email could not be sent");
       onStatusUpdated?.();
       onBack();
     } catch (err: any) {
       console.error(err);
       popup.error("Failed to reject");
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -330,8 +367,8 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
           )}
           <button
             type="button"
-            onClick={handleReject}
-            disabled={moving}
+            onClick={() => setShowReject(true)}
+            disabled={moving || rejecting}
             className={`inline-flex items-center px-4 py-2 rounded-lg border border-destructive bg-destructive text-white hover:opacity-90 text-sm font-medium disabled:opacity-50 ${FOCUS}`}
           >
             <XCircle className="h-5 w-5 mr-2" /> Reject
@@ -480,6 +517,62 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
       </div>
       <div className="h-4 sm:h-6 shrink-0" aria-hidden="true" />
       </div>
+
+      {showReject && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) closeRejectDialog(); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') closeRejectDialog(); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-dialog-title"
+            className={`w-full max-w-md border ${skin.edge} ${skin.surface} ${skin.radius} p-5 shadow-xl`}
+          >
+            <h2 id="reject-dialog-title" className={skin.cardTitle}>Reject {candidate.name}?</h2>
+            <p className={`mt-1.5 ${skin.body}`}>
+              Tell the candidate why. This reason is emailed to them{candidate.email ? ` at ${candidate.email}` : ''} and shown in their notifications.
+            </p>
+            <label htmlFor="reject-reason" className="mt-4 block text-sm font-bold text-ink/80">
+              Reason for rejection <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              id="reject-reason"
+              autoFocus
+              rows={5}
+              maxLength={MAX_REASON}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g. We were looking for more hands-on site experience for this role."
+              className={`mt-1.5 w-full resize-none px-3 py-2 text-sm rounded-lg ${skin.field} ${FOCUS}`}
+            />
+            <div className="mt-1 flex justify-between text-xs text-ink/50">
+              <span>{rejectReason.trim().length < MIN_REASON ? `At least ${MIN_REASON} characters` : ' '}</span>
+              <span>{rejectReason.length}/{MAX_REASON}</span>
+            </div>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeRejectDialog}
+                disabled={rejecting}
+                className={`cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleReject}
+                disabled={rejecting || rejectReason.trim().length < MIN_REASON}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive bg-destructive text-white hover:opacity-90 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${FOCUS}`}
+              >
+                {rejecting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <XCircle className="h-4 w-4" aria-hidden="true" />}
+                {rejecting ? 'Rejecting…' : 'Reject & send email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

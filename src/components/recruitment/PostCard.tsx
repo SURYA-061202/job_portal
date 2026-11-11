@@ -1,16 +1,15 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import type { RecruitmentRequest } from '@/types';
 import { timeAgo } from '@/lib/format';
-import { useSkin, FOCUS } from '@/styles/skin';
-import { Calendar, Briefcase, MapPin, IndianRupee, X } from 'lucide-react';
+import { useSkin } from '@/styles/skin';
+import { Calendar, Briefcase, MapPin, IndianRupee } from 'lucide-react';
+import SkillsLine from '@/components/ui/SkillsLine';
 
 /* The job-post card shared by the Posts tab and the Pipeline tab, so both
    modules list posts with the same UI. Title reserves two lines (empty second
    line when short), experience/salary/location as icon meta with no boxes,
    skills as
-   comma-separated text clamped to two lines - an "…" chip appears at the line
-   end when it overflows and opens the full list in a modal. Footer has
+   comma-separated text held to one line - an "…" appears at the line end when
+   it overflows and a hover popover lists every skill. Footer has
    posted-ago and applicant count. Root is role="button" rather than <button>
    so the skills "…" chip can be a real nested <button>; keyboard activation
    is handled manually. */
@@ -23,23 +22,12 @@ export default function PostCard({ post, onOpen, count, countLabel }: {
     countLabel?: string;
 }) {
     const skin = useSkin();
-    const [showAllSkills, setShowAllSkills] = useState(false);
-    const [skillsClamped, setSkillsClamped] = useState(false);
-    const skillsRef = useRef<HTMLSpanElement>(null);
-
     const footerCount = count ?? post.applicantCount ?? 0;
     const footerLabel = countLabel ?? (post.applicantCount === 1 ? 'Applicant' : 'Applicants');
 
     const allSkills = post.skills
         ? post.skills.split(',').map(s => s.trim()).filter(Boolean)
         : [];
-    const skillsText = allSkills.join(', ');
-
-    // Two-line clamp is CSS-only; measure to know whether the "…" chip is needed.
-    useLayoutEffect(() => {
-        const el = skillsRef.current;
-        if (el) setSkillsClamped(el.scrollHeight > el.clientHeight + 1);
-    }, [skillsText]);
 
     return (
         <>
@@ -90,26 +78,16 @@ export default function PostCard({ post, onOpen, count, countLabel }: {
                     </span>
 
                     <span className="mt-4 flex-1">
-                        <span className={`mb-2 block ${skin.micro} font-bold!`}>Key Skills</span>
-                        <span className="relative block">
-                            <span ref={skillsRef} className={`line-clamp-2 ${skin.body}`}>
-                                {skillsText}
-                            </span>
-                            {skillsClamped && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowAllSkills(true);
-                                    }}
-                                    aria-label="Show all skills"
-                                    title="Show all skills"
-                                    className={`absolute bottom-0 right-0 cursor-pointer pl-2 font-bold ${skin.body} ${skin.cardSurface} ${FOCUS}`}
-                                >
-                                    &hellip;
-                                </button>
-                            )}
-                        </span>
+                        {allSkills.length > 0 && (
+                            <SkillsLine
+                                skills={allSkills}
+                                lines={1}
+                                label="Skills"
+                                className=""
+                                textClass={`${skin.body} leading-5!`}
+                                maskClass={skin.cardSurface}
+                            />
+                        )}
                     </span>
 
                     <span className="mt-4 flex items-center justify-between gap-2">
@@ -124,43 +102,6 @@ export default function PostCard({ post, onOpen, count, countLabel }: {
                 </span>
             </div>
 
-            {showAllSkills && createPortal(
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-                    onClick={() => setShowAllSkills(false)}
-                >
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label={`All skills for ${post.jobTitle}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`w-full max-w-md border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow}`}
-                    >
-                        <div className={`flex items-start justify-between gap-3 border-b ${skin.edge} px-5 py-4`}>
-                            <div className="min-w-0">
-                                <h3 className={skin.emptyTitle}>Key Skills</h3>
-                                <p className={`mt-1 truncate ${skin.meta}`}>{post.jobTitle}</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowAllSkills(false)}
-                                aria-label="Close skills"
-                                className={`shrink-0 cursor-pointer rounded-lg p-1 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
-                            >
-                                <X className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5 p-5">
-                            {allSkills.map((skill, i) => (
-                                <span key={i} className={`${skin.tag} rounded-lg`}>
-                                    {skill}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
         </>
     );
 }

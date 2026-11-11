@@ -49,7 +49,7 @@ export default function RecruiterPostDetail({ recruitment, onBack, onViewCandida
                         onClick={onBack}
                         aria-label="Back to posts"
                         title="Back to posts"
-                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 shadow-sm transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-ink bg-ink text-surface shadow-sm transition-colors duration-200 hover:bg-ink/85 ${FOCUS}`}
                     >
                         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -128,20 +128,28 @@ export default function RecruiterPostDetail({ recruitment, onBack, onViewCandida
                                 {rounds.length === 0 ? (
                                     <p className={`mt-3 ${skin.body}`}>No interview rounds for this post.</p>
                                 ) : (
-                                    <ol className="mt-4">
-                                        {rounds.map((round, i) => (
-                                            <li key={round.roundNumber} className="relative flex gap-4 pb-5 last:pb-0">
-                                                {i < rounds.length - 1 && <span aria-hidden="true" className="absolute left-[15px] top-8 h-[calc(100%-2rem)] w-px bg-ink/15" />}
-                                                <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">
-                                                    {round.roundNumber}
-                                                </span>
-                                                <div className="min-w-0 pt-1">
-                                                    <p className="break-words text-sm font-semibold text-ink">{round.name || 'Not named'}</p>
-                                                    <p className={skin.meta}>Round {round.roundNumber}</p>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ol>
+                                    <div className="scrollbar-hide mt-5 overflow-x-auto pb-1">
+                                        {/* Track spans the full section width; first round sits at the left edge, last at the right edge */}
+                                        <ol className="relative flex w-max min-w-full justify-between gap-6">
+                                            {rounds.length > 1 && <span aria-hidden="true" className="absolute left-4 right-4 top-4 h-px bg-ink/15" />}
+                                            {rounds.map((round, i) => {
+                                                const isFirst = i === 0;
+                                                const isLast = i === rounds.length - 1 && rounds.length > 1;
+                                                const align = isFirst ? 'items-start text-left' : isLast ? 'items-end text-right' : 'items-center text-center';
+                                                return (
+                                                    <li key={round.roundNumber} className={`relative z-10 flex min-w-[100px] flex-col ${align}`}>
+                                                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface ring-4 ring-surface">
+                                                            {round.roundNumber}
+                                                        </span>
+                                                        <div className="mt-3 min-w-0">
+                                                            <p className="break-words text-sm font-semibold text-ink">{round.name || 'Not named'}</p>
+                                                            <p className={skin.meta}>Round {round.roundNumber}</p>
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ol>
+                                    </div>
                                 )}
                             </section>
 

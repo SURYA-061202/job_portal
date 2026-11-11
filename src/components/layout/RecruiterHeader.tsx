@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Menu, Pencil, X, UserCheck, CalendarClock, BadgeCheck, BarChart3, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Menu, Pencil, X, UserCheck, CalendarClock, BadgeCheck, BarChart3, ShieldCheck, type LucideIcon } from 'lucide-react';
+import CompanyVerificationModal from '@/components/tabs/CompanyVerificationModal';
 import MessagesButton from '@/components/messages/MessagesButton';
 import NotificationBell from './NotificationBell';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
@@ -87,6 +88,8 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
   // Profile panel on the right; it grows out of the profile icon.
   const [profileOrigin, setProfileOrigin] = useState<{ x: number; y: number } | null>(null);
   const [profileEditing, setProfileEditing] = useState(false);
+  // Company verification dialog, opened from the shield icon beside the edit icon.
+  const [verifyOpen, setVerifyOpen] = useState(false);
   // Notifications panel on the right; it grows out of the bell.
   const [notifOrigin, setNotifOrigin] = useState<{ x: number; y: number } | null>(null);
   const openNotifications = (e: React.MouseEvent<HTMLElement>) => {
@@ -288,7 +291,7 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
                 notifOrigin ? 'bg-ink/10 text-ink' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'
               } ${FOCUS}`}
             >
-              <NotificationBell simpleMode filled />
+              <NotificationBell simpleMode filled badgeOnParent />
             </button>
             )}
             {SHOW_PROFILE && (
@@ -320,7 +323,7 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
               aria-label="Notifications"
               className={`relative cursor-pointer rounded-lg p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${FOCUS}`}
             >
-              <NotificationBell simpleMode />
+              <NotificationBell simpleMode badgeOnParent />
             </button>
             )}
             <button
@@ -423,18 +426,32 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
           }}
           widthClass="max-w-[22rem]"
           titleAction={
-            <button
-              type="button"
-              onClick={() => setProfileEditing((v) => !v)}
-              aria-label={profileEditing ? 'Cancel editing' : 'Edit profile'}
-              aria-pressed={profileEditing}
-              title={profileEditing ? 'Cancel editing' : 'Edit profile'}
-              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors ${
-                profileEditing ? 'text-ink' : 'text-ink/50 hover:text-ink'
-              } ${FOCUS}`}
-            >
-              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setProfileEditing((v) => !v)}
+                aria-label={profileEditing ? 'Cancel editing' : 'Edit profile'}
+                aria-pressed={profileEditing}
+                title={profileEditing ? 'Cancel editing' : 'Edit profile'}
+                className={`ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg ${skin.iconTile} transition-colors duration-200 hover:border-ink/40 hover:text-ink ${
+                  profileEditing ? 'border-ink/40 bg-ink/10 text-ink' : ''
+                } ${FOCUS}`}
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </button>
+              {/* Admins have no company to verify. */}
+              {userRole !== 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => setVerifyOpen(true)}
+                  aria-label="Verify company"
+                  title="Verify company"
+                  className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg ${skin.iconTile} transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                >
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </>
           }
         >
           <ProfileTab
@@ -449,6 +466,7 @@ export default function RecruiterHeader({ activeTab, onTabChange, onLogout, user
           />
         </ExpandingModal>
       )}
+      {verifyOpen && <CompanyVerificationModal onClose={() => setVerifyOpen(false)} />}
     </header>
   );
 }

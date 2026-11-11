@@ -11,6 +11,9 @@ const managerInviteFn = httpsCallable(functions, 'managerInvite');
 const sendInterviewInviteFn = httpsCallable(functions, 'sendInterviewInvite');
 const sendRoundInviteFn = httpsCallable(functions, 'sendRoundInvite');
 const sendCongratulationsMailFn = httpsCallable(functions, 'sendCongratulationsMail');
+const sendCompanyEmailCodeFn = httpsCallable<{ email: string }, { success: boolean }>(functions, 'sendCompanyEmailCode');
+const verifyCompanyEmailCodeFn = httpsCallable<{ code: string }, { success: boolean; email: string }>(functions, 'verifyCompanyEmailCode');
+const sendRejectionMailFn = httpsCallable(functions, 'sendRejectionMail');
 const sendVerifyDetailsFn = httpsCallable(functions, 'sendVerifyDetails');
 const sendPasswordResetMailFn = httpsCallable(functions, 'sendPasswordResetMail');
 const sendSignupOtpFn = httpsCallable<{ email: string; mobile: string }, { success: boolean }>(functions, 'sendSignupOtp');
@@ -44,6 +47,27 @@ export async function sendRoundInvite(data: {
 
 export async function sendCongratulationsMail(data: { candidate: CandidateInput }) {
   await sendCongratulationsMailFn(data);
+}
+
+/** Emails a 6-digit code to the company address, to prove the recruiter can read mail there. */
+export async function sendCompanyEmailCode(email: string) {
+  await sendCompanyEmailCodeFn({ email });
+}
+
+/** Checks the code; on success the backend marks that address as verified on the recruiter's profile. */
+export async function verifyCompanyEmailCode(code: string): Promise<string> {
+  const result = await verifyCompanyEmailCodeFn({ code });
+  return result.data.email;
+}
+
+/** Tells a rejected candidate why, in the recruiter's words wrapped in a polite message. */
+export async function sendRejectionMail(data: {
+  candidate: CandidateInput;
+  role?: string;
+  reason: string;
+  roundName?: string;
+}) {
+  await sendRejectionMailFn(data);
 }
 
 export async function sendVerifyDetails(data: { candidate: CandidateInput; baseUrl: string }) {

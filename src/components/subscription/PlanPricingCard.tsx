@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, X } from 'lucide-react';
 import { useSkin } from '@/styles/skin';
-import { formatLimit, formatPrice, isUnlimited } from '@/lib/subscriptions';
+import { describePrivileges, formatLimit, formatPrice, isUnlimited } from '@/lib/subscriptions';
 import type { SubscriptionAudience, SubscriptionPlan } from '@/types';
 
 interface PlanPricingCardProps {
@@ -28,11 +28,12 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
     const skin = useSkin();
     const isUser = audience === 'user';
     const items = [
-        ...(plan.maxPosts === 0
-            ? []
-            : [isUser
-                ? isUnlimited(plan.maxPosts) ? 'View unlimited job posts' : `View up to ${formatLimit(plan.maxPosts)} job posts`
-                : isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `${formatLimit(plan.maxPosts)} job posts`]),
+        // User plans are defined by their privileges (price + validity + toggles), not a post count.
+        ...(isUser
+            ? describePrivileges(plan.privileges)
+            : plan.maxPosts === 0
+                ? []
+                : [isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `${formatLimit(plan.maxPosts)} job posts`]),
         ...(!isUser && includeContact ? ['Candidate contact details & resumes'] : []),
         ...(plan.features ?? []).filter((f) => f.trim()),
     ];
@@ -57,8 +58,9 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
 
             {action && <div className="mt-5">{action}</div>}
 
+            {(items.length > 0 || restrictions.length > 0) && (
             <div className={`mt-6 border-t border-ink/10 pt-5`}>
-                <p className="mb-3 text-sm font-semibold text-ink">Includes:</p>
+                {items.length > 0 && <p className="mb-3 text-sm font-semibold text-ink">Includes:</p>}
                 <ul className="space-y-3 text-sm text-ink/80">
                     {items.map((item, i) => (
                         <li key={i} className="flex items-start gap-2.5">
@@ -74,6 +76,7 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
                     ))}
                 </ul>
             </div>
+            )}
         </article>
     );
 }

@@ -14,6 +14,9 @@ export type NotificationType =
     | 'subscription_request_sent'
     | 'subscription_approved'
     | 'subscription_rejected'
+    | 'company_verified'
+    | 'company_verification_rejected'
+    | 'company_verification_request'
     | 'round_moved'
     | 'offer_sent'
     | 'application_rejected'
@@ -252,6 +255,48 @@ export async function createSubscriptionRejectedNotification(
     });
 }
 
+/** Tells an admin that a recruiter has asked for their company to be verified. */
+export async function createCompanyVerificationRequestNotification(
+    adminEmail: string,
+    recruiterName: string,
+    companyName: string
+): Promise<string> {
+    return createNotification({
+        userId: adminEmail,
+        type: 'company_verification_request',
+        title: 'Company Verification Request',
+        message: `${recruiterName} has asked to verify ${companyName}. Please review it in Recruiters.`,
+        metadata: { recruiterName, companyName },
+    });
+}
+
+export async function createCompanyVerifiedNotification(
+    recruiterEmail: string,
+    companyName: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'company_verified',
+        title: 'Company Verified',
+        message: `${companyName} has been verified. Candidates will see your company as verified.`,
+        metadata: { companyName },
+    });
+}
+
+export async function createCompanyVerificationRejectedNotification(
+    recruiterEmail: string,
+    companyName: string,
+    note?: string
+): Promise<string> {
+    return createNotification({
+        userId: recruiterEmail,
+        type: 'company_verification_rejected',
+        title: 'Company Verification Declined',
+        message: `We could not verify ${companyName}.${note ? ` Reason: ${note}` : ' Please check your details and submit again.'}`,
+        metadata: { companyName },
+    });
+}
+
 /* ------------------------------------------------------------------ *
  * Lookups. Notifications are addressed by email, but the app tracks
  * people by id, so these bridge the two.
@@ -340,6 +385,8 @@ export async function notifyCandidateOfStatusChange(params: {
     status: string;
     /** Name of the round, when the new status is an interview round. */
     roundLabel?: string;
+    /** Why the candidate was rejected, shown in their notification. */
+    reason?: string;
 }): Promise<void> {
     try {
         const email = await getPersonEmail(params.candidateId);
@@ -354,8 +401,8 @@ export async function notifyCandidateOfStatusChange(params: {
                 userId: email,
                 type: 'application_rejected',
                 title: 'Application Update',
-                message: `Thank you for your time. Your application${forRole} is not moving forward at this stage.`,
-                metadata: { role: jobTitle },
+                message: `Thank you for your time. Your application${forRole} is not moving forward at this stage.${params.reason?.trim() ? ` Feedback: ${params.reason.trim()}` : ''}`,
+                metadata: { role: jobTitle, ...(params.reason?.trim() ? { reason: params.reason.trim() } : {}) },
             });
             return;
         }

@@ -24,7 +24,7 @@ interface Props {
   className?: string;
 }
 
-export default function NotificationBell({ className = '', simpleMode = false, filled = false }: Props & { simpleMode?: boolean; filled?: boolean }) {
+export default function NotificationBell({ className = '', simpleMode = false, filled = false, badgeOnParent = false }: Props & { simpleMode?: boolean; filled?: boolean; badgeOnParent?: boolean }) {
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const open = !!origin;
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -115,7 +115,7 @@ export default function NotificationBell({ className = '', simpleMode = false, f
 
   if (simpleMode) {
     return (
-      <div className={`relative flex items-center justify-center ${className}`}>
+      <div className={`${badgeOnParent ? '' : 'relative '}flex items-center justify-center ${className}`}>
         {/* The parent button already carries the accessible name and colour. */}
         {filled ? (
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-6 w-6" fill="currentColor">
@@ -126,7 +126,7 @@ export default function NotificationBell({ className = '', simpleMode = false, f
           <Bell aria-hidden="true" className="icon-lg" />
         )}
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-xs font-semibold text-surface">
+          <span className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-surface ${badgeOnParent ? 'text-[10px] font-bold' : 'text-xs font-semibold'}`}>
             {unreadCount}
           </span>
         )}
@@ -139,7 +139,7 @@ export default function NotificationBell({ className = '', simpleMode = false, f
       <button onClick={handleToggle} className={`relative p-2 ${skin.radius} text-ink/60 hover:bg-ink/5 hover:text-ink transition-colors ${FOCUS} ${className}`}>
         <Bell className="h-5 w-5 text-brand" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-brand text-surface text-xs rounded-full px-1.5">{unreadCount}</span>
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-surface">{unreadCount}</span>
         )}
       </button>
 

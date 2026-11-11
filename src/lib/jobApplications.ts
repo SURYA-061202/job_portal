@@ -102,11 +102,13 @@ export async function upsertApplication(
 export async function setApplicationStatus(
   postId: string,
   userId: string,
-  status: string
+  status: string,
+  /** Extra fields stored with the status, e.g. a rejection reason. */
+  extra?: Record<string, unknown>
 ): Promise<void> {
   await setDoc(
     doc(db, 'job_applications', applicationId(postId, userId)),
-    { status },
+    { status, ...(extra ?? {}) },
     { merge: true }
   );
 }

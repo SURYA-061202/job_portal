@@ -377,7 +377,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         ) : (
                             <div className="flex flex-col gap-4">
                                 {visiblePosts.map((post) => (
-                                    <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
+                                    <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard skillsPopover applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
                                 ))}
                             </div>
                         )}

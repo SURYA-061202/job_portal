@@ -202,6 +202,15 @@ export const UNLIMITED = -1;
 /** Who a plan is for. Plans saved before audiences existed have none and count as 'recruiter'. */
 export type SubscriptionAudience = 'recruiter' | 'user';
 
+/**
+ * Extra things a user (job seeker) plan can switch on. Add new keys here (and to
+ * USER_PRIVILEGES in lib/subscriptions.ts) as more privileges are introduced.
+ */
+export interface PlanPrivileges {
+  /** See which recruiters/companies viewed the user's profile. */
+  profileVisibility?: boolean;
+}
+
 /** A subscription level the admin offers to recruiters or to job seekers (users). */
 export interface SubscriptionPlan {
   id?: string;
@@ -218,6 +227,8 @@ export interface SubscriptionPlan {
   maxPosts: number;
   /** Recruiter plans: max candidates visible in the Candidates module. Unused (0) on user plans. */
   maxCandidates: number;
+  /** User plans: privileges the plan grants. Unused on recruiter plans. */
+  privileges?: PlanPrivileges;
   features: string[];
   active: boolean;
   createdAt?: any;
@@ -231,6 +242,7 @@ export interface UserSubscription {
   level: number;
   maxPosts: number;
   maxCandidates: number;
+  privileges?: PlanPrivileges;
   startedAt: any;
   expiresAt: any;
 }
@@ -263,6 +275,8 @@ export interface EffectiveSubscription {
   level: number;
   maxPosts: number;
   maxCandidates: number;
+  /** What the active plan unlocks for a user. Empty on the free tier; everything for admins. */
+  privileges: PlanPrivileges;
   expiresAt: Date | null;
   /** True when a paid plan existed but has lapsed (the user is back on the free tier). */
   expired: boolean;

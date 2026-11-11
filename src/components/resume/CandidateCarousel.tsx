@@ -4,6 +4,7 @@ import type { Candidate } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 import CandidateSearchResults from './CandidateSearchResults';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
+import SkillsLine from '@/components/ui/SkillsLine';
 
 interface CandidateCarouselProps {
   candidates: Candidate[];
@@ -198,13 +199,7 @@ export default function CandidateCarousel({ candidates, loading, onSelectCandida
                 </p>
               )}
 
-              {skills.length > 0 && (
-                <p className="mt-3 line-clamp-2 text-[11px] leading-6">
-                  {skills.map((s, i) => (
-                    <span key={`${s}-${i}`} className="mr-1 inline-block rounded-md bg-ink/5 px-2 align-middle text-[11px] font-medium leading-[18px] text-ink/80">{s}</span>
-                  ))}
-                </p>
-              )}
+              {skills.length > 0 && <SkillsLine skills={skills} />}
 
               <div className="mt-auto flex items-center justify-between pt-2.5 text-xs">
                 <span className="text-ink/50">{skills.length} {skills.length === 1 ? 'skill' : 'skills'}</span>

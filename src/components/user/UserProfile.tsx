@@ -3,7 +3,7 @@ import { sendEmailVerification, RecaptchaVerifier, linkWithPhoneNumber, unlink }
 import type { ConfirmationResult } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera, Eye, ChevronRight } from 'lucide-react';
+import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera, Eye, ChevronRight, Lock } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import popup from '@/components/ui/Popup';
 import UserHeader from '@/components/layout/UserHeader';
@@ -12,6 +12,7 @@ import ProfileDetailsView from './ProfileDetailsView';
 import JobsAndApplicationsView from './JobsAndApplicationsView';
 import RecommendationsView from './RecommendationsView';
 import ProfileVisibilityModal from './ProfileVisibilityModal';
+import { useSubscription } from '@/lib/useSubscription';
 import { ProfileCardSkeleton, ContentCardSkeleton } from './SkeletonLoaders';
 import { sendPasswordResetMail, confirmMobileVerified, checkMobileAvailable, normalizeMobile } from '@/lib/emailFunctions';
 
@@ -22,6 +23,9 @@ export default function UserProfile() {
     const activeTab = (searchParams.get('tab') || 'profile') as 'profile' | 'jobs' | 'applications' | 'recommendations';
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [visibilityOrigin, setVisibilityOrigin] = useState<{ x: number; y: number } | null>(null);
+    // Profile visibility is a plan privilege: only users whose active plan includes it can open it.
+    const subscription = useSubscription(auth.currentUser?.uid ?? null, 'user');
+    const canSeeVisibility = !!subscription?.privileges?.profileVisibility;
     const [verifyingEmail, setVerifyingEmail] = useState(false);
     const [sendingResetLink, setSendingResetLink] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(auth.currentUser?.emailVerified || false);
@@ -584,7 +588,7 @@ export default function UserProfile() {
                 root so it never unmounts mid-flow (e.g. toggling edit mode). */}
             <div id="mobile-otp-recaptcha" />
 
-            {visibilityOrigin && <ProfileVisibilityModal origin={visibilityOrigin} onClose={() => setVisibilityOrigin(null)} />}
+            {visibilityOrigin && canSeeVisibility && <ProfileVisibilityModal origin={visibilityOrigin} onClose={() => setVisibilityOrigin(null)} />}
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
                 <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8 relative`}>
@@ -863,18 +867,25 @@ export default function UserProfile() {
                                                     <div className="pt-3 border-t border-border mt-2">
                                                         <button
                                                             type="button"
+                                                            disabled={!canSeeVisibility}
+                                                            title={canSeeVisibility ? undefined : 'Subscribe to a plan with Profile visibility to unlock this'}
                                                             onClick={(e) => {
                                                                 const r = e.currentTarget.getBoundingClientRect();
                                                                 setVisibilityOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
                                                             }}
-                                                            className="flex w-full cursor-pointer items-center justify-between rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                                                            className={`flex w-full items-center justify-between rounded-md text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${canSeeVisibility ? 'cursor-pointer hover:text-brand' : 'cursor-not-allowed opacity-60'}`}
                                                         >
                                                             <span className="flex items-center gap-2">
                                                                 <Eye className="w-3.5 h-3.5 text-ink/60" aria-hidden="true" />
                                                                 <span className="text-[11px] font-bold uppercase text-ink">Profile Visibility</span>
                                                             </span>
-                                                            <ChevronRight className="w-3.5 h-3.5 text-ink/40" aria-hidden="true" />
+                                                            {canSeeVisibility
+                                                                ? <ChevronRight className="w-3.5 h-3.5 text-ink/40" aria-hidden="true" />
+                                                                : <Lock className="w-3.5 h-3.5 text-ink/40" aria-hidden="true" />}
                                                         </button>
+                                                        {!canSeeVisibility && (
+                                                            <p className="mt-1 pl-5 text-[10px] text-ink/50">Available with a subscription plan that includes it.</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

@@ -25,6 +25,7 @@ import {
 import { UNLIMITED } from '@/types';
 import type {
     EffectiveSubscription,
+    PlanPrivileges,
     SubscriptionAudience,
     SubscriptionPlan,
     SubscriptionRequest,
@@ -77,6 +78,7 @@ export const FREE_SUBSCRIPTION: EffectiveSubscription = {
     level: 0,
     maxPosts: FREE_POST_LIMIT,
     maxCandidates: FREE_CANDIDATE_LIMIT,
+    privileges: {},
     expiresAt: null,
     expired: false,
 };
@@ -88,9 +90,22 @@ export const FREE_USER_SUBSCRIPTION: EffectiveSubscription = {
     level: 0,
     maxPosts: FREE_USER_POST_LIMIT,
     maxCandidates: 0,
+    privileges: {},
     expiresAt: null,
     expired: false,
 };
+
+/**
+ * Privileges the admin can switch on for a user plan. Add an entry here (and a key on
+ * PlanPrivileges in types) to offer a new one; the admin form and plan cards pick it up.
+ */
+export const USER_PRIVILEGES: { key: keyof PlanPrivileges; label: string; hint: string }[] = [
+    { key: 'profileVisibility', label: 'Profile visibility', hint: 'See which recruiters have viewed your profile' },
+];
+
+/** Plain-language list of what a plan's privileges unlock, for plan cards. */
+export const describePrivileges = (privileges?: PlanPrivileges): string[] =>
+    USER_PRIVILEGES.filter((p) => privileges?.[p.key]).map((p) => p.label);
 
 export const planAudience = (plan: { audience?: SubscriptionAudience }): SubscriptionAudience => plan.audience ?? 'recruiter';
 
@@ -105,6 +120,7 @@ const ADMIN_SUBSCRIPTION: EffectiveSubscription = {
     level: 99,
     maxPosts: UNLIMITED,
     maxCandidates: UNLIMITED,
+    privileges: { profileVisibility: true },
     expiresAt: null,
     expired: false,
 };
@@ -133,6 +149,7 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
                 level: sub.level ?? 1,
                 maxPosts: typeof sub.maxPosts === 'number' ? sub.maxPosts : freeTier.maxPosts,
                 maxCandidates: typeof sub.maxCandidates === 'number' ? sub.maxCandidates : freeTier.maxCandidates,
+                privileges: sub.privileges ?? {},
                 expiresAt,
                 expired: false,
             };
@@ -150,6 +167,7 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
             level: 99,
             maxPosts: UNLIMITED,
             maxCandidates: UNLIMITED,
+            privileges: {},
             expiresAt: null,
             expired: false,
         };
@@ -319,6 +337,7 @@ async function grantPlan(recruiterId: string, plan: SubscriptionPlan): Promise<D
         level: plan.level,
         maxPosts: plan.maxPosts,
         maxCandidates: plan.maxCandidates,
+        privileges: plan.privileges ?? {},
         startedAt: Timestamp.now(),
         expiresAt: Timestamp.fromDate(expiresAt),
     };

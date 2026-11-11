@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Mail, Phone, Users, X } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Users, X, BadgeCheck } from 'lucide-react';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, firebaseConfig } from '@/lib/firebase';
 import { initializeApp } from 'firebase/app';
@@ -9,7 +9,12 @@ import popup from '@/components/ui/Popup';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
 import { timeAgo } from '@/lib/format';
 import type { RecruitmentRequest } from '@/types';
-import { createManagerInviteNotification } from '@/lib/notificationHelper';
+import {
+    createManagerInviteNotification,
+    createCompanyVerifiedNotification,
+    createCompanyVerificationRejectedNotification,
+} from '@/lib/notificationHelper';
+import { reviewCompanyVerification, type CompanyVerification } from '@/lib/companyVerification';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 interface UserData {
@@ -24,6 +29,7 @@ interface UserData {
     /** The role this recruiter is hiring for. */
     hiringRole?: string;
     profileImage?: string;
+    companyVerification?: CompanyVerification;
 }
 
 export default function AddMembersTab(_props: { onViewMember?: (memberId: string) => void }) {
@@ -206,6 +212,36 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
         }
     };
 
+    /** Admin decision on a recruiter's pending company-verification request. */
+    const reviewVerification = async (member: UserData, decision: 'verified' | 'rejected') => {
+        const request = member.companyVerification;
+        if (!request) return;
+        let note = '';
+        if (decision === 'rejected') {
+            const answer = window.prompt(`Why is ${request.companyName} being declined? The recruiter will see this.`);
+            if (answer === null) return; // cancelled
+            note = answer.trim();
+            if (!note) {
+                popup.error('Please give a reason for declining');
+                return;
+            }
+        }
+        try {
+            await reviewCompanyVerification(member.id, decision, note);
+            setMembers(prev => prev.map(m => m.id === member.id
+                ? { ...m, companyVerification: { ...request, status: decision, reviewNote: note } }
+                : m));
+            void (decision === 'verified'
+                ? createCompanyVerifiedNotification(member.email, request.companyName)
+                : createCompanyVerificationRejectedNotification(member.email, request.companyName, note)
+            ).catch(err => console.error('Could not notify recruiter of the review:', err));
+            popup.success(decision === 'verified' ? 'Company verified' : 'Verification declined');
+        } catch (err) {
+            console.error('Company verification review failed:', err);
+            popup.error('Could not save the decision');
+        }
+    };
+
     const filteredMembers = members.filter(m =>
         m.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -308,8 +344,29 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
                                     {/* Company */}
                                     <div className="min-w-0 space-y-0.5">
                                         <p className={`truncate ${skin.body}`}>{member.companyName || '-'}</p>
-                                        {/* Invisible second line: keeps the name level with the email beside it. */}
-                                        <p aria-hidden="true" className={`invisible hidden lg:block ${skin.meta}`}>&nbsp;</p>
+                                        {member.companyVerification?.status === 'verified' ? (
+                                            <p className={`flex items-center gap-1 ${skin.meta} text-brand`}>
+                                                <BadgeCheck className="h-3 w-3 shrink-0" aria-hidden="true" />Verified
+                                            </p>
+                                        ) : member.companyVerification?.status === 'pending' ? (
+                                            <div className="space-y-1">
+                                                <p className={`text-xs text-ink/70 break-words`} title="Details submitted by the recruiter">
+                                                    {member.companyVerification.companyName} · {member.companyVerification.registrationType} {member.companyVerification.registrationNumber}
+                                                    <br />{member.companyVerification.website} · {member.companyVerification.companyEmail}
+                                                </p>
+                                                <div className="flex gap-1.5">
+                                                    <button type="button" onClick={() => reviewVerification(member, 'verified')} className={`inline-flex h-6 cursor-pointer items-center rounded-md border border-ink/70 bg-ink/70 px-2.5 text-[11px] font-bold text-surface transition-colors hover:bg-ink/60 ${FOCUS}`}>
+                                                        Approve
+                                                    </button>
+                                                    <button type="button" onClick={() => reviewVerification(member, 'rejected')} className={`inline-flex h-6 cursor-pointer items-center rounded-md border border-destructive px-2.5 text-[11px] font-bold text-destructive transition-colors hover:bg-destructive/10 ${FOCUS}`}>
+                                                        Decline
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* Invisible second line: keeps the name level with the email beside it. */
+                                            <p aria-hidden="true" className={`invisible hidden lg:block ${skin.meta}`}>&nbsp;</p>
+                                        )}
                                     </div>
 
                                     {/* Contact */}

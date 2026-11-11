@@ -7,7 +7,8 @@ import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailVie
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
-import { Search, ChevronDown, BellRing, Building2, X, Undo2 } from 'lucide-react';
+import { Search, ChevronDown, BellRing, Building2, X, Undo2, Bookmark } from 'lucide-react';
+import { getSavedJobIds } from '@/lib/savedJobs';
 import popup from '@/components/ui/Popup';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
 import JobAlertsPanel from '@/components/user/JobAlertsPanel';
@@ -52,6 +53,9 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     // Top companies replaces the post list with company cards; opening one shows its posts.
     const [showCompanies, setShowCompanies] = useState(false);
     const [activeCompany, setActiveCompany] = useState<string | null>(null);
+    // "Saved jobs" narrows the list to posts saved from the job detail page.
+    const [showSaved, setShowSaved] = useState(false);
+    const [savedIds, setSavedIds] = useState<string[]>([]);
     // Typing stays smooth on long lists: the search runs on a slightly lagging copy.
     const deferredSearch = useDeferredValue(searchTerm);
 
@@ -64,6 +68,16 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         if (activeTab === 'jobs') fetchPosts();
         else fetchApplications();
     }, [activeTab]);
+
+    // Re-read the saved ids whenever the list is on screen, so a job saved (or
+    // un-saved) in the detail view is reflected as soon as the person comes back.
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid || activeTab !== 'jobs' || selectedJob) return;
+        let cancelled = false;
+        getSavedJobIds(uid).then((ids) => { if (!cancelled) setSavedIds(ids); });
+        return () => { cancelled = true; };
+    }, [activeTab, selectedJob]);
 
     const fetchApplications = async () => {
         const user = auth.currentUser;
@@ -239,7 +253,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     );
 
     // The plan decides how many jobs can be opened; assume the free limit until it loads.
-    const visiblePosts = filteredPosts;
+    const visiblePosts = showSaved ? filteredPosts.filter(post => savedIds.includes(post.id!)) : filteredPosts;
 
     // The Applications tab honours the same filters; it used to render the raw list.
     const filteredApplications = rankByKeywords(
@@ -345,7 +359,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                 <p aria-live="polite">
                                     {!loading && (
                                         <span className={`inline-flex h-8 items-center rounded-lg border border-ink px-3.5 text-xs font-bold text-ink`}>
-                                            {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'}
+                                            {visiblePosts.length} {showSaved ? 'saved' : ''} {visiblePosts.length === 1 ? 'post' : 'posts'}
                                         </span>
                                     )}
                                 </p>
@@ -363,7 +377,20 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             </button>
                             <button
                                 type="button"
-                                onClick={() => (!showCompanies ? setShowCompanies(true) : activeCompany ? setActiveCompany(null) : closeCompanies())}
+                                onClick={() => { closeCompanies(); setShowSaved(s => !s); }}
+                                aria-pressed={showSaved}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold transition-colors hover:text-brand ${showSaved ? 'text-brand' : 'text-ink'} ${FOCUS_RING}`}
+                            >
+                                <Bookmark className="h-4 w-4" aria-hidden="true" />Saved jobs
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowSaved(false);
+                                    if (!showCompanies) setShowCompanies(true);
+                                    else if (activeCompany) setActiveCompany(null);
+                                    else closeCompanies();
+                                }}
                                 aria-pressed={showCompanies}
                                 className={`inline-flex cursor-pointer items-center gap-2 rounded-md text-sm font-bold transition-colors hover:text-brand ${showCompanies ? 'text-brand' : 'text-ink'} ${FOCUS_RING}`}
                             >
@@ -407,10 +434,12 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                 <TopCompaniesPanel posts={openPosts} onSelect={setActiveCompany} />
                             )
                         ) : activeTab === 'jobs' ? (
-                            filteredPosts.length === 0 ? (
+                            visiblePosts.length === 0 ? (
                                 <div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
-                                    <h3 className="text-lg font-bold text-ink mb-2">No jobs matched your criteria</h3>
-                                    <p className="text-ink/60 max-w-sm mx-auto">Adjust filters or search terms.</p>
+                                    <h3 className="text-lg font-bold text-ink mb-2">{showSaved && savedIds.length === 0 ? 'No saved jobs yet' : 'No jobs matched your criteria'}</h3>
+                                    <p className="text-ink/60 max-w-sm mx-auto">
+                                        {showSaved && savedIds.length === 0 ? 'Open a job and choose Save to keep it here.' : 'Adjust filters or search terms.'}
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4">

@@ -228,13 +228,18 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                 level: matchedPlan?.level ?? 0,
                                 maxPosts: postLimit,
                                 maxCandidates: sub?.maxCandidates ?? -1,
+                                privileges: sub?.privileges,
                                 features: matchedPlan?.features ?? [],
                                 active: true,
                             } as SubscriptionPlan}
                             audience={audience}
                             badge={statusLabel}
                             includeContact={isPaid && !sub?.expired}
-                            restrictions={!isUser && !isPaid ? ['You cannot add job posts on the Free plan', 'Candidate contact details and resumes are locked'] : []}
+                            restrictions={
+                                !isUser && !isPaid ? ['You cannot add job posts on the Free plan', 'Candidate contact details and resumes are locked']
+                                : isUser && !sub?.privileges?.profileVisibility ? ['Profile visibility is locked']
+                                : []
+                            }
                             priceNode={
                                 <p className="mt-5 text-3xl font-bold text-ink">
                                     {isPaid ? (sub?.expiresAt ? formatDate(sub.expiresAt) : 'No expiry') : 'Free'}

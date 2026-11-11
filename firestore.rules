@@ -31,6 +31,17 @@ service cloud.firestore {
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
     }
+    // A recruiter may only file a company-verification request ('pending'), and
+    // never touch one an admin has already verified. The request's company email
+    // must be the one they proved with the emailed code: `companyEmailVerified`
+    // is written only by the verifyCompanyEmailCode Cloud Function. Approving or
+    // declining is an admin write, which skips this check.
+    function companyVerificationOk() {
+      return !changedKeys().hasAny(['companyVerification'])
+             || (request.resource.data.companyVerification.status == 'pending'
+                 && request.resource.data.get('companyEmailVerified', '') == request.resource.data.companyVerification.companyEmail
+                 && resource.data.get('companyVerification', {}).get('status', 'none') != 'verified');
+    }
 
     // ---------- users ----------
     match /users/{uid} {
@@ -56,7 +67,8 @@ service cloud.firestore {
       // Nobody but an admin can change role, plan or premium flag.
       allow update: if isAdmin()
                     || (request.auth.uid == uid
-                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid']));
+                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid', 'companyVerified', 'companyEmailVerified'])
+                        && companyVerificationOk());
 
       allow delete: if isAdmin();
 

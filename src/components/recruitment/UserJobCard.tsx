@@ -5,6 +5,7 @@ import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { buildHighlightRegex } from '@/lib/candidateSearch';
 import Highlight from '@/components/resume/Highlight';
+import SkillsLine from '@/components/ui/SkillsLine';
 
 interface UserJobCardProps {
     recruitment: RecruitmentRequest;
@@ -19,6 +20,8 @@ interface UserJobCardProps {
     whiteCard?: boolean;
     /** Skills as plain comma-separated text instead of grey chips. */
     plainSkills?: boolean;
+    /** Skills as one line of plain text; an "…" at its end opens a hover popover with every skill. */
+    skillsPopover?: boolean;
     /** Recruiter side: tiny edit and delete icons beside the title. */
     /** Search keywords to highlight in the card text. */
     keywords?: string[];
@@ -26,7 +29,7 @@ interface UserJobCardProps {
     onDelete?: (recruitment: RecruitmentRequest) => Promise<void> | void;
 }
 
-export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, plainSkills, keywords, onEdit, onDelete }: UserJobCardProps) {
+export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, plainSkills, skillsPopover, keywords, onEdit, onDelete }: UserJobCardProps) {
     const regex = useMemo(() => buildHighlightRegex(keywords ?? []), [keywords]);
     const hl = (t?: string) => <Highlight text={t ?? ''} regex={regex} />;
     const [confirming, setConfirming] = useState(false);
@@ -43,11 +46,12 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
     // Skills that match the search come first, so a hit is never hidden past the third chip.
     const shownSkills = plainSkills ? 6 : 3;
-    const { skillChips, skillTotal } = useMemo(() => {
+    const { skillChips, skillTotal, orderedSkills } = useMemo(() => {
         const all = (recruitment.skills || '').split(',').map(s => s.trim()).filter(Boolean);
-        if (!regex) return { skillChips: all.slice(0, shownSkills), skillTotal: all.length };
+        if (!regex) return { skillChips: all.slice(0, shownSkills), skillTotal: all.length, orderedSkills: all };
         const hit = new RegExp(regex.source, 'iu');
-        return { skillChips: [...all.filter(s => hit.test(s)), ...all.filter(s => !hit.test(s))].slice(0, shownSkills), skillTotal: all.length };
+        const ordered = [...all.filter(s => hit.test(s)), ...all.filter(s => !hit.test(s))];
+        return { skillChips: ordered.slice(0, shownSkills), skillTotal: all.length, orderedSkills: ordered };
     }, [recruitment.skills, regex, shownSkills]);
     // The company is not on the card, so it only appears when the search matched it.
     const companyHit = !!regex && !!recruitment.companyName && new RegExp(regex.source, 'iu').test(recruitment.companyName);
@@ -138,19 +142,35 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
 
                 {/* Skills & Action */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {skillsPopover ? (
+                        <div className="w-full min-w-0 flex-1">
+                            {orderedSkills.length > 0 && (
+                                <SkillsLine
+                                    skills={orderedSkills}
+                                    lines={1}
+                                    className=""
+                                    textClass="text-xs font-medium leading-5 text-ink/70 md:text-sm"
+                                    maskClass={whiteCard ? 'bg-surface' : skin.canvas}
+                                    render={hl}
+                                />
+                            )}
+                        </div>
+                    ) : (
                     <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={`mr-1 ${skin.micro}`}>Skills:</span>
-                        {plainSkills ? (
-                            <span className="text-xs font-medium text-ink/70 md:text-sm">
-                                {skillChips.map((skill, i) => <Fragment key={i}>{i > 0 && ', '}{hl(skill)}</Fragment>)}
-                                {skillTotal > skillChips.length && <span className="ml-1.5 font-bold text-ink">+{skillTotal - skillChips.length}</span>}
-                            </span>
-                        ) : skillChips.map((skill, i) => (
-                            <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
-                                {hl(skill)}
-                            </span>
-                        ))}
-                    </div>
+                            <span className={`mr-1 ${skin.micro}`}>Skills:</span>
+                            {plainSkills ? (
+                                <span className="text-xs font-medium text-ink/70 md:text-sm">
+                                    {skillChips.map((skill, i) => <Fragment key={i}>{i > 0 && ', '}{hl(skill)}</Fragment>)}
+                                    {skillTotal > skillChips.length && <span className="ml-1.5 font-bold text-ink">+{skillTotal - skillChips.length}</span>}
+                                </span>
+                            ) : skillChips.map((skill, i) => (
+                                <span key={i} className="rounded-lg bg-border px-2 py-1 text-xs font-medium text-ink/70">
+                                    {hl(skill)}
+                                </span>
+                            ))}
+                        </div>
+    
+                    )}
 
                     <button
                         onClick={() => onViewDetails?.(recruitment)}

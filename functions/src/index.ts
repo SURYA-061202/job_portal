@@ -18,6 +18,7 @@ import {
 export { verifyEmailExists } from "./emailVerify";
 export { sendSignupOtp, verifySignupOtp } from "./signupOtp";
 export { confirmMobileVerified, checkMobileAvailable } from "./mobileOtp";
+export { sendCompanyEmailCode, verifyCompanyEmailCode } from "./companyEmail";
 export { parseResume, scoreCandidates, rankApplicants, clusterCandidates } from "./ai";
 export { getInterviewInvite, submitInterviewResponse, submitVerifyDetails } from "./candidatePortal";
 
@@ -218,6 +219,43 @@ export const sendCongratulationsMail = onCall(async (request) => {
     `;
 
   return send({ to: candidate.email, subject: "Offer Letter – Welcome to Indian Infra", html }, "sendCongratulationsMail");
+});
+
+// 4b. Rejection email. The recruiter's reason is included, worded politely.
+export const sendRejectionMail = onCall(async (request) => {
+  await staffMail(request);
+  const data = request.data as { candidate?: unknown; role?: string; reason?: string; roundName?: string };
+  const candidate = candidateOf(data.candidate);
+  const role = str(data.role, 200);
+  const reason = str(data.reason, 1000);
+  const roundName = str(data.roundName, 100);
+  if (reason.length < 10) throw new HttpsError("invalid-argument", "A reason for rejection is required.");
+
+  const forRole = role ? ` for the position of <strong>${esc(role)}</strong>` : "";
+  const stage = roundName ? ` after the <strong>${esc(roundName)}</strong> round` : "";
+  // Keep the recruiter's line breaks, but never any markup.
+  const reasonHtml = esc(reason).replace(/\r?\n/g, "<br/>");
+
+  const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;line-height:1.6;">
+        <h2 style="color:#1d4ed8;">Update on Your Application${role ? ` – ${esc(role)}` : ""}</h2>
+        <p>Hi ${firstName(candidate.name)},</p>
+        <p>Thank you for taking the time to interview with <strong>Indian Infra</strong>${forRole}. We truly appreciate the effort you put into the process.</p>
+        <p>After careful consideration, we have decided not to move forward with your application${stage} at this time.</p>
+        <div style="background:#f8fafc;border-left:4px solid #1d4ed8;padding:12px 16px;border-radius:4px;margin:20px 0;">
+          <p style="margin:0 0 6px;font-weight:bold;color:#475569;">Feedback from the hiring team</p>
+          <p style="margin:0;">${reasonHtml}</p>
+        </div>
+        <p>This decision reflects the needs of this particular role and is not a judgement of your overall abilities. We encourage you to keep an eye on our openings and apply again for roles that match your experience.</p>
+        <p>We wish you every success in your career ahead.</p>
+        <p>Best regards,<br/>Talent Acquisition Team<br/>Indian Infra</p>
+      </div>
+    `;
+
+  return send(
+    { to: candidate.email, subject: `Update on Your Application${role ? ` – ${role}` : ""} @ Indian Infra`, html },
+    "sendRejectionMail"
+  );
 });
 
 // 5. Verify-details email

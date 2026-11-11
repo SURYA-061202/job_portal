@@ -17,12 +17,13 @@ import {
     revokeSubscription,
     savePlan,
     subscribeAllRequests,
+    USER_PRIVILEGES,
 } from '@/lib/subscriptions';
 import { UNLIMITED } from '@/types';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
 import ExpandingModal from './ExpandingModal';
-import type { SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
+import type { PlanPrivileges, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface Recruiter {
     id: string;
@@ -43,6 +44,7 @@ interface PlanForm {
     maxCandidates: string;
     maxCandidatesUnlimited: boolean;
     features: string;
+    privileges: PlanPrivileges;
 }
 
 const emptyForm = (nextLevel: number): PlanForm => ({
@@ -56,6 +58,7 @@ const emptyForm = (nextLevel: number): PlanForm => ({
     maxCandidates: '',
     maxCandidatesUnlimited: false,
     features: '',
+    privileges: {},
 });
 
 const formFromPlan = (p: SubscriptionPlan): PlanForm => ({
@@ -70,6 +73,7 @@ const formFromPlan = (p: SubscriptionPlan): PlanForm => ({
     maxCandidates: isUnlimited(p.maxCandidates) ? '' : String(p.maxCandidates),
     maxCandidatesUnlimited: isUnlimited(p.maxCandidates),
     features: p.features.join('\n'),
+    privileges: p.privileges ?? {},
 });
 
 const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
@@ -80,8 +84,8 @@ const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
 
 export default function AdminSubscriptionTab({ adminId }: { adminId: string | null }) {
     const skin = useSkin();
-    // Plans are for recruiters only; one subscription unlocks contact details, resumes and posts.
-    const audience = 'recruiter' as SubscriptionAudience;
+    // The admin manages two catalogues: recruiter plans (posts, contacts, resumes) and user plans (privileges).
+    const [audience, setAudience] = useState<SubscriptionAudience>('recruiter');
     // Requests and Recruiters open in a modal that grows out of their header icon.
     const [reqFilter, setReqFilter] = useState<'all' | 'pending' | 'resolved'>('all');
     const [recSearch, setRecSearch] = useState('');
@@ -99,6 +103,16 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
     const [saving, setSaving] = useState(false);
 
     const isUserSide = audience === 'user';
+    const peopleLabel = isUserSide ? 'Users' : 'Recruiters';
+    const personLabel = isUserSide ? 'User' : 'Recruiter';
+    const switchAudience = (next: SubscriptionAudience) => {
+        if (next === audience) return;
+        setAudience(next);
+        setPanel(null);
+        setForm(null);
+        setRecSearch('');
+        setReqFilter('all');
+    };
     const plans = useMemo(() => allPlans.filter((p) => planAudience(p) === audience), [allPlans, audience]);
     const requests = useMemo(() => allRequests.filter((r) => (r.audience ?? 'recruiter') === audience), [allRequests, audience]);
 
@@ -193,14 +207,15 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         const level = parseInt(form.level, 10);
         const price = Number(form.price || 0);
         const durationDays = parseInt(form.durationDays, 10);
-        const maxPosts = form.maxPostsUnlimited ? UNLIMITED : parseInt(form.maxPosts, 10);
+        // User plans are defined by price, validity and privileges only - no post count.
+        const maxPosts = isUserSide || form.maxPostsUnlimited ? UNLIMITED : parseInt(form.maxPosts, 10);
         const maxCandidates = UNLIMITED; // every plan can view all candidates
 
         if (!form.name.trim()) return popup.error('Plan name is required');
         if (!Number.isInteger(level) || level < 1) return popup.error('Level must be 1 or higher');
         if (!Number.isFinite(price) || price < 0) return popup.error('Price cannot be negative');
         if (!Number.isInteger(durationDays) || durationDays < 1) return popup.error('Duration must be at least 1 day');
-        if (!form.maxPostsUnlimited && (!Number.isInteger(maxPosts) || maxPosts < 1)) return popup.error(`Enter a ${isUserSide ? 'job view' : 'post'} limit of 1 or more, or tick Unlimited`);
+        if (!isUserSide && !form.maxPostsUnlimited && (!Number.isInteger(maxPosts) || maxPosts < 1)) return popup.error('Enter a post limit of 1 or more, or tick Unlimited');
         if (plans.some((p) => p.level === level && p.id !== form.id)) return popup.error(`Level ${level} is already used by another plan`);
 
         setSaving(true);
@@ -214,7 +229,8 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                 price,
                 durationDays,
                 maxPosts,
-                maxCandidates,
+                maxCandidates: isUserSide ? 0 : maxCandidates,
+                ...(isUserSide ? { privileges: form.privileges } : {}),
                 features: form.features.split('\n').map((f) => f.trim()).filter(Boolean),
                 active: true,
             });
@@ -239,6 +255,24 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     <h2 className={skin.heading}>Subscription plans</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Audience toggle, joined into one control and placed before Requests; the active side is filled */}
+                    <div role="radiogroup" aria-label="Plan audience" className={`inline-flex h-10 items-center rounded-full border ${skin.edge} bg-surface p-1 shadow-sm`}>
+                        {([['recruiter', 'Recruiters'], ['user', 'Users']] as const).map(([key, label]) => {
+                            const active = audience === key;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => switchAudience(key)}
+                                    className={`inline-flex h-8 cursor-pointer items-center rounded-full px-4 text-sm font-semibold transition-colors duration-200 ${FOCUS} ${active ? 'bg-ink text-surface' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'}`}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
                     <button
                         type="button"
                         onClick={(e) => openPanel('requests', e.currentTarget)}
@@ -263,7 +297,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
                             <Users className="h-3.5 w-3.5" aria-hidden="true" />
                         </span>
-                        Recruiters
+                        {peopleLabel}
                     </button>
                     <button
                         type="button"
@@ -282,7 +316,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     </div>
                 ) : plans.length === 0 ? (
                     <div className={`flex min-h-[200px] flex-1 items-center justify-center border ${skin.edge} ${skin.cardSurface} ${skin.radius} px-6 text-center`}>
-                        <p className={skin.body}>No plans yet. Use Add plan to create one.</p>
+                        <p className={skin.body}>No {isUserSide ? 'user' : 'recruiter'} plans yet. Use Add plan to create one.</p>
                     </div>
                 ) : (
                     <PlanSlider>
@@ -355,20 +389,51 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="plan-posts" className="block text-xs font-bold text-ink/80 mb-1">{isUserSide ? 'Job posts viewable' : 'Max job posts'}</label>
-                                <input id="plan-posts" type="number" min={1} disabled={form.maxPostsUnlimited} value={form.maxPostsUnlimited ? '' : form.maxPosts} onChange={(e) => setForm({ ...form, maxPosts: e.target.value })} className={`${fieldClass} disabled:opacity-50`} />
-                                <label className="mt-1.5 flex items-center gap-2 text-xs text-ink/70">
-                                    <input type="checkbox" checked={form.maxPostsUnlimited} onChange={(e) => setForm({ ...form, maxPostsUnlimited: e.target.checked })} /> Unlimited
-                                </label>
-                            </div>
-                        </div>
+                        {isUserSide ? (
+                            <fieldset>
+                                <legend className="mb-2 block text-xs font-bold text-ink/80">Privileges</legend>
+                                <div className={`divide-y ${skin.divide} rounded-lg border ${skin.edge}`}>
+                                    {USER_PRIVILEGES.map((p) => {
+                                        const on = !!form.privileges[p.key];
+                                        return (
+                                            <div key={p.key} className="flex items-center justify-between gap-4 px-3.5 py-3">
+                                                <div className="min-w-0">
+                                                    <p id={`priv-${p.key}`} className="text-sm font-semibold text-ink">{p.label}</p>
+                                                    <p className={skin.meta}>{p.hint}</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    role="switch"
+                                                    aria-checked={on}
+                                                    aria-labelledby={`priv-${p.key}`}
+                                                    onClick={() => setForm({ ...form, privileges: { ...form.privileges, [p.key]: !on } })}
+                                                    className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${FOCUS} ${on ? 'bg-ink' : 'bg-ink/20'}`}
+                                                >
+                                                    <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform duration-200 ${on ? 'translate-x-5' : ''}`} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </fieldset>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="plan-posts" className="block text-xs font-bold text-ink/80 mb-1">Max job posts</label>
+                                        <input id="plan-posts" type="number" min={1} disabled={form.maxPostsUnlimited} value={form.maxPostsUnlimited ? '' : form.maxPosts} onChange={(e) => setForm({ ...form, maxPosts: e.target.value })} className={`${fieldClass} disabled:opacity-50`} />
+                                        <label className="mt-1.5 flex items-center gap-2 text-xs text-ink/70">
+                                            <input type="checkbox" checked={form.maxPostsUnlimited} onChange={(e) => setForm({ ...form, maxPostsUnlimited: e.target.checked })} /> Unlimited
+                                        </label>
+                                    </div>
+                                </div>
 
-                        <div>
-                            <label htmlFor="plan-features" className="block text-xs font-bold text-ink/80 mb-1">Extra features (one per line)</label>
-                            <textarea id="plan-features" rows={3} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} className={fieldClass} />
-                        </div>
+                                <div>
+                                    <label htmlFor="plan-features" className="block text-xs font-bold text-ink/80 mb-1">Extra features (one per line)</label>
+                                    <textarea id="plan-features" rows={3} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} className={fieldClass} />
+                                </div>
+                            </>
+                        )}
 
                         <div className="flex gap-3 pt-2">
                             <button type="button" onClick={() => setForm(null)} className={`flex-1 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}>
@@ -384,7 +449,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
             {panel && (
                 <ExpandingModal
                     origin={{ x: panel.x, y: panel.y }}
-                    title={panel.kind === 'requests' ? 'Subscription requests' : 'Recruiters'}
+                    title={panel.kind === 'requests' ? `${personLabel} subscription requests` : peopleLabel}
                     onClose={() => setPanel(null)}
                 >
                     {panel.kind === 'requests' ? (
@@ -411,7 +476,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                     <table className="min-w-full">
                                         <thead className={`sticky top-0 z-10 border-b ${skin.edge} bg-surface`}>
                                             <tr>
-                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>{personLabel}</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Status</th>
                                                 <th scope="col" className={`px-5 py-3 text-center ${skin.micro}`}>Delete</th>
@@ -490,28 +555,28 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     ) : (
                         <>
                             <div className={`flex shrink-0 items-center justify-between gap-3 border-b ${skin.edge} px-5 py-3`}>
-                                <label htmlFor="recruiter-search" className="sr-only">Search recruiters</label>
+                                <label htmlFor="recruiter-search" className="sr-only">Search {peopleLabel.toLowerCase()}</label>
                                 <input
                                     id="recruiter-search"
                                     type="text"
                                     value={recSearch}
                                     onChange={(e) => setRecSearch(e.target.value)}
-                                    placeholder="Search recruiters"
+                                    placeholder={`Search ${peopleLabel.toLowerCase()}`}
                                     className={`h-9 w-52 max-w-[60%] rounded-lg border border-ink/20 bg-surface px-3 text-sm text-ink placeholder:text-ink/40 ${FOCUS}`}
                                 />
-                                <span className={`shrink-0 ${skin.meta}`}>{recruiters.length} recruiter{recruiters.length === 1 ? '' : 's'}</span>
+                                <span className={`shrink-0 ${skin.meta}`}>{recruiters.length} {personLabel.toLowerCase()}{recruiters.length === 1 ? '' : 's'}</span>
                             </div>
                             {(() => {
                                 const q = recSearch.trim().toLowerCase();
                                 const rows = q ? recruiters.filter((r) => `${r.name} ${r.email}`.toLowerCase().includes(q)) : recruiters;
                                 if (rows.length === 0) {
-                                    return <p className={`px-6 py-16 text-center ${skin.body}`}>{recruiters.length === 0 ? 'No recruiters yet. Add them from Add Recruiters.' : 'No recruiter matches your search.'}</p>;
+                                    return <p className={`px-6 py-16 text-center ${skin.body}`}>{recruiters.length === 0 ? (isUserSide ? 'No users yet.' : 'No recruiters yet. Add them from Add Recruiters.') : `No ${personLabel.toLowerCase()} matches your search.`}</p>;
                                 }
                                 return (
                                     <table className="min-w-full">
                                         <thead className={`sticky top-0 z-10 border-b ${skin.edge} bg-surface`}>
                                             <tr>
-                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>{personLabel}</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
                                                 <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Valid until</th>
                                                 <th scope="col" className={`px-5 py-3 text-center ${skin.micro}`}>Remove</th>
