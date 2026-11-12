@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Check, ClipboardList, Loader2, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { Check, ClipboardList, CreditCard, Loader2, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -19,11 +19,12 @@ import {
     subscribeAllRequests,
     USER_PRIVILEGES,
 } from '@/lib/subscriptions';
+import { formatAmount, subscribeAllPayments } from '@/lib/payments';
 import { UNLIMITED } from '@/types';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
 import ExpandingModal from './ExpandingModal';
-import type { PlanPrivileges, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
+import type { PaymentRecord, PlanPrivileges, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface Recruiter {
     id: string;
@@ -82,6 +83,8 @@ const STATUS_LABEL: Record<SubscriptionRequest['status'], string> = {
     rejected: 'Declined',
 };
 
+type PanelKind = 'requests' | 'recruiters' | 'payments';
+
 export default function AdminSubscriptionTab({ adminId }: { adminId: string | null }) {
     const skin = useSkin();
     // The admin manages two catalogues: recruiter plans (posts, contacts, resumes) and user plans (privileges).
@@ -89,13 +92,15 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
     // Requests and Recruiters open in a modal that grows out of their header icon.
     const [reqFilter, setReqFilter] = useState<'all' | 'pending' | 'resolved'>('all');
     const [recSearch, setRecSearch] = useState('');
-    const [panel, setPanel] = useState<{ kind: 'requests' | 'recruiters'; x: number; y: number } | null>(null);
-    const openPanel = (kind: 'requests' | 'recruiters', el: HTMLElement) => {
+    const [panel, setPanel] = useState<{ kind: PanelKind; x: number; y: number } | null>(null);
+    const openPanel = (kind: PanelKind, el: HTMLElement) => {
         const r = el.getBoundingClientRect();
         setPanel({ kind, x: r.left + r.width / 2, y: r.top + r.height / 2 });
     };
     const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
     const [allRequests, setAllRequests] = useState<SubscriptionRequest[]>([]);
+    const [payments, setPayments] = useState<PaymentRecord[]>([]);
+    const [payFilter, setPayFilter] = useState<'paid' | 'failed' | 'all'>('paid');
     const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -158,6 +163,17 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
             }),
         []
     );
+
+    // Online payments (Razorpay), live. Abandoned checkouts ('created') are only shown under All.
+    useEffect(
+        () =>
+            subscribeAllPayments(setPayments, (error) => {
+                console.error('Error listening to payments:', error);
+            }),
+        []
+    );
+    const paidPayments = useMemo(() => payments.filter((p) => p.status === 'paid'), [payments]);
+    const revenue = useMemo(() => paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0), [paidPayments]);
 
     const pending = useMemo(() => requests.filter((r) => r.status === 'pending'), [requests]);
     const history = useMemo(() => requests.filter((r) => r.status !== 'pending'), [requests]);
@@ -289,6 +305,18 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                         </span>
                         Requests
                     </button>
+                    {!isUserSide && (
+                        <button
+                            type="button"
+                            onClick={(e) => openPanel('payments', e.currentTarget)}
+                            className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                        >
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                                <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                            Payments
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={(e) => openPanel('recruiters', e.currentTarget)}
@@ -449,10 +477,81 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
             {panel && (
                 <ExpandingModal
                     origin={{ x: panel.x, y: panel.y }}
-                    title={panel.kind === 'requests' ? `${personLabel} subscription requests` : peopleLabel}
+                    title={panel.kind === 'requests' ? `${personLabel} subscription requests` : panel.kind === 'payments' ? 'Subscription payments' : peopleLabel}
                     onClose={() => setPanel(null)}
                 >
-                    {panel.kind === 'requests' ? (
+                    {panel.kind === 'payments' ? (
+                        <>
+                            <div className={`flex shrink-0 flex-wrap items-center justify-between gap-2 border-b ${skin.edge} px-5 py-3`}>
+                                <div className="flex gap-2">
+                                    {([['paid', 'Paid'], ['failed', 'Failed'], ['all', 'All']] as const).map(([key, label]) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => setPayFilter(key)}
+                                            aria-pressed={payFilter === key}
+                                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200 ${FOCUS} ${payFilter === key ? 'bg-ink text-surface' : 'bg-ink/5 text-ink/70 hover:bg-ink/10'}`}
+                                        >
+                                            {label} ({key === 'all' ? payments.length : payments.filter((p) => p.status === key).length})
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-sm text-ink/70">
+                                    Collected: <span className="font-semibold text-ink">{formatAmount(revenue)}</span>
+                                </p>
+                            </div>
+                            {(() => {
+                                const rows = payFilter === 'all' ? payments : payments.filter((p) => p.status === payFilter);
+                                if (rows.length === 0) {
+                                    return <p className={`px-6 py-16 text-center ${skin.body}`}>{payments.length === 0 ? 'No online payments yet.' : 'Nothing in this view.'}</p>;
+                                }
+                                return (
+                                    <table className="min-w-full">
+                                        <thead className={`sticky top-0 z-10 border-b ${skin.edge} bg-surface`}>
+                                            <tr>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Recruiter</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Plan</th>
+                                                <th scope="col" className={`px-3 py-3 text-left ${skin.micro}`}>Amount</th>
+                                                <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className={`divide-y ${skin.divide}`}>
+                                            {rows.map((p) => {
+                                                const chip =
+                                                    p.status === 'paid' ? 'bg-green-500/10 text-green-700'
+                                                    : p.status === 'failed' ? 'bg-destructive/10 text-destructive'
+                                                    : 'bg-ink/5 text-ink/60';
+                                                const label = p.status === 'paid' ? 'Paid' : p.status === 'failed' ? 'Failed' : 'Not completed';
+                                                return (
+                                                    <tr key={p.orderId} className="transition-colors duration-150 hover:bg-ink/[0.03]">
+                                                        <td className="px-5 py-3.5">
+                                                            <p className="text-sm font-semibold text-ink">{p.userName}</p>
+                                                            <p className={skin.meta}>{p.userEmail}</p>
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <p className="text-sm text-ink">{p.plan?.planName}</p>
+                                                            <p className={skin.meta}>{formatDate(p.paidAt ?? p.createdAt)}</p>
+                                                        </td>
+                                                        <td className="px-3 py-3.5">
+                                                            <p className="text-sm font-semibold text-ink">{formatAmount(p.amount)}</p>
+                                                            {p.method && <p className={`${skin.meta} uppercase`}>{p.method}</p>}
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
+                                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{label}</span>
+                                                            <p className={`mt-1 ${skin.meta}`}>
+                                                                {p.status === 'paid' && p.expiresAt ? `Until ${formatDate(p.expiresAt)}` : p.failureReason || ''}
+                                                            </p>
+                                                            {p.razorpayPaymentId && <p className={`${skin.meta} font-mono text-[11px]`}>{p.razorpayPaymentId}</p>}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                );
+                            })()}
+                        </>
+                    ) : panel.kind === 'requests' ? (
                         <>
                             <div className={`flex shrink-0 gap-2 border-b ${skin.edge} px-5 py-3`}>
                                 {([['all', 'All', requests.length], ['pending', 'Pending', pending.length], ['resolved', 'Resolved', history.length]] as const).map(([key, label, n]) => (

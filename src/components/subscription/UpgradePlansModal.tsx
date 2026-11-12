@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Clock, Loader2, X } from 'lucide-react';
+import { Clock, CreditCard, Loader2, X } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { canRenewPlan, formatDate, formatLimit, formatPrice, getMyRequests, getPlans, isUnlimited, requestSubscription } from '@/lib/subscriptions';
+import { isPurchasable } from '@/lib/payments';
+import { usePlanCheckout } from '@/lib/usePlanCheckout';
 import type { EffectiveSubscription, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface UpgradePlansModalProps {
@@ -22,6 +24,9 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
     const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [requestingId, setRequestingId] = useState<string | null>(null);
+    // Recruiter plans with a price are bought online; the modal closes once the plan is active.
+    const { payingId, pay } = usePlanCheckout(subscription, onClose);
+    const canPay = (plan: SubscriptionPlan) => audience !== 'user' && isPurchasable(plan);
 
     const load = useCallback(async () => {
         if (!userId) return;
@@ -143,6 +148,19 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                         </ul>
                                         {activeNoEnd ? (
                                             <span className="mt-5 inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                        ) : canPay(plan) ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => pay(plan)}
+                                            disabled={payingId !== null}
+                                            className={`mt-5 inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                        >
+                                            {payingId === plan.id ? (
+                                                <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Processing...</>
+                                            ) : (
+                                                <><CreditCard className="h-4 w-4" aria-hidden="true" /> {renewable ? 'Renew' : 'Subscribe'} - {formatPrice(plan.price)}</>
+                                            )}
+                                        </button>
                                         ) : (
                                         <button
                                             type="button"

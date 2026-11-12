@@ -21,6 +21,7 @@ export { confirmMobileVerified, checkMobileAvailable } from "./mobileOtp";
 export { sendCompanyEmailCode, verifyCompanyEmailCode } from "./companyEmail";
 export { parseResume, scoreCandidates, rankApplicants, clusterCandidates } from "./ai";
 export { getInterviewInvite, submitInterviewResponse, submitVerifyDetails } from "./candidatePortal";
+export { createSubscriptionOrder, verifySubscriptionPayment, razorpayWebhook } from "./payments";
 
 if (getApps().length === 0) {
   initializeApp();

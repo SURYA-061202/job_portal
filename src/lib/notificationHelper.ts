@@ -14,6 +14,8 @@ export type NotificationType =
     | 'subscription_request_sent'
     | 'subscription_approved'
     | 'subscription_rejected'
+    | 'subscription_activated'
+    | 'subscription_purchased'
     | 'company_verified'
     | 'company_verification_rejected'
     | 'company_verification_request'

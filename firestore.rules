@@ -92,6 +92,15 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ---------- online payments (Razorpay) ----------
+    // Written only by the payment Cloud Functions (createSubscriptionOrder,
+    // verifySubscriptionPayment, razorpayWebhook), which grant the plan after the
+    // payment is verified. Clients can read their own; admins read all.
+    match /payments/{orderId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
     // ---------- job posts ----------
     match /recruits/{postId} {
       // Signed-in users only. The signed-out candidate pages go through Cloud

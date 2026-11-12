@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, Clock, CreditCard, Loader2, Lock } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
@@ -7,6 +7,7 @@ import {
     countRecruiterPosts,
     formatDate,
     formatLimit,
+    formatPrice,
     FREE_POST_LIMIT,
     FREE_USER_POST_LIMIT,
     getMyRequests,
@@ -14,9 +15,11 @@ import {
     isUnlimited,
     requestSubscription,
 } from '@/lib/subscriptions';
+import { formatAmount, isPurchasable, subscribeMyPayments } from '@/lib/payments';
+import { usePlanCheckout } from '@/lib/usePlanCheckout';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
-import type { EffectiveSubscription, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
+import type { EffectiveSubscription, PaymentRecord, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface RecruiterSubscriptionTabProps {
     userId: string | null;
@@ -42,6 +45,9 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
     const [loading, setLoading] = useState(true);
     const [plansOpen, setPlansOpen] = useState(startOnPlans);
     const [requestingId, setRequestingId] = useState<string | null>(null);
+    const [payments, setPayments] = useState<PaymentRecord[]>([]);
+    // Recruiters pay online; job seekers still request from the admin.
+    const { payingId, pay } = usePlanCheckout(subscription, () => setPlansOpen(false));
 
     const load = useCallback(async () => {
         if (!userId) return;
@@ -65,6 +71,11 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (!userId || isUser) return;
+        return subscribeMyPayments(userId, setPayments, (error) => console.error('Error loading payments:', error));
+    }, [userId, isUser]);
 
     // The admin approving a request changes `subscription` live - refresh the request list with it.
     const planKey = subscription?.planId ?? subscription?.source;
@@ -156,6 +167,19 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                         audience={audience}
                                         action={activeNoEnd ? (
                                             <span className="inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                        ) : !isUser && isPurchasable(plan) ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => pay(plan)}
+                                                disabled={payingId !== null}
+                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                            >
+                                                {payingId === plan.id ? (
+                                                    <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Processing...</>
+                                                ) : (
+                                                    <><CreditCard className="h-4 w-4" aria-hidden="true" /> {renewable ? 'Renew' : 'Subscribe'} - {formatPrice(plan.price)}</>
+                                                )}
+                                            </button>
                                         ) : (
                                             <button
                                                 type="button"
@@ -184,7 +208,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                 <section aria-label="Current plan" className="space-y-4">
                     {sub?.expired && (
                         <p role="alert" className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive rounded-lg">
-                            Your previous subscription has expired and you are back on the free tier. Request a plan to restore your limits.
+                            Your previous subscription has expired and you are back on the free tier. {isUser ? 'Request a plan' : 'Renew or choose a plan'} to restore your limits.
                         </p>
                     )}
                     {/* Same vertical card as the available plans, one column wide. */}
@@ -277,6 +301,36 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                         />
                         )}
                     </div>
+
+                    {!isUser && payments.length > 0 && (
+                        <div className={`border ${skin.edge} bg-surface ${skin.radius} p-6`}>
+                            <h3 className={`mb-3 ${skin.cardTitle}`}>Payment history</h3>
+                            <ul className={`divide-y ${skin.divide}`}>
+                                {payments.map((p) => (
+                                    <li key={p.orderId} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-ink">
+                                                {p.plan.planName} <span className="font-normal text-ink/60">{'\u00B7'} {formatAmount(p.amount)}</span>
+                                            </p>
+                                            <p className={skin.meta}>
+                                                {formatDate(p.paidAt ?? p.createdAt)}
+                                                {p.status === 'paid' && p.expiresAt ? ` \u00B7 valid until ${formatDate(p.expiresAt)}` : ''}
+                                                {p.status === 'failed' && p.failureReason ? ` \u00B7 ${p.failureReason}` : ''}
+                                                {p.razorpayPaymentId ? ` \u00B7 ${p.razorpayPaymentId}` : ''}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                p.status === 'paid' ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
+                                            }`}
+                                        >
+                                            {p.status === 'paid' ? 'Paid' : 'Failed'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
                     {isUser && requests.length > 0 && (
                         <div className={`border ${skin.edge} bg-surface ${skin.radius} p-6`}>

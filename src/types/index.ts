@@ -246,6 +246,8 @@ export interface UserSubscription {
   privileges?: PlanPrivileges;
   startedAt: any;
   expiresAt: any;
+  /** Set when the plan was bought online: the payments/{orderId} it came from. */
+  paymentOrderId?: string;
 }
 
 export type SubscriptionRequestStatus = 'pending' | 'approved' | 'rejected';
@@ -265,6 +267,39 @@ export interface SubscriptionRequest {
   resolvedAt?: any;
   resolvedBy?: string;
   note?: string;
+}
+
+export type PaymentStatus = 'created' | 'paid' | 'failed';
+
+/**
+ * One online payment for a plan, payments/{orderId}. Written only by the payment
+ * Cloud Functions (functions/src/payments.ts); recruiters read their own, admins all.
+ */
+export interface PaymentRecord {
+  id?: string;
+  /** Razorpay order id (same as the document id). */
+  orderId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  /** Plan terms snapshotted when the order was created; this is what was granted. */
+  plan: {
+    planId: string;
+    planName: string;
+    level: number;
+    price: number;
+    durationDays: number;
+  };
+  /** In paise (₹1 = 100). */
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  razorpayPaymentId?: string;
+  method?: string | null;
+  failureReason?: string | null;
+  expiresAt?: any;
+  createdAt: any;
+  paidAt?: any;
 }
 
 /** What a user is entitled to right now, after expiry and legacy flags are applied. */
