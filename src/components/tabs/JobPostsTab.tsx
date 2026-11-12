@@ -296,8 +296,23 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 )}
                             </div>
 
-                            {/* Actions row under the search, right-aligned. */}
-                            <div className="flex flex-wrap items-center justify-end gap-2.5">
+                            {/* Count at the left (in line with the post cards), actions at the right. */}
+                            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5">
+                                {loadingPosts ? <span aria-hidden="true" /> : (
+                                    <div aria-live="polite" className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                                        <p className="flex items-baseline gap-1.5">
+                                            <span className="text-2xl font-black leading-none tabular-nums text-ink">{visiblePosts.length}</span>
+                                            <span className="text-sm font-semibold text-ink/60">
+                                                {keywords.length > 0 ? (visiblePosts.length === 1 ? 'match' : 'matches') : (visiblePosts.length === 1 ? 'post' : 'posts')}
+                                            </span>
+                                        </p>
+                                        {keywords.length > 0 && (
+                                            <span className="max-w-[22rem] truncate rounded-full bg-ink/5 px-3 py-1 text-xs font-medium text-ink/70" title={keywords.join(', ')}>
+                                                for {keywords.join(', ')}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 <button
                                     type="button"
                                     onClick={handleAddPost}

@@ -33,3 +33,7 @@ export function stripEmoji(text?: string | null): string {
     if (!text) return '';
     return text.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').replace(/\s{2,}/g, ' ').trim();
 }
+
+/** Up to two capital letters from a name, for avatar circles. */
+export const initials = (name: string): string =>
+    name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?';

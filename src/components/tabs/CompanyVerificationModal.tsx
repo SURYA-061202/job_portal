@@ -278,9 +278,9 @@ export default function CompanyVerificationModal({ onClose }: Props) {
                           type="button"
                           onClick={sendCode}
                           disabled={sendingCode || !normalizedEmail}
-                          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg ${skin.secondary} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg ${skin.secondary} !px-3 !py-1.5 !text-xs !normal-case !tracking-normal ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                         >
-                          {sendingCode && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                          {sendingCode && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                           {codeSent ? 'Resend code' : 'Send verification code'}
                         </button>
                         {codeSent && (
@@ -300,7 +300,7 @@ export default function CompanyVerificationModal({ onClose }: Props) {
                               type="button"
                               onClick={checkCode}
                               disabled={checkingCode || code.length !== 6}
-                              className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                              className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg ${skin.cta} !px-3 !py-1.5 !text-xs !normal-case !tracking-normal ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                             >
                               {checkingCode && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
                               Verify
@@ -338,7 +338,8 @@ export default function CompanyVerificationModal({ onClose }: Props) {
                   {error && <p role="alert" className="text-xs font-medium text-destructive">{error}</p>}
 
                   <div className="flex gap-3 pt-1">
-                    <button type="submit" disabled={submitting || !emailVerified} title={emailVerified ? undefined : 'Verify your company email first'} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}>
+                    {/* Not disabled while the email is unverified: clicking explains what is missing instead of doing nothing. */}
+                    <button type="submit" disabled={submitting} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} !normal-case !tracking-normal ${FOCUS} disabled:cursor-not-allowed disabled:opacity-60`}>
                       {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
                       Send for review
                     </button>

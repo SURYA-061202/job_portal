@@ -49,8 +49,8 @@ function AdminReviews() {
                             <p className="truncate text-sm font-semibold text-ink">{r.userName} <span className="font-medium text-ink/50">· {ROLE_LABEL[r.userRole] ?? r.userRole}</span></p>
                             <span className={`shrink-0 ${skin.meta}`}>{timeAgo(toMillis(r.updatedAt))}</span>
                         </div>
-                        <div className="mt-1"><StarRating value={r.rating} label={`${r.userName}'s rating`} /></div>
-                        {r.comment && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-ink/85">{r.comment}</p>}
+                        <div className="mt-1 flex"><StarRating value={r.rating} label={`${r.userName}'s rating`} /></div>
+                        {r.comment && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink/85">{r.comment}</p>}
                     </li>
                 ))}
             </ul>

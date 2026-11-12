@@ -667,6 +667,28 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         )}
                                     </div>
                                 )}
+                                {/* Same side padding as the card grid, so the count lines up with the first card. */}
+                                {!showPostView && !loading && (
+                                    <div aria-live="polite" className="mt-5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4">
+                                        <p className="flex items-baseline gap-1.5">
+                                            <span className="text-2xl font-black leading-none tabular-nums text-ink">{displayCandidates.length}</span>
+                                            <span className="text-sm font-semibold text-ink/60">
+                                                {isSearching ? (displayCandidates.length === 1 ? 'match' : 'matches') : (displayCandidates.length === 1 ? 'candidate' : 'candidates')}
+                                            </span>
+                                        </p>
+                                        {isSearching && (
+                                            <span className="max-w-[22rem] truncate rounded-full bg-ink/5 px-3 py-1 text-xs font-medium text-ink/70" title={keywords.join(', ')}>
+                                                for {keywords.join(', ')}
+                                            </span>
+                                        )}
+                                        {hiddenCount > 0 && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+                                                <Lock className="h-3 w-3" aria-hidden="true" />
+                                                {hiddenCount} locked
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             )}
 

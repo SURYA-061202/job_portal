@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from './firebase';
 import { createNotification } from './notificationHelper';
 import { toMillis } from './profileViews';
+import { useUnreadPostChats } from './postChat';
 
 /**
  * Support messaging between the admin and everyone else (job seekers and
@@ -183,13 +184,14 @@ export function useMessagingProfile(uid: string | null | undefined): MessagingPr
     return uid ? profile : null;
 }
 
-/** Number of threads with something new for this person; drives the badge on the Messages icon. */
+/** Number of threads (admin chat and post chats) with something new for this person; drives the badge on the Messages icon. */
 export function useUnreadMessages(profile: MessagingProfile | null): number {
     const [count, setCount] = useState(0);
+    const postChats = useUnreadPostChats(profile);
     useEffect(() => {
-        if (!profile) return;
-        if (profile.isAdmin) return subscribeThreads(list => setCount(list.filter(t => isUnread(t, true)).length));
-        return subscribeThread(profile.uid, t => setCount(t && isUnread(t, false) ? 1 : 0));
+        // Only the admin has an inbox now; everyone else chats with recruiters (post chats).
+        if (!profile?.isAdmin) return;
+        return subscribeThreads(list => setCount(list.filter(t => isUnread(t, true)).length));
     }, [profile]);
-    return profile ? count : 0;
+    return profile ? (profile.isAdmin ? count : postChats) : 0;
 }

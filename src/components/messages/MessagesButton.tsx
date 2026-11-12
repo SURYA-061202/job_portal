@@ -39,7 +39,7 @@ export default function MessagesButton({ variant }: MessagesButtonProps) {
                     setOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
                 }}
                 aria-label={unread > 0 ? `Messages, ${unread} unread` : 'Messages'}
-                title={profile.isAdmin ? 'Messages from users' : 'Message the admin'}
+                title={profile.isAdmin ? 'Messages from users' : 'Help and messages'}
                 aria-expanded={!!origin}
                 className={variant === 'recruiter'
                     ? `relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${origin ? 'bg-ink/10 text-ink' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'} ${FOCUS}`

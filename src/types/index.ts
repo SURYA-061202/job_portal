@@ -182,6 +182,7 @@ export interface RecruitmentRequest {
   requestedBy?: 'Dinesh' | 'Naresh';
   recruiterId?: string;
   recruiterName?: string;
+  recruiterEmail?: string;
   companyName?: string;
   createdAt: any;
   applicantCount?: number;

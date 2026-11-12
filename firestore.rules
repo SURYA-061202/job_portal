@@ -211,6 +211,42 @@ service cloud.firestore {
       }
     }
 
+    // ---------- messaging (job seeker <-> the recruiter of a post) ----------
+    // One thread per seeker per post, id = `${postId}_${seekerUid}`. The seeker
+    // opens it with their first message; the post's recruiter reads and answers.
+    // The admin may read (moderation) but does not take part.
+    match /post_threads/{threadId} {
+      function postSeeker() {
+        return threadId.matches('.*_' + request.auth.uid);
+      }
+      function postRecruiter() {
+        return get(/databases/$(database)/documents/post_threads/$(threadId)).data.recruiterId == request.auth.uid;
+      }
+
+      allow get: if signedIn() && (postSeeker() || resource.data.recruiterId == request.auth.uid || isAdmin());
+      allow list: if signedIn() && (resource.data.userId == request.auth.uid
+                                    || resource.data.recruiterId == request.auth.uid
+                                    || isAdmin());
+      // The recruiter on the thread must be the one who really published the post.
+      allow create: if signedIn() && postSeeker()
+                    && request.resource.data.userId == request.auth.uid
+                    && threadId == request.resource.data.postId + '_' + request.auth.uid
+                    && exists(/databases/$(database)/documents/recruits/$(request.resource.data.postId))
+                    && get(/databases/$(database)/documents/recruits/$(request.resource.data.postId)).data.recruiterId == request.resource.data.recruiterId;
+      allow update: if signedIn() && (resource.data.userId == request.auth.uid || resource.data.recruiterId == request.auth.uid)
+                    && changedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'lastSenderId', 'lastSenderRole', 'userReadAt', 'recruiterReadAt']);
+
+      match /messages/{mid} {
+        allow read: if signedIn() && (postSeeker() || postRecruiter() || isAdmin());
+        allow create: if signedIn() && (postSeeker() || postRecruiter())
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.senderRole == (postSeeker() ? 'user' : 'recruiter')
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000;
+      }
+    }
+
     // ---------- reviews of the portal itself ----------
     // One review per account (id = user id): five stars and a few words. The
     // admin reads them all; a person can read, change or delete only their own.
