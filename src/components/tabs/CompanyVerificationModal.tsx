@@ -266,7 +266,7 @@ export default function CompanyVerificationModal({ onClose }: Props) {
                   <div>
                     <label htmlFor="cv-email" className={labelCls}>Company email</label>
                     <input id="cv-email" type="email" value={form.companyEmail} onChange={set('companyEmail')} placeholder="you@yourcompany.com" className={inputCls} />
-                    <p className="mt-0.5 text-xs text-ink/50">Must use your company's website domain.</p>
+                    <p className="mt-0.5 text-xs text-ink/50">Use your company's website domain (Gmail is accepted for now).</p>
 
                     {emailVerified ? (
                       <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-brand">

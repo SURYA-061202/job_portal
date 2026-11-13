@@ -37,6 +37,14 @@ const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 /** 21 characters: listing status, industry code, state, year, ownership, number. */
 const CIN = /^[LU]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}$/;
 
+/**
+ * TEMPORARY: Gmail is accepted as the company email (and is exempt from the
+ * website-domain match) until real domain verification is switched on. Set to
+ * false to go back to company-domain-only. Mirror in functions/src/companyEmail.ts.
+ */
+const ALLOW_GMAIL = true;
+const GMAIL = new Set(['gmail.com', 'googlemail.com']);
+
 /** Mailboxes anyone can open - they say nothing about who works at the company. */
 const FREE_MAIL = new Set([
   'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.in', 'yahoo.co.in', 'outlook.com', 'hotmail.com',
@@ -65,7 +73,8 @@ export function validateCompanyEmail(rawEmail: string, rawWebsite = ''): string 
   const email = rawEmail.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid company email address.';
   const emailDomain = email.split('@')[1];
-  if (FREE_MAIL.has(emailDomain)) return 'Use your company email address, not a personal one like Gmail or Yahoo.';
+  if (ALLOW_GMAIL && GMAIL.has(emailDomain)) return null;
+  if (FREE_MAIL.has(emailDomain)) return 'Use your company email address, not a personal one like Yahoo or Outlook.';
   const host = websiteHost(rawWebsite);
   if (host && emailDomain !== host && !emailDomain.endsWith(`.${host}`) && !host.endsWith(`.${emailDomain}`)) {
     return `Your email domain (${emailDomain}) should match your company website (${host}).`;

@@ -9,7 +9,7 @@ import { parseKeywords, searchCandidates } from '@/lib/candidateSearch';
 import { isUnlimited } from '@/lib/subscriptions';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
-import CandidateCarousel from '@/components/resume/CandidateCarousel';
+import CandidateTable from '@/components/resume/CandidateTable';
 import BackRow from '@/components/layout/BackRow';
 import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
 import InviteFlow from '@/components/resume/InviteFlow';
@@ -22,6 +22,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { useRecordProfileView } from '@/lib/profileViews';
+import { matchScore } from '@/lib/postMatch';
 
 interface CandidatesTabProps {
     postId?: string | null;
@@ -110,6 +111,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
     const skin = useSkin();
     const [inviteFor, setInviteFor] = useState<Candidate | null>(null);
+    // Post path: the post being viewed (for match scores) and the Applied / Non Applied switch.
+    const [post, setPost] = useState<RecruitmentRequest | null>(null);
+    const [showNonApplied, setShowNonApplied] = useState(false);
+    const [usersLoaded, setUsersLoaded] = useState(false);
     // candidate id -> ids of this recruiter's posts they applied to
     const [appliedPosts, setAppliedPosts] = useState<Record<string, string[]>>({});
 
@@ -170,6 +175,25 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             fetchCandidates(true);
         }
     }, [postId, viewMode]);
+
+    useEffect(() => {
+        setShowNonApplied(false);
+        setPost(null);
+        if (!postId) return;
+        let cancelled = false;
+        getDoc(doc(db, 'recruits', postId))
+            .then((snap) => { if (!cancelled && snap.exists()) setPost({ id: snap.id, ...snap.data() } as RecruitmentRequest); })
+            .catch((err) => console.error('Failed to load post for matching', err));
+        return () => { cancelled = true; };
+    }, [postId]);
+
+    // Non Applied needs every registered user; load them the first time it is opened.
+    useEffect(() => {
+        if (postId && showNonApplied && !usersLoaded) {
+            setUsersLoaded(true);
+            fetchRegisteredUsers();
+        }
+    }, [postId, showNonApplied, usersLoaded]);
 
     // Fetch posts + applicant counts for post card grid view
     useEffect(() => {
@@ -478,6 +502,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         // otherwise the module's registered list.
         if (viewMode === 'registered-users' && !postId) {
             list = registeredUsers;
+        } else if (postId && showNonApplied) {
+            // Everyone registered who has not applied to (or been added to) this post.
+            const applied = new Set(filteredCandidates.map(c => c.id));
+            list = registeredUsers.filter(c => !applied.has(c.id));
         } else {
             // Otherwise show job candidates
             list = isFilteringApplicants
@@ -494,7 +522,15 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         }
 
         return list;
-    }, [viewMode, postId, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
+    }, [viewMode, postId, showNonApplied, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
+
+    // On the Posts path every candidate gets a 0-100 fit for this post, best first.
+    const scores = useMemo(() => {
+        if (!postId || !post) return undefined;
+        const out: Record<string, number> = {};
+        for (const c of baseList) out[c.id] = matchScore(c, post);
+        return out;
+    }, [postId, post, baseList]);
 
     // Most common skills across the list, offered as one-click search chips.
     const topSkills = useMemo(() => {
@@ -521,8 +557,14 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // limit is applied afterwards, so a keyword never reveals a hidden candidate
     // and the best matches are the ones a limited plan still shows.
     const searchResults = useMemo(
-        () => searchCandidates(baseList, keywords, 'any'),
-        [baseList, keywords]
+        () => {
+            const found = searchCandidates(baseList, keywords, 'any');
+            // Without keywords the list order is ours to choose: best post match first.
+            return scores && keywords.length === 0
+                ? [...found].sort((a, b) => (scores[b.candidate.id] ?? 0) - (scores[a.candidate.id] ?? 0))
+                : found;
+        },
+        [baseList, keywords, scores]
     );
 
     // Admins are never capped. A recruiter is capped by their plan.
@@ -578,11 +620,24 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         onClick={onBack}
                                         aria-label="Back to posts"
                                         title="Back to posts"
-                                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 shadow-sm transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-black bg-black text-white shadow-sm transition-colors duration-200 hover:bg-black/80 ${FOCUS}`}
                                     >
                                         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                                     </button>
                                     <h2 className="min-w-0 text-2xl font-bold leading-tight text-ink sm:text-3xl">{postTitle || 'Post Applicants'}</h2>
+                                    <div role="group" aria-label="Candidate group" className="ml-auto inline-flex shrink-0 overflow-hidden rounded-lg border border-black">
+                                        {([['Applied', false], ['Non Applied', true]] as const).map(([label, value]) => (
+                                            <button
+                                                key={label}
+                                                type="button"
+                                                aria-pressed={showNonApplied === value}
+                                                onClick={() => { setShowNonApplied(value); setSelectedCandidate(null); }}
+                                                className={`cursor-pointer px-4 py-1.5 text-sm font-semibold transition-colors duration-200 ${showNonApplied === value ? 'bg-black text-white' : 'bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (isFilteringApplicants || onBack) && (
                                 <BackRow
@@ -592,7 +647,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     className="mb-3"
                                 />
                             )}
-                            {!postId && (
                             <div className="shrink-0">
                                 {/* Controls row below the header: search at the
                                     left end, candidates count at the right end.
@@ -690,7 +744,6 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                     </div>
                                 )}
                             </div>
-                            )}
 
 
                             {/* Body - the only scrollable area, on the same
@@ -843,7 +896,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         ) : selectedCandidate ? (
                                             /* Opened from search: same layout as the plain list - the profile on the left,
                                                the other matches as cards beside it, sliding for more. */
-                                            <CandidateCarousel
+                                            <CandidateTable
                                                 candidates={splitCandidates}
                                                 loading={false}
                                                 onSelectCandidate={handleCandidateSelect}
@@ -852,7 +905,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 canViewContact={canViewContact}
                                                 onViewPlans={onViewPlans}
                                                 keywords={keywords}
-                                                showStatus={!!postId}
+                                                showStatus={!!postId && !showNonApplied}
+ scores={scores}
  onInvite={inviteHandler}
                                             />
                                         ) : (
@@ -863,7 +917,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             />
                                         )
                                     ) : (
-                                        <CandidateCarousel
+                                        <CandidateTable
                                             candidates={displayCandidates}
                                             loading={loading}
                                             onSelectCandidate={handleCandidateSelect}
@@ -871,8 +925,9 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             onCloseSelected={handleBackToList}
                                             canViewContact={canViewContact}
                                             onViewPlans={onViewPlans}
-                                            emptyMessage={isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
-                                            showStatus={!!postId}
+                                            emptyMessage={showNonApplied ? 'Every registered candidate has applied to this post.' : isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
+                                            showStatus={!!postId && !showNonApplied}
+ scores={scores}
  onInvite={inviteHandler}
                                         />
                                     )}

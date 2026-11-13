@@ -10,6 +10,10 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
+/** TEMPORARY: Gmail is accepted as the company email for now. Set to false to turn it off. */
+const ALLOW_GMAIL = true;
+const GMAIL = new Set(["gmail.com", "googlemail.com"]);
+
 /** Personal mailboxes prove nothing about a company; mirrors src/lib/companyVerification.ts. */
 const FREE_MAIL = new Set([
   "gmail.com", "googlemail.com", "yahoo.com", "yahoo.in", "yahoo.co.in", "outlook.com", "hotmail.com",
@@ -31,8 +35,9 @@ export const sendCompanyEmailCode = onCall(async (request) => {
   const raw = (request.data as { email?: unknown })?.email;
   const email = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   if (!isEmail(email)) throw new HttpsError("invalid-argument", "Enter a valid company email address.");
-  if (FREE_MAIL.has(email.split("@")[1])) {
-    throw new HttpsError("invalid-argument", "Use your company email address, not a personal one like Gmail or Yahoo.");
+  const mailDomain = email.split("@")[1];
+  if (!(ALLOW_GMAIL && GMAIL.has(mailDomain)) && FREE_MAIL.has(mailDomain)) {
+    throw new HttpsError("invalid-argument", "Use your company email address, not a personal one like Yahoo or Outlook.");
   }
 
   await enforceLimit(`company-code:${caller.uid}`, 6, HOUR, "Too many codes requested. Please try again in an hour.");

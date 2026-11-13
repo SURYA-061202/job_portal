@@ -220,7 +220,7 @@ export default function Dashboard() {
       />
 
       <main className={`flex-1 min-h-0 ${isSelfScrollingTab ? 'overflow-hidden' : 'overflow-auto'} thin-scrollbar flex flex-col relative w-full`}>
-        <div className={`mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:py-6 flex-1 flex flex-col relative z-10 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
+        <div className={`mx-auto w-full ${activeTab === 'candidates' ? 'max-w-none' : 'max-w-7xl'} px-4 py-4 sm:px-6 md:py-6 flex-1 flex flex-col relative z-10 ${isSelfScrollingTab ? 'min-h-0' : ''}`}>{renderTabContent()}</div>
       </main>
     </div>
   );

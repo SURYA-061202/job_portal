@@ -6,13 +6,14 @@ import { getApplicantCounts } from '@/lib/jobApplications';
 import type { EffectiveSubscription, RecruitmentRequest } from '@/types';
 import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal';
 import RecruiterPostDetail from '@/components/recruitment/RecruiterPostDetail';
+import PostTable from '@/components/recruitment/PostTable';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import PostLimitModal from '@/components/subscription/PostLimitModal';
 import { checkPostQuota } from '@/lib/subscriptions';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
-    Search, Plus, SearchX, X,
+    Search, Plus, SearchX, X, List, LayoutGrid,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -57,6 +58,14 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
     const [sort] = useState<SortKey>('newest');
+    // Table or card list; remembered per browser.
+    const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+        try { return localStorage.getItem('postsViewMode') === 'cards' ? 'cards' : 'table'; } catch { return 'table'; }
+    });
+    const changeView = (mode: 'table' | 'cards') => {
+        setViewMode(mode);
+        try { localStorage.setItem('postsViewMode', mode); } catch { /* private mode: just not remembered */ }
+    };
     const searchRef = useRef<HTMLInputElement>(null);
     const skin = useSkin();
 
@@ -313,6 +322,22 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         )}
                                     </div>
                                 )}
+                                <div className="ml-auto flex items-center gap-2">
+                                <div role="group" aria-label="Post layout" className="inline-flex overflow-hidden rounded-md border border-ink/70">
+                                    {([['table', List, 'Table view'], ['cards', LayoutGrid, 'Card view']] as const).map(([mode, Icon, label]) => (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => changeView(mode)}
+                                            aria-pressed={viewMode === mode}
+                                            aria-label={label}
+                                            title={label}
+                                            className={`flex h-8 w-9 cursor-pointer items-center justify-center transition-colors duration-200 ${viewMode === mode ? 'bg-ink/70 text-surface' : 'bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                        >
+                                            <Icon className="h-4 w-4" aria-hidden="true" />
+                                        </button>
+                                    ))}
+                                </div>
                                 <button
                                     type="button"
                                     onClick={handleAddPost}
@@ -324,6 +349,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                         <Plus className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" aria-hidden="true" />
                                     </span>
                                 </button>
+                                </div>
                             </div>
                     </div>
 
@@ -335,31 +361,16 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                         top of the body bg while the posts scroll under it. */}
                     <div className={`flex-1 min-h-0 w-full flex flex-col overflow-hidden`}>
                         <div className="h-1 shrink-0" aria-hidden="true" />
-                        <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ${!loadingPosts && recruitmentRequests.length === 0 ? ' flex flex-col' : ''}`}>
+                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                         {loadingPosts ? (
-                            <div role="status" aria-busy="true" className="flex flex-col gap-4">
+                            <div role="status" aria-busy="true" className={`border ${skin.edge} bg-surface`}>
                                 <span className="sr-only">Loading job posts…</span>
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                    <div key={i} aria-hidden="true" className={`animate-pulse rounded-lg border ${skin.edge} bg-surface p-4 md:p-6`}>
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className={`h-6 w-1/3 ${skin.skeleton}`} />
-                                            <div className={`h-6 w-20 ${skin.skeleton}`} />
-                                        </div>
-                                        <div className="mt-4 flex flex-wrap gap-4">
-                                            <div className={`h-3.5 w-28 ${skin.skeleton}`} />
-                                            <div className={`h-3.5 w-20 ${skin.skeleton}`} />
-                                            <div className={`h-3.5 w-24 ${skin.skeleton}`} />
-                                        </div>
-                                        <div className={`mt-4 h-3.5 w-full ${skin.skeleton}`} />
-                                        <div className={`mt-2 h-3.5 w-2/3 ${skin.skeleton}`} />
-                                        <div className="mt-5 flex items-center justify-between gap-4">
-                                            <div className="flex gap-1.5">
-                                                <div className={`h-6 w-16 ${skin.skeleton}`} />
-                                                <div className={`h-6 w-20 ${skin.skeleton}`} />
-                                                <div className={`h-6 w-14 ${skin.skeleton}`} />
-                                            </div>
-                                            <div className={`h-8 w-20 ${skin.skeleton}`} />
-                                        </div>
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <div key={i} aria-hidden="true" className={`flex animate-pulse items-center gap-6 border-b ${skin.edge} px-3 py-3.5 last:border-b-0`}>
+                                        <div className={`h-4 w-1/4 ${skin.skeleton}`} />
+                                        <div className={`h-4 w-1/6 ${skin.skeleton}`} />
+                                        <div className={`h-4 w-1/6 ${skin.skeleton}`} />
+                                        <div className={`h-4 flex-1 ${skin.skeleton}`} />
                                     </div>
                                 ))}
                             </div>
@@ -390,11 +401,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 )}
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-4">
-                                {visiblePosts.map((post) => (
-                                    <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard skillsPopover applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
-                                ))}
-                            </div>
+                            viewMode === 'table' ? (
+                                <PostTable posts={visiblePosts} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
+                            ) : (
+                                <div className="thin-scrollbar flex min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
+                                    {visiblePosts.map((post) => (
+                                        <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard skillsPopover applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
+                                    ))}
+                                </div>
+                            )
                         )}
                         </div>
                         <div className="h-3 md:h-4 shrink-0" aria-hidden="true" />
