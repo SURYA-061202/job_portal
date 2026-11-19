@@ -23,6 +23,7 @@ export { sendCompanyEmailCode, verifyCompanyEmailCode } from "./companyEmail";
 export { parseResume, scoreCandidates, rankApplicants, clusterCandidates } from "./ai";
 export { getInterviewInvite, submitInterviewResponse, submitVerifyDetails } from "./candidatePortal";
 export { createSubscriptionOrder, verifySubscriptionPayment, razorpayWebhook } from "./payments";
+export { subscriptionExpiryReminders } from "./expiryReminders";
 
 if (getApps().length === 0) {
   initializeApp();

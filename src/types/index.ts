@@ -130,6 +130,11 @@ export interface Education {
   field: string;
   year: string;
   cgpa?: string;
+  duration?: string;
+  arrears?: string;
+  educationGap?: string;
+  marksheetUrl?: string;
+  marksheetName?: string;
 }
 
 export interface Project {
@@ -228,6 +233,8 @@ export interface SubscriptionPlan {
   maxPosts: number;
   /** Recruiter plans: max candidates visible in the Candidates module. Unused (0) on user plans. */
   maxCandidates: number;
+  /** Recruiter plans: credit points added to the recruiter's balance each time the plan is granted. */
+  credits?: number;
   /** User plans: privileges the plan grants. Unused on recruiter plans. */
   privileges?: PlanPrivileges;
   features: string[];
@@ -243,6 +250,8 @@ export interface UserSubscription {
   level: number;
   maxPosts: number;
   maxCandidates: number;
+  /** Credit points the plan gave when granted (the live plan's value wins when it can be read). */
+  credits?: number;
   privileges?: PlanPrivileges;
   startedAt: any;
   expiresAt: any;
@@ -318,6 +327,14 @@ export interface EffectiveSubscription {
   expired: boolean;
   /** The plan that lapsed, when `expired`; lets the UI offer to renew it. */
   lapsedPlanId?: string | null;
+  /** Credit points the plan gives (taken from the plan itself). Ignored when `unlimitedCredits`. */
+  creditsTotal: number;
+  /** Credit points spent in the current subscription period. */
+  creditsUsed: number;
+  /** creditsTotal minus creditsUsed. */
+  credits: number;
+  /** Admins and legacy premium recruiters are never charged credits. */
+  unlimitedCredits: boolean;
 }
 
 // Ensure this file is treated as a module

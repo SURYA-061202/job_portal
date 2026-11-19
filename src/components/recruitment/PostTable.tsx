@@ -16,7 +16,7 @@ interface PostTableProps {
   onDelete?: (post: RecruitmentRequest) => Promise<void> | void;
 }
 
-const COLUMNS = ['Job title', 'Department', 'Location', 'Level', 'Experience', 'Skills', 'Applicants', 'Posted', 'Actions', 'View'];
+const COLUMNS = ['Job title', 'Department', 'Location', 'Level', 'Experience', 'Skills', 'Applicants', 'Posted', 'View', 'Actions'];
 const CENTERED = new Set(['Applicants', 'Actions', 'View']);
 
 /**
@@ -80,6 +80,9 @@ export default function PostTable({ posts, onViewDetails, keywords = [], onEdit,
                 <td className={`${td} min-w-[16rem]`}>{skills.length ? <FitSkills skills={skills} render={hl} /> : dash}</td>
                 <td className={`${td} whitespace-nowrap text-center font-semibold text-ink tabular-nums`}>{post.applicantCount ?? 0}</td>
                 <td className={`${td} whitespace-nowrap`}>{timeAgo(post.createdAt)}</td>
+                <td className={`${td} whitespace-nowrap text-center`}>
+                  <span className="text-[13px] font-medium text-sky-700 group-hover:underline">View</span>
+                </td>
                 <td className={`${td} whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-center gap-0.5">
                     {onEdit && !confirming && (
@@ -112,9 +115,6 @@ export default function PostTable({ posts, onViewDetails, keywords = [], onEdit,
                       </button>
                     ))}
                   </div>
-                </td>
-                <td className={`${td} whitespace-nowrap text-center`}>
-                  <span className="text-[13px] font-medium text-sky-700 group-hover:underline">View</span>
                 </td>
               </tr>
             );

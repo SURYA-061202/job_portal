@@ -30,12 +30,21 @@ export const getUserEducation = (data: UserDoc): Education[] => {
     const items = Array.isArray(data.educationItems) ? (data.educationItems as UserDoc[]) : [];
     const mapped: Education[] = items.map((edu) => {
         const grade = asText(edu.grade);
+        const duration = asText(edu.duration);
+        const marksheetUrl = asText(edu.marksheetUrl);
+        // Only record arrears/gap once the candidate has answered the question.
+        const arrears = edu.hasArrears === 'yes' ? asText(edu.arrearsDetails) || 'Yes' : edu.hasArrears === 'no' ? 'No' : '';
+        const educationGap = edu.hasGap === 'yes' ? asText(edu.gapDetails) || 'Yes' : edu.hasGap === 'no' ? 'No' : '';
         return {
             institution: asText(edu.collegeName) || asText(data.college),
             degree: asText(edu.course) || asText(data.degree),
             field: asText(edu.specialization),
-            year: asText(edu.graduatedYear),
-            ...(grade ? { cgpa: grade } : {})
+            year: duration || asText(edu.graduatedYear),
+            ...(grade ? { cgpa: grade } : {}),
+            ...(duration ? { duration } : {}),
+            ...(arrears ? { arrears } : {}),
+            ...(educationGap ? { educationGap } : {}),
+            ...(marksheetUrl ? { marksheetUrl, marksheetName: asText(edu.marksheetName) } : {})
         };
     });
     if (mapped.length > 0) return mapped;

@@ -166,7 +166,7 @@ export default function RecommendationsView() {
             { label: 'Experience', done: getUserExperience(profile).length > 0 || !!String(me.years || '').trim() },
             { label: 'Education', done: getUserEducation(profile).length > 0 },
             { label: 'Projects', done: getUserProjects(profile).length > 0 },
-            { label: 'Certificates', done: getUserCertificates(profile).length > 0 },
+            { label: 'Certifications', done: getUserCertificates(profile).length > 0 },
             { label: 'Resume', done: !!String(profile.resumeUrl || '').trim() },
             { label: 'Location', done: !!me.address.trim() },
             { label: 'Verified mobile', done: !!profile.mobileVerified },

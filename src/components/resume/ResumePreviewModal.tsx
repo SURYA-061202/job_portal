@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Download } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
@@ -9,13 +9,49 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 interface ResumePreviewModalProps {
     url: string;
     onClose: () => void;
+    title?: string;
+    /** Name for the downloaded file, without extension. */
+    fileName?: string;
+    /** Runs before a download starts; return false to cancel it (e.g. when credit points are short). */
+    onBeforeDownload?: () => Promise<boolean> | boolean;
+    /** Small note on the download button, e.g. "5 credits". */
+    downloadHint?: string;
 }
 
 type PreviewStatus = 'loading' | 'ready' | 'failed';
 
 /** Full-screen overlay that previews a stored resume (PDF) inline instead of opening a new browser tab. */
-export default function ResumePreviewModal({ url, onClose }: ResumePreviewModalProps) {
+export default function ResumePreviewModal({ url, onClose, title = 'Resume Preview', fileName, onBeforeDownload, downloadHint }: ResumePreviewModalProps) {
     const isPdf = /\.pdf(\?|#|$)/i.test(url);
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        if (downloading) return;
+        setDownloading(true);
+        try {
+            if (onBeforeDownload && !(await onBeforeDownload())) return;
+            const ext = isPdf ? 'pdf' : (url.split('?')[0].split('.').pop() || 'pdf').slice(0, 5);
+            const name = `${(fileName || 'Resume').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Resume'}.${ext}`;
+            try {
+                // Fetching as a blob forces a real download (a plain link to another origin would just open).
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Download failed (${response.status})`);
+                const objectUrl = URL.createObjectURL(await response.blob());
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = name;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+            } catch (error) {
+                console.error('Blob download failed, opening the file instead:', error);
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        } finally {
+            setDownloading(false);
+        }
+    };
     const [status, setStatus] = useState<PreviewStatus>(isPdf ? 'loading' : 'failed');
     const scrollRef = useRef<HTMLDivElement>(null);
     const stackRef = useRef<HTMLDivElement>(null);
@@ -89,8 +125,20 @@ export default function ResumePreviewModal({ url, onClose }: ResumePreviewModalP
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="bg-surface rounded-2xl w-full max-w-4xl p-6 relative z-10 shadow-2xl h-[90vh] max-h-[90vh] flex flex-col border border-border resume-preview-scroll">
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                    <h2 className="text-xl font-bold text-ink">Resume Preview</h2>
-                    <button onClick={onClose} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors" aria-label="Close preview"><X className="w-5 h-5 text-ink/60" /></button>
+                    <h2 className="text-xl font-bold text-ink">{title}</h2>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={handleDownload}
+                            disabled={downloading}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold border border-border bg-surface text-ink hover:border-ink rounded-lg transition-colors disabled:opacity-60"
+                        >
+                            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download
+                            {downloadHint && <span className="text-[11px] font-semibold text-ink/50">({downloadHint})</span>}
+                        </button>
+                        <button onClick={onClose} className="p-1.5 hover:bg-ink/5 rounded-full transition-colors" aria-label="Close preview"><X className="w-5 h-5 text-ink/60" /></button>
+                    </div>
                 </div>
                 <div className="flex-1 min-h-0 rounded-xl border border-border bg-muted overflow-hidden relative">
                     {!isPdf ? (
@@ -101,7 +149,7 @@ export default function ResumePreviewModal({ url, onClose }: ResumePreviewModalP
                             </a>
                         </div>
                     ) : status === 'failed' ? (
-                        <iframe src={url} title="Resume Preview" className="w-full h-full" />
+                        <iframe src={url} title={title} className="w-full h-full" />
                     ) : (
                         <>
                             <div ref={scrollRef} className="h-full w-full overflow-y-auto resume-preview-scroll">

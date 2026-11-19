@@ -65,12 +65,35 @@ service cloud.firestore {
                     );
 
       // Nobody but an admin can change role, plan or premium flag.
+      // A plan's credit points come from the plan itself. The owner records spending
+      // in creditsUsed, which can only go up within the same subscription period
+      // (creditsPeriod); a new period (a renewal or new plan) starts it again.
       allow update: if isAdmin()
                     || (request.auth.uid == uid
-                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid', 'companyVerified', 'companyEmailVerified'])
-                        && companyVerificationOk());
+                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid', 'companyVerified', 'companyEmailVerified', 'creditsUsed', 'creditsPeriod'])
+                        && companyVerificationOk())
+                    || (request.auth.uid == uid
+                        && changedKeys().hasOnly(['creditsUsed', 'creditsPeriod'])
+                        && request.resource.data.creditsUsed is number
+                        && request.resource.data.creditsUsed >= 0
+                        && request.resource.data.creditsPeriod == resource.data.subscription.startedAt.toMillis()
+                        && (request.resource.data.creditsUsed > resource.data.get('creditsUsed', 0)
+                            || request.resource.data.creditsPeriod != resource.data.get('creditsPeriod', 0)));
 
       allow delete: if isAdmin();
+
+      // Candidates a recruiter has already paid credits to view (so re-opening is free).
+      match /unlocked/{key} {
+        allow read, create: if signedIn() && request.auth.uid == uid;
+      }
+
+      // What a recruiter's credit points were spent on (search, view, download).
+      match /creditUsage/{entryId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if signedIn() && request.auth.uid == uid
+                      && request.resource.data.kind in ['search', 'view_profile', 'view_resume', 'download']
+                      && request.resource.data.cost is number;
+      }
 
       match /testResults/{testId} {
         allow read: if signedIn() && (request.auth.uid == uid || isStaff());

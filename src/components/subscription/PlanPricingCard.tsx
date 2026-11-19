@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, X } from 'lucide-react';
 import { useSkin } from '@/styles/skin';
-import { describePrivileges, formatLimit, formatPrice, isUnlimited } from '@/lib/subscriptions';
+import { describePrivileges, formatLimit, formatPrice, formatValidity, isUnlimited } from '@/lib/subscriptions';
 import type { SubscriptionAudience, SubscriptionPlan } from '@/types';
 
 interface PlanPricingCardProps {
@@ -21,10 +21,12 @@ interface PlanPricingCardProps {
     includeContact?: boolean;
     /** Things this plan cannot do, listed with a cross (free plan restrictions). */
     restrictions?: string[];
+    /** Tighter spacing above the price (the current-plan card). */
+    compact?: boolean;
 }
 
 /** Pricing card: name, description, price, action, then an "Includes" tick list. */
-export default function PlanPricingCard({ plan, audience = 'recruiter', badge, action, corner, priceNode, extra, includeContact = true, restrictions = [] }: PlanPricingCardProps) {
+export default function PlanPricingCard({ plan, audience = 'recruiter', badge, action, corner, priceNode, extra, includeContact = true, restrictions = [], compact = false }: PlanPricingCardProps) {
     const skin = useSkin();
     const isUser = audience === 'user';
     const items = [
@@ -34,6 +36,7 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
             : plan.maxPosts === 0
                 ? []
                 : [isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `${formatLimit(plan.maxPosts)} job posts`]),
+        ...(!isUser && plan.credits ? [`${plan.credits.toLocaleString('en-IN')} credit points`] : []),
         ...(!isUser && includeContact ? ['Candidate contact details & resumes'] : []),
         ...(plan.features ?? []).filter((f) => f.trim()),
     ];
@@ -45,12 +48,12 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
                 <h4 className="text-2xl font-bold text-ink">{plan.name}</h4>
                 {badge && <span className={`${skin.chip} rounded-lg`}>{badge}</span>}
             </div>
-            <p className={`mt-3 min-h-[2.75rem] ${skin.body}`}>{plan.description || ' '}</p>
+            <p className={`mt-3 ${compact ? '' : 'min-h-[2.75rem]'} ${skin.body}`}>{plan.description || ' '}</p>
 
             {priceNode ?? (
-                <p className="mt-5 text-3xl font-bold text-ink">
+                <p className={`${compact ? 'mt-3' : 'mt-5'} text-3xl font-bold text-ink`}>
                     {formatPrice(plan.price)}
-                    <span className="text-sm font-medium text-ink/60"> / {plan.durationDays} days</span>
+                    <span className="text-sm font-medium text-ink/60"> / {formatValidity(plan.durationDays)}</span>
                 </p>
             )}
 
@@ -59,7 +62,8 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
             {action && <div className="mt-5">{action}</div>}
 
             {(items.length > 0 || restrictions.length > 0) && (
-            <div className={`mt-6 border-t border-ink/10 pt-5`}>
+            <div className="mt-6">
+
                 {items.length > 0 && <p className="mb-3 text-sm font-semibold text-ink">Includes:</p>}
                 <ul className="space-y-3 text-sm text-ink/80">
                     {items.map((item, i) => (

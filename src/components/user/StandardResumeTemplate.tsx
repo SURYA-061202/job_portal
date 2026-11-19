@@ -133,7 +133,7 @@ export const StandardResumeTemplate = ({ data }: ResumeProps) => {
                                         <Text style={styles.boldText}>{edu.collegeName}</Text>
                                     </View>
                                     <View>
-                                        <Text style={styles.boldText}>{edu.graduatedYear || ''}</Text>
+                                        <Text style={styles.boldText}>{edu.duration || edu.graduatedYear || ''}</Text>
                                     </View>
                                 </View>
                                 <View style={styles.subSubheadingRow}>

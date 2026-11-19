@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Clock, CreditCard, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, Clock, Coins, CreditCard, Loader2, Lock, Receipt } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
@@ -17,8 +17,10 @@ import {
 } from '@/lib/subscriptions';
 import { formatAmount, isPurchasable, subscribeMyPayments } from '@/lib/payments';
 import { usePlanCheckout } from '@/lib/usePlanCheckout';
+import { CREDIT_COST, subscribeCreditUsage, summarizeUsage, USAGE_KINDS, usageEntryTime, type CreditUsageEntry } from '@/lib/credits';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
+import ExpandingModal from './ExpandingModal';
 import type { EffectiveSubscription, PaymentRecord, SubscriptionAudience, SubscriptionPlan, SubscriptionRequest } from '@/types';
 
 interface RecruiterSubscriptionTabProps {
@@ -46,6 +48,13 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
     const [plansOpen, setPlansOpen] = useState(startOnPlans);
     const [requestingId, setRequestingId] = useState<string | null>(null);
     const [payments, setPayments] = useState<PaymentRecord[]>([]);
+    const [usage, setUsage] = useState<CreditUsageEntry[]>([]);
+    // Payment history and credit usage open in a panel that grows out of their button.
+    const [panel, setPanel] = useState<{ kind: 'payments' | 'credits'; x: number; y: number } | null>(null);
+    const openPanel = (kind: 'payments' | 'credits', el: HTMLElement) => {
+        const r = el.getBoundingClientRect();
+        setPanel({ kind, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    };
     // Recruiters pay online; job seekers still request from the admin.
     const { payingId, pay } = usePlanCheckout(subscription, () => setPlansOpen(false));
 
@@ -77,6 +86,11 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
         return subscribeMyPayments(userId, setPayments, (error) => console.error('Error loading payments:', error));
     }, [userId, isUser]);
 
+    useEffect(() => {
+        if (!userId || isUser) return;
+        return subscribeCreditUsage(userId, setUsage, (error) => console.error('Error loading credit usage:', error));
+    }, [userId, isUser]);
+
     // The admin approving a request changes `subscription` live - refresh the request list with it.
     const planKey = subscription?.planId ?? subscription?.source;
     useEffect(() => {
@@ -106,6 +120,13 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
         ? Math.min(100, Math.round((postsUsed / postLimit) * 100))
         : 0;
 
+    const usageSummary = summarizeUsage(usage);
+    // Credit points come from the plan; "used" counts this subscription period only.
+    const creditsLeft = sub?.credits ?? 0;
+    const creditsTotal = sub?.creditsTotal ?? 0;
+    const creditsUsed = sub?.creditsUsed ?? 0;
+    const creditPct = creditsTotal > 0 ? Math.min(100, Math.round((creditsUsed / creditsTotal) * 100)) : 0;
+
     const isPaid = !!sub && sub.source !== 'free';
     const matchedPlan = sub?.source === 'plan' ? plans.find((p) => p.id === sub.planId) : undefined;
     const statusText = sub?.expired ? 'Your subscription has expired.' : isPaid ? 'Your active subscription.' : 'The free tier. Subscribe to unlock more.';
@@ -123,6 +144,23 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
             {(!isUser || plansOpen) && (
                 <div className="flex items-center justify-between gap-3">
                     <h1 className="text-2xl font-bold text-ink">{plansOpen ? 'Available Plans' : 'Subscription'}</h1>
+                    {!isUser && !plansOpen && (
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {([['payments', 'Payment history', Receipt], ['credits', 'Credit points usage', Coins]] as const).map(([kind, label, Icon]) => (
+                                <button
+                                    key={kind}
+                                    type="button"
+                                    onClick={(e) => openPanel(kind, e.currentTarget)}
+                                    className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                                >
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </span>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {plansOpen && (
                         <button
                             type="button"
@@ -258,6 +296,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                             } as SubscriptionPlan}
                             audience={audience}
                             badge={statusLabel}
+                            compact
                             includeContact={isPaid && !sub?.expired}
                             restrictions={
                                 !isUser && !isPaid ? ['You cannot add job posts on the Free plan', 'Candidate contact details and resumes are locked']
@@ -265,26 +304,48 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                 : []
                             }
                             priceNode={
-                                <p className="mt-5 text-3xl font-bold text-ink">
+                                <p className="mt-5 text-sm font-bold text-ink">
                                     {isPaid ? (sub?.expiresAt ? formatDate(sub.expiresAt) : 'No expiry') : 'Free'}
-                                    <span className="text-sm font-medium text-ink/60">{isPaid && sub?.expiresAt ? (sub.expired ? ' \u00B7 expired' : ' \u00B7 valid until') : ''}</span>
+                                    <span className="font-medium text-ink/60">{isPaid && sub?.expiresAt ? (sub.expired ? ' · expired' : ' · valid until') : ''}</span>
                                 </p>
                             }
-                            extra={!isUser && postLimit !== 0 ? (
-                                <div>
-                                    <p className="text-sm text-ink/80">
-                                        Job posts used: <span className="font-semibold text-ink">{postsUsed ?? 0} / {formatLimit(postLimit)}</span>
-                                    </p>
-                                    {!isUnlimited(postLimit) && (
-                                        <div
-                                            role="progressbar"
-                                            aria-label="Job posts used"
-                                            aria-valuemin={0}
-                                            aria-valuemax={100}
-                                            aria-valuenow={postPct}
-                                            className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
-                                        >
-                                            <div className={`h-full ${postPct >= 100 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${postPct}%` }} />
+                            extra={!isUser && (postLimit !== 0 || (isPaid && sub && !sub.unlimitedCredits)) ? (
+                                <div className="space-y-4">
+                                    {postLimit !== 0 && (
+                                        <div>
+                                            <p className="text-sm text-ink/80">
+                                                Job posts used: <span className="font-semibold text-ink">{postsUsed ?? 0} / {formatLimit(postLimit)}</span>
+                                            </p>
+                                            {!isUnlimited(postLimit) && (
+                                                <div
+                                                    role="progressbar"
+                                                    aria-label="Job posts used"
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                    aria-valuenow={postPct}
+                                                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
+                                                >
+                                                    <div className={`h-full ${postPct >= 100 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${postPct}%` }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {isPaid && sub && !sub.unlimitedCredits && (
+                                        <div>
+                                            <p className="text-sm text-ink/80">
+                                                Credit points used: <span className="font-semibold text-ink">{creditsUsed.toLocaleString('en-IN')} / {creditsTotal.toLocaleString('en-IN')}</span>
+                                            </p>
+                                            <div
+                                                role="progressbar"
+                                                aria-label="Credit points used"
+                                                aria-valuemin={0}
+                                                aria-valuemax={100}
+                                                aria-valuenow={creditPct}
+                                                className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
+                                            >
+                                                <div className={`h-full ${creditsTotal > 0 && creditsLeft === 0 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${creditPct}%` }} />
+                                            </div>
+                                            <p className={`mt-1.5 ${skin.meta}`}>{creditsLeft.toLocaleString('en-IN')} points left</p>
                                         </div>
                                     )}
                                 </div>
@@ -302,34 +363,102 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                         )}
                     </div>
 
-                    {!isUser && payments.length > 0 && (
-                        <div className={`border ${skin.edge} bg-surface ${skin.radius} p-6`}>
-                            <h3 className={`mb-3 ${skin.cardTitle}`}>Payment history</h3>
-                            <ul className={`divide-y ${skin.divide}`}>
-                                {payments.map((p) => (
-                                    <li key={p.orderId} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-ink">
-                                                {p.plan.planName} <span className="font-normal text-ink/60">{'\u00B7'} {formatAmount(p.amount)}</span>
-                                            </p>
-                                            <p className={skin.meta}>
-                                                {formatDate(p.paidAt ?? p.createdAt)}
-                                                {p.status === 'paid' && p.expiresAt ? ` \u00B7 valid until ${formatDate(p.expiresAt)}` : ''}
-                                                {p.status === 'failed' && p.failureReason ? ` \u00B7 ${p.failureReason}` : ''}
-                                                {p.razorpayPaymentId ? ` \u00B7 ${p.razorpayPaymentId}` : ''}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                                p.status === 'paid' ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
-                                            }`}
-                                        >
-                                            {p.status === 'paid' ? 'Paid' : 'Failed'}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                    {!isUser && panel?.kind === 'payments' && (
+                        <ExpandingModal origin={{ x: panel.x, y: panel.y }} title="Payment history" onClose={() => setPanel(null)} widthClass="max-w-[34rem]">
+                            {payments.length === 0 ? (
+                                <p className={`px-6 py-16 text-center ${skin.body}`}>No online payments yet.</p>
+                            ) : (
+                                <ul className={`divide-y ${skin.divide} px-5`}>
+                                    {payments.map((p) => (
+                                        <li key={p.orderId} className="flex flex-wrap items-center justify-between gap-2 py-3.5">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-ink">
+                                                    {p.plan.planName} <span className="font-normal text-ink/60">{'\u00B7'} {formatAmount(p.amount)}</span>
+                                                </p>
+                                                <p className={skin.meta}>
+                                                    {formatDate(p.paidAt ?? p.createdAt)}
+                                                    {p.status === 'paid' && p.expiresAt ? ` \u00B7 valid until ${formatDate(p.expiresAt)}` : ''}
+                                                    {p.status === 'failed' && p.failureReason ? ` \u00B7 ${p.failureReason}` : ''}
+                                                    {p.razorpayPaymentId ? ` \u00B7 ${p.razorpayPaymentId}` : ''}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                    p.status === 'paid' ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
+                                                }`}
+                                            >
+                                                {p.status === 'paid' ? 'Paid' : 'Failed'}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </ExpandingModal>
+                    )}
+
+                    {!isUser && panel?.kind === 'credits' && (
+                        <ExpandingModal
+                            origin={{ x: panel.x, y: panel.y }}
+                            title="Credit points usage"
+                            subtitle={sub?.unlimitedCredits ? 'Unlimited credit points' : `${creditsLeft.toLocaleString('en-IN')} points left`}
+                            onClose={() => setPanel(null)}
+                            widthClass="max-w-[34rem]"
+                        >
+                            <div className={`grid shrink-0 grid-cols-2 gap-3 border-b ${skin.edge} px-5 py-4`}>
+                                <div className={`border border-destructive ${skin.radius} px-4 py-3`}>
+                                    <p className="text-xs font-medium text-destructive">Points used</p>
+                                    <p className="mt-1 text-2xl font-bold text-destructive">{creditsUsed.toLocaleString('en-IN')}</p>
+                                </div>
+                                <div className={`border border-success ${skin.radius} px-4 py-3`}>
+                                    <p className="text-xs font-medium text-success">Points left</p>
+                                    <p className="mt-1 text-2xl font-bold text-success">{sub?.unlimitedCredits ? 'Unlimited' : creditsLeft.toLocaleString('en-IN')}</p>
+                                </div>
+                            </div>
+
+                            <table className="min-w-full">
+                                <thead className={`border-b ${skin.edge}`}>
+                                    <tr>
+                                        <th scope="col" className={`px-5 py-3 text-left ${skin.micro}`}>Used for</th>
+                                        <th scope="col" className={`px-3 py-3 text-right ${skin.micro}`}>Times</th>
+                                        <th scope="col" className={`px-5 py-3 text-right ${skin.micro}`}>Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${skin.divide}`}>
+                                    {USAGE_KINDS.map((k) => (
+                                        <tr key={k.kind}>
+                                            <td className="px-5 py-3">
+                                                <p className="text-sm font-semibold text-ink">{k.label}</p>
+                                                <p className={skin.meta}>{k.hint} {'\u00B7'} {CREDIT_COST[k.kind === 'search' ? 'search' : k.kind === 'download' ? 'download' : 'view']} pt each</p>
+                                            </td>
+                                            <td className="px-3 py-3 text-right text-sm text-ink">{usageSummary.byKind[k.kind].count}</td>
+                                            <td className="px-5 py-3 text-right text-sm font-semibold text-ink">{usageSummary.byKind[k.kind].points}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className={`border-t ${skin.edge} px-5 py-3`}>
+                                <p className={skin.micro}>Recent activity</p>
+                            </div>
+                            {usage.length === 0 ? (
+                                <p className={`px-6 pb-10 pt-4 text-center ${skin.body}`}>No credit points used yet.</p>
+                            ) : (
+                                <ul className={`divide-y ${skin.divide} px-5 pb-4`}>
+                                    {usage.slice(0, 100).map((e) => (
+                                        <li key={e.id} className="flex items-center justify-between gap-3 py-3">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-ink">{USAGE_KINDS.find((k) => k.kind === e.kind)?.label.replace(/s$/, '') ?? e.kind}</p>
+                                                <p className={`truncate ${skin.meta}`}>
+                                                    {e.note ? `${e.note} \u00B7 ` : ''}
+                                                    {new Date(usageEntryTime(e.createdAt)).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                            <span className="shrink-0 text-sm font-semibold text-ink">-{e.cost}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </ExpandingModal>
                     )}
 
                     {isUser && requests.length > 0 && (

@@ -81,6 +81,10 @@ export const FREE_SUBSCRIPTION: EffectiveSubscription = {
     privileges: {},
     expiresAt: null,
     expired: false,
+    creditsTotal: 0,
+    creditsUsed: 0,
+    credits: 0,
+    unlimitedCredits: false,
 };
 
 export const FREE_USER_SUBSCRIPTION: EffectiveSubscription = {
@@ -93,7 +97,22 @@ export const FREE_USER_SUBSCRIPTION: EffectiveSubscription = {
     privileges: {},
     expiresAt: null,
     expired: false,
+    creditsTotal: 0,
+    creditsUsed: 0,
+    credits: 0,
+    unlimitedCredits: false,
 };
+
+/** How long a plan can be offered for. The plan stores the day count. */
+export const VALIDITY_OPTIONS: { label: string; days: number }[] = [
+    { label: '1 month', days: 30 },
+    { label: '3 months', days: 90 },
+    { label: '6 months', days: 180 },
+    { label: '1 year', days: 365 },
+];
+
+export const formatValidity = (days: number): string =>
+    VALIDITY_OPTIONS.find((o) => o.days === days)?.label ?? `${days} days`;
 
 /**
  * Privileges the admin can switch on for a user plan. Add an entry here (and a key on
@@ -123,13 +142,21 @@ const ADMIN_SUBSCRIPTION: EffectiveSubscription = {
     privileges: { profileVisibility: true },
     expiresAt: null,
     expired: false,
+    creditsTotal: 0,
+    creditsUsed: 0,
+    credits: 0,
+    unlimitedCredits: true,
 };
 
 /**
  * Turns a users/{uid} document into what that person may do right now.
  * Order: admin -> active plan -> legacy isPremium flag -> free tier.
  */
-export function resolveSubscription(userData: Record<string, any> | undefined | null): EffectiveSubscription {
+export function resolveSubscription(
+    userData: Record<string, any> | undefined | null,
+    /** The plan's current credit points, read from subscription_plans/{planId}; falls back to the granted snapshot. */
+    planCredits?: number | null
+): EffectiveSubscription {
     if (!userData) return FREE_SUBSCRIPTION;
     if (userData.role === 'admin') return ADMIN_SUBSCRIPTION;
 
@@ -137,6 +164,12 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
     const freeTier = audience === 'user' ? FREE_USER_SUBSCRIPTION : FREE_SUBSCRIPTION;
 
     const sub = userData.subscription as UserSubscription | undefined;
+    // Credit points come from the plan: its total minus what was spent in this subscription period.
+    // A new grant or renewal changes startedAt, which starts the count again from zero.
+    const startedMs = toDate(sub?.startedAt)?.getTime() ?? 0;
+    const creditsTotal = Math.max(0, typeof planCredits === 'number' ? planCredits : typeof sub?.credits === 'number' ? sub.credits : 0);
+    const creditsUsed = userData.creditsPeriod === startedMs && typeof userData.creditsUsed === 'number' ? Math.max(0, userData.creditsUsed) : 0;
+    const credits = Math.max(0, creditsTotal - creditsUsed);
     let expired = false;
     let lapsedPlanId: string | null = null;
     if (sub?.planId) {
@@ -152,6 +185,10 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
                 privileges: sub.privileges ?? {},
                 expiresAt,
                 expired: false,
+                creditsTotal,
+                creditsUsed,
+                credits,
+                unlimitedCredits: false,
             };
         }
         expired = true;
@@ -170,6 +207,10 @@ export function resolveSubscription(userData: Record<string, any> | undefined | 
             privileges: {},
             expiresAt: null,
             expired: false,
+            creditsTotal: 0,
+            creditsUsed: 0,
+            credits: 0,
+            unlimitedCredits: true,
         };
     }
 
@@ -337,6 +378,7 @@ async function grantPlan(recruiterId: string, plan: SubscriptionPlan): Promise<D
         level: plan.level,
         maxPosts: plan.maxPosts,
         maxCandidates: plan.maxCandidates,
+        credits: Math.max(0, Math.floor(Number(plan.credits) || 0)),
         privileges: plan.privileges ?? {},
         startedAt: Timestamp.now(),
         expiresAt: Timestamp.fromDate(expiresAt),
@@ -400,5 +442,5 @@ export async function assignPlan(recruiterId: string, plan: SubscriptionPlan): P
 
 /** Removes a recruiter's plan (and the legacy premium flag) so they fall back to the free tier. */
 export async function revokeSubscription(recruiterId: string): Promise<void> {
-    await updateDoc(doc(db, 'users', recruiterId), { subscription: deleteField(), isPremium: false });
+    await updateDoc(doc(db, 'users', recruiterId), { subscription: deleteField(), isPremium: false, creditsUsed: deleteField(), creditsPeriod: deleteField() });
 }

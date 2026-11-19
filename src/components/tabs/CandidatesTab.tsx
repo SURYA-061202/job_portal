@@ -6,17 +6,27 @@ import { db } from '@/lib/firebase';
 import { getAllApplications, getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
 import { getUserCertificates, getUserCourses, getUserEducation, getUserExperience, getUserProjects, getUserSkills } from '@/lib/userToCandidate';
 import { parseKeywords, searchCandidates } from '@/lib/candidateSearch';
+import {
+    activeFilterChips,
+    buildCandidateFilterSections,
+    hasActiveFilters,
+    matchesCandidateFilters,
+    type SelectedFilters
+} from '@/lib/candidateFilters';
 import { isUnlimited } from '@/lib/subscriptions';
+import { spendCredits, unlockKey } from '@/lib/credits';
 import type { Candidate } from '@/types';
 import CandidateList from '@/components/resume/CandidateList';
 import CandidateTable from '@/components/resume/CandidateTable';
+import CandidateCarousel from '@/components/resume/CandidateCarousel';
 import BackRow from '@/components/layout/BackRow';
 import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
 import InviteFlow from '@/components/resume/InviteFlow';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
-import { ArrowLeft, Search, LayoutGrid, Briefcase, Calendar, Lock, X } from 'lucide-react';
+import FilterSidebar from '@/components/recruitment/FilterSidebar';
+import { ArrowLeft, Search, LayoutGrid, List, Briefcase, Calendar, Lock, X, SlidersHorizontal } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
@@ -83,6 +93,41 @@ function userDocToCandidate(
     } as unknown as Candidate;
 }
 
+/**
+ * Recruiter-uploaded candidates only carry education parsed from a resume. When the same person
+ * has a platform profile (matched by email), show the education they entered there instead:
+ * duration, grade, arrears, gap and the uploaded marksheet.
+ */
+async function withProfileEducation(list: Candidate[]): Promise<Candidate[]> {
+    if (list.length === 0) return list;
+    try {
+        const snap = await getDocs(fsQuery(collection(db, 'users'), where('role', '==', 'user')));
+        const byEmail = new Map<string, Record<string, any>>();
+        // Several accounts can share an email: keep the one whose education has the most details filled in.
+        const detail = (data: Record<string, any>) =>
+            (data.educationItems as Record<string, any>[]).reduce(
+                (n, e) => n + (e.marksheetUrl ? 2 : 0) + (e.grade ? 1 : 0) + (e.duration ? 1 : 0) + (e.hasArrears ? 1 : 0) + (e.hasGap ? 1 : 0),
+                0
+            );
+        snap.forEach((d) => {
+            const data = d.data();
+            const email = String(data.email || '').trim().toLowerCase();
+            if (!email || !Array.isArray(data.educationItems) || data.educationItems.length === 0) return;
+            const existing = byEmail.get(email);
+            if (!existing || detail(data) >= detail(existing)) byEmail.set(email, data);
+        });
+        return list.map((c) => {
+            const profile = byEmail.get(String(c.email || '').trim().toLowerCase());
+            if (!profile) return c;
+            const education = getUserEducation(profile);
+            return { ...c, education, extractedData: c.extractedData ? { ...c.extractedData, education } : c.extractedData } as Candidate;
+        });
+    } catch (error) {
+        console.error('Could not load profile education for candidates:', error);
+        return list;
+    }
+}
+
 function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter, onBack, onNavigateToShortlisted, userRole, userId, candidateLimit, planName, canViewContact = false, onViewPlans }: CandidatesTabProps) {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
@@ -98,7 +143,79 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<'list' | 'history'>('list');
     const [searchTerm, setSearchTerm] = useState('');
-    const deferredSearch = useDeferredValue(searchTerm);
+    // The search runs live as the recruiter types; the results follow the box.
+    const [committedSearch, setCommittedSearch] = useState('');
+    const deferredSearch = useDeferredValue(committedSearch);
+    // One charge per typing session: idle until the first character, then the
+    // session is billing/charged/failed and stays that way until the box is cleared.
+    const chargeStateRef = useRef<'idle' | 'charging' | 'charged' | 'failed'>('idle');
+    const chargeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const clearChargeTimer = () => {
+        if (chargeTimerRef.current) {
+            clearTimeout(chargeTimerRef.current);
+            chargeTimerRef.current = null;
+        }
+    };
+
+    // Bills the session once. Results are already on screen; a failed charge
+    // (out of credit points) hides them again - spendCredits shows the message.
+    const chargeOnce = async (term: string) => {
+        if (chargeStateRef.current !== 'idle') return;
+        chargeStateRef.current = 'charging';
+        const { ok } = await spendCredits('search', { note: term, label: 'A search' });
+        chargeStateRef.current = ok ? 'charged' : 'failed';
+        if (!ok) setCommittedSearch('');
+    };
+
+    // Live search: every keystroke updates the results; the first character of a
+    // session schedules the charge (debounced, so a finished keyword is what gets
+    // billed and a stray keypress costs nothing). Clearing is free and ends the
+    // session, so the next search charges again.
+    const handleSearchInput = (value: string) => {
+        setSearchTerm(value);
+        clearChargeTimer();
+        if (!value.trim()) {
+            if (chargeStateRef.current !== 'charging') chargeStateRef.current = 'idle';
+            setCommittedSearch('');
+            return;
+        }
+        // A failed session stays hidden until the box is cleared.
+        if (chargeStateRef.current === 'failed') return;
+        setCommittedSearch(value);
+        if (chargeStateRef.current === 'idle') {
+            chargeTimerRef.current = setTimeout(() => {
+                chargeTimerRef.current = null;
+                void chargeOnce(value);
+            }, 500);
+        }
+    };
+
+    // Enter bills right away instead of waiting out the debounce.
+    const flushSearchCharge = () => {
+        clearChargeTimer();
+        if (searchTerm.trim() && chargeStateRef.current === 'idle') void chargeOnce(searchTerm);
+    };
+
+    useEffect(() => clearChargeTimer, []);
+
+    // Facet filters from the sidebar: instant and free (never routed through
+    // the keyword search, so they never cost a credit point).
+    const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({});
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const toggleFilter = (section: string, option: string) => {
+        setSelectedFilters(prev => {
+            const current = prev[section] ?? [];
+            return {
+                ...prev,
+                [section]: current.includes(option)
+                    ? current.filter(value => value !== option)
+                    : [...current, option]
+            };
+        });
+    };
+    const clearAllFilters = () => setSelectedFilters({});
+
     const [filterPostId, setFilterPostId] = useState<string | null>(null);
     const [isFilteringApplicants, setIsFilteringApplicants] = useState(false);
 
@@ -110,6 +227,15 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     const [showPostView, setShowPostView] = useState(false);
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
     const skin = useSkin();
+    // Table (default) or cards; remembered per browser.
+    const [layout, setLayout] = useState<'table' | 'cards'>(() => {
+        try { return localStorage.getItem('candidatesViewMode') === 'cards' ? 'cards' : 'table'; } catch { return 'table'; }
+    });
+    const changeLayout = (mode: 'table' | 'cards') => {
+        setLayout(mode);
+        try { localStorage.setItem('candidatesViewMode', mode); } catch { /* private mode: just not remembered */ }
+    };
+    const CandidatesView = layout === 'cards' ? CandidateCarousel : CandidateTable;
     const [inviteFor, setInviteFor] = useState<Candidate | null>(null);
     // Post path: the post being viewed (for match scores) and the Applied / Non Applied switch.
     const [post, setPost] = useState<RecruitmentRequest | null>(null);
@@ -291,7 +417,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 return toDt(b.createdAt) - toDt(a.createdAt);
             });
 
-            setCandidates(candidatesData);
+            setCandidates(await withProfileEducation(candidatesData));
         } catch (error) {
             console.error('Error fetching candidates:', error);
         } finally {
@@ -331,6 +457,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 }
             });
 
+            const enriched = await withProfileEducation(allCandidates);
+            allCandidates.splice(0, allCandidates.length, ...enriched);
             console.log(`[DEBUG] Found ${allCandidates.length} manually uploaded candidates for this post`);
 
             // 2. Fetch applications (include all statuses)
@@ -407,7 +535,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 users.push(userDocToCandidate(doc.id, data, 'Unnamed User', 'User', { status: 'pending' }));
             });
 
-            setRegisteredUsers(users);
+            setRegisteredUsers(await withProfileEducation(users));
 
         } catch (error) {
             console.error('Error fetching registered users:', error);
@@ -453,9 +581,14 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         }
     };
 
-    const handleCandidateSelect = (candidate: Candidate) => {
+    // Opening a candidate's profile costs credit points, once per candidate.
+    const chargeProfileView = async (candidate: Candidate): Promise<boolean> =>
+        (await spendCredits('view', { kind: 'view_profile', note: candidate.name, unlockKey: unlockKey(candidate.id, 'profile'), label: 'Viewing profile details' })).ok;
+
+    const handleCandidateSelect = async (candidate: Candidate) => {
         // If in registered users view, fetch their application history
         if (viewMode === 'registered-users') {
+            if (!(await chargeProfileView(candidate))) return;
             fetchUserApplications(candidate.id);
             setSelectedCandidate(candidate);
             return;
@@ -468,6 +601,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             }
             return;
         }
+        if (!(await chargeProfileView(candidate))) return;
         setSelectedCandidate(candidate);
     };
 
@@ -524,18 +658,34 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         return list;
     }, [viewMode, postId, showNonApplied, registeredUsers, isFilteringApplicants, filteredCandidates, candidates, activeClusterId, clusters]);
 
+    // Sidebar sections with per-option counts, derived from the list on screen.
+    const filterSections = useMemo(() => buildCandidateFilterSections(baseList), [baseList]);
+    const filtersActive = hasActiveFilters(selectedFilters);
+    const activeFilterCount = Object.values(selectedFilters).reduce((n, values) => n + values.length, 0);
+    const filterChips = useMemo(
+        () => (filtersActive ? activeFilterChips(selectedFilters, filterSections) : []),
+        [filtersActive, selectedFilters, filterSections]
+    );
+
+    // Facets narrow the list BEFORE keyword search and the plan cap, so counts,
+    // rankings and the "N locked" banner all describe the filtered set.
+    const facetList = useMemo(
+        () => (filtersActive ? baseList.filter(candidate => matchesCandidateFilters(candidate, selectedFilters)) : baseList),
+        [baseList, selectedFilters, filtersActive]
+    );
+
     // On the Posts path every candidate gets a 0-100 fit for this post, best first.
     const scores = useMemo(() => {
         if (!postId || !post) return undefined;
         const out: Record<string, number> = {};
-        for (const c of baseList) out[c.id] = matchScore(c, post);
+        for (const c of facetList) out[c.id] = matchScore(c, post);
         return out;
-    }, [postId, post, baseList]);
+    }, [postId, post, facetList]);
 
     // Most common skills across the list, offered as one-click search chips.
     const topSkills = useMemo(() => {
         const counts = new Map<string, { label: string; n: number }>();
-        for (const c of baseList) {
+        for (const c of facetList) {
             for (const raw of Array.isArray(c.skills) ? c.skills : []) {
                 const label = String(raw).trim();
                 if (!label) continue;
@@ -545,12 +695,13 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             }
         }
         return [...counts.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8).map(([key, v]) => ({ key, label: v.label }));
-    }, [baseList]);
+    }, [facetList]);
 
     const toggleSkill = (skill: string) => {
         const parts = searchTerm.split(',').map((p) => p.trim()).filter(Boolean);
         const has = parts.some((p) => p.toLowerCase() === skill.toLowerCase());
-        setSearchTerm((has ? parts.filter((p) => p.toLowerCase() !== skill.toLowerCase()) : [...parts, skill]).join(', '));
+        const next = (has ? parts.filter((p) => p.toLowerCase() !== skill.toLowerCase()) : [...parts, skill]).join(', ');
+        handleSearchInput(next);
     };
 
     // Keyword search runs over the FULL list and ranks by relevance; the plan
@@ -558,13 +709,13 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // and the best matches are the ones a limited plan still shows.
     const searchResults = useMemo(
         () => {
-            const found = searchCandidates(baseList, keywords, 'any');
+            const found = searchCandidates(facetList, keywords, 'any');
             // Without keywords the list order is ours to choose: best post match first.
             return scores && keywords.length === 0
                 ? [...found].sort((a, b) => (scores[b.candidate.id] ?? 0) - (scores[a.candidate.id] ?? 0))
                 : found;
         },
-        [baseList, keywords, scores]
+        [facetList, keywords, scores]
     );
 
     // Admins are never capped. A recruiter is capped by their plan.
@@ -578,10 +729,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // Beside an opened profile during a search: the matches first, then everyone else.
     const splitCandidates = useMemo(() => {
         const matchedIds = new Set(visibleResults.map((r) => r.candidate.id));
-        const rest = baseList.filter((c) => !matchedIds.has(c.id));
+        const rest = facetList.filter((c) => !matchedIds.has(c.id));
         const all = [...visibleResults.map((r) => r.candidate), ...rest];
         return capped ? all.slice(0, candidateLimit) : all;
-    }, [visibleResults, baseList, capped, candidateLimit]);
+    }, [visibleResults, facetList, capped, candidateLimit]);
 
     // The white results panel hugs the list, but fills the whole body area
     // when there is nothing to show.
@@ -612,7 +763,21 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             ) : (
                 <>
                     {activeView === 'list' && (
-                        <>
+                        // Left: facet sidebar (desktop). Right: search masthead
+                        // + the only scrollable body, so the table keeps its
+                        // own scroll area beside a sticky filter panel.
+                        <div className={`flex-1 min-h-0 flex flex-col ${showPostView ? '' : 'lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6'}`}>
+                            {!showPostView && (
+                                <aside aria-label="Candidate filters" className="hidden lg:block lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto thin-scrollbar lg:pr-1">
+                                    <FilterSidebar
+                                        sections={filterSections}
+                                        selectedFilters={selectedFilters}
+                                        onToggleFilter={toggleFilter}
+                                        onClearFilters={clearAllFilters}
+                                    />
+                                </aside>
+                            )}
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col space-y-4 lg:min-h-0">
                             {postId && onBack ? (
                                 <div className="mb-3 flex items-center gap-3 px-4">
                                     <button
@@ -665,21 +830,24 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 id="candidate-keyword-search"
                                                 type="text"
                                                 placeholder="Search by skill, role, company or college"
-                                                title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together.'
+                                                title='Separate keywords with commas, e.g. "site engineer, autocad". Without commas each word is a keyword; use "quotes" to keep a phrase together. The search runs as you type (1 credit point per search).'
                                                 className={`block w-full h-12 pl-11 pr-10 text-sm rounded-lg border border-ink/20 bg-surface text-ink placeholder:text-ink/40 shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
                                                 value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                onChange={(e) => handleSearchInput(e.target.value)}
                                                 onKeyDown={(e) => {
-                                                    if (e.key === 'Escape' && searchTerm) {
+                                                    if (e.key === 'Enter') {
                                                         e.preventDefault();
-                                                        setSearchTerm('');
+                                                        flushSearchCharge();
+                                                    } else if (e.key === 'Escape' && searchTerm) {
+                                                        e.preventDefault();
+                                                        handleSearchInput('');
                                                     }
                                                 }}
                                             />
                                             {searchTerm && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => setSearchTerm('')}
+                                                    onClick={() => handleSearchInput('')}
                                                     aria-label="Clear search"
                                                     className={`absolute inset-y-0 right-0 my-auto mr-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
                                                 >
@@ -723,6 +891,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 )}
                                 {/* Same side padding as the card grid, so the count lines up with the first card. */}
                                 {!showPostView && !loading && (
+                                    <>
                                     <div aria-live="polite" className="mt-5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4">
                                         <p className="flex items-baseline gap-1.5">
                                             <span className="text-2xl font-black leading-none tabular-nums text-ink">{displayCandidates.length}</span>
@@ -741,8 +910,61 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 {hiddenCount} locked
                                             </span>
                                         )}
+                                        <div className="ml-auto flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setFiltersOpen(true)}
+                                                className={`relative inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-ink/70 bg-surface px-3 text-xs font-semibold text-ink transition-colors duration-200 hover:bg-ink/5 lg:hidden ${FOCUS}`}
+                                            >
+                                                <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                                                Filters
+                                                {activeFilterCount > 0 && (
+                                                    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold tabular-nums text-white">
+                                                        {activeFilterCount}
+                                                    </span>
+                                                )}
+                                            </button>
+                                            <div role="group" aria-label="Candidate layout" className="inline-flex overflow-hidden rounded-md border border-ink/70">
+                                                {([['table', List, 'Table view'], ['cards', LayoutGrid, 'Card view']] as const).map(([mode, Icon, label]) => (
+                                                    <button
+                                                        key={mode}
+                                                        type="button"
+                                                        onClick={() => changeLayout(mode)}
+                                                        aria-pressed={layout === mode}
+                                                        aria-label={label}
+                                                        title={label}
+                                                        className={`flex h-8 w-9 cursor-pointer items-center justify-center transition-colors duration-200 ${layout === mode ? 'bg-ink/70 text-surface' : 'bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                                    >
+                                                        <Icon className="h-4 w-4" aria-hidden="true" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
+                                    {filterChips.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 px-4">
+                                            {filterChips.map((chip) => (
+                                                <button
+                                                    key={`${chip.sectionKey}:${chip.value}`}
+                                                    type="button"
+                                                    onClick={() => toggleFilter(chip.sectionKey, chip.value)}
+                                                    aria-label={`Remove filter ${chip.label}`}
+                                                    className={`group inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${FOCUS} border-ink/15 bg-surface text-ink/70 hover:border-ink/40`}
+                                                >
+                                                    {chip.label}
+                                                    <X className="h-3 w-3 text-ink/40 group-hover:text-ink" aria-hidden="true" />
+                                                </button>
+                                            ))}
+                                            <button
+                                                type="button"
+                                                onClick={clearAllFilters}
+                                                className={`cursor-pointer px-1 text-xs font-bold text-destructive transition-colors duration-200 hover:underline ${FOCUS}`}
+                                            >
+                                                Clear all
+                                            </button>
+                                        </div>
+                                    )}
+                                </>)}
                             </div>
 
 
@@ -896,7 +1118,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         ) : selectedCandidate ? (
                                             /* Opened from search: same layout as the plain list - the profile on the left,
                                                the other matches as cards beside it, sliding for more. */
-                                            <CandidateTable
+                                            <CandidatesView
                                                 candidates={splitCandidates}
                                                 loading={false}
                                                 onSelectCandidate={handleCandidateSelect}
@@ -917,7 +1139,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             />
                                         )
                                     ) : (
-                                        <CandidateTable
+                                        <CandidatesView
                                             candidates={displayCandidates}
                                             loading={loading}
                                             onSelectCandidate={handleCandidateSelect}
@@ -925,7 +1147,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             onCloseSelected={handleBackToList}
                                             canViewContact={canViewContact}
                                             onViewPlans={onViewPlans}
-                                            emptyMessage={showNonApplied ? 'Every registered candidate has applied to this post.' : isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
+                                            emptyMessage={filtersActive ? 'No candidates match the selected filters.' : showNonApplied ? 'Every registered candidate has applied to this post.' : isFilteringApplicants ? 'No applicants found for this post.' : 'No candidates yet.'}
                                             showStatus={!!postId && !showNonApplied}
  scores={scores}
  onInvite={inviteHandler}
@@ -935,7 +1157,8 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                             )}
                             </div>
                             </div>
-                        </>
+                            </div>
+                        </div>
                     )}
 
                     {activeView === 'history' && (
@@ -959,6 +1182,45 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 </>
             )}
 
+            {filtersOpen && (
+                <div className="fixed inset-0 z-50 flex items-end lg:hidden" role="dialog" aria-modal="true" aria-label="Filter candidates">
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={() => setFiltersOpen(false)}
+                        aria-hidden="true"
+                    />
+                    <div className={`relative flex max-h-[85vh] w-full flex-col overflow-hidden border-t ${skin.edge} ${skin.surface} rounded-t-2xl`}>
+                        <div className={`flex shrink-0 items-center justify-between border-b px-4 py-3 ${skin.edge}`}>
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink">Filters</h3>
+                            <button
+                                type="button"
+                                onClick={() => setFiltersOpen(false)}
+                                aria-label="Close filters"
+                                className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full ${skin.subtle} ${skin.subtleHover} ${FOCUS}`}
+                            >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-4 thin-scrollbar">
+                            <FilterSidebar
+                                sections={filterSections}
+                                selectedFilters={selectedFilters}
+                                onToggleFilter={toggleFilter}
+                                onClearFilters={clearAllFilters}
+                            />
+                        </div>
+                        <div className={`shrink-0 border-t p-3 ${skin.edge}`}>
+                            <button
+                                type="button"
+                                onClick={() => setFiltersOpen(false)}
+                                className={`w-full cursor-pointer rounded-lg ${skin.cta} py-2.5 text-sm font-semibold ${FOCUS}`}
+                            >
+                                Show {displayCandidates.length} {displayCandidates.length === 1 ? 'candidate' : 'candidates'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {editingCandidate && (
                 <ManualDetailsModal
                     candidate={editingCandidate}

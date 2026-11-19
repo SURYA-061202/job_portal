@@ -102,7 +102,7 @@ export default function PostStageList({ title, items, countNoun = 'candidate', l
             <div className={detail ? 'flex min-h-0 flex-1 flex-col gap-4 lg:flex-row' : 'flex min-h-0 flex-1 flex-col'}>
             <div className={`min-h-0 overflow-y-auto scrollbar-hide ${detail ? 'max-h-64 shrink-0 lg:max-h-none lg:w-80' : 'flex-1'}`}>
                 {loading ? (
-                    <div role="status" aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div role="status" aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                         <span className="sr-only">Loading posts…</span>
                         {Array.from({ length: 6 }).map((_, i) => (
                             <div key={i} aria-hidden="true" className={`flex animate-pulse gap-4 border ${skin.edge} bg-surface ${skin.radius} p-4`}>
@@ -124,7 +124,7 @@ export default function PostStageList({ title, items, countNoun = 'candidate', l
                         <p className={`mt-1 max-w-sm ${skin.body}`}>{search ? 'Try a different title, department or location.' : emptyText}</p>
                     </div>
                 ) : (
-                    <ul className={detail ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'}>
+                    <ul className={detail ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'}>
                         {items.map(({ post, count, note, skills }) => (
                             <li key={post.id}>
                                 {plain ? (

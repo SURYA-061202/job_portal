@@ -575,7 +575,7 @@ export default function PersonalizedCVPage() {
                                         <StatusItem label="Courses" count={userData?.courseItems?.length} />
                                         <StatusItem label="Projects" count={userData?.projectItems?.length} />
                                         <StatusItem label="Skills" count={userData?.skillItems?.length} />
-                                        <StatusItem label="Certificates" count={userData?.certificateItems?.length} />
+                                        <StatusItem label="Certifications" count={userData?.certificateItems?.length} />
                                     </div>
                                 </div>
                             </div>
@@ -662,7 +662,7 @@ export default function PersonalizedCVPage() {
                                             <div key={i} style={{ fontSize: '12px', color: '#000000' }}>
                                                 <div className="flex justify-between font-bold">
                                                     <span>{edu.collegeName}</span>
-                                                    <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{edu.graduatedYear || ''}</span>
+                                                    <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{edu.duration || edu.graduatedYear || ''}</span>
                                                 </div>
                                                 <div className="flex justify-between" style={{ fontSize: '11px', color: '#374151' }}>
                                                     <span>{edu.course} {edu.specialization ? `in ${edu.specialization}` : ''} {edu.grade ? `(CGPA of ${edu.grade})` : ''}</span>

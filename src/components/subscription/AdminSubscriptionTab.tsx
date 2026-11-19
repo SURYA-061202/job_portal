@@ -18,6 +18,7 @@ import {
     savePlan,
     subscribeAllRequests,
     USER_PRIVILEGES,
+    VALIDITY_OPTIONS,
 } from '@/lib/subscriptions';
 import { formatAmount, subscribeAllPayments } from '@/lib/payments';
 import { UNLIMITED } from '@/types';
@@ -44,6 +45,7 @@ interface PlanForm {
     maxPostsUnlimited: boolean;
     maxCandidates: string;
     maxCandidatesUnlimited: boolean;
+    credits: string;
     features: string;
     privileges: PlanPrivileges;
 }
@@ -58,6 +60,7 @@ const emptyForm = (nextLevel: number): PlanForm => ({
     maxPostsUnlimited: false,
     maxCandidates: '',
     maxCandidatesUnlimited: false,
+    credits: '',
     features: '',
     privileges: {},
 });
@@ -73,6 +76,7 @@ const formFromPlan = (p: SubscriptionPlan): PlanForm => ({
     maxPostsUnlimited: isUnlimited(p.maxPosts),
     maxCandidates: isUnlimited(p.maxCandidates) ? '' : String(p.maxCandidates),
     maxCandidatesUnlimited: isUnlimited(p.maxCandidates),
+    credits: p.credits ? String(p.credits) : '',
     features: p.features.join('\n'),
     privileges: p.privileges ?? {},
 });
@@ -226,8 +230,10 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         // User plans are defined by price, validity and privileges only - no post count.
         const maxPosts = isUserSide || form.maxPostsUnlimited ? UNLIMITED : parseInt(form.maxPosts, 10);
         const maxCandidates = UNLIMITED; // every plan can view all candidates
+        const credits = isUserSide ? 0 : parseInt(form.credits || '0', 10);
 
         if (!form.name.trim()) return popup.error('Plan name is required');
+        if (!Number.isInteger(credits) || credits < 0) return popup.error('Credit points must be 0 or more');
         if (!Number.isInteger(level) || level < 1) return popup.error('Level must be 1 or higher');
         if (!Number.isFinite(price) || price < 0) return popup.error('Price cannot be negative');
         if (!Number.isInteger(durationDays) || durationDays < 1) return popup.error('Duration must be at least 1 day');
@@ -246,7 +252,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                 durationDays,
                 maxPosts,
                 maxCandidates: isUserSide ? 0 : maxCandidates,
-                ...(isUserSide ? { privileges: form.privileges } : {}),
+                ...(isUserSide ? { privileges: form.privileges } : { credits }),
                 features: form.features.split('\n').map((f) => f.trim()).filter(Boolean),
                 active: true,
             });
@@ -412,8 +418,16 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                 <input id="plan-price" type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={fieldClass} placeholder="0 = free" />
                             </div>
                             <div>
-                                <label htmlFor="plan-days" className="block text-xs font-bold text-ink/80 mb-1">Valid for (days)</label>
-                                <input id="plan-days" required type="number" min={1} value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} className={fieldClass} />
+                                <label htmlFor="plan-days" className="block text-xs font-bold text-ink/80 mb-1">Validity</label>
+                                <select id="plan-days" required value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} className={fieldClass}>
+                                    {VALIDITY_OPTIONS.map((o) => (
+                                        <option key={o.days} value={String(o.days)}>{o.label}</option>
+                                    ))}
+                                    {/* A plan saved earlier with a custom number of days keeps it until changed. */}
+                                    {!VALIDITY_OPTIONS.some((o) => String(o.days) === form.durationDays) && (
+                                        <option value={form.durationDays}>{form.durationDays} days</option>
+                                    )}
+                                </select>
                             </div>
                         </div>
 
@@ -453,6 +467,11 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                         <label className="mt-1.5 flex items-center gap-2 text-xs text-ink/70">
                                             <input type="checkbox" checked={form.maxPostsUnlimited} onChange={(e) => setForm({ ...form, maxPostsUnlimited: e.target.checked })} /> Unlimited
                                         </label>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="plan-credits" className="block text-xs font-bold text-ink/80 mb-1">Credit points</label>
+                                        <input id="plan-credits" type="number" min={0} step={1} value={form.credits} onChange={(e) => setForm({ ...form, credits: e.target.value })} className={fieldClass} placeholder="e.g. 500" />
+                                        <p className={`mt-1.5 ${skin.meta}`}>Search 1 · Download 5 · View 5</p>
                                     </div>
                                 </div>
 
@@ -683,7 +702,8 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                         </thead>
                                         <tbody className={`divide-y ${skin.divide}`}>
                                             {rows.map((r) => {
-                                                const sub = resolveSubscription(r.data);
+                                                const planId = r.data.subscription?.planId;
+                                                const sub = resolveSubscription(r.data, allPlans.find((p) => p.id === planId)?.credits);
                                                 const hasPlan = sub.source === 'plan' || sub.source === 'legacy';
                                                 return (
                                                     <tr key={r.id} className="transition-colors duration-150 hover:bg-ink/[0.03]">
@@ -694,6 +714,9 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                                         <td className="px-3 py-3.5">
                                                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${hasPlan ? 'bg-brand/10 text-brand' : 'bg-ink/5 text-ink/60'}`}>{sub.planName}</span>
                                                             {sub.expired && <span className="ml-2 text-xs font-medium text-destructive">expired</span>}
+                                                            {!isUserSide && !sub.unlimitedCredits && (
+                                                                <p className={`mt-1 ${skin.meta}`}>{sub.credits.toLocaleString('en-IN')} / {sub.creditsTotal.toLocaleString('en-IN')} credit points left</p>
+                                                            )}
                                                         </td>
                                                         <td className="px-3 py-3.5 text-sm text-ink/80">{sub.expiresAt ? formatDate(sub.expiresAt) : '-'}</td>
                                                         <td className="px-5 py-3.5">

@@ -37,6 +37,12 @@ service firebase.storage {
       allow write: if signedIn() && request.auth.uid == uid && (request.method == 'delete' || okFile());
     }
 
+    // Education marksheets (PDF) owned by a job seeker
+    match /marksheets/{uid}/{file} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow write: if signedIn() && request.auth.uid == uid && (request.method == 'delete' || okFile());
+    }
+
     // Job descriptions attached to posts
     match /jd/{file} {
       allow read: if signedIn();

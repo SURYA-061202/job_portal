@@ -72,6 +72,9 @@
 
   --color-destructive: #ef4444;
   --color-destructive-foreground: #fafafa;
+  /* Positive balances: points left, healthy usage. */
+  --color-success: #16a34a;
+  --color-success-foreground: #fafafa;
 
   /* --- Shape ------------------------------------------------------------ */
 

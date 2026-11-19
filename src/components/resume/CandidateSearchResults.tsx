@@ -6,6 +6,7 @@ import { useSkin, FOCUS } from '@/styles/skin';
 import Highlight from './Highlight';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import ResumePreviewModal from './ResumePreviewModal';
+import { CREDIT_COST, spendCredits, unlockKey } from '@/lib/credits';
 
 interface CandidateSearchResultsProps {
     results: CandidateMatch[];
@@ -82,7 +83,8 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
  */
 export default function CandidateSearchResults({ results, keywords, onSelectCandidate, detail = false, onClose, canViewContact = false, onViewPlans, showStatus = false, onInvite, isApplied }: CandidateSearchResultsProps) {
     const skin = useSkin();
-    const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+    const [marksheetUrl, setMarksheetUrl] = useState<string | null>(null);
+    const [resumeTarget, setResumeTarget] = useState<{ url: string; name?: string } | null>(null);
     const regex = useMemo(() => buildHighlightRegex(keywords), [keywords]);
     const hl = (text: string) => <Highlight text={text} regex={regex} />;
 
@@ -108,6 +110,12 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                     field: txt(e?.field),
                     institution: txt(e?.institution),
                     year: txt(e?.year),
+                    cgpa: txt(e?.cgpa),
+                    duration: txt(e?.duration),
+                    arrears: txt(e?.arrears),
+                    educationGap: txt(e?.educationGap),
+                    marksheetUrl: txt(e?.marksheetUrl),
+                    marksheetName: txt(e?.marksheetName),
                 }));
                 const projects = projectLines(c);
                 const certs = [
@@ -228,7 +236,11 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                         c.resumeUrl && (
                                             <button
                                                 type="button"
-                                                onClick={() => setResumeUrl(c.resumeUrl as string)}
+                                                onClick={async () => {
+                                                    // Opening a resume costs credit points (once per candidate).
+                                                    const { ok } = await spendCredits('view', { kind: 'view_resume', note: c.name, unlockKey: unlockKey(c.id, 'resume'), label: 'Viewing a resume' });
+                                                    if (ok) setResumeTarget({ url: c.resumeUrl as string, name: c.name });
+                                                }}
                                                 className={`ml-5 inline-flex items-center cursor-pointer rounded-lg ${skin.secondary} !border-current ${FOCUS}`}
                                             >
                                                 Resume
@@ -328,7 +340,21 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                                                             {hl([e.degree, e.field].filter(Boolean).join(' in '))}
                                                         </p>
                                                         <p className={skin.body}>{hl(e.institution)}</p>
-                                                        {e.year && <p className={skin.meta}>{e.year}</p>}
+                                                        {e.cgpa && <p className={skin.meta}>{isNaN(parseFloat(e.cgpa)) ? e.cgpa : `CGPA: ${e.cgpa}`}</p>}
+                                                        {e.year && <p className={skin.meta}>{e.duration ? `Duration: ${e.year}` : e.year}</p>}
+                                                        {e.arrears && <p className={skin.meta}>History of Arrears: {e.arrears}</p>}
+                                                        {e.educationGap && <p className={skin.meta}>Gap in Education: {e.educationGap}</p>}
+                                                        {e.marksheetUrl && (
+                                                            <p className={skin.meta}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setMarksheetUrl(e.marksheetUrl)}
+                                                                    className="cursor-pointer text-left underline underline-offset-2 hover:text-ink"
+                                                                >
+                                                                    {e.marksheetName || 'Marksheet.pdf'}
+                                                                </button>
+                                                            </p>
+                                                        )}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -353,7 +379,16 @@ export default function CandidateSearchResults({ results, keywords, onSelectCand
                             </div>
                             </div>
                         </article>
-                        {resumeUrl && <ResumePreviewModal url={resumeUrl} onClose={() => setResumeUrl(null)} />}
+                        {marksheetUrl && <ResumePreviewModal url={marksheetUrl} title="Marksheet Preview" fileName="Marksheet" onClose={() => setMarksheetUrl(null)} />}
+                        {resumeTarget && (
+                            <ResumePreviewModal
+                                url={resumeTarget.url}
+                                onClose={() => setResumeTarget(null)}
+                                fileName={`${resumeTarget.name || 'Candidate'} Resume`}
+                                downloadHint={`${CREDIT_COST.download} credits`}
+                                onBeforeDownload={async () => (await spendCredits('download', { note: resumeTarget.name, label: 'Downloading a resume' })).ok}
+                            />
+                        )}
                     </li>
                 );
             })}

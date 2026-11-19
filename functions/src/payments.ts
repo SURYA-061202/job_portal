@@ -38,6 +38,8 @@ interface PlanSnapshot {
   durationDays: number;
   maxPosts: number;
   maxCandidates: number;
+  /** Credit points the plan gave when bought (the live plan's value wins in the app). */
+  credits?: number;
   privileges: Record<string, boolean>;
 }
 
@@ -326,6 +328,7 @@ export const createSubscriptionOrder = onCall(async (request) => {
     durationDays,
     maxPosts: typeof plan.maxPosts === "number" ? plan.maxPosts : -1,
     maxCandidates: typeof plan.maxCandidates === "number" ? plan.maxCandidates : -1,
+    credits: Number.isFinite(Number(plan.credits)) ? Math.max(0, Math.floor(Number(plan.credits))) : 0,
     privileges: plan.privileges ?? {},
   };
   const doc: PaymentDoc = {

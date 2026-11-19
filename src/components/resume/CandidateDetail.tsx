@@ -7,6 +7,7 @@ import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc } from 'fir
 import { db, storage } from '@/lib/firebase';
 import InterviewInviteModal from './InterviewInviteModal';
 import ResumePreviewModal from './ResumePreviewModal';
+import { CREDIT_COST, spendCredits, unlockKey } from '@/lib/credits';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -26,6 +27,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [candidate, setCandidate] = useState(initialCandidate);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showResumePreview, setShowResumePreview] = useState(false);
+  const [marksheetUrl, setMarksheetUrl] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
 
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
@@ -275,7 +277,12 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
           <button
             type="button"
-            onClick={() => candidate.resumeUrl && setShowResumePreview(true)}
+            onClick={async () => {
+              if (!candidate.resumeUrl) return;
+              // Opening a resume costs credit points (once per candidate).
+              const { ok } = await spendCredits('view', { kind: 'view_resume', note: candidate.name, unlockKey: unlockKey(candidate.id, 'resume'), label: 'Viewing a resume' });
+              if (ok) setShowResumePreview(true);
+            }}
             className={`inline-flex items-center gap-1.5 cursor-pointer rounded-lg ${skin.cta} ${FOCUS}`}
           >
             Resume
@@ -412,11 +419,20 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                       )}
                       <p className="text-ink/70">{edu.institution}</p>
                       {edu.cgpa && (
-                        <p className="mt-2 text-sm text-ink/60">
+                        <p className="mt-1 text-sm text-ink/60">
                           {isNaN(parseFloat(String(edu.cgpa))) ? edu.cgpa : `CGPA: ${edu.cgpa}`}
                         </p>
                       )}
-                      {edu.year && <p className="mt-2 text-sm text-ink/60">{edu.year}</p>}
+                      {edu.year && <p className="mt-2 text-sm text-ink/60">{edu.duration ? `Duration: ${edu.year}` : edu.year}</p>}
+                      {edu.arrears && <p className="mt-1 text-sm text-ink/60">History of Arrears: {edu.arrears}</p>}
+                      {edu.educationGap && <p className="mt-1 text-sm text-ink/60">Gap in Education: {edu.educationGap}</p>}
+                      {edu.marksheetUrl && (
+                        <p className="mt-1 text-sm text-ink/60">
+                          <button type="button" onClick={() => setMarksheetUrl(edu.marksheetUrl ?? null)} className="cursor-pointer text-left underline underline-offset-2 hover:text-ink">
+                            {edu.marksheetName || 'Marksheet.pdf'}
+                          </button>
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -564,8 +580,15 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       </div>
 
 
+      {marksheetUrl && <ResumePreviewModal url={marksheetUrl} title="Marksheet Preview" fileName="Marksheet" onClose={() => setMarksheetUrl(null)} />}
       {showResumePreview && candidate.resumeUrl && (
-        <ResumePreviewModal url={candidate.resumeUrl} onClose={() => setShowResumePreview(false)} />
+        <ResumePreviewModal
+          url={candidate.resumeUrl}
+          onClose={() => setShowResumePreview(false)}
+          fileName={`${candidate.name || 'Candidate'} Resume`}
+          downloadHint={`${CREDIT_COST.download} credits`}
+          onBeforeDownload={async () => (await spendCredits('download', { note: candidate.name, label: 'Downloading a resume' })).ok}
+        />
       )}
 
       {showInviteModal && (

@@ -679,7 +679,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                                                 )}
                                                 {item.certificates && item.certificates.length > 0 && (
                                                     <div className="py-1.5 space-y-1">
-                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Certificates</span>
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-ink/40">Certifications</span>
                                                         {item.certificates.map((certificate, i) => (
                                                             <p key={i} className="leading-snug break-words" title={certificate.title}>
                                                                 {certificate.title}

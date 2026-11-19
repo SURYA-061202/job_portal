@@ -7,6 +7,12 @@ import popup from '@/components/ui/Popup';
 import ResumePreviewModal from '@/components/resume/ResumePreviewModal';
 import { CheckCircle2, FileUp, Loader2, Edit2, X, Plus, Trash2 } from 'lucide-react';
 
+const EMPTY_EDU = {
+    collegeName: '', course: '', specialization: '', duration: '', grade: '',
+    hasArrears: 'no', arrearsDetails: '', hasGap: 'no', gapDetails: '', marksheetUrl: '', marksheetName: ''
+};
+type EduForm = typeof EMPTY_EDU;
+
 interface ProfileDetailsViewProps {
     formData: any;
     setFormData: React.Dispatch<React.SetStateAction<any>>;
@@ -20,7 +26,8 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     const [activeModal, setActiveModal] = useState<'education'|'project'|'certificate'|'experience'|'course'|'skill'|null>(null);
     const [editIndex, setEditIndex] = useState<number | null>(null);
 
-    const [eduForm, setEduForm] = useState({ collegeName: '', course: '', specialization: '', graduatedYear: '', grade: '' });
+    const [eduForm, setEduForm] = useState<EduForm>(EMPTY_EDU);
+    const [uploadingMarksheet, setUploadingMarksheet] = useState(false);
     const [projForm, setProjForm] = useState({ title: '', role: '', duration: '', description: '', link: '' });
     const [certForm, setCertForm] = useState({ name: '', organization: '', issueDate: '', url: '' });
     const [expForm, setExpForm] = useState({ company: '', role: '', description: '', duration: '' });
@@ -30,13 +37,14 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
     const [courseInput, setCourseInput] = useState('');
     const [tempCourses, setTempCourses] = useState<string[]>([]);
     const [showResumePreview, setShowResumePreview] = useState(false);
+    const [marksheetPreviewUrl, setMarksheetPreviewUrl] = useState<string | null>(null);
 
     const openModal = (type: 'education'|'project'|'certificate'|'experience'|'course'|'skill', index: number | null = null) => {
         setEditIndex(index);
         setActiveModal(type);
         if (type === 'education') {
-            if (index !== null) setEduForm(formData.educationItems[index] || { collegeName: '', course: '', specialization: '', graduatedYear: '', grade: '' });
-            else setEduForm({ collegeName: '', course: '', specialization: '', graduatedYear: '', grade: '' });
+            if (index !== null) setEduForm({ ...EMPTY_EDU, ...(formData.educationItems[index] || {}) });
+            else setEduForm(EMPTY_EDU);
         } else if (type === 'project') {
             if (index !== null) setProjForm(formData.projectItems[index] || { title: '', role: '', duration: '', description: '', link: '' });
             else setProjForm({ title: '', role: '', duration: '', description: '', link: '' });
@@ -87,9 +95,14 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
 
     const handleSaveEdu = () => {
         if (!eduForm.collegeName.trim()) return popup.error('College Name is required');
+        const cleaned = {
+            ...eduForm,
+            arrearsDetails: eduForm.hasArrears === 'yes' ? eduForm.arrearsDetails : '',
+            gapDetails: eduForm.hasGap === 'yes' ? eduForm.gapDetails : ''
+        };
         const newArray = [...(formData.educationItems || [])];
-        if (editIndex !== null) newArray[editIndex] = eduForm;
-        else newArray.push(eduForm);
+        if (editIndex !== null) newArray[editIndex] = cleaned;
+        else newArray.push(cleaned);
         saveArrayConfig('educationItems', newArray);
     };
 
@@ -144,6 +157,29 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             popup.error(`Upload failed`);
         } finally {
             setUploadingCert(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleMarksheetUpload = async (e: any) => {
+        const file = e.target.files?.[0];
+        const user = auth.currentUser;
+        if (!file || !user) return;
+
+        if (file.type !== 'application/pdf') { e.target.value = ''; return popup.error('Only PDF files are allowed'); }
+        if (file.size > 2 * 1024 * 1024) { e.target.value = ''; return popup.error('File size exceeds 2MB limit'); }
+
+        setUploadingMarksheet(true);
+        try {
+            const storageRef = ref(storage, `marksheets/${user.uid}/${Date.now()}.pdf`);
+            const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
+            const publicUrl = await getDownloadURL(snapshot.ref);
+            setEduForm((prev) => ({ ...prev, marksheetUrl: publicUrl, marksheetName: file.name }));
+            popup.success('Marksheet uploaded!');
+        } catch (error: any) {
+            popup.error('Upload failed');
+        } finally {
+            setUploadingMarksheet(false);
             e.target.value = '';
         }
     };
@@ -226,9 +262,21 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                                     <h4 className="font-bold text-ink">{edu.collegeName}</h4>
                                     <p className="text-sm font-semibold text-ink/70 mt-0.5">{edu.course} {edu.specialization && `- ${edu.specialization}`}</p>
                                     <div className="mt-1 text-xs text-ink/60">
-                                        {edu.grade && <p>Grade: {edu.grade}</p>}
-                                        {edu.graduatedYear && <p>Year of Completion: {edu.graduatedYear}</p>}
+                                        {edu.grade && <p><span className="text-[11px] font-bold text-ink/60">Grade:</span> {edu.grade}</p>}
+                                        {edu.duration && <p><span className="text-[11px] font-bold text-ink/60">Duration:</span> {edu.duration}</p>}
+                                        {!edu.duration && edu.graduatedYear && <p><span className="text-[11px] font-bold text-ink/60">Year of Completion:</span> {edu.graduatedYear}</p>}
+                                        <p><span className="text-[11px] font-bold text-ink/60">History of Arrears:</span> {edu.hasArrears === 'yes' ? (edu.arrearsDetails || 'Yes') : 'No'}</p>
+                                        <p><span className="text-[11px] font-bold text-ink/60">Gap in Education:</span> {edu.hasGap === 'yes' ? (edu.gapDetails || 'Yes') : 'No'}</p>
                                     </div>
+                                    {edu.marksheetUrl && (
+                                        <div className="mt-2">
+                                            <p className="text-[11px] font-bold text-ink/60">MarkSheet</p>
+                                            <p className="flex items-center gap-1.5 text-xs text-ink/70 mt-0.5">
+                                                <span className="truncate max-w-[220px]">{edu.marksheetName || 'Marksheet.pdf'}</span>
+                                                <button type="button" onClick={() => setMarksheetPreviewUrl(edu.marksheetUrl)} className="px-1.5 py-px text-[10px] leading-4 font-bold border border-border rounded text-ink/70 hover:text-ink hover:border-ink transition-colors">View</button>
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => openModal('education', idx)} className="p-1.5 hover:bg-ink/5 rounded-lg text-ink/60 hover:text-ink transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
@@ -316,10 +364,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     </div>
                 )}
             </div>
-            {/* Certificates Card */}
+            {/* Certifications Card */}
             <div className="bg-surface rounded-lg border border-border p-5">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-ink">Certificates</h3>
+                    <h3 className="text-lg font-bold text-ink">Certifications</h3>
                     <button onClick={() => openModal('certificate')} className="text-brand font-bold text-sm hover:text-brand flex items-center gap-1">
                         <Plus className="w-4 h-4" /> Add
                     </button>
@@ -414,6 +462,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 <ResumePreviewModal url={formData.resumeUrl} onClose={() => setShowResumePreview(false)} />
             )}
 
+            {marksheetPreviewUrl && (
+                <ResumePreviewModal url={marksheetPreviewUrl} title="Marksheet Preview" onClose={() => setMarksheetPreviewUrl(null)} />
+            )}
+
             {/* Modal Overlays */}
             {activeModal === 'experience' && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -494,7 +546,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
                             <div>
-                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">College / University Name</label>
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">School / College / University Name</label>
                                 <input type="text" value={eduForm.collegeName} onChange={(e)=>setEduForm({...eduForm, collegeName: e.target.value})} className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                             </div>
                             <div>
@@ -507,18 +559,70 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Graduated Year</label>
-                                    <input type="text" value={eduForm.graduatedYear} onChange={(e)=>setEduForm({...eduForm, graduatedYear: e.target.value})} placeholder="e.g. 2024" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Duration of Education</label>
+                                    <input type="text" value={eduForm.duration} onChange={(e)=>setEduForm({...eduForm, duration: e.target.value})} placeholder="e.g. 2024 - 2026" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Grade (CGPA / %)</label>
                                     <input type="text" value={eduForm.grade} onChange={(e)=>setEduForm({...eduForm, grade: e.target.value})} placeholder="e.g. 8.5 CGPA" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
                                 </div>
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">History of Arrears</label>
+                                    <div className="flex items-center gap-1 mb-2">
+                                        {(['yes', 'no'] as const).map((opt) => (
+                                            <button key={opt} type="button" onClick={() => setEduForm({...eduForm, hasArrears: opt})} className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border transition-colors ${eduForm.hasArrears === opt ? 'bg-ink/70 text-surface border-ink/70' : 'bg-surface text-ink/60 border-border hover:border-ink'}`}>
+                                                {opt === 'yes' ? 'Yes' : 'No'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {eduForm.hasArrears === 'yes' && (
+                                        <input type="text" value={eduForm.arrearsDetails} onChange={(e)=>setEduForm({...eduForm, arrearsDetails: e.target.value})} placeholder="e.g. 2 arrears, cleared" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Gap in Education</label>
+                                    <div className="flex items-center gap-1 mb-2">
+                                        {(['yes', 'no'] as const).map((opt) => (
+                                            <button key={opt} type="button" onClick={() => setEduForm({...eduForm, hasGap: opt})} className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border transition-colors ${eduForm.hasGap === opt ? 'bg-ink/70 text-surface border-ink/70' : 'bg-surface text-ink/60 border-border hover:border-ink'}`}>
+                                                {opt === 'yes' ? 'Yes' : 'No'}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {eduForm.hasGap === 'yes' && (
+                                        <input type="text" value={eduForm.gapDetails} onChange={(e)=>setEduForm({...eduForm, gapDetails: e.target.value})} placeholder="e.g. 1 year, reason" className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-sm text-ink outline-none focus:border-ink focus:ring-2 focus:ring-brand/20" />
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[11px] uppercase font-bold text-ink/60 mb-1">Upload Marksheet (PDF)</label>
+                                {eduForm.marksheetUrl ? (
+                                    <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                            <span className="text-xs font-bold text-emerald-700 truncate">{eduForm.marksheetName || 'Marksheet attached'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 flex-shrink-0">
+                                            <button type="button" onClick={() => setMarksheetPreviewUrl(eduForm.marksheetUrl)} className="text-xs font-bold text-ink/80 hover:text-ink underline">View</button>
+                                            <button type="button" onClick={() => setEduForm({...eduForm, marksheetUrl: '', marksheetName: ''})} className="text-xs font-bold text-destructive hover:text-destructive">Remove</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <label className="flex items-center justify-center w-full px-4 py-6 bg-muted border border-border border-dashed rounded-lg cursor-pointer hover:bg-ink/5 hover:border-brand transition-all">
+                                        <input type="file" accept="application/pdf" className="hidden" onChange={handleMarksheetUpload} />
+                                        <div className="flex flex-col items-center gap-2 text-center mt-1">
+                                            {uploadingMarksheet ? <Loader2 className="w-5 h-5 text-brand animate-spin" /> : <FileUp className="w-5 h-5 text-ink/60" />}
+                                            <span className="text-xs font-bold text-ink/60">{uploadingMarksheet ? 'Uploading...' : 'Click to upload marksheet (PDF, max 2MB)'}</span>
+                                        </div>
+                                    </label>
+                                )}
+                            </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
                             <button onClick={closeModal} className="px-5 py-2.5 text-sm font-bold text-ink/60 hover:bg-ink/5 hover:text-ink rounded-lg transition-colors">Cancel</button>
-                            <button disabled={saving} onClick={handleSaveEdu} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
+                            <button disabled={saving || uploadingMarksheet} onClick={handleSaveEdu} className="px-4 py-2 border border-ink/70 bg-ink/70 text-surface text-xs font-semibold rounded-lg hover:border-ink/60 hover:bg-ink/60 transition-colors disabled:opacity-50 min-w-[100px]">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Details'}
                             </button>
                         </div>
@@ -573,7 +677,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
                     <div className="bg-surface rounded-lg w-full max-w-lg p-6 relative z-10 shadow-2xl max-h-[90vh] flex flex-col border border-border">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Certificate" : "Add Certificate"}</h2>
+                            <h2 className="text-xl font-bold text-ink">{editIndex !== null ? "Edit Certification" : "Add Certification"}</h2>
                             <button onClick={closeModal} className="p-1.5 hover:bg-ink/5 rounded-lg transition-colors"><X className="w-5 h-5 text-ink/60"/></button>
                         </div>
                         <div className="overflow-y-auto pr-2 space-y-4 pb-2">
