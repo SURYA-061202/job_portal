@@ -148,6 +148,13 @@ export default function FilterSidebar({ sections: customSections, selectedFilter
                 { label: "10-20 LPA", value: "10-20 LPA" },
                 { label: "20+ LPA", value: "20+ LPA" }
             ]
+        },
+        {
+            title: "Deadline",
+            key: "closing",
+            options: [
+                { label: "Closing soon (within 7 days)", value: "soon" }
+            ]
         }
     ];
 

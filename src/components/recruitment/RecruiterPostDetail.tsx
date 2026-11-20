@@ -5,11 +5,16 @@ import {
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds } from '@/lib/interviewRounds';
 import { useSkin, FOCUS } from '@/styles/skin';
+import PostStatusBadge from '@/components/recruitment/PostStatusBadge';
+import PostLifecycleMenu, { type LifecycleAction } from '@/components/recruitment/PostLifecycleMenu';
+import { describeExpiry, formatDate, getPostLifecycle } from '@/lib/postLifecycle';
 
 interface RecruiterPostDetailProps {
     recruitment: RecruitmentRequest;
     onBack: () => void;
     onViewCandidates: (postId: string) => void;
+    /** Pause / resume / extend / close / repost, shown as buttons beside the status. */
+    onLifecycle?: (post: RecruitmentRequest, action: LifecycleAction) => void;
 }
 
 /**
@@ -17,8 +22,9 @@ interface RecruiterPostDetailProps {
  * already names the section. A square back button before the title, with the applicants
  * button, then the sections one below another: details, about, interview process and skills.
  */
-export default function RecruiterPostDetail({ recruitment, onBack, onViewCandidates }: RecruiterPostDetailProps) {
+export default function RecruiterPostDetail({ recruitment, onBack, onViewCandidates, onLifecycle }: RecruiterPostDetailProps) {
     const skin = useSkin();
+    const lifecycle = getPostLifecycle(recruitment);
 
     const rounds = getPostRounds(recruitment);
     const skills = recruitment.skills ? recruitment.skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
@@ -55,6 +61,8 @@ export default function RecruiterPostDetail({ recruitment, onBack, onViewCandida
                     </button>
                     <h1 className="min-w-0 text-2xl font-bold leading-tight text-ink sm:text-3xl">{recruitment.jobTitle}</h1>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                {onLifecycle && <PostLifecycleMenu post={recruitment} onAction={onLifecycle} inline />}
                 <button
                     type="button"
                     onClick={() => onViewCandidates(recruitment.id!)}
@@ -64,6 +72,26 @@ export default function RecruiterPostDetail({ recruitment, onBack, onViewCandida
                     {applicants} {applicants === 1 ? 'applicant' : 'applicants'}
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
                 </button>
+                </div>
+            </div>
+
+            {/* Where the post is in its life: status, expiry and repost history. */}
+            <div className="-mt-2 mb-5 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink/70">
+                <PostStatusBadge post={recruitment} />
+                <span className={lifecycle.expiringSoon ? 'font-semibold text-amber-700' : undefined}>{describeExpiry(recruitment)}</span>
+                {lifecycle.expiresAt && lifecycle.status !== 'closed' && <span className="text-ink/50">({formatDate(lifecycle.expiresAt)})</span>}
+                {recruitment.status === 'closed' && recruitment.closeReason && (
+                    <span className="text-ink/50">
+                        {recruitment.closeReason === 'filled' ? 'Position filled' : recruitment.closeReason === 'cancelled' ? 'Hiring cancelled' : 'Closed'}
+                        {recruitment.closedAt ? ` on ${formatDate(recruitment.closedAt)}` : ''}
+                    </span>
+                )}
+                {recruitment.applicationCap ? (
+                    <span className="text-ink/50">Application limit: {applicants} of {recruitment.applicationCap}</span>
+                ) : null}
+                {(recruitment.repostCount ?? 0) > 0 && (
+                    <span className="text-ink/50">Reposted {recruitment.repostCount} {recruitment.repostCount === 1 ? 'time' : 'times'}</span>
+                )}
             </div>
 
             <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">

@@ -1,11 +1,15 @@
 import type { RecruitmentRequest } from '@/types';
-import { useState, useMemo, Fragment } from 'react';
-import { MapPin, Briefcase, Clock, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { useMemo, Fragment } from 'react';
+import { MapPin, Briefcase, Clock, CalendarClock, CalendarDays } from 'lucide-react';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { buildHighlightRegex } from '@/lib/candidateSearch';
 import Highlight from '@/components/resume/Highlight';
 import SkillsLine from '@/components/ui/SkillsLine';
+import PostStatusBadge from '@/components/recruitment/PostStatusBadge';
+import PostLifecycleMenu, { type LifecycleAction } from '@/components/recruitment/PostLifecycleMenu';
+import { describeClosing, describeExpiry, getPostLifecycle } from '@/lib/postLifecycle';
+import { timeAgo } from '@/lib/format';
 
 interface UserJobCardProps {
     recruitment: RecruitmentRequest;
@@ -22,27 +26,30 @@ interface UserJobCardProps {
     plainSkills?: boolean;
     /** Skills as one line of plain text; an "…" at its end opens a hover popover with every skill. */
     skillsPopover?: boolean;
-    /** Recruiter side: tiny edit and delete icons beside the title. */
     /** Search keywords to highlight in the card text. */
     keywords?: string[];
     onEdit?: (recruitment: RecruitmentRequest) => void;
     onDelete?: (recruitment: RecruitmentRequest) => Promise<void> | void;
+    /** Recruiter side: pause / resume / extend / close / repost, with the status and expiry shown on the card. */
+    onLifecycle?: (recruitment: RecruitmentRequest, action: LifecycleAction) => void;
+    onDuplicate?: (recruitment: RecruitmentRequest) => void;
 }
 
-export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, plainSkills, skillsPopover, keywords, onEdit, onDelete }: UserJobCardProps) {
+export default function UserJobCard({ recruitment, currentUserId, onViewDetails, hideNewBadge, applicationStatus, applicantCount, whiteCard, plainSkills, skillsPopover, keywords, onEdit, onDelete, onLifecycle, onDuplicate }: UserJobCardProps) {
     const regex = useMemo(() => buildHighlightRegex(keywords ?? []), [keywords]);
     const hl = (t?: string) => <Highlight text={t ?? ''} regex={regex} />;
-    const [confirming, setConfirming] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-    const tiny = `flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-ink/50 transition-colors duration-200 hover:bg-ink/5 hover:text-ink disabled:opacity-50 ${FOCUS}`;
     const isNew = !hideNewBadge && currentUserId && !recruitment.viewedBy?.includes(currentUserId);
     const statusInfo = getApplicationStatusInfo(applicationStatus);
     const pillInfo = applicantCount !== undefined
-        ? { label: `${applicantCount} ${applicantCount === 1 ? 'applicant' : 'applicants'}`, className: 'bg-ink/5 text-ink/80 border-ink/20' }
+        ? { label: `${applicantCount}${recruitment.applicationCap ? `/${recruitment.applicationCap}` : ''} ${applicantCount === 1 && !recruitment.applicationCap ? 'applicant' : 'applicants'}`, className: 'bg-ink/5 text-ink/80 border-ink/20' }
         : statusInfo && statusInfo.className.includes('brand')
             ? { label: statusInfo.label, className: 'bg-ink/5 text-ink/80 border-ink/20' }
             : statusInfo;
     const skin = useSkin();
+    // Recruiters always see the status; job seekers only when the post has stopped taking applications
+    // (e.g. one they applied to that has since closed).
+    const lifecycle = getPostLifecycle(recruitment);
+    const showStatus = !!onLifecycle || !lifecycle.open;
 
     // Skills that match the search come first, so a hit is never hidden past the third chip.
     const shownSkills = plainSkills ? 6 : 3;
@@ -74,62 +81,50 @@ export default function UserJobCard({ recruitment, currentUserId, onViewDetails,
                         <h3 className="text-base md:text-xl font-bold leading-tight text-ink transition-colors duration-200">
                             {hl(recruitment.jobTitle)}
                         </h3>
-                        {(onEdit || onDelete) && (
-                            <div className="flex shrink-0 items-center gap-0.5">
-                                {onEdit && !confirming && (
-                                    <button type="button" onClick={() => onEdit(recruitment)} className={tiny} title="Edit post" aria-label={`Edit ${recruitment.jobTitle}`}>
-                                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                                    </button>
-                                )}
-                                {onDelete && (confirming ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            disabled={deleting}
-                                            onClick={async () => {
-                                                setDeleting(true);
-                                                try { await onDelete(recruitment); } finally { setDeleting(false); setConfirming(false); }
-                                            }}
-                                            className={`${tiny} text-destructive hover:text-destructive`}
-                                            title="Confirm delete"
-                                            aria-label="Confirm delete"
-                                        >
-                                            {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
-                                        </button>
-                                        <button type="button" disabled={deleting} onClick={() => setConfirming(false)} className={tiny} title="Cancel" aria-label="Cancel delete">
-                                            <X className="h-3.5 w-3.5" aria-hidden="true" />
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button type="button" onClick={() => setConfirming(true)} className={`${tiny} hover:text-destructive`} title="Delete post" aria-label={`Delete ${recruitment.jobTitle}`}>
-                                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                    </button>
-                                ))}
-                            </div>
+                    </div>
+                    {/* Right end: the actions button, then status, then the applicant count. */}
+                    <div className="flex shrink-0 items-center gap-2">
+                        {(onEdit || onDelete || onLifecycle || onDuplicate) && (
+                            <PostLifecycleMenu post={recruitment} onAction={onLifecycle} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} />
+                        )}
+                        {showStatus && <PostStatusBadge post={recruitment} className="py-1 md:text-xs" />}
+                        {pillInfo && (
+                            <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[9px] md:text-[11px] font-bold border ${pillInfo.className}`}>
+                                {pillInfo.label}
+                            </span>
                         )}
                     </div>
-                    {pillInfo && (
-                        <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[9px] md:text-[11px] font-bold border ${pillInfo.className}`}>
-                            {pillInfo.label}
-                        </span>
-                    )}
                 </div>
 
                 {companyHit && <p className="mb-2 text-xs font-medium text-ink/60 md:text-sm">{hl(recruitment.companyName)}</p>}
 
                 {/* Key facts - plain text, no pills */}
-                <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 text-ink/70">
-                    <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
+                <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 text-ink/70 md:justify-start md:grid-cols-[11rem_6rem_6.5rem_10.5rem_minmax(0,1fr)]">
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm font-medium">
                         <MapPin className="w-3 h-3 shrink-0" />
                         {hl(recruitment.location)}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm font-medium">
                         <Briefcase className="w-3 h-3 shrink-0" />
                         {hl(recruitment.positionLevel || 'Full Time')}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium">
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm font-medium">
                         <Clock className="w-3 h-3 shrink-0" />
                         {recruitment.yearsExperience} Years
+                    </div>
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm font-medium">
+                        <CalendarDays className="w-3 h-3 shrink-0" />
+                        Posted {timeAgo(recruitment.postedAt ?? recruitment.createdAt)}
+                    </div>
+                    {/* Recruiters see the full expiry wording; job seekers see how long they have to apply. */}
+                    {/* Always rendered, even when empty, so the columns keep their place. */}
+                    <div className={`flex min-w-0 items-center gap-1.5 text-xs md:text-sm font-medium ${lifecycle.expiringSoon ? 'font-bold text-amber-700' : ''}`}>
+                        {(onLifecycle ? describeExpiry(recruitment) : describeClosing(recruitment)) && (
+                            <>
+                                <CalendarClock className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{onLifecycle ? describeExpiry(recruitment) : describeClosing(recruitment)}</span>
+                            </>
+                        )}
                     </div>
                 </div>
 

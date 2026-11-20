@@ -24,6 +24,9 @@ export { parseResume, scoreCandidates, rankApplicants, clusterCandidates } from 
 export { getInterviewInvite, submitInterviewResponse, submitVerifyDetails } from "./candidatePortal";
 export { createSubscriptionOrder, verifySubscriptionPayment, razorpayWebhook } from "./payments";
 export { subscriptionExpiryReminders } from "./expiryReminders";
+export { postLifecycleSweep } from "./postLifecycle";
+export { postEnded } from "./postCandidateNotify";
+export { publishScheduledPosts, postCapReached } from "./postScheduling";
 
 if (getApps().length === 0) {
   initializeApp();

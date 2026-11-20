@@ -10,6 +10,7 @@ import {
     getUserCertificates, getUserEducation, getUserExperience, getUserProjects, getUserSkills,
 } from '@/lib/userToCandidate';
 import type { RecruitmentRequest } from '@/types';
+import { isPostOpen, postedTime } from '@/lib/postLifecycle';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 import popup from '@/components/ui/Popup';
@@ -101,7 +102,7 @@ export default function RecommendationsView() {
                 getUserApplications(user.uid),
             ]);
             setProfile(userDoc.exists() ? userDoc.data() : {});
-            setPosts(postsSnap.docs.map(d => ({ id: d.id, ...d.data() }) as RecruitmentRequest));
+            setPosts(postsSnap.docs.map(d => ({ id: d.id, ...d.data() }) as RecruitmentRequest).sort((a, b) => postedTime(b) - postedTime(a)));
             setAppliedIds(new Set(apps.map(a => a.post_id)));
         } catch (err) {
             console.error('Error loading recommendations:', err);
@@ -114,7 +115,7 @@ export default function RecommendationsView() {
     useEffect(() => { load(); }, [load]);
 
     const uid = auth.currentUser?.uid;
-    const open = useMemo(() => posts.filter(p => !appliedIds.has(p.id as string)), [posts, appliedIds]);
+    const open = useMemo(() => posts.filter(p => isPostOpen(p) && !appliedIds.has(p.id as string)), [posts, appliedIds]);
 
     const me = useMemo<SeekerProfile | null>(() => profile && ({
         skills: getUserSkills(profile),
@@ -198,14 +199,14 @@ export default function RecommendationsView() {
 
     if (selectedJob) {
         return (
-            <div className="min-h-[500px] px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
+            <div className="min-h-[500px]">
                 <RecruitmentDetailView recruitment={selectedJob} onBack={() => setSelectedJob(null)} isUserView />
             </div>
         );
     }
 
     if (loading || !me) {
-        return <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3"><JobListSkeleton count={3} /></div>;
+        return <div><JobListSkeleton count={3} /></div>;
     }
 
     const doneCount = checklist.filter(c => c.done).length;
@@ -229,7 +230,7 @@ export default function RecommendationsView() {
     const currentTab = TABS.find(t => t.key === tab)!;
 
     return (
-        <div className="space-y-5 px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
+        <div className="space-y-5">
             {/* Hero: where you stand and the one thing to do next */}
             <section className={`rounded-2xl border ${skin.edge} bg-surface p-4 sm:p-5`}>
                 <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-5">

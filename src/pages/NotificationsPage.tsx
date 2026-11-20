@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -16,6 +17,8 @@ interface Notification {
     time: string;
     read: boolean;
     createdAt: any;
+    /** Set on job-deadline notifications: the post, and open jobs like it. */
+    jobLink?: { postId: string; similar: { id: string; jobTitle: string }[] };
 }
 
 export default function NotificationsPage() {
@@ -61,6 +64,14 @@ export default function NotificationsPage() {
                         time: formatTimeAgo(createdAt),
                         read: data.read || false,
                         createdAt: data.createdAt,
+                        jobLink: ['post_closing_soon', 'post_ended'].includes(data.type) && typeof data.metadata?.postId === 'string'
+                            ? {
+                                postId: data.metadata.postId,
+                                similar: Array.isArray(data.metadata.similarJobs)
+                                    ? data.metadata.similarJobs.filter((s: { id?: string; jobTitle?: string }) => s?.id && s?.jobTitle)
+                                    : [],
+                            }
+                            : undefined,
                     } as Notification;
                 })
                 .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
@@ -75,7 +86,7 @@ export default function NotificationsPage() {
 
     const getNotificationType = (type: string): 'success' | 'warning' | 'info' => {
         if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent', 'subscription_approved', 'subscription_activated', 'subscription_purchased'].includes(type)) return 'success';
-        if (['verify_details', 'application_rejected', 'subscription_rejected', 'company_verification_rejected', 'subscription_expiring'].includes(type)) return 'warning';
+        if (['verify_details', 'application_rejected', 'subscription_rejected', 'company_verification_rejected', 'subscription_expiring', 'post_expiring', 'post_expired', 'post_closing_soon', 'post_publish_failed', 'post_cap_reached'].includes(type)) return 'warning';
         return 'info';
     };
 
@@ -160,6 +171,16 @@ export default function NotificationsPage() {
                                             )}
                                         </div>
                                         <p className="text-ink/70 text-sm mb-2">{notification.message}</p>
+                                        {notification.jobLink && (
+                                            <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold">
+                                                <Link to={`/job/${notification.jobLink.postId}`} className={`text-sky-700 underline-offset-2 hover:underline ${FOCUS}`}>View job</Link>
+                                                {notification.jobLink.similar.map((s) => (
+                                                    <Link key={s.id} to={`/job/${s.id}`} className={`max-w-[16rem] truncate text-sky-700 underline-offset-2 hover:underline ${FOCUS}`} title={s.jobTitle}>
+                                                        {s.jobTitle}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
                                         <span className={skin.meta}>{notification.time}</span>
                                     </div>
                                 </div>

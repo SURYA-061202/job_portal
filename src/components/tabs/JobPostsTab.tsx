@@ -8,12 +8,15 @@ import RecruitmentFormModal from '@/components/recruitment/RecruitmentFormModal'
 import RecruiterPostDetail from '@/components/recruitment/RecruiterPostDetail';
 import PostTable from '@/components/recruitment/PostTable';
 import UserJobCard from '@/components/recruitment/UserJobCard';
-import PostLimitModal from '@/components/subscription/PostLimitModal';
+import PostLifecycleDialog, { type LifecycleDialogKind, type LifecycleDialogResult } from '@/components/recruitment/PostLifecycleDialog';
+import type { LifecycleAction } from '@/components/recruitment/PostLifecycleMenu';
 import { checkPostQuota } from '@/lib/subscriptions';
+import { PostActionError, closePost, extendPost, pausePost, publishPost, repostPost, resumePost, setPostExpiry } from '@/lib/postActions';
+import { countByStatus, getPostLifecycle } from '@/lib/postLifecycle';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
-    Search, Plus, SearchX, X, List, LayoutGrid,
+    Search, Plus, SearchX, X, List, LayoutGrid, Pause, Play, CalendarPlus, XCircle,
 } from 'lucide-react';
 
 /* The Posts tab re-skins itself from the shared app-style store, so it always
@@ -26,6 +29,18 @@ import {
    near-black - so it only ever appears as a fill or an aria-hidden accent. */
 
 type SortKey = 'newest' | 'oldest' | 'applicants' | 'title';
+
+/** Lifecycle filter above the list. `expiring` = active posts within a few days of their expiry. */
+type StatusFilter = 'all' | 'draft' | 'active' | 'expiring' | 'paused' | 'expired' | 'closed';
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'draft', label: 'Drafts' },
+    { key: 'active', label: 'Active' },
+    { key: 'expiring', label: 'Expiring soon' },
+    { key: 'paused', label: 'Paused' },
+    { key: 'expired', label: 'Expired' },
+    { key: 'closed', label: 'Closed' },
+];
 
 /** Firestore Timestamp | Date | ISO string | number -> epoch ms. */
 const toTime = (value: unknown): number => {
@@ -53,7 +68,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [editingPost, setEditingPost] = useState<RecruitmentRequest | null>(null);
     const [selectedPost, setSelectedPost] = useState<RecruitmentRequest | null>(null);
     const [isRecruitmentModalOpen, setIsRecruitmentModalOpen] = useState(false);
-    const [limitInfo, setLimitInfo] = useState<{ used: number; limit: number; planName: string } | null>(null);
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [lifecycleDialog, setLifecycleDialog] = useState<{ kind: LifecycleDialogKind; post: RecruitmentRequest } | null>(null);
+    // The form opened from "Duplicate": a new post pre-filled from another.
+    const [duplicating, setDuplicating] = useState(false);
+    // False when the plan has no free slot: the form then only offers draft / schedule.
+    const [canPublish, setCanPublish] = useState(true);
+    // Bulk actions (table view): the ticked posts, and the extend / close dialog for them.
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkDialog, setBulkDialog] = useState<'extend' | 'close' | null>(null);
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [isRestoring, setIsRestoring] = useState(!!initialSelectedPostId);
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +87,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     });
     const changeView = (mode: 'table' | 'cards') => {
         setViewMode(mode);
+        if (mode === 'cards') setSelectedIds(new Set());
         try { localStorage.setItem('postsViewMode', mode); } catch { /* private mode: just not remembered */ }
     };
     const searchRef = useRef<HTMLInputElement>(null);
@@ -140,28 +164,54 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         }
     };
 
-    // Add Post is gated by the plan: at the limit the recruiter is sent to the
-    // upgrade dialog instead of the form. The form re-checks on save, so a stale
-    // tab or a second browser window cannot slip past it.
-    const handleAddPost = async () => {
-        if (!isAdmin && userId) {
-            try {
-                const quota = await checkPostQuota(userId);
-                if (!quota.allowed) {
-                    setLimitInfo({ used: quota.used, limit: quota.limit, planName: quota.subscription.planName });
-                    return;
-                }
-            } catch (error) {
-                console.error('Could not check the post limit:', error);
-            }
+    // Whether the plan has a free slot for one more live post. The form uses it to decide between
+    // "Add Post" and draft / schedule only; it re-checks when saving, so a stale tab cannot slip past.
+    const checkCanPublish = async (): Promise<boolean> => {
+        if (isAdmin || !userId) return true;
+        try {
+            return (await checkPostQuota(userId)).allowed;
+        } catch (error) {
+            console.error('Could not check the post limit:', error);
+            return true;
         }
-        setEditingPost(null);
+    };
+
+    const openForm = async (post: RecruitmentRequest | null, asDuplicate = false) => {
+        setCanPublish(await checkCanPublish());
+        setDuplicating(asDuplicate);
+        setEditingPost(post);
         setIsRecruitmentModalOpen(true);
     };
 
-    const handleEditPost = (post: RecruitmentRequest) => {
-        setEditingPost(post);
-        setIsRecruitmentModalOpen(true);
+    const handleAddPost = () => { void openForm(null); };
+
+    const handleEditPost = (post: RecruitmentRequest) => { void openForm(post); };
+
+    // A copy for a similar role: the details and rounds carry over, nothing about its lifecycle or applicants does.
+    const handleDuplicatePost = (post: RecruitmentRequest) => {
+        const copy: RecruitmentRequest = {
+            jobTitle: post.jobTitle,
+            urgencyLevel: post.urgencyLevel,
+            department: post.department,
+            candidateType: post.candidateType,
+            positionLevel: post.positionLevel,
+            yearsExperience: post.yearsExperience,
+            modeOfWork: post.modeOfWork,
+            location: post.location,
+            candidatesCount: post.candidatesCount,
+            qualification: post.qualification,
+            skills: post.skills,
+            description: post.description,
+            jdUrl: post.jdUrl,
+            budgetPay: post.budgetPay,
+            salaryBreakup: post.salaryBreakup,
+            totalRounds: post.totalRounds,
+            rounds: post.rounds,
+            validityDays: post.validityDays,
+            applicationCap: post.applicationCap,
+            createdAt: null,
+        };
+        void openForm(copy, true);
     };
 
     const handleDeletePost = async (post: RecruitmentRequest) => {
@@ -175,6 +225,91 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             popup.error(`Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
     };
+
+    // Pause and resume act straight away; extend, close and repost ask one question first.
+    const runLifecycle = async (work: () => Promise<void>, doneMessage: string): Promise<boolean> => {
+        try {
+            await work();
+            popup.success(doneMessage);
+            await fetchRecruitmentRequests();
+            return true;
+        } catch (err) {
+            if (!(err instanceof PostActionError)) console.error('Post lifecycle error:', err);
+            popup.error(err instanceof PostActionError ? err.message : `Could not update the post: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            return false;
+        }
+    };
+
+    const handleLifecycle = (post: RecruitmentRequest, action: LifecycleAction) => {
+        if (action === 'pause') void runLifecycle(() => pausePost(post), 'Post paused. Candidates can no longer see it.');
+        else if (action === 'resume') void runLifecycle(() => resumePost(post), 'Post resumed.');
+        else if (action === 'publish') void runLifecycle(() => publishPost(post, isAdmin), 'Post is live!');
+        else setLifecycleDialog({ kind: action, post });
+    };
+
+    const confirmLifecycle = async (result: LifecycleDialogResult) => {
+        const post = lifecycleDialog?.post;
+        if (!post) return;
+        let ok = false;
+        if (result.kind === 'close') {
+            ok = await runLifecycle(() => closePost(post, result.reason), 'Post closed.');
+        } else if (result.kind === 'extend') {
+            ok = result.until
+                ? await runLifecycle(() => setPostExpiry(post, result.until!), 'Closing date updated.')
+                : await runLifecycle(() => extendPost(post, result.days!), `Post extended by ${result.days} days.`);
+        } else {
+            ok = await runLifecycle(() => repostPost(post, result.until ?? result.days!, isAdmin), 'Post is live again.');
+        }
+        if (ok) setLifecycleDialog(null);
+    };
+
+    /* ---- bulk actions ---- */
+    const selectedPosts = recruitmentRequests.filter((p) => selectedIds.has(p.id ?? ''));
+    const eligible = {
+        pause: selectedPosts.filter((p) => getPostLifecycle(p).status === 'active'),
+        resume: selectedPosts.filter((p) => getPostLifecycle(p).status === 'paused'),
+        extend: selectedPosts.filter((p) => { const lc = getPostLifecycle(p); return lc.live && !!lc.expiresAt; }),
+        close: selectedPosts.filter((p) => getPostLifecycle(p).live),
+    };
+
+    /** Runs one action over the eligible posts, one at a time, and reports what happened. */
+    const runBulk = async (verb: string, posts: RecruitmentRequest[], work: (post: RecruitmentRequest) => Promise<void>): Promise<void> => {
+        let done = 0;
+        let lastError = '';
+        const succeeded = new Set<string>();
+        for (const post of posts) {
+            try {
+                await work(post);
+                done += 1;
+                succeeded.add(post.id ?? '');
+            } catch (err) {
+                lastError = err instanceof Error ? err.message : 'Unknown error';
+            }
+        }
+        const skipped = selectedPosts.length - posts.length;
+        const failed = posts.length - done;
+        const tail = [skipped > 0 ? `${skipped} skipped (not applicable)` : '', failed > 0 ? `${failed} failed` : ''].filter(Boolean).join(', ');
+        if (done > 0) popup.success(`${verb} ${done} ${done === 1 ? 'post' : 'posts'}${tail ? ` - ${tail}` : ''}.`);
+        else popup.error(failed > 0 ? lastError : 'None of the selected posts can do that.');
+        setSelectedIds((prev) => new Set([...prev].filter((id) => !succeeded.has(id))));
+        await fetchRecruitmentRequests();
+    };
+
+    const confirmBulkDialog = async (result: LifecycleDialogResult) => {
+        if (result.kind === 'close') await runBulk('Closed', eligible.close, (p) => closePost(p, result.reason));
+        else if (result.kind === 'extend' && result.days) await runBulk(`Extended by ${result.days} days:`, eligible.extend, (p) => extendPost(p, result.days!));
+        setBulkDialog(null);
+    };
+
+    // A post that was deleted or filtered out of the data can't stay ticked.
+    useEffect(() => {
+        setSelectedIds((prev) => {
+            const live = new Set(recruitmentRequests.map((p) => p.id ?? ''));
+            const kept = [...prev].filter((id) => live.has(id));
+            return kept.length === prev.size ? prev : new Set(kept);
+        });
+    }, [recruitmentRequests]);
+
     useEffect(() => {
         fetchRecruitmentRequests();
     }, []);
@@ -207,10 +342,16 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     // Same keyword search as the Candidates tab: commas split phrases, otherwise each
     // word is its own keyword ("quoted" keeps a phrase). Any keyword may hit; posts
     // that match more keywords (and in more important fields) come first.
+    const statusCounts = countByStatus(recruitmentRequests);
+    const inStatus = recruitmentRequests.filter((post) => {
+        if (statusFilter === 'all') return true;
+        const lc = getPostLifecycle(post);
+        return statusFilter === 'expiring' ? lc.expiringSoon : lc.status === statusFilter;
+    });
     const matchScore = new Map<string, { count: number; score: number }>();
     const filteredRecruitmentRequests = keywords.length === 0
-        ? recruitmentRequests
-        : recruitmentRequests.filter((post) => {
+        ? inStatus
+        : inStatus.filter((post) => {
             const fields: [string | undefined, number][] = [
                 [post.jobTitle, 5], [post.skills, 5], [post.department, 3], [post.location, 3],
                 [post.positionLevel, 2], [post.modeOfWork, 2], [post.candidateType, 2],
@@ -257,6 +398,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 <RecruiterPostDetail
                     recruitment={selectedPost}
                     onBack={() => setSelectedPost(null)}
+                    onLifecycle={handleLifecycle}
                     onViewCandidates={(postId) => {
                         setSelectedPost(null);
                         onViewCandidates?.(postId, selectedPost.jobTitle);
@@ -351,7 +493,55 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 </button>
                                 </div>
                             </div>
+
+                            {/* Lifecycle filter: where each post is in its life. */}
+                            {!loadingPosts && recruitmentRequests.length > 0 && (
+                                <div role="group" aria-label="Filter posts by status" className="flex flex-wrap items-center gap-2">
+                                    {STATUS_FILTERS.map(({ key, label }) => {
+                                        const n = key === 'all' ? statusCounts.all : key === 'expiring' ? statusCounts.expiringSoon : statusCounts[key];
+                                        const on = statusFilter === key;
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => setStatusFilter(key)}
+                                                aria-pressed={on}
+                                                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-200 ${on ? 'border-ink/70 bg-ink/70 text-surface' : 'border-ink/20 bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                            >
+                                                {label}
+                                                <span className={`tabular-nums ${on ? 'text-surface/80' : 'text-ink/50'}`}>{n}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                     </div>
+
+                    {/* Bulk actions: appear once posts are ticked in the table. */}
+                    {viewMode === 'table' && selectedIds.size > 0 && (
+                        <div role="toolbar" aria-label="Bulk actions" className="mt-3 flex flex-shrink-0 flex-wrap items-center gap-2 rounded-lg border border-ink/20 bg-surface px-3 py-2">
+                            <span className="mr-1 text-sm font-semibold text-ink tabular-nums">{selectedIds.size} selected</span>
+                            {([
+                                ['Extend', CalendarPlus, eligible.extend.length, () => setBulkDialog('extend'), false],
+                                ['Pause', Pause, eligible.pause.length, () => void runBulk('Paused', eligible.pause, pausePost), false],
+                                ['Resume', Play, eligible.resume.length, () => void runBulk('Resumed', eligible.resume, resumePost), false],
+                                ['Close', XCircle, eligible.close.length, () => setBulkDialog('close'), true],
+                            ] as const).map(([label, Icon, n, onClick, danger]) => (
+                                <button
+                                    key={label}
+                                    type="button"
+                                    disabled={n === 0}
+                                    onClick={onClick}
+                                    title={n === 0 ? `None of the selected posts can be ${label.toLowerCase()}d` : `${label} ${n} ${n === 1 ? 'post' : 'posts'}`}
+                                    className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${danger ? 'border-destructive text-destructive hover:bg-destructive/10' : 'border-ink/30 text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                >
+                                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                                    {label} <span className="tabular-nums opacity-70">({n})</span>
+                                </button>
+                            ))}
+                            <button type="button" onClick={() => setSelectedIds(new Set())} className={`ml-auto cursor-pointer text-xs font-semibold text-ink/60 hover:text-ink ${FOCUS}`}>Clear</button>
+                        </div>
+                    )}
 
                     {/* Results - the only scrollable region, on a white panel
                         with the posts themselves in the page grey. The mb-4 on
@@ -388,7 +578,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                 <p className={`mx-auto mt-2 max-w-sm ${skin.body}`}>
                                     {searchTerm
                                         ? <>Nothing matches <span className={`break-words ${skin.cardValue}`}>“{searchTerm}”</span>. Try a different title, department or location.</>
-                                        : 'No posts to show.'}
+                                        : statusFilter === 'all' ? 'No posts to show.' : `You have no ${statusFilter === 'expiring' ? 'posts expiring soon' : `${statusFilter} posts`}.`}
                                 </p>
                                 {searchTerm && (
                                     <button
@@ -402,11 +592,14 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                             </div>
                         ) : (
                             viewMode === 'table' ? (
-                                <PostTable posts={visiblePosts} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
+                                <PostTable posts={visiblePosts} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} onLifecycle={handleLifecycle} onDuplicate={handleDuplicatePost}
+                                    selectedIds={selectedIds}
+                                    onToggleSelect={(id) => setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
+                                    onToggleAll={(select) => setSelectedIds(select ? new Set(visiblePosts.map((p) => p.id ?? '')) : new Set())} />
                             ) : (
                                 <div className="thin-scrollbar flex min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
                                     {visiblePosts.map((post) => (
-                                        <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard skillsPopover applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} />
+                                        <UserJobCard key={post.id} recruitment={post} hideNewBadge whiteCard skillsPopover applicantCount={post.applicantCount ?? 0} onViewDetails={setSelectedPost} keywords={keywords} onEdit={handleEditPost} onDelete={handleDeletePost} onLifecycle={handleLifecycle} onDuplicate={handleDuplicatePost} />
                                     ))}
                                 </div>
                             )
@@ -418,22 +611,34 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             )}
 
             {/* Modals */}
-            <PostLimitModal
-                isOpen={limitInfo !== null}
-                onClose={() => setLimitInfo(null)}
-                used={limitInfo?.used ?? 0}
-                limit={limitInfo?.limit ?? 0}
-                planName={limitInfo?.planName ?? ''}
-                onViewPlans={() => onViewPlans?.()}
-            />
+            {lifecycleDialog && (
+                <PostLifecycleDialog
+                    kind={lifecycleDialog.kind}
+                    post={lifecycleDialog.post}
+                    onCancel={() => setLifecycleDialog(null)}
+                    onConfirm={confirmLifecycle}
+                />
+            )}
+            {bulkDialog && (
+                <PostLifecycleDialog
+                    kind={bulkDialog}
+                    count={bulkDialog === 'extend' ? eligible.extend.length : eligible.close.length}
+                    onCancel={() => setBulkDialog(null)}
+                    onConfirm={confirmBulkDialog}
+                />
+            )}
             <RecruitmentFormModal
                 isOpen={isRecruitmentModalOpen}
                 onClose={() => {
                     setIsRecruitmentModalOpen(false);
                     setEditingPost(null);
+                    setDuplicating(false);
                     fetchRecruitmentRequests();
                 }}
                 initialData={editingPost}
+                duplicate={duplicating}
+                canPublish={canPublish}
+                onViewPlans={() => { setIsRecruitmentModalOpen(false); setEditingPost(null); onViewPlans?.(); }}
             />
         </div>
     );

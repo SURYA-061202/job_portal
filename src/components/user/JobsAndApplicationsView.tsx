@@ -3,11 +3,13 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
+import { isClosingSoon, isPostOpen, postedTime } from '@/lib/postLifecycle';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
 import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
-import { Search, ChevronDown, BellRing, Building2, X, Undo2, Bookmark } from 'lucide-react';
+import { Search, ChevronDown, BellRing, Building2, X, Undo2, Bookmark, List, LayoutGrid } from 'lucide-react';
+import UserJobTable from '@/components/recruitment/UserJobTable';
 import { getSavedJobIds } from '@/lib/savedJobs';
 import popup from '@/components/ui/Popup';
 import ExpandingModal from '@/components/subscription/ExpandingModal';
@@ -55,6 +57,14 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     const [activeCompany, setActiveCompany] = useState<string | null>(null);
     // "Saved jobs" narrows the list to posts saved from the job detail page.
     const [showSaved, setShowSaved] = useState(false);
+    // Jobs open as a table by default; the switch flips to cards and is remembered per browser.
+    const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+        try { return localStorage.getItem('userJobsViewMode') === 'cards' ? 'cards' : 'table'; } catch { return 'table'; }
+    });
+    const changeView = (mode: 'table' | 'cards') => {
+        setViewMode(mode);
+        try { localStorage.setItem('userJobsViewMode', mode); } catch { /* private mode: just not remembered */ }
+    };
     const [savedIds, setSavedIds] = useState<string[]>([]);
     // Typing stays smooth on long lists: the search runs on a slightly lagging copy.
     const deferredSearch = useDeferredValue(searchTerm);
@@ -127,10 +137,11 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
             const q = query(recruitsRef, orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
 
-            const postsData = querySnapshot.docs.map(docSnap => ({
+            // Paused, expired and closed posts are not listed or open to applications.
+            const postsData = (querySnapshot.docs.map(docSnap => ({
                 id: docSnap.id,
                 ...docSnap.data()
-            })) as RecruitmentRequest[];
+            })) as RecruitmentRequest[]).filter(isPostOpen);
 
             const counts = await safeApplicantCounts();
             setApplicantCounts(counts);
@@ -210,7 +221,10 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 return forms.some(form => place.includes(form));
             });
 
-        return matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesLocation;
+        // Deadline: only jobs that close within the week.
+        const matchesClosing = !selectedFilters.closing?.includes('soon') || isClosingSoon(post);
+
+        return matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesLocation && matchesClosing;
     };
 
     /** Firestore Timestamp, Date, or anything Date can parse. */
@@ -248,7 +262,8 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
         posts
             // Jobs already applied to live on the Applications tab instead.
             .filter(post => matchesFilters(post) && !applications.some(app => app.post_id === post.id))
-            .sort((a, b) => newestFirst(a.createdAt, b.createdAt)),
+            // A reposted job counts from its repost date, so it rises back to the top.
+            .sort((a, b) => postedTime(b) - postedTime(a)),
         post => post,
     );
 
@@ -266,13 +281,31 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     // Open jobs the person can still apply to, and the ones inside the company they opened.
     const openPosts = posts.filter(post => !applications.some(app => app.post_id === post.id));
     const companyPosts = activeCompany
-        ? openPosts.filter(p => companySlug(p.companyName || '') === companySlug(activeCompany)).sort((a, b) => newestFirst(a.createdAt, b.createdAt))
+        ? openPosts.filter(p => companySlug(p.companyName || '') === companySlug(activeCompany)).sort((a, b) => postedTime(b) - postedTime(a))
         : [];
     const closeCompanies = () => { setShowCompanies(false); setActiveCompany(null); };
 
+    const viewToggle = (
+        <div role="group" aria-label="Job layout" className="inline-flex overflow-hidden rounded-md border border-ink/70">
+            {([['table', List, 'Table view'], ['cards', LayoutGrid, 'Card view']] as const).map(([mode, Icon, label]) => (
+                <button
+                    key={mode}
+                    type="button"
+                    onClick={() => changeView(mode)}
+                    aria-pressed={viewMode === mode}
+                    aria-label={label}
+                    title={label}
+                    className={`flex h-8 w-9 cursor-pointer items-center justify-center transition-colors duration-200 ${viewMode === mode ? 'bg-ink/70 text-surface' : 'bg-surface text-ink hover:bg-ink/5'} ${FOCUS_RING}`}
+                >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                </button>
+            ))}
+        </div>
+    );
+
     if (selectedJob) {
         return (
-            <div className="min-h-[500px] px-4 sm:px-6 lg:px-8">
+            <div className="min-h-[500px]">
                 <RecruitmentDetailView
                     recruitment={selectedJob}
                     onBack={() => setSelectedJob(null)}
@@ -283,10 +316,10 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
     }
 
     return (
-        <div className="px-4 py-1 sm:px-6 sm:py-2 lg:px-8 lg:py-3">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div>
+            <div className="grid grid-cols-1 lg:grid-cols-[19.5rem_minmax(0,1fr)] gap-8">
                 {/* Left Sidebar - Filters, starting level with the search field */}
-                <aside className="hidden lg:block lg:col-span-1 pr-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide">
+                <aside className="hidden lg:block pr-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide">
                     <FilterSidebar
                         selectedFilters={selectedFilters}
                         onToggleFilter={toggleFilter}
@@ -295,7 +328,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 </aside>
 
                 {/* Right Content - Search field at the top, posts below it */}
-                <div className="lg:col-span-3 flex flex-col">
+                <div className="min-w-0 flex flex-col">
                     <div className="mb-3">
                         <div className="relative w-full">
                             <label htmlFor="job-keyword-search" className="sr-only">Search jobs by keywords</label>
@@ -396,7 +429,20 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                             >
                                 <Building2 className="h-4 w-4" aria-hidden="true" />Top companies
                             </button>
+                            {viewToggle}
                             </div>
+                        </div>
+                    )}
+                    {activeTab !== 'jobs' && (
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <p aria-live="polite">
+                                {!loading && (
+                                    <span className="inline-flex h-8 items-center rounded-lg border border-ink px-3.5 text-xs font-bold text-ink">
+                                        {filteredApplications.length} {filteredApplications.length === 1 ? 'application' : 'applications'}
+                                    </span>
+                                )}
+                            </p>
+                            {viewToggle}
                         </div>
                     )}
                     {/* Mobile-only filter trigger; on desktop the sidebar covers filtering */}
@@ -423,11 +469,15 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                             <p className="text-ink/60 max-w-sm mx-auto">Check another company, or come back later.</p>
                                         </div>
                                     ) : (
+                                        viewMode === 'table' ? (
+                                            <UserJobTable rows={companyPosts.map((post) => ({ post }))} onViewDetails={setSelectedJob} />
+                                        ) : (
                                         <div className="flex flex-col gap-4">
                                             {companyPosts.map((post) => (
                                                 <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} whiteCard plainSkills />
                                             ))}
                                         </div>
+                                        )
                                     )}
                                 </div>
                             ) : (
@@ -442,11 +492,15 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                     </p>
                                 </div>
                             ) : (
+                                viewMode === 'table' ? (
+                                    <UserJobTable rows={visiblePosts.map((post) => ({ post }))} onViewDetails={setSelectedJob} keywords={keywords} />
+                                ) : (
                                 <div className="flex flex-col gap-4">
                                     {visiblePosts.map((post) => (
                                         <UserJobCard key={post.id} recruitment={post} onViewDetails={setSelectedJob} whiteCard plainSkills keywords={keywords} />
                                     ))}
                                 </div>
+                                )
                             )
                         ) : (
                             filteredApplications.length === 0 ? (
@@ -461,6 +515,20 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                     </p>
                                 </div>
                             ) : (
+                                viewMode === 'table' ? (
+                                    <UserJobTable
+                                        rows={filteredApplications.map((app) => ({
+                                            post: {
+                                                ...app.recruitment_requests,
+                                                id: app.recruitment_requests.id,
+                                                applicantCount: applicantCounts[app.recruitment_requests.id] || 0,
+                                            },
+                                            applicationStatus: app.status,
+                                        }))}
+                                        onViewDetails={(j) => setSelectedJob(j)}
+                                        keywords={keywords}
+                                    />
+                                ) : (
                                 <div className="flex flex-col gap-4">
                                     {filteredApplications.map((app) => (
                                         <UserJobCard
@@ -481,6 +549,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                                         />
                                     ))}
                                 </div>
+                                )
                             )
                         )}
                         </div>

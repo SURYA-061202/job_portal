@@ -5,6 +5,7 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
+import { isClosingSoon, isPostOpen, postedTime } from '@/lib/postLifecycle';
 import UserHeader from '@/components/layout/UserHeader';
 
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
@@ -134,10 +135,11 @@ export default function UserDashboard() {
             const q = query(recruitsRef, orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
 
-            const postsData = querySnapshot.docs.map(doc => ({
+            // Paused, expired and closed posts are not listed or open to applications.
+            const postsData = (querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            })) as RecruitmentRequest[];
+            })) as RecruitmentRequest[]).filter(isPostOpen);
 
             const counts = await getApplicantCounts();
             setApplicantCounts(counts);
@@ -258,16 +260,18 @@ export default function UserDashboard() {
                 return forms.some(form => place.includes(form));
             });
 
+        // Deadline: only jobs that close within the week.
+        const matchesClosing = !selectedFilters.closing?.includes('soon') || isClosingSoon(post);
+
         // 3. Application Exclusion
         const isApplied = applications.some(app => app.post_id === post.id);
 
-        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesSelectedCities && !isApplied;
+        return matchesSearch && matchesLocation && matchesJobType && matchesExp && matchesSalary && matchesDepartment && matchesSelectedCities && matchesClosing && !isApplied;
     }).sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        // A reposted job counts from its repost date, so it rises back to the top.
         return sortBy === 'recent'
-            ? dateB.getTime() - dateA.getTime()
-            : dateA.getTime() - dateB.getTime();
+            ? postedTime(b) - postedTime(a)
+            : postedTime(a) - postedTime(b);
     });
 
     // The plan decides how many of the matching jobs this user can open.

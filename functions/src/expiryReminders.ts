@@ -17,22 +17,22 @@ const NOTIFY_WINDOW_DAYS = 5;
 /** Day before expiry the email targets; the window below keeps it resilient. */
 const EMAIL_BEFORE_DAYS = 2;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const TIME_ZONE = "Asia/Kolkata";
+export const TIME_ZONE = "Asia/Kolkata";
 
 /** Lazy-loaded at call time (see index.ts: the 10s deployment-analysis budget). */
 const mailer = () => require("./mailer") as typeof import("./mailer");
 
 /** Calendar day in IST as YYYY-MM-DD, so "2 days left" matches what the user reads. */
-function dayKey(date: Date): string {
+export function dayKey(date: Date): string {
     return date.toLocaleDateString("en-CA", { timeZone: TIME_ZONE });
 }
 
-function daysBetween(fromKey: string, toKey: string): number {
+export function daysBetween(fromKey: string, toKey: string): number {
     return Math.round((Date.parse(`${toKey}T00:00:00Z`) - Date.parse(`${fromKey}T00:00:00Z`)) / DAY_MS);
 }
 
 /** Timestamp | {seconds} | ISO string | millis — the shapes expiresAt has held. */
-function toDate(value: unknown): Date | null {
+export function toDate(value: unknown): Date | null {
     if (!value) return null;
     const v = value as { toDate?: () => Date; seconds?: number };
     if (typeof v.toDate === "function") return v.toDate();
@@ -41,12 +41,12 @@ function toDate(value: unknown): Date | null {
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatExpiry(date: Date): string {
+export function formatExpiry(date: Date): string {
     return date.toLocaleDateString("en-GB", { timeZone: TIME_ZONE, day: "numeric", month: "short", year: "numeric" });
 }
 
 /** Claims a one-shot send. True only when this run created the log document. */
-async function claim(key: string): Promise<boolean> {
+export async function claim(key: string): Promise<boolean> {
     try {
         await firestore().collection("expiry_reminders").doc(key).create({ createdAt: Timestamp().now() });
         return true;

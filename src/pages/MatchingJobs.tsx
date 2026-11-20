@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
+import { isPostOpen } from '@/lib/postLifecycle';
 import UserHeader from '@/components/layout/UserHeader';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import { Award, ChevronLeft, Sparkles } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function MatchingJobs() {
 
             // 3. Filter jobs with score > 50
             const scores = uData.matchingScores || {};
-            const matchedPosts = allPosts.filter(post => (scores[post.id!] || 0) > 50);
+            const matchedPosts = allPosts.filter(post => isPostOpen(post) && (scores[post.id!] || 0) > 50);
 
             // Sort by score descending
             matchedPosts.sort((a, b) => (scores[b.id!] || 0) - (scores[a.id!] || 0));
@@ -101,7 +102,7 @@ export default function MatchingJobs() {
         <div className={`min-h-screen ${skin.canvas} flex flex-col`}>
             <UserHeader />
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 w-full max-w-none px-4 sm:px-6 py-4 md:py-6">
                 {/* Header Navigation */}
                 <div className="mb-8">
                     <button 

@@ -3,6 +3,7 @@ import { auth, db } from './firebase';
 import { assessJob } from './jobMatch';
 import { createNotification } from './notificationHelper';
 import type { RecruitmentRequest } from '@/types';
+import { isPostOpen, postedTime } from '@/lib/postLifecycle';
 
 /** A search a job seeker saved so new matching jobs reach them as notifications. */
 export interface SavedSearch {
@@ -88,7 +89,8 @@ export const deleteSavedSearch = (id: string) => deleteDoc(doc(db, 'saved_search
 
 export async function listRecentPosts(): Promise<RecruitmentRequest[]> {
     const snap = await getDocs(query(collection(db, 'recruits'), orderBy('createdAt', 'desc')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }) as RecruitmentRequest);
+    // Open posts only: a closed or expired job should not show up on company pages or in alert previews.
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }) as RecruitmentRequest).filter(isPostOpen).sort((a, b) => postedTime(b) - postedTime(a));
 }
 
 /**
@@ -112,11 +114,17 @@ export async function checkJobAlerts(): Promise<void> {
 
         const since = (s: SavedSearch) => toMillis(s.lastCheckedAt) || toMillis(s.createdAt);
         const oldest = Math.min(...searches.map(since));
-        const snap = await getDocs(query(collection(db, 'recruits'), where('createdAt', '>', Timestamp.fromMillis(oldest))));
-        const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }) as RecruitmentRequest);
+        // New posts, plus older ones a recruiter has reposted since: a repost is a fresh listing too.
+        const [created, reposted] = await Promise.all([
+            getDocs(query(collection(db, 'recruits'), where('createdAt', '>', Timestamp.fromMillis(oldest)))),
+            getDocs(query(collection(db, 'recruits'), where('lastRepostedAt', '>', Timestamp.fromMillis(oldest)))),
+        ]);
+        const byId = new Map<string, RecruitmentRequest>();
+        [...created.docs, ...reposted.docs].forEach(d => byId.set(d.id, { id: d.id, ...d.data() } as RecruitmentRequest));
+        const posts = [...byId.values()].filter(isPostOpen);
 
         for (const search of searches) {
-            const fresh = posts.filter(p => toMillis(p.createdAt) > since(search) && matchesSearch(p, search));
+            const fresh = posts.filter(p => postedTime(p) > since(search) && matchesSearch(p, search));
             if (fresh.length > 0) {
                 const titles = fresh.slice(0, 3).map(p => p.jobTitle).join(', ');
                 await createNotification({

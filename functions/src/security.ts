@@ -9,6 +9,7 @@ const adminAuth = () => require("firebase-admin/auth") as typeof import("firebas
 export const firestore = () => adminFirestore().getFirestore();
 export const auth = () => adminAuth().getAuth();
 export const Timestamp = () => adminFirestore().Timestamp;
+export const FieldValue = () => adminFirestore().FieldValue;
 
 export type Role = "user" | "recruiter" | "manager" | "admin";
 const STAFF: Role[] = ["recruiter", "manager", "admin"];

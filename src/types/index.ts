@@ -167,6 +167,20 @@ export interface InterviewRound {
   name: string;
 }
 
+/**
+ * Where a job post is in its life. Stored on recruits/{id}.status; `expired` is
+ * also derived on read when an `active` post passes its `expiresAt`
+ * (see lib/postLifecycle.ts). Posts created before lifecycles existed have no
+ * status and count as active with no expiry.
+ */
+export type PostStatus = 'draft' | 'active' | 'paused' | 'expired' | 'closed';
+
+/** Why a post is paused: by the recruiter (absent) or because it hit its application cap. */
+export type PostPauseReason = 'cap';
+
+/** Why a recruiter closed a post by hand. */
+export type PostCloseReason = 'filled' | 'cancelled' | 'other';
+
 export interface RecruitmentRequest {
   id?: string;
   jobTitle: string;
@@ -196,6 +210,30 @@ export interface RecruitmentRequest {
   totalRounds?: number;
   /** Names for each round; index-independent, keyed by roundNumber. */
   rounds?: InterviewRound[];
+
+  /* ---- lifecycle (see lib/postLifecycle.ts) ---- */
+  /** Absent on legacy posts, which are treated as active with no expiry. */
+  status?: PostStatus;
+  /** How many days a listing runs for each time it is posted or reposted. */
+  validityDays?: number;
+  /** When the current listing went live; reset by a repost (createdAt never changes). */
+  postedAt?: any;
+  /** When the listing stops accepting applications. Absent = never expires. */
+  expiresAt?: any;
+  /** Set while paused; on resume the expiry moves out by the paused time. */
+  pausedAt?: any;
+  pausedReason?: PostPauseReason;
+  /** Drafts only: when set, the post goes live by itself at this time (a "scheduled" post). */
+  publishAt?: any;
+  /** Stop taking applications (the post pauses itself) once this many have been received. Absent = no cap. */
+  applicationCap?: number;
+  /** Stamped by the daily sweep the first time it sees the post past its expiry. */
+  expiredAt?: any;
+  closedAt?: any;
+  closeReason?: PostCloseReason;
+  /** How many times the post has been reposted. */
+  repostCount?: number;
+  lastRepostedAt?: any;
 }
 
 /* ------------------------------------------------------------------ *

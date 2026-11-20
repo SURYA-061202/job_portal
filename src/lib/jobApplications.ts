@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { notifyRecruiterOfApplication } from './notificationHelper';
+import { getPostLifecycle } from './postLifecycle';
 
 export interface JobApplication {
   id: string;
@@ -64,6 +65,21 @@ export async function applyForJob(
   const exists = await hasUserApplied(postId, userId);
   if (exists) {
     return { success: false, error: 'You have already applied for this position.' };
+  }
+
+  // Only an open post takes applications (the Firestore rules enforce the same).
+  const postSnap = await getDoc(doc(db, 'recruits', postId));
+  if (!postSnap.exists()) {
+    return { success: false, error: 'This job is no longer available.' };
+  }
+  const lifecycle = getPostLifecycle(postSnap.data() as Parameters<typeof getPostLifecycle>[0]);
+  if (!lifecycle.open) {
+    return {
+      success: false,
+      error: lifecycle.status === 'paused'
+        ? 'This job is temporarily not accepting applications.'
+        : 'This job is no longer accepting applications.',
+    };
   }
 
   await setDoc(doc(db, 'job_applications', applicationId(postId, userId)), {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
-    Users, CheckCircle2, Loader2, FilePlus2, Redo2, Edit, Trash2, Share2, Bookmark, BookmarkCheck,
+    Users, CheckCircle2, Loader2, FilePlus2, Redo2, Edit, Trash2, Share2, Bookmark, BookmarkCheck, Lock,
 } from 'lucide-react';
 import { getSavedJobIds, setJobSaved } from '@/lib/savedJobs';
 import { db, auth } from '@/lib/firebase';
@@ -11,6 +11,8 @@ import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import popup from '@/components/ui/Popup';
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds } from '@/lib/interviewRounds';
+import { closingIn, formatDate, getPostLifecycle } from '@/lib/postLifecycle';
+import { timeAgo } from '@/lib/format';
 import ShareJobModal from './ShareJobModal';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -45,6 +47,17 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     useEffect(() => {
         setRecruitment(initialData);
     }, [initialData]);
+
+    // Candidate view: the page scrolls under the sticky site header, so the title row
+    // pins itself just below it instead of scrolling away.
+    const [headerOffset, setHeaderOffset] = useState(0);
+    useEffect(() => {
+        if (!isUserView) return;
+        const measure = () => setHeaderOffset(document.querySelector('header')?.getBoundingClientRect().height ?? 0);
+        measure();
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [isUserView]);
 
     useEffect(() => {
         checkStatus();
@@ -181,6 +194,14 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
         }
     };
 
+    const lifecycle = getPostLifecycle(recruitment);
+    // Candidates who have not applied see why they can't, instead of an Apply button that would fail.
+    const closedNotice = (
+        <div className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 text-xs font-bold text-neutral-700">
+            <Lock className="h-4 w-4" aria-hidden="true" />
+            {lifecycle.status === 'paused' ? 'Not accepting applications right now' : 'No longer accepting applications'}
+        </div>
+    );
     const statusInfo = getApplicationStatusInfo(applicationStatus) ?? { label: 'Applied', className: 'bg-ink/5 text-ink/80 border-ink/20' };
 
     const rounds = getPostRounds(recruitment);
@@ -222,6 +243,12 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     if (isManager && recruitment.applicantCount !== undefined) {
         facts.push({ label: 'Applicants', value: `${recruitment.applicantCount}` });
     }
+    // Job seekers see when the post went up and how long they have to apply.
+    if (isUserView) {
+        facts.push({ label: 'Posted', value: timeAgo(recruitment.postedAt ?? recruitment.createdAt) });
+        const closes = closingIn(recruitment);
+        if (closes && lifecycle.expiresAt) facts.push({ label: 'Closes', value: `${formatDate(lifecycle.expiresAt)} (${closes})` });
+    }
 
     return (
         <div className={`flex flex-col h-full ${skin.canvas}`}>
@@ -230,7 +257,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 on the page canvas. The recruiter/admin view keeps the
                 Posts-tab masthead recipe: hairline edge, surface, radius, wash
                 and the controls row. */}
-            <div className={`shrink-0 mb-3 z-10 ${isUserView ? '' : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
+            <div style={isUserView ? { top: headerOffset } : undefined} className={`shrink-0 mb-3 z-40 ${isUserView ? `sticky ${skin.canvas} py-2` : `overflow-hidden border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.headerWash}`}`}>
                 {/* Title row */}
                 <div className={`flex flex-wrap items-center justify-between gap-3 ${isUserView ? '' : 'px-4 py-3.5 sm:px-5'}`}>
                     <div className="flex min-w-0 items-center gap-3">
@@ -282,7 +309,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                 <Share2 className="h-4 w-4" aria-hidden="true" />
                                 <span className="text-xs font-bold uppercase tracking-wider">Share</span>
                             </button>
-                            {!hasApplied && !checkingProfile ? (
+                            {!hasApplied && !checkingProfile && !lifecycle.open ? closedNotice : !hasApplied && !checkingProfile ? (
                                 <button
                                     onClick={handleApply}
                                     disabled={actionLoading}
@@ -348,7 +375,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                                     <span>Candidates</span>
                                 </button>
                             </>
-                        ) : !hasApplied && !checkingProfile ? (
+                        ) : !hasApplied && !checkingProfile && !lifecycle.open ? closedNotice : !hasApplied && !checkingProfile ? (
                             <button
                                 onClick={handleApply}
                                 disabled={actionLoading}

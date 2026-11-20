@@ -3,7 +3,6 @@ import {
     collection,
     deleteDoc,
     doc,
-    getCountFromServer,
     getDoc,
     getDocs,
     onSnapshot,
@@ -22,10 +21,12 @@ import {
     createSubscriptionRequestNotification,
     createSubscriptionRequestSentNotification,
 } from '@/lib/notificationHelper';
+import { isPostLive } from '@/lib/postLifecycle';
 import { UNLIMITED } from '@/types';
 import type {
     EffectiveSubscription,
     PlanPrivileges,
+    RecruitmentRequest,
     SubscriptionAudience,
     SubscriptionPlan,
     SubscriptionRequest,
@@ -234,10 +235,15 @@ export async function getUserSubscription(userId: string): Promise<EffectiveSubs
     return resolveSubscription(snap.exists() ? snap.data() : undefined);
 }
 
-/** How many job posts a recruiter currently owns. */
+/**
+ * How many plan slots a recruiter's posts use. Only live posts (active or
+ * paused, not expired or closed) count, so closing or letting a post expire
+ * frees its slot, and reposting or resuming needs a free one. Counted in
+ * memory because legacy posts have no status field to query on.
+ */
 export async function countRecruiterPosts(userId: string): Promise<number> {
-    const snap = await getCountFromServer(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
-    return snap.data().count;
+    const snap = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
+    return snap.docs.filter((d) => isPostLive(d.data() as Pick<RecruitmentRequest, 'status' | 'expiresAt'>)).length;
 }
 
 export interface PostQuota {

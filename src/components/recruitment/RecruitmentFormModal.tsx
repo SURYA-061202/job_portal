@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds, MAX_TOTAL_ROUNDS } from '@/lib/interviewRounds';
 import { checkPostQuota } from '@/lib/subscriptions';
+import { draftLifecycleFields, newPostLifecycleFields, resumePost } from '@/lib/postActions';
+import { DEFAULT_VALIDITY_DAYS, VALIDITY_OPTIONS, addDays, describeExpiry, endOfDay, formatDate, formatDateTime, getPostLifecycle, toDate } from '@/lib/postLifecycle';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -18,14 +20,40 @@ interface RecruitmentFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialData?: RecruitmentRequest | null;
+    /** The form was opened from another post: it is a new post (no id), pre-filled. */
+    duplicate?: boolean;
+    /** False when the plan has no free post slot: the post can only be saved as a draft or scheduled. */
+    canPublish?: boolean;
+    onViewPlans?: () => void;
 }
 
-export default function RecruitmentFormModal({ isOpen, onClose, initialData }: RecruitmentFormModalProps) {
+const pad = (n: number) => String(n).padStart(2, '0');
+/** <input type="date"> value, local time. */
+const toDateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** <input type="datetime-local"> value, local time. */
+const toDateTimeInput = (d: Date) => `${toDateInput(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+export default function RecruitmentFormModal({ isOpen, onClose, initialData, duplicate = false, canPublish = true, onViewPlans }: RecruitmentFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [userProfile, setUserProfile] = useState<{ firstName?: string; lastName?: string; companyName?: string } | null>(null);
     const { showSuccess, showError } = usePopup();
     const skin = useSkin();
+    // How long the listing runs. 0 only for an older post with no expiry that the recruiter leaves as it is.
+    const [validity, setValidity] = useState<number>(DEFAULT_VALIDITY_DAYS);
+    // Posts made before lifecycles existed carry no status or expiry; they may opt in here.
+    const isLegacy = !!initialData?.id && !initialData.status && !initialData.expiresAt;
+    // A draft is edited like a new post: it still has its validity, schedule and publish choice to make.
+    const isDraftEdit = initialData?.status === 'draft';
+    const creating = !initialData?.id || isDraftEdit;
+    const showValidity = creating || isLegacy;
+    // Listing runs for `validity` days, or until an exact closing date.
+    const [validityMode, setValidityMode] = useState<'days' | 'date'>('days');
+    const [closingDate, setClosingDate] = useState('');
+    // Publish now, or hold as a draft that goes live at a chosen time.
+    const [publishLater, setPublishLater] = useState(false);
+    const [publishAtText, setPublishAtText] = useState('');
+    const [applicationCap, setApplicationCap] = useState('');
     const [formData, setFormData] = useState({
         jobTitle: '',
         urgencyLevel: 'Moderate' as 'Immediate' | 'Moderate' | 'Flexible',
@@ -89,7 +117,23 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                 totalRounds: rounds.length,
                 roundNames: rounds.map(r => r.name),
             });
+            const legacy = !!initialData.id && !initialData.status && !initialData.expiresAt;
+            setValidity(legacy ? 0 : (initialData.validityDays ?? DEFAULT_VALIDITY_DAYS));
+            // A draft keeps a chosen closing date in expiresAt; a copy never carries one over.
+            const planned = initialData.id && initialData.status === 'draft' ? toDate(initialData.expiresAt) : null;
+            setValidityMode(planned ? 'date' : 'days');
+            setClosingDate(planned ? toDateInput(planned) : '');
+            const goLive = initialData.id && initialData.status === 'draft' ? toDate(initialData.publishAt) : null;
+            setPublishLater(!!goLive);
+            setPublishAtText(goLive ? toDateTimeInput(goLive) : '');
+            setApplicationCap(initialData.applicationCap ? String(initialData.applicationCap) : '');
         } else if (isOpen) {
+            setValidity(DEFAULT_VALIDITY_DAYS);
+            setValidityMode('days');
+            setClosingDate('');
+            setPublishLater(false);
+            setPublishAtText('');
+            setApplicationCap('');
             // Reset to default values when opening modal without initialData
             setFormData({
                 jobTitle: '',
@@ -115,18 +159,42 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
 
     if (!isOpen) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); void submit('publish'); };
+
+    /** `publish` makes the post live (or scheduled, when a go-live time is set); `draft` saves it unpublished. */
+    const submit = async (mode: 'publish' | 'draft') => {
+        const asDraft = mode === 'draft';
+        if (asDraft && !formData.jobTitle.trim()) { showError('Give the draft a job title first.'); return; }
+
+        // Application cap: blank = no limit.
+        const cap = applicationCap.trim() === '' ? null : Number(applicationCap);
+        if (cap !== null && (!Number.isInteger(cap) || cap < 1)) { showError('The application limit must be a whole number of at least 1.'); return; }
+
+        // Go-live time and closing date.
+        const goLive = creating && !asDraft && publishLater ? new Date(publishAtText) : null;
+        if (creating && !asDraft && publishLater && (!publishAtText || Number.isNaN(goLive!.getTime()) || goLive!.getTime() <= Date.now())) {
+            showError('Pick a go-live time in the future.');
+            return;
+        }
+        const scheduled = goLive !== null;
+        // A draft may also keep a go-live time; it then goes live by itself like a scheduled post.
+        const draftGoLive = asDraft && publishLater && publishAtText ? new Date(publishAtText) : null;
+        const closesOn = showValidity && validityMode === 'date' ? endOfDay(closingDate) : null;
+        if (showValidity && validityMode === 'date') {
+            const startsAt = goLive ?? draftGoLive ?? new Date();
+            if (!closesOn || closesOn.getTime() <= startsAt.getTime()) { showError('Pick a closing date after the post goes live.'); return; }
+        }
+        const goesLiveNow = creating && !asDraft && !scheduled;
         setLoading(true);
 
         try {
-            // New posts must fit the plan. Editing an existing post never counts.
-            if (!initialData?.id) {
+            // A post going live now must fit the plan. Drafts and scheduled posts hold no slot until they go live.
+            if (goesLiveNow) {
                 const uid = auth.currentUser?.uid;
                 if (uid) {
                     const quota = await checkPostQuota(uid);
                     if (!quota.allowed) {
-                        showError(`Post limit reached (${quota.used}/${quota.limit} on the ${quota.subscription.planName} plan). Subscribe to a higher plan to add more posts.`);
+                        showError(`Post limit reached (${quota.used}/${quota.limit} on the ${quota.subscription.planName} plan). Save it as a draft, or subscribe to a higher plan.`);
                         return;
                     }
                 }
@@ -164,26 +232,47 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     .slice(0, formData.totalRounds)
                     .map((name, i) => ({ roundNumber: i + 1, name: name.trim() })),
                 jdUrl: jdUrl,
+                ...(cap !== null ? { applicationCap: cap } : initialData?.id ? { applicationCap: deleteField() } : {}),
                 updatedAt: serverTimestamp()
             };
+
+            const days = validity || DEFAULT_VALIDITY_DAYS;
+            const liveFields = newPostLifecycleFields(closesOn ?? days);
+            const lifecycle = creating
+                ? (asDraft || scheduled
+                    ? draftLifecycleFields({ validityDays: days, closesOn, publishAt: goLive ?? draftGoLive }, !!initialData?.id)
+                    : { ...liveFields, ...(isDraftEdit ? { publishAt: deleteField() } : {}) })
+                // Only an older post with no lifecycle can start one here; everyone else
+                // changes status and expiry through the post's status actions.
+                : (isLegacy && (validity > 0 || closesOn) ? liveFields : {});
 
             if (initialData?.id) {
                 // Update
                 console.log('Updating recruitment request...');
                 const updatePayload = {
                     ...payload,
+                    ...lifecycle,
                     // Optionally update recruiter/company if desired, but usually we stick to the original creator
                     // recruiterName: `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || initialData.recruiterName,
                     // companyName: userProfile?.companyName || initialData.companyName,
                 };
                 await updateDoc(doc(db, 'recruits', initialData.id), updatePayload);
-                showSuccess('Recruitment request updated successfully!');
+                // A post that paused itself at its application cap wakes up once the cap is raised or removed.
+                if (initialData.status === 'paused' && initialData.pausedReason === 'cap' && (cap === null || cap > (initialData.applicantCount ?? 0))) {
+                    await resumePost({ ...initialData, applicationCap: cap ?? undefined });
+                }
+                showSuccess(
+                    isDraftEdit && !asDraft ? (scheduled ? `Post scheduled for ${formatDateTime(goLive)}.` : 'Post is live!')
+                        : asDraft ? 'Draft saved.'
+                            : 'Recruitment request updated successfully!',
+                );
             } else {
                 // Create
                 console.log('Saving recruitment request to Firestore...');
                 const user = auth.currentUser;
                 await addDoc(collection(db, 'recruits'), {
                     ...payload,
+                    ...lifecycle,
                     recruiterId: user?.uid || '',
                     // Kept on the post so applicant notifications can reach the owner without reading user profiles.
                     recruiterEmail: (user?.email || '').trim().toLowerCase(),
@@ -191,7 +280,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     companyName: userProfile?.companyName || '',
                     createdAt: serverTimestamp()
                 });
-                showSuccess('Recruitment request raised successfully!');
+                showSuccess(asDraft ? 'Draft saved.' : scheduled ? `Post scheduled for ${formatDateTime(goLive)}.` : 'Recruitment request raised successfully!');
             }
 
             onClose();
@@ -231,7 +320,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pb-4 pt-24 bg-black/30 backdrop-blur-sm overflow-y-auto">
             <div className={`border ${skin.edge} ${skin.surface} ${skin.radius} ${skin.shadow} w-full max-w-4xl max-h-[calc(100vh-7rem)] flex flex-col`}>
                 <div className={`px-6 py-4 border-b ${skin.edge} ${skin.surface} flex justify-between items-center flex-shrink-0 rounded-t-2xl`}>
-                    <h2 className={`${skin.heading} font-outfit`}>{initialData?.id ? 'Update Post' : 'Add Post'}</h2>
+                    <h2 className={`${skin.heading} font-outfit`}>{duplicate ? 'Duplicate Post' : isDraftEdit ? 'Edit Draft' : initialData?.id ? 'Update Post' : 'Add Post'}</h2>
                     <button onClick={onClose} className={`p-2 text-ink/60 hover:bg-ink/5 hover:text-ink ${skin.radius} cursor-pointer transition-colors ${FOCUS}`}>
                         <X className="w-5 h-5" />
                     </button>
@@ -396,6 +485,120 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                         </div>
                     </div>
 
+                    {/* Listing: how long it runs, when it goes live, and how many applications it takes */}
+                    {creating && !canPublish && (
+                        <div role="note" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                            Your plan's post limit is reached, so this post can't go live now. Save it as a draft, or schedule it for later - it goes live then only if a slot is free.
+                            {onViewPlans && <> <button type="button" onClick={onViewPlans} className="font-bold underline underline-offset-2">See plans</button></>}
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <div>
+                            <label htmlFor="post-validity" className="block text-sm font-medium text-ink/80 mb-1">
+                                {showValidity ? 'Listing Validity' : 'Listing status'}
+                            </label>
+                            {!showValidity ? (
+                                <p className="text-sm text-ink/70">
+                                    {getPostLifecycle(initialData ?? {}).label} · {describeExpiry(initialData ?? {})}
+                                    {initialData && getPostLifecycle(initialData).expiresAt && <> ({formatDate(initialData.expiresAt)})</>}
+                                    <span className="block text-xs text-ink/50">Extend, pause, close or repost it from the post's status actions in the Posts list.</span>
+                                </p>
+                            ) : (
+                                <>
+                                    <select
+                                        id="post-validity"
+                                        value={validityMode === 'date' ? 'date' : validity}
+                                        onChange={(e) => {
+                                            if (e.target.value === 'date') {
+                                                setValidityMode('date');
+                                                if (!closingDate) setClosingDate(toDateInput(addDays(Date.now(), DEFAULT_VALIDITY_DAYS)));
+                                            } else {
+                                                setValidityMode('days');
+                                                setValidity(Number(e.target.value));
+                                            }
+                                        }}
+                                        className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
+                                    >
+                                        {isLegacy && <option value={0}>No expiry (keep as is)</option>}
+                                        {VALIDITY_OPTIONS.map((d) => <option key={d} value={d}>{d} days</option>)}
+                                        <option value="date">Pick a closing date…</option>
+                                    </select>
+                                    {validityMode === 'date' && (
+                                        <input
+                                            type="date"
+                                            aria-label="Closing date"
+                                            min={toDateInput(addDays(Date.now(), 1))}
+                                            value={closingDate}
+                                            onChange={(e) => setClosingDate(e.target.value)}
+                                            className={`mt-2 w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
+                                        />
+                                    )}
+                                    <p className="mt-1 text-xs text-ink/50">
+                                        {validityMode === 'date'
+                                            ? 'Accepts applications until the end of that day.'
+                                            : validity > 0
+                                                ? `Accepts applications for ${validity} days after it goes live. You can pause, extend, close or repost it later.`
+                                                : 'This post never expires until you give it a validity.'}
+                                    </p>
+                                </>
+                            )}
+                        </div>
+
+                        {creating && (
+                            <div>
+                                <label htmlFor="post-publish" className="block text-sm font-medium text-ink/80 mb-1">Publish</label>
+                                <select
+                                    id="post-publish"
+                                    value={publishLater ? 'later' : 'now'}
+                                    onChange={(e) => {
+                                        const later = e.target.value === 'later';
+                                        setPublishLater(later);
+                                        if (later && !publishAtText) {
+                                            const d = addDays(Date.now(), 1);
+                                            d.setHours(9, 0, 0, 0);
+                                            setPublishAtText(toDateTimeInput(d));
+                                        }
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
+                                >
+                                    <option value="now">Right away</option>
+                                    <option value="later">Schedule for later</option>
+                                </select>
+                                {publishLater && (
+                                    <input
+                                        type="datetime-local"
+                                        aria-label="Go-live time"
+                                        min={toDateTimeInput(new Date())}
+                                        value={publishAtText}
+                                        onChange={(e) => setPublishAtText(e.target.value)}
+                                        className={`mt-2 w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
+                                    />
+                                )}
+                                <p className="mt-1 text-xs text-ink/50">
+                                    {publishLater ? 'Held as a draft and published automatically within 15 minutes of this time.' : 'Or use Save as Draft to keep it hidden for now.'}
+                                </p>
+                            </div>
+                        )}
+
+                        <div>
+                            <label htmlFor="post-cap" className="block text-sm font-medium text-ink/80 mb-1">Application Limit</label>
+                            <input
+                                id="post-cap"
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={applicationCap}
+                                onChange={(e) => setApplicationCap(e.target.value)}
+                                placeholder="No limit"
+                                className={`w-full px-3 py-2 rounded-lg ${skin.field} !font-normal ${FOCUS}`}
+                            />
+                            <p className="mt-1 text-xs text-ink/50">
+                                The post pauses itself after this many applications.
+                                {initialData?.id && <> Currently {initialData.applicantCount ?? 0}.</>}
+                            </p>
+                        </div>
+                    </div>
+
                     {/* Interview Rounds — these become the pipeline stages for this post */}
                     <div className="space-y-4">
                         <div>
@@ -508,14 +711,25 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData }: R
                     >
                         Cancel
                     </button>
+                    {creating && (
+                        <button
+                            type="button"
+                            disabled={loading}
+                            onClick={() => void submit('draft')}
+                            className={`cursor-pointer rounded-lg ${skin.secondary} ${FOCUS} disabled:opacity-50`}
+                        >
+                            Save as Draft
+                        </button>
+                    )}
                     <button
                         type="submit"
                         form="recruitment-form"
-                        disabled={loading}
+                        disabled={loading || (creating && !publishLater && !canPublish)}
+                        title={creating && !publishLater && !canPublish ? 'Post limit reached: save as a draft or schedule it' : undefined}
                         className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                     >
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {initialData?.id ? 'Update Post' : 'Add Post'}
+                        {!creating ? 'Update Post' : publishLater ? 'Schedule Post' : isDraftEdit ? 'Publish Post' : 'Add Post'}
                     </button>
                 </div>
             </div>

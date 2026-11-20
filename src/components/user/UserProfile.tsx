@@ -563,7 +563,7 @@ export default function UserProfile() {
         return (
             <div className="min-h-screen bg-muted flex flex-col">
                 <UserHeader />
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+                <main className="flex-1 max-w-none w-full px-4 sm:px-6 py-4 md:py-6">
                     <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8`}>
                         {activeTab === 'profile' && (
                             <div className="w-full lg:w-[350px] flex-shrink-0">
@@ -590,7 +590,7 @@ export default function UserProfile() {
 
             {visibilityOrigin && canSeeVisibility && <ProfileVisibilityModal origin={visibilityOrigin} onClose={() => setVisibilityOrigin(null)} />}
 
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+            <main className="flex-1 max-w-none w-full px-4 sm:px-6 py-4 md:py-6">
                 <div className={`w-full flex flex-col ${activeTab === 'profile' ? 'lg:flex-row' : ''} gap-8 relative`}>
                     
                     {/* Left Column - Profile Card (Only shown in Profile tab) */}

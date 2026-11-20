@@ -137,12 +137,23 @@ service cloud.firestore {
     }
 
     // ---------- applications ----------
+    // A job seeker can only apply to a post that is open: status active (a post
+    // from before lifecycles has none and counts as active) and not past its
+    // expiresAt. Paused, expired and closed posts refuse new applications even
+    // from a modified client. Staff add candidates to any post.
+    function postOpen(postId) {
+      let post = get(/databases/$(database)/documents/recruits/$(postId)).data;
+      return post.get('status', 'active') == 'active'
+             && (post.get('expiresAt', null) == null || post.expiresAt > request.time);
+    }
+
     match /job_applications/{appId} {
       allow get: if signedIn() && (resource == null || isStaff() || resource.data.user_id == request.auth.uid);
       allow list: if signedIn() && (isStaff() || resource.data.user_id == request.auth.uid);
       allow create: if signedIn() && (
                       isStaff()
-                      || (request.resource.data.user_id == request.auth.uid)
+                      || (request.resource.data.user_id == request.auth.uid
+                          && postOpen(request.resource.data.post_id))
                     );
       allow update: if signedIn() && (
                       isStaff()
