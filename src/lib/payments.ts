@@ -36,6 +36,10 @@ const verifyPaymentFn = httpsCallable<{ orderId: string; paymentId: string; sign
     functions,
     'verifySubscriptionPayment'
 );
+const reportFailedFn = httpsCallable<{ orderId: string; paymentId: string }, { recorded: boolean }>(
+    functions,
+    'reportSubscriptionPaymentFailed'
+);
 
 /* ------------------------------------------------------------------ *
  * Razorpay Checkout script
@@ -48,7 +52,7 @@ interface RazorpaySuccess {
 }
 
 interface RazorpayFailure {
-    error?: { description?: string; reason?: string };
+    error?: { description?: string; reason?: string; metadata?: { order_id?: string; payment_id?: string } };
 }
 
 interface RazorpayInstance {
@@ -167,9 +171,16 @@ export async function payForPlan(plan: SubscriptionPlan): Promise<CheckoutResult
         });
 
         rzp.on('payment.failed', (response) => {
-            // Logged only; checkout lets the user try another method. If they then
-            // close it, ondismiss resolves as cancelled.
+            // Checkout lets the user try another method; if they then close it,
+            // ondismiss resolves as cancelled. The server records the failure and
+            // notifies the recruiter (once per order) after checking it with Razorpay.
             console.warn('Payment attempt failed:', response.error?.description || response.error?.reason);
+            const paymentId = response.error?.metadata?.payment_id;
+            if (paymentId) {
+                reportFailedFn({ orderId: response.error?.metadata?.order_id || order.orderId, paymentId }).catch((error) =>
+                    console.warn('Could not report the failed payment:', error)
+                );
+            }
         });
 
         rzp.open();

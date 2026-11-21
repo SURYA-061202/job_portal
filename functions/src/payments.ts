@@ -1,7 +1,9 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { createHmac, timingSafeEqual } from "crypto";
 import type { Timestamp as FsTimestamp } from "firebase-admin/firestore";
-import { cleanId, enforceLimit, firestore, HOUR, requireAuth, str, Timestamp } from "./security";
+import { cleanId, enforceLimit, escapeHtml as esc, firestore, HOUR, isEmail, requireAuth, safeBaseUrl, str, Timestamp } from "./security";
+
+const mailer = () => require("./mailer") as typeof import("./mailer");
 
 /**
  * Recruiter subscriptions paid through Razorpay.
@@ -60,7 +62,46 @@ interface PaymentDoc {
   grantedBy?: "checkout" | "webhook";
   createdAt: FsTimestamp;
   paidAt?: FsTimestamp;
+  /** Issued once, in the same transaction that grants the plan. */
+  invoice?: InvoiceDoc;
+  /** Set when the recruiter was told the payment failed, so a retry never notifies twice. */
+  failureNotifiedAt?: FsTimestamp;
 }
+
+/**
+ * Everything needed to render the invoice later, frozen at payment time so a
+ * renamed plan or an edited profile never changes an issued invoice.
+ */
+interface InvoiceDoc {
+  /** INV-2026-000123: sequential per calendar year (IST). */
+  number: string;
+  issuedAt: FsTimestamp;
+  seller: { name: string; address: string; gstin: string; email: string };
+  billedTo: { name: string; email: string; company: string; phone: string };
+  description: string;
+  periodStart: FsTimestamp;
+  periodEnd: FsTimestamp;
+  /** In paise; the plan price, inclusive of any taxes. */
+  amount: number;
+  currency: string;
+  method: string;
+  razorpayPaymentId: string;
+}
+
+const COUNTERS = "counters";
+
+/** Seller details printed on invoices (functions/.env). */
+function invoiceSeller(): InvoiceDoc["seller"] {
+  return {
+    name: (process.env.INVOICE_SELLER_NAME || "Indian Infra Jobs").trim(),
+    address: (process.env.INVOICE_SELLER_ADDRESS || "").trim(),
+    gstin: (process.env.INVOICE_SELLER_GSTIN || "").trim(),
+    email: (process.env.INVOICE_SELLER_EMAIL || "").trim(),
+  };
+}
+
+/** Calendar year in India, which is what the invoice number counts by. */
+const istYear = (d: Date) => Number(d.toLocaleString("en-IN", { year: "numeric", timeZone: "Asia/Kolkata" }));
 
 /* ------------------------------------------------------------------ *
  * Razorpay REST helpers (no SDK needed: Node 22 has fetch)
@@ -181,11 +222,40 @@ async function grantPaidPlan(orderId: string, payment: RzpPayment, via: "checkou
 
     const userRef = db.collection("users").doc(pay.userId);
     const userSnap = await tx.get(userRef);
-    const current = userSnap.data()?.subscription as { planId?: string; expiresAt?: FsTimestamp } | undefined;
+    // Invoice numbers run 000001, 000002, ... per year, with no gaps: the counter
+    // moves in the same transaction that marks the order paid.
+    const now = new Date();
+    const year = istYear(now);
+    const counterRef = db.collection(COUNTERS).doc(`invoices_${year}`);
+    const counterSnap = await tx.get(counterRef);
+    const seq = (Number(counterSnap.data()?.last) || 0) + 1;
+
+    const user = (userSnap.data() ?? {}) as Record<string, any>;
+    const current = user.subscription as { planId?: string; expiresAt?: FsTimestamp } | undefined;
     const currentEnd = current?.expiresAt?.toDate?.();
     const base =
       current?.planId === pay.plan.planId && currentEnd && currentEnd.getTime() > Date.now() ? currentEnd : new Date();
     const expiresAt = new Date(base.getTime() + pay.plan.durationDays * DAY_MS);
+
+    const invoice: InvoiceDoc = {
+      number: `INV-${year}-${String(seq).padStart(6, "0")}`,
+      issuedAt: ts.fromDate(now),
+      seller: invoiceSeller(),
+      billedTo: {
+        name: pay.userName,
+        email: pay.userEmail,
+        company: str(user.companyName || user.company || "", 200),
+        phone: str(user.phone || user.mobile || user.phoneNumber || "", 20),
+      },
+      description: `${pay.plan.planName} subscription - ${pay.plan.durationDays} days`,
+      periodStart: ts.fromDate(base),
+      periodEnd: ts.fromDate(expiresAt),
+      amount: pay.amount,
+      currency: pay.currency,
+      method: payment.method || "",
+      razorpayPaymentId: payment.id,
+    };
+    tx.set(counterRef, { last: seq, updatedAt: ts.now() }, { merge: true });
 
     tx.update(userRef, {
       subscription: {
@@ -208,32 +278,157 @@ async function grantPaidPlan(orderId: string, payment: RzpPayment, via: "checkou
       expiresAt: ts.fromDate(expiresAt),
       grantedBy: via,
       failureReason: null,
+      invoice,
     });
 
-    return { planName: pay.plan.planName, expiresAt, newlyGranted: true, pay };
+    return { planName: pay.plan.planName, expiresAt, newlyGranted: true, pay: { ...pay, invoice } };
   });
 
   if (result.newlyGranted) await notifyPaid(result.pay, result.expiresAt);
   return { planName: result.planName, expiresAt: result.expiresAt, newlyGranted: result.newlyGranted };
 }
 
-/** Recruiter: "your plan is active". Admins: "X bought Y". Best-effort, never throws. */
+/** The recruiter's notification address: the email on the order, else the profile's. */
+async function recruiterEmail(pay: PaymentDoc): Promise<string> {
+  if (pay.userEmail) return pay.userEmail.trim().toLowerCase();
+  const email = (await firestore().collection("users").doc(pay.userId).get()).data()?.email;
+  return email ? String(email).trim().toLowerCase() : "";
+}
+
+const rupees2 = (paise: number) =>
+  `₹${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const METHOD_LABEL: Record<string, string> = {
+  upi: "UPI",
+  card: "Card",
+  netbanking: "Net banking",
+  wallet: "Wallet",
+  emi: "EMI",
+  paylater: "Pay later",
+};
+const methodLabel = (m: string) => METHOD_LABEL[m] || (m ? m.charAt(0).toUpperCase() + m.slice(1) : "Online");
+
+/** The invoice as an email body. Mirrors the PDF the recruiter can download from Payment history. */
+function invoiceEmail(pay: PaymentDoc, inv: InvoiceDoc): string {
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:4px 0;color:#64748b;">${esc(label)}</td><td style="padding:4px 0;text-align:right;color:#0f172a;">${esc(value)}</td></tr>`;
+  const seller = [inv.seller.address, inv.seller.gstin ? `GSTIN: ${inv.seller.gstin}` : "", inv.seller.email]
+    .filter(Boolean)
+    .map((l) => `<div>${esc(l)}</div>`)
+    .join("");
+  const billed = [inv.billedTo.company, inv.billedTo.email, inv.billedTo.phone]
+    .filter(Boolean)
+    .map((l) => `<div>${esc(l)}</div>`)
+    .join("");
+  const appUrl = safeBaseUrl();
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#0f172a;line-height:1.5;border:1px solid #e2e8f0;border-radius:8px;padding:24px;">
+      <h2 style="color:#f97316;margin:0 0 4px;">Payment successful</h2>
+      <p style="margin:0 0 20px;">Hi ${esc(pay.userName)}, thank you for your payment. Your <strong>${esc(pay.plan.planName)}</strong> plan is active until <strong>${esc(formatDate(inv.periodEnd.toDate()))}</strong>. Your invoice is below.</p>
+
+      <table role="presentation" width="100%" style="border-collapse:collapse;margin-bottom:20px;">
+        <tr>
+          <td style="vertical-align:top;">
+            <div style="font-size:20px;font-weight:bold;">INVOICE</div>
+            <div style="color:#64748b;font-size:13px;">${esc(inv.number)}</div>
+          </td>
+          <td style="vertical-align:top;text-align:right;font-size:13px;color:#475569;">
+            <div style="font-weight:bold;color:#0f172a;">${esc(inv.seller.name)}</div>${seller}
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" style="border-collapse:collapse;font-size:13px;margin-bottom:20px;">
+        <tr>
+          <td style="vertical-align:top;width:50%;">
+            <div style="color:#64748b;text-transform:uppercase;font-size:11px;letter-spacing:.05em;">Billed to</div>
+            <div style="font-weight:bold;">${esc(inv.billedTo.name)}</div>${billed}
+          </td>
+          <td style="vertical-align:top;">
+            <table role="presentation" width="100%" style="border-collapse:collapse;">
+              ${row("Invoice date", formatDate(inv.issuedAt.toDate()))}
+              ${row("Payment method", methodLabel(inv.method))}
+              ${row("Status", "Paid")}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" style="border-collapse:collapse;font-size:13px;">
+        <tr style="background:#f8fafc;">
+          <th style="text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;">Description</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;">Period</th>
+          <th style="text-align:right;padding:10px;border-bottom:1px solid #e2e8f0;">Amount</th>
+        </tr>
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #e2e8f0;">${esc(inv.description)}</td>
+          <td style="padding:10px;border-bottom:1px solid #e2e8f0;">${esc(formatDate(inv.periodStart.toDate()))} - ${esc(formatDate(inv.periodEnd.toDate()))}</td>
+          <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">${esc(rupees2(inv.amount))}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:10px;text-align:right;font-weight:bold;">Total paid</td>
+          <td style="padding:10px;text-align:right;font-weight:bold;">${esc(rupees2(inv.amount))}</td>
+        </tr>
+      </table>
+      <p style="color:#94a3b8;font-size:12px;margin:4px 0 0;text-align:right;">Inclusive of all applicable taxes.</p>
+
+      <p style="margin-top:24px;font-size:13px;">You can download this invoice as a PDF any time from <strong>Subscription &rarr; Payment history</strong>${appUrl ? ` on <a href="${esc(appUrl)}" style="color:#f97316;">Indian Infra Jobs</a>` : ""}.</p>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+      <p style="color:#94a3b8;font-size:12px;">Best regards,<br/>Indian Infra Recruitment Team</p>
+    </div>
+  `;
+}
+
+function failedEmail(pay: PaymentDoc, reason: string): string {
+  const appUrl = safeBaseUrl();
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;line-height:1.6;border:1px solid #e2e8f0;border-radius:8px;padding:24px;">
+      <h2 style="color:#dc2626;">Payment failed</h2>
+      <p>Hi ${esc(pay.userName)},</p>
+      <p>Your payment of <strong>${esc(rupees2(pay.amount))}</strong> for the <strong>${esc(pay.plan.planName)}</strong> plan could not be completed, so the plan has not been activated.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:8px;margin:20px 0;">
+        <p style="margin:0;font-weight:bold;color:#b91c1c;">Reason</p>
+        <p style="margin:8px 0 0;">${esc(reason)}</p>
+      </div>
+      <p>If any money was debited, it will be refunded to your account automatically by your bank or Razorpay, usually within 5-7 working days.</p>
+      ${appUrl ? `<p style="margin-top:24px;"><a href="${esc(appUrl)}" style="background:#f97316;color:#ffffff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">Try again</a></p>` : ""}
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+      <p style="color:#94a3b8;font-size:12px;">Best regards,<br/>Indian Infra Recruitment Team</p>
+    </div>
+  `;
+}
+
+/** Best-effort email; a mail outage never undoes a payment. */
+async function sendPaymentMail(to: string, subject: string, html: string): Promise<void> {
+  if (!isEmail(to)) return;
+  try {
+    await mailer().sendMail({ to, subject, html });
+  } catch (err) {
+    console.error("payment email failed", subject, err);
+  }
+}
+
+/** Recruiter: "your plan is active" + invoice email. Admins: "X bought Y". Best-effort, never throws. */
 async function notifyPaid(pay: PaymentDoc, expiresAt: Date): Promise<void> {
+  let to = "";
   try {
     const db = firestore();
     const now = Timestamp().now();
     const batch = db.batch();
     const base = { read: false, viewed: false, createdAt: now };
     const until = formatDate(expiresAt);
+    const invoiceNote = pay.invoice ? ` Invoice ${pay.invoice.number} has been emailed to you.` : "";
+    to = await recruiterEmail(pay);
 
-    if (pay.userEmail) {
+    if (to) {
       batch.set(db.collection("notifications").doc(), {
         ...base,
-        userId: pay.userEmail.toLowerCase(),
+        userId: to,
         type: "subscription_activated",
-        title: "Subscription Activated",
-        message: `Payment of ${rupees(pay.amount)} received. Your ${pay.plan.planName} subscription is active until ${until}.`,
-        metadata: { orderId: pay.orderId, planId: pay.plan.planId },
+        title: "Payment Successful",
+        message: `Payment of ${rupees(pay.amount)} received. Your ${pay.plan.planName} subscription is active until ${until}.${invoiceNote}`,
+        metadata: { orderId: pay.orderId, planId: pay.plan.planId, ...(pay.invoice ? { invoiceNumber: pay.invoice.number } : {}) },
       });
     }
 
@@ -254,10 +449,65 @@ async function notifyPaid(pay: PaymentDoc, expiresAt: Date): Promise<void> {
   } catch (err) {
     console.error("notifyPaid failed", err);
   }
+  if (to && pay.invoice) {
+    await sendPaymentMail(to, `Payment received - Invoice ${pay.invoice.number} | Indian Infra Jobs`, invoiceEmail(pay, pay.invoice));
+  }
 }
 
-/** Fetches the payment from Razorpay and captures it if it is only authorized. */
-async function confirmedPayment(paymentId: string): Promise<RzpPayment> {
+/** Recruiter: "your payment failed" (in-app + email). Best-effort, never throws. */
+async function notifyFailed(pay: PaymentDoc, reason: string): Promise<void> {
+  let to = "";
+  try {
+    to = await recruiterEmail(pay);
+    if (to) {
+      await firestore().collection("notifications").add({
+        userId: to,
+        type: "subscription_payment_failed",
+        title: "Payment Failed",
+        message: `Your payment of ${rupees(pay.amount)} for the ${pay.plan.planName} plan failed: ${reason}. The plan was not activated. If money was debited, it will be refunded automatically.`,
+        metadata: { orderId: pay.orderId, planId: pay.plan.planId },
+        read: false,
+        viewed: false,
+        createdAt: Timestamp().now(),
+      });
+    }
+  } catch (err) {
+    console.error("notifyFailed failed", err);
+  }
+  if (to) await sendPaymentMail(to, "Payment failed | Indian Infra Jobs", failedEmail(pay, reason));
+}
+
+/**
+ * Marks an unpaid order failed and tells the recruiter, once per order. Checkout
+ * retries on the same order, so a later attempt can still succeed (grantPaidPlan
+ * accepts a failed order) and never downgrades a paid one.
+ */
+async function recordFailure(orderId: string, payment: RzpPayment): Promise<void> {
+  const db = firestore();
+  const ref = db.collection(PAYMENTS).doc(orderId);
+  const reason = str(payment.error_description || "Payment failed", 300);
+  const notify = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return null;
+    const pay = snap.data() as PaymentDoc;
+    if (pay.status === "paid" || payment.order_id !== orderId) return null;
+    const first = !pay.failureNotifiedAt;
+    tx.update(ref, {
+      status: "failed",
+      failureReason: reason,
+      razorpayPaymentId: payment.id,
+      ...(first ? { failureNotifiedAt: Timestamp().now() } : {}),
+    });
+    return first ? pay : null;
+  });
+  if (notify) await notifyFailed(notify, reason);
+}
+
+/**
+ * Fetches the payment from Razorpay and captures it if it is only authorized.
+ * A payment Razorpay reports as failed is recorded (and the recruiter told) first.
+ */
+async function confirmedPayment(paymentId: string, orderId: string): Promise<RzpPayment> {
   let payment = await razorpay<RzpPayment>(`/payments/${encodeURIComponent(paymentId)}`);
   if (payment.status === "authorized") {
     payment = await razorpay<RzpPayment>(`/payments/${encodeURIComponent(paymentId)}/capture`, {
@@ -265,6 +515,7 @@ async function confirmedPayment(paymentId: string): Promise<RzpPayment> {
       body: { amount: payment.amount, currency: payment.currency },
     });
   }
+  if (payment.status === "failed") await recordFailure(orderId, payment);
   if (payment.status !== "captured") {
     throw new HttpsError("failed-precondition", payment.error_description || "The payment was not completed.");
   }
@@ -383,9 +634,35 @@ export const verifySubscriptionPayment = onCall(async (request) => {
   if (!checkoutSignatureValid(orderId, paymentId, signature, keys().keySecret)) {
     throw new HttpsError("permission-denied", "Payment verification failed. If money was debited, it will be activated or refunded automatically.");
   }
-  const payment = await confirmedPayment(paymentId);
+  const payment = await confirmedPayment(paymentId, orderId);
   const granted = await grantPaidPlan(orderId, payment, "checkout");
   return { planName: granted.planName, expiresAtMs: granted.expiresAt.getTime() };
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b. A failed attempt the browser reports
+ * ------------------------------------------------------------------ */
+
+/**
+ * Checkout's payment.failed event. Without it a failure only reaches us through
+ * the webhook; with it the recruiter is told even when no webhook is set up. The
+ * browser's word is never trusted: the payment is read back from Razorpay.
+ */
+export const reportSubscriptionPaymentFailed = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const data = (request.data || {}) as { orderId?: unknown; paymentId?: unknown };
+  const orderId = cleanId(data.orderId, "order");
+  const paymentId = cleanId(data.paymentId, "payment");
+  await enforceLimit(`pay-failed:${uid}`, 30, HOUR);
+
+  const pay = (await firestore().collection(PAYMENTS).doc(orderId).get()).data() as PaymentDoc | undefined;
+  if (!pay || pay.userId !== uid) throw new HttpsError("not-found", "Unknown order.");
+  if (pay.status === "paid") return { recorded: false };
+
+  const payment = await razorpay<RzpPayment>(`/payments/${encodeURIComponent(paymentId)}`);
+  if (payment.status !== "failed" || payment.order_id !== orderId) return { recorded: false };
+  await recordFailure(orderId, payment);
+  return { recorded: true };
 });
 
 /* ------------------------------------------------------------------ *
@@ -419,14 +696,8 @@ export const razorpayWebhook = onRequest(async (req, res) => {
       // Orders not created by createSubscriptionOrder are not ours to grant.
       if (exists && payment.status === "captured") await grantPaidPlan(orderId, payment, "webhook");
     } else if (payment && orderId && event.event === "payment.failed") {
-      const ref = firestore().collection(PAYMENTS).doc(orderId);
-      await firestore().runTransaction(async (tx) => {
-        const snap = await tx.get(ref);
-        // A later attempt on the same order may still succeed; never downgrade a paid order.
-        if (snap.exists && (snap.data() as PaymentDoc).status === "created") {
-          tx.update(ref, { status: "failed", failureReason: str(payment.error_description || "Payment failed", 300), razorpayPaymentId: payment.id });
-        }
-      });
+      // Records the failure and notifies the recruiter once; never downgrades a paid order.
+      await recordFailure(orderId, payment);
     }
     res.status(200).send("ok");
   } catch (err) {

@@ -769,12 +769,33 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                         <div className={`flex-1 min-h-0 flex flex-col ${showPostView ? '' : 'lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6'}`}>
                             {!showPostView && (
                                 <aside aria-label="Candidate filters" className="hidden lg:block lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto thin-scrollbar lg:pr-1">
-                                    <FilterSidebar
-                                        sections={filterSections}
-                                        selectedFilters={selectedFilters}
-                                        onToggleFilter={toggleFilter}
-                                        onClearFilters={clearAllFilters}
-                                    />
+                                    {loading ? (
+                                        /* Facets are built from the loaded list, so show their shape until it arrives. */
+                                        <div role="status" aria-busy="true" className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 md:p-5`}>
+                                            <span className="sr-only">Loading filters…</span>
+                                            {[4, 4, 3, 4].map((rows, s) => (
+                                                <div key={s} aria-hidden="true" className={`animate-pulse ${s < 3 ? 'mb-5' : ''}`}>
+                                                    <div className={`mb-3 h-3 w-24 rounded ${skin.skeleton}`} />
+                                                    <div className="space-y-3">
+                                                        {Array.from({ length: rows }).map((_, r) => (
+                                                            <div key={r} className="flex items-center gap-3">
+                                                                <div className={`h-4 w-4 shrink-0 rounded md:h-5 md:w-5 ${skin.skeleton}`} />
+                                                                <div className={`h-3 flex-1 rounded ${skin.skeleton}`} style={{ maxWidth: `${60 + ((s + r) % 3) * 15}%` }} />
+                                                                <div className={`h-3 w-5 shrink-0 rounded ${skin.skeleton}`} />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <FilterSidebar
+                                            sections={filterSections}
+                                            selectedFilters={selectedFilters}
+                                            onToggleFilter={toggleFilter}
+                                            onClearFilters={clearAllFilters}
+                                        />
+                                    )}
                                 </aside>
                             )}
                             <div className="flex min-h-0 min-w-0 flex-1 flex-col space-y-4 lg:min-h-0">
@@ -790,7 +811,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                                     </button>
                                     <h2 className="min-w-0 text-2xl font-bold leading-tight text-ink sm:text-3xl">{postTitle || 'Post Applicants'}</h2>
-                                    <div role="group" aria-label="Candidate group" className="ml-auto inline-flex shrink-0 overflow-hidden rounded-lg border border-black">
+                                    <div role="group" aria-label="Candidate group" className="ml-auto inline-flex shrink-0 overflow-hidden rounded-md border border-black">
                                         {([['Applied', false], ['Non Applied', true]] as const).map(([label, value]) => (
                                             <button
                                                 key={label}
@@ -858,7 +879,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                         {!postId && !isFilteringApplicants && viewMode !== 'registered-users' && (
                                             <button
                                                 onClick={() => setShowPostView(!showPostView)}
-                                                className={`flex h-9 w-9 items-center justify-center border border-ink/70 bg-ink/70 text-surface ${skin.radius} transition-colors duration-200 hover:bg-ink/60 ${FOCUS}`}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-md border border-ink/70 bg-ink/70 text-surface transition-colors duration-200 hover:bg-ink/60 ${FOCUS}`}
                                                 title="Post-based view"
                                             >
                                                 <LayoutGrid className="w-5 h-5" />
@@ -879,7 +900,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                             type="button"
                                                             onClick={() => toggleSkill(t.label)}
                                                             aria-pressed={active}
-                                                            className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${active ? 'border-ink bg-ink text-surface' : 'border-ink/15 bg-surface text-ink/70 hover:border-ink/40'} ${FOCUS}`}
+                                                            className={`cursor-pointer rounded-md border px-3 py-1 text-xs font-medium transition-colors duration-200 ${active ? 'border-ink bg-ink text-surface' : 'border-ink/15 bg-surface text-ink/70 hover:border-ink/40'} ${FOCUS}`}
                                                         >
                                                             {t.label}
                                                         </button>
@@ -949,7 +970,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                     type="button"
                                                     onClick={() => toggleFilter(chip.sectionKey, chip.value)}
                                                     aria-label={`Remove filter ${chip.label}`}
-                                                    className={`group inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${FOCUS} border-ink/15 bg-surface text-ink/70 hover:border-ink/40`}
+                                                    className={`group inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium transition-colors duration-200 ${FOCUS} border-ink/15 bg-surface text-ink/70 hover:border-ink/40`}
                                                 >
                                                     {chip.label}
                                                     <X className="h-3 w-3 text-ink/40 group-hover:text-ink" aria-hidden="true" />

@@ -506,7 +506,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                                                 type="button"
                                                 onClick={() => setStatusFilter(key)}
                                                 aria-pressed={on}
-                                                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-200 ${on ? 'border-ink/70 bg-ink/70 text-surface' : 'border-ink/20 bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
+                                                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-semibold transition-colors duration-200 ${on ? 'border-ink/70 bg-ink/70 text-surface' : 'border-ink/20 bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
                                             >
                                                 {label}
                                                 <span className={`tabular-nums ${on ? 'text-surface/80' : 'text-ink/50'}`}>{n}</span>

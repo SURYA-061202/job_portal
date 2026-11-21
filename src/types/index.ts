@@ -347,6 +347,24 @@ export interface PaymentRecord {
   expiresAt?: any;
   createdAt: any;
   paidAt?: any;
+  /** Issued by the server when the payment succeeds (absent on payments made before invoicing). */
+  invoice?: PaymentInvoice;
+}
+
+/** Invoice terms frozen at payment time (functions/src/payments.ts). */
+export interface PaymentInvoice {
+  number: string;
+  issuedAt: any;
+  seller: { name: string; address: string; gstin: string; email: string };
+  billedTo: { name: string; email: string; company: string; phone: string };
+  description: string;
+  periodStart: any;
+  periodEnd: any;
+  /** In paise, inclusive of any taxes. */
+  amount: number;
+  currency: string;
+  method: string;
+  razorpayPaymentId: string;
 }
 
 /** What a user is entitled to right now, after expiry and legacy flags are applied. */

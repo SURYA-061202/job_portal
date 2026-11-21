@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Coins, CreditCard, Loader2, Lock, Receipt } from 'lucide-react';
+import { ArrowLeft, Clock, Coins, CreditCard, Download, Loader2, Lock, Receipt } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
 import {
@@ -57,6 +57,21 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
     };
     // Recruiters pay online; job seekers still request from the admin.
     const { payingId, pay } = usePlanCheckout(subscription, () => setPlansOpen(false));
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const downloadInvoice = async (p: PaymentRecord) => {
+        if (!p.invoice) return;
+        setDownloadingId(p.orderId);
+        try {
+            // jsPDF loads only when an invoice is actually downloaded.
+            const { downloadInvoicePdf } = await import('@/lib/invoicePdf');
+            downloadInvoicePdf(p.invoice);
+        } catch (error) {
+            console.error('Invoice download failed:', error);
+            popup.error('Could not download the invoice. Please try again.');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
 
     const load = useCallback(async () => {
         if (!userId) return;
@@ -151,9 +166,9 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                     key={kind}
                                     type="button"
                                     onClick={(e) => openPanel(kind, e.currentTarget)}
-                                    className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                                    className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
                                 >
-                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                                    <span className="flex h-7 w-7 items-center justify-center rounded bg-ink/5">
                                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                                     </span>
                                     {label}
@@ -165,7 +180,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                         <button
                             type="button"
                             onClick={() => setPlansOpen(false)}
-                            className={`group inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-3 pr-5 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                            className={`group inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border ${skin.edge} bg-surface pl-3 pr-5 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
                         >
                             <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden="true" />
                             Back
@@ -204,13 +219,13 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                         plan={plan}
                                         audience={audience}
                                         action={activeNoEnd ? (
-                                            <span className="inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                            <span className="inline-flex w-full cursor-default items-center justify-center gap-2 rounded-md border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
                                         ) : !isUser && isPurchasable(plan) ? (
                                             <button
                                                 type="button"
                                                 onClick={() => pay(plan)}
                                                 disabled={payingId !== null}
-                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-md ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                                             >
                                                 {payingId === plan.id ? (
                                                     <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Processing...</>
@@ -223,7 +238,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                                 type="button"
                                                 onClick={() => handleRequest(plan)}
                                                 disabled={!!pending || requestingId !== null}
-                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                                className={`inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-md ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                                             >
                                                 {requestingId === plan.id ? (
                                                     <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>
@@ -274,7 +289,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                 <button
                                     type="button"
                                     onClick={() => setPlansOpen(true)}
-                                    className={`mt-8 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
+                                    className={`mt-8 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md ${skin.cta} ${FOCUS}`}
                                 >
                                     Subscribe
                                 </button>
@@ -354,7 +369,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                 <button
                                     type="button"
                                     onClick={() => setPlansOpen(true)}
-                                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg ${skin.cta} ${FOCUS}`}
+                                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md ${skin.cta} ${FOCUS}`}
                                 >
                                     {isPaid && !sub?.expired ? 'View available plans' : 'Choose a plan'}
                                 </button>
@@ -379,16 +394,34 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                                     {formatDate(p.paidAt ?? p.createdAt)}
                                                     {p.status === 'paid' && p.expiresAt ? ` \u00B7 valid until ${formatDate(p.expiresAt)}` : ''}
                                                     {p.status === 'failed' && p.failureReason ? ` \u00B7 ${p.failureReason}` : ''}
-                                                    {p.razorpayPaymentId ? ` \u00B7 ${p.razorpayPaymentId}` : ''}
                                                 </p>
+                                                {p.status === 'paid' && p.invoice && (
+                                                    <p className={skin.meta}>Invoice {p.invoice.number}</p>
+                                                )}
                                             </div>
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                                    p.status === 'paid' ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
-                                                }`}
-                                            >
-                                                {p.status === 'paid' ? 'Paid' : 'Failed'}
-                                            </span>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                {p.status === 'paid' && p.invoice && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => downloadInvoice(p)}
+                                                        disabled={downloadingId === p.orderId}
+                                                        aria-label={`Download invoice ${p.invoice.number}`}
+                                                        className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border ${skin.edge} bg-surface px-2.5 text-xs font-semibold text-ink transition-colors duration-200 hover:border-ink/40 hover:bg-ink/5 disabled:cursor-wait disabled:opacity-60 ${FOCUS}`}
+                                                    >
+                                                        {downloadingId === p.orderId
+                                                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                                                            : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
+                                                        Invoice
+                                                    </button>
+                                                )}
+                                                <span
+                                                    className={`inline-flex rounded-md px-2.5 py-0.5 text-xs font-semibold ${
+                                                        p.status === 'paid' ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
+                                                    }`}
+                                                >
+                                                    {p.status === 'paid' ? 'Paid' : 'Failed'}
+                                                </span>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>

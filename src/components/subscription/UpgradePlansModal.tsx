@@ -147,13 +147,13 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                             ))}
                                         </ul>
                                         {activeNoEnd ? (
-                                            <span className="mt-5 inline-flex w-full cursor-default items-center justify-center gap-2 rounded-lg border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
+                                            <span className="mt-5 inline-flex w-full cursor-default items-center justify-center gap-2 rounded-md border border-current px-4 py-2 text-sm font-semibold text-ink">Active plan</span>
                                         ) : canPay(plan) ? (
                                         <button
                                             type="button"
                                             onClick={() => pay(plan)}
                                             disabled={payingId !== null}
-                                            className={`mt-5 inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                            className={`mt-5 inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-md ${skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                                         >
                                             {payingId === plan.id ? (
                                                 <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Processing...</>
@@ -166,7 +166,7 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                             type="button"
                                             onClick={() => handleRequest(plan)}
                                             disabled={!!pending || requestingId !== null}
-                                            className={`mt-5 inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-lg ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                            className={`mt-5 inline-flex w-full items-center justify-center gap-2 cursor-pointer rounded-md ${isRequested ? skin.secondary : skin.cta} ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
                                         >
                                             {requestingId === plan.id ? (
                                                 <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Sending...</>

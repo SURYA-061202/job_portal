@@ -22,7 +22,7 @@ export { confirmMobileVerified, checkMobileAvailable } from "./mobileOtp";
 export { sendCompanyEmailCode, verifyCompanyEmailCode } from "./companyEmail";
 export { parseResume, scoreCandidates, rankApplicants, clusterCandidates } from "./ai";
 export { getInterviewInvite, submitInterviewResponse, submitVerifyDetails } from "./candidatePortal";
-export { createSubscriptionOrder, verifySubscriptionPayment, razorpayWebhook } from "./payments";
+export { createSubscriptionOrder, verifySubscriptionPayment, reportSubscriptionPaymentFailed, razorpayWebhook } from "./payments";
 export { subscriptionExpiryReminders } from "./expiryReminders";
 export { postLifecycleSweep } from "./postLifecycle";
 export { postEnded } from "./postCandidateNotify";
