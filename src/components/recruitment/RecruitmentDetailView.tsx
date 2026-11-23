@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/errors';
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -5,7 +6,7 @@ import {
 } from 'lucide-react';
 import { getSavedJobIds, setJobSaved } from '@/lib/savedJobs';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, type DocumentData } from 'firebase/firestore';
 import { hasUserApplied, applyForJob, getApplicationStatus, recordJobView } from '@/lib/jobApplications';
 import { getApplicationStatusInfo } from '@/lib/applicationStatus';
 import popup from '@/components/ui/Popup';
@@ -36,7 +37,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
     const [checkingProfile, setCheckingProfile] = useState(true);
     const [hasApplied, setHasApplied] = useState(false);
     const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
-    const [userProfile, setUserProfile] = useState<any>(null);
+    const [userProfile, setUserProfile] = useState<DocumentData | null>(null);
     const [isManager, setIsManager] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
@@ -61,6 +62,7 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
 
     useEffect(() => {
         checkStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Re-check only when the recruitment changes
     }, [recruitment.id]);
 
     // A job seeker opening a post counts as a view, whichever screen they came from.
@@ -147,9 +149,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
             showSuccess('Recruitment post deleted successfully');
             onDelete?.(recruitment.id);
             onBack();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Delete error:', err);
-            showError(`Failed to delete: ${err.message}`);
+            showError(`Failed to delete: ${errorMessage(err)}`);
         } finally {
             setDeleting(false);
         }
@@ -186,9 +188,9 @@ export default function RecruitmentDetailView({ recruitment: initialData, onBack
                 setHasApplied(true);
                 setApplicationStatus('applied');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Apply error:', err);
-            popup.error(`Failed to apply: ${err.message}`);
+            popup.error(`Failed to apply: ${errorMessage(err)}`);
         } finally {
             setActionLoading(false);
         }

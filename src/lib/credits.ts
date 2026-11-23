@@ -1,3 +1,5 @@
+import { toMillis } from '@/lib/dates';
+import type { FireDate } from '@/types';
 import { collection, doc, getDoc, onSnapshot, runTransaction, serverTimestamp, type Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { resolveSubscription } from '@/lib/subscriptions';
@@ -31,7 +33,7 @@ export interface CreditUsageEntry {
     cost: number;
     /** Candidate name, or the search keywords. */
     note?: string;
-    createdAt?: any;
+    createdAt?: FireDate;
 }
 
 export interface SpendResult {
@@ -134,11 +136,9 @@ export async function spendCredits(action: CreditAction, options: SpendOptions =
 /** Unlock key for "viewed this candidate's resume / profile": one charge per candidate. */
 export const unlockKey = (candidateId: string, kind: 'profile' | 'resume'): string => `${candidateId}_${kind}`;
 
-const millis = (value: any): number => {
+const millis = (value: FireDate | undefined): number => {
     if (!value) return Date.now(); // a just-written entry whose server time has not arrived yet
-    if (typeof value.toMillis === 'function') return value.toMillis();
-    if (typeof value.seconds === 'number') return value.seconds * 1000;
-    return new Date(value).getTime() || 0;
+    return toMillis(value);
 };
 
 /** Live list of a recruiter's credit spending, newest first. */

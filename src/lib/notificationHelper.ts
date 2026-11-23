@@ -46,7 +46,7 @@ export interface NotificationData {
         role?: string;
         dates?: string[];
         roundType?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 

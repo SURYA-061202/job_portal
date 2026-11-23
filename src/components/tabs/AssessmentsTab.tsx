@@ -1,3 +1,4 @@
+import type { FireDate } from '@/types';
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, X, ClipboardCheck, BookOpen, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
@@ -18,7 +19,7 @@ interface AssessmentSection {
     title: string;
     description: string;
     questions: MCQ[];
-    createdAt: any;
+    createdAt: FireDate;
 }
 
 export default function AssessmentsTab() {

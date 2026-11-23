@@ -1,3 +1,4 @@
+import { toMillis } from '@/lib/dates';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
@@ -61,9 +62,7 @@ export default function MemberDetailContent({ memberId, onBack }: MemberDetailCo
                 const snapshot = await getDocs(q);
                 const postsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as RecruitmentRequest[];
                 postsData.sort((a, b) => {
-                    const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : (a.createdAt || 0);
-                    const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : (b.createdAt || 0);
-                    return Number(dateB) - Number(dateA);
+                    return toMillis(b.createdAt) - toMillis(a.createdAt);
                 });
                 setPosts(postsData);
             } catch (error) {

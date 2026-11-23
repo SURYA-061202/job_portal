@@ -1,3 +1,4 @@
+import type { DocumentData } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import UserHeader from '@/components/layout/UserHeader';
 import { db, auth } from '@/lib/firebase';
@@ -33,7 +34,7 @@ export default function TrainingModulePage() {
     const [userResults, setUserResults] = useState<Record<string, TestResult>>({});
     const [loading, setLoading] = useState(true);
     const [activeTest, setActiveTest] = useState<AssessmentSection | null>(null);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<DocumentData | null>(null);
     const skin = useSkin();
 
     useEffect(() => {

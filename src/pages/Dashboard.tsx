@@ -45,10 +45,11 @@ export default function Dashboard() {
   const skin = useSkin();
 
   useEffect(() => {
-    if (location.state && (location.state as any).activeTab) {
-      setActiveTab((location.state as any).activeTab);
-      if ((location.state as any).postId) {
-        setSelectedPostId((location.state as any).postId);
+    const locState = (location.state ?? {}) as { activeTab?: string; postId?: string };
+    if (locState.activeTab) {
+      setActiveTab(locState.activeTab as typeof activeTab);
+      if (locState.postId) {
+        setSelectedPostId(locState.postId);
       }
       // Clear state to avoid getting stuck
       window.history.replaceState({}, document.title);

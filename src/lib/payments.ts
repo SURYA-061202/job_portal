@@ -1,3 +1,4 @@
+import { toMillis } from '@/lib/dates';
 import { httpsCallable } from 'firebase/functions';
 import { collection, onSnapshot, query, where, type Unsubscribe } from 'firebase/firestore';
 import { db, functions } from './firebase';
@@ -191,7 +192,6 @@ export async function payForPlan(plan: SubscriptionPlan): Promise<CheckoutResult
  * Payment history
  * ------------------------------------------------------------------ */
 
-const toMillis = (v: any): number => (typeof v?.toMillis === 'function' ? v.toMillis() : 0);
 const newestFirst = (rows: PaymentRecord[]) => rows.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
 /** Live list of one recruiter's payments (paid and failed; abandoned checkouts are left out). */

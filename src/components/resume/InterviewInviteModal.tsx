@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/errors';
 import { useState, useEffect } from 'react';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { X } from 'lucide-react';
@@ -76,7 +77,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   useEffect(() => {
     // An invite is always raised against one post: the candidate's own application
     // if they have one, otherwise the post whose candidate list this was opened from.
-    const applicantPostId = (candidate as any).postId as string | undefined;
+    const applicantPostId = candidate.postId as string | undefined;
     const effectivePostId = applicantPostId || defaultPostId || '';
 
     const fetchJobs = async () => {
@@ -115,7 +116,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
   };
 
   const handleSend = async () => {
-    const isJobApplicant = !!(candidate as any).postId;
+    const isJobApplicant = !!candidate.postId;
     if (!role || dates.some((d) => !d) || !roundType || interviewers.length === 0) {
       popup.error('Please fill all fields');
       return;
@@ -128,7 +129,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
     try {
       setLoading(true);
-      const effectivePostId = isJobApplicant ? (candidate as any).postId : selectedPostId;
+      const effectivePostId = isJobApplicant ? candidate.postId : selectedPostId;
       await sendInterviewInvite({
         candidate,
         interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl, postId: effectivePostId },
@@ -172,11 +173,11 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
       // Always create/upsert the job application
       try {
         console.log('[InterviewInvite] Creating/updating application:', { user_id: candidate.id, post_id: effectivePostId });
-        await upsertApplication(effectivePostId, candidate.id, 'shortlisted');
+        await upsertApplication(effectivePostId!, candidate.id, 'shortlisted');
         console.log('[InterviewInvite] Application created/updated successfully');
-      } catch (appError: any) {
+      } catch (appError: unknown) {
         console.error('Error creating job application:', appError);
-        popup.error(`Sync Error: ${appError.message}`);
+        popup.error(`Sync Error: ${errorMessage(appError)}`);
       }
 
       // Store interview details in interviews collection for both types
@@ -225,8 +226,8 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
       popup.success('Email sent successfully');
       onSent?.();
       onClose();
-    } catch (err: any) {
-      popup.error(err.message || 'Failed to send email');
+    } catch (err: unknown) {
+      popup.error(errorMessage(err) || 'Failed to send email');
     } finally {
       setLoading(false);
     }
@@ -246,7 +247,7 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
 
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
           {/* Job Selection for Manual Candidates */}
-          {!((candidate as any).postId) && (
+          {!(candidate.postId) && (
             <div>
               <label className="block text-sm font-medium text-ink/80 mb-1">Select Job Position</label>
               <select

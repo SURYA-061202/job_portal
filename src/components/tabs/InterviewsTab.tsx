@@ -1,3 +1,6 @@
+import type { InterviewDetails } from '@/types';
+import type { DocumentData } from 'firebase/firestore';
+import { toMillis } from '@/lib/dates';
 import AppliedTab from '@/components/tabs/AppliedTab';
 import PostStageList from '@/components/recruitment/PostStageList';
 import StageHeader from '@/components/recruitment/StageHeader';
@@ -15,7 +18,7 @@ import { ChevronDown } from "lucide-react";
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from "@/styles/skin";
 
-const normalizeSkills = (skills: any): string[] => {
+const normalizeSkills = (skills: unknown): string[] => {
   if (!skills) return [];
   if (Array.isArray(skills)) return skills.filter(Boolean);
   if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
@@ -73,6 +76,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
   }, []);
 
   const fetchData = async () => {
@@ -81,16 +85,14 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
       const isAdmin = userRole === 'admin';
 
       // 1. Fetch from Firestore candidates
-      let candQuery = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
+      const candQuery = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
       const qs = await getDocs(candQuery);
       qs.forEach((d) => {
         allCandidates.push({ id: d.id, ...d.data() } as Candidate);
       });
 
       allCandidates.sort((a, b) => {
-        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-        return Number(dateB) - Number(dateA);
+        return toMillis(b.createdAt) - toMillis(a.createdAt);
       });
 
       // 2. Fetch job applications currently in an interview round or selected
@@ -121,8 +123,8 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
       if (applications && applications.length > 0) {
         for (const app of applications) {
           try {
-            let userData: any = null;
-            let intData: any = {};
+            let userData: DocumentData | null = null;
+            let intData: DocumentData = {};
 
             // First try users collection (registered users)
             const userDoc = await getDoc(doc(db, 'users', app.user_id));
@@ -163,9 +165,9 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
                 education: userData.education || [],
                 createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                 updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
-                status: app.status as any,
+                status: app.status,
                 postId: app.post_id,
-                interviewDetails: intData as any
+                interviewDetails: intData as InterviewDetails
               } as Candidate);
             }
           } catch (err) {
@@ -179,8 +181,8 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
       // 3. Fetch posts that have candidates in interview rounds
       const postIds = new Set<string>();
       for (const c of allCandidates) {
-        const pid = (c as any).postId;
-        if (pid && isInterviewStage((c as any).status || '')) {
+        const pid = c.postId;
+        if (pid && isInterviewStage(c.status || '')) {
           postIds.add(pid);
         }
       }
@@ -191,7 +193,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
           const postDoc = await getDoc(doc(db, 'recruits', pid));
           if (postDoc.exists()) {
             const postData = { id: postDoc.id, ...postDoc.data() } as RecruitmentRequest;
-            const count = allCandidates.filter(c => (c as any).postId === pid && isInterviewStage((c as any).status || '')).length;
+            const count = allCandidates.filter(c => c.postId === pid && isInterviewStage(c.status || '')).length;
             postList.push({ ...postData, interviewCount: count });
           }
         } catch (err) {
@@ -200,9 +202,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
       }
 
       postList.sort((a, b) => {
-        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-        return Number(dateB) - Number(dateA);
+        return toMillis(b.createdAt) - toMillis(a.createdAt);
       });
 
       setPosts(postList);
@@ -218,7 +218,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
   // by default (selected candidates have left the pipeline and live in the
   // Selected Candidates module), narrowed to one round when the dropdown says so.
   const activeCandidates = useMemo(() =>
-    candidates.filter((c) => isInterviewStage((c as any).status || '')),
+    candidates.filter((c) => isInterviewStage(c.status || '')),
     [candidates]
   );
 
@@ -227,9 +227,9 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
   const postCandidates = useMemo(() => {
     if (!selectedPost) return [];
     return activeCandidates.filter((c) => {
-      if ((c as any).postId !== selectedPost.id) return false;
+      if (c.postId !== selectedPost.id) return false;
       if (!selectedRound) return true;
-      return ((c as any).status || '') === selectedRound;
+      return (c.status || '') === selectedRound;
     });
   }, [activeCandidates, selectedPost, selectedRound]);
 
@@ -248,7 +248,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
   };
 
   if (selectedCandidate) {
-    const statusSel = (selectedCandidate as any).status;
+    const statusSel = selectedCandidate.status;
     if (statusSel === 'selected') {
       return <SelectedCandidateDetail candidate={selectedCandidate} onBack={() => setSelectedCandidate(null)} />;
     }

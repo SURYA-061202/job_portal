@@ -1,7 +1,8 @@
+import { errorCode } from '@/lib/errors';
 import { useState, useEffect, useRef } from 'react';
 import { sendEmailVerification, RecaptchaVerifier, linkWithPhoneNumber, unlink } from 'firebase/auth';
 import type { ConfirmationResult } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs, type DocumentData } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User, Mail, Phone, Loader2, Briefcase, MapPin, Edit2, X, ShieldCheck, ShieldAlert, CheckCircle2, Camera, Eye, ChevronRight, Lock } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -60,7 +61,7 @@ export default function UserProfile() {
     useEffect(() => () => clearRecaptcha(), []);
 
     useEffect(() => {
-        let interval: any;
+        let interval: ReturnType<typeof setInterval> | undefined;
         if (!isEmailVerified) {
             interval = setInterval(async () => {
                 const user = auth.currentUser;
@@ -86,7 +87,7 @@ export default function UserProfile() {
     }, [mobileResendIn]);
     
     // Core Profile Fields
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<DocumentData>({
         firstName: '',
         lastName: '',
         email: '',
@@ -99,10 +100,10 @@ export default function UserProfile() {
         profileScore: 0,
         
         // Structured Array Data
-        educationItems: [] as any[],
-        projectItems: [] as any[],
-        certificateItems: [] as any[],
-        experienceItems: [] as any[],
+        educationItems: [] as DocumentData[],
+        projectItems: [] as DocumentData[],
+        certificateItems: [] as DocumentData[],
+        experienceItems: [] as DocumentData[],
         courseItems: [] as string[],
         skillItems: [] as string[],
         matchingScores: {} as Record<string, number>
@@ -119,12 +120,14 @@ export default function UserProfile() {
             document.head.appendChild(link);
         }
         fetchUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
     }, []);
 
     useEffect(() => {
         if (activeTab === 'profile' && formData.email) {
             calculateMatchingScores();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Rescore only when the tab/email changes
     }, [activeTab, formData.email]);
 
     const fetchUserProfile = async () => {
@@ -335,7 +338,7 @@ export default function UserProfile() {
                 // Simple Matching Logic
                 // 1. Skills Match (70% weight)
                 const jobSkills = job.skills?.toLowerCase().split(',').map((s: string) => s.trim()).filter(Boolean) || [];
-                const userSkills = formData.skillItems.map(s => s.toLowerCase());
+                const userSkills = formData.skillItems.map((s: string) => s.toLowerCase());
                 
                 let skillScore = 0;
                 if (jobSkills.length > 0) {
@@ -378,9 +381,9 @@ export default function UserProfile() {
         try {
             await sendEmailVerification(user);
             popup.success('Verification email sent! Please check your inbox.');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error sending verification email:', error);
-            if (error.code === 'auth/too-many-requests') {
+            if (errorCode(error) === 'auth/too-many-requests') {
                 popup.error('Too many requests. Please try again later.');
             } else {
                 popup.error('Failed to send verification email');

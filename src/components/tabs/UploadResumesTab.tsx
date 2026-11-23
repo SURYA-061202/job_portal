@@ -1,10 +1,12 @@
 'use client';
+import { toMillis } from '@/lib/dates';
+import { errorMessage } from '@/lib/errors';
 
 import { useState, useEffect } from 'react';
-import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where, limit } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, where, limit, type DocumentData } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import type { Candidate, RecruitmentRequest } from '@/types';
+import type { Candidate, CandidateData, RecruitmentRequest } from '@/types';
 import ResumeUpload from '@/components/resume/ResumeUpload';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import CustomDropdown from '@/components/CustomDropdown';
@@ -14,10 +16,8 @@ import { analyzeCandidateScores } from '@/lib/aiService';
 import { useSkin } from '@/styles/skin';
 
 // PDF.js – load the worker dynamically so Vite can bundle it
-// @ts-ignore
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
-// @ts-ignore – pdfjsWorker will be resolved by Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // Check if an email already exists in the users collection
@@ -59,9 +59,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
 
                 if (userRole && userRole !== 'admin' && userId) {
                     jobs = jobs.sort((a, b) => {
-                        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-                        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-                        return Number(dateB) - Number(dateA);
+                        return toMillis(b.createdAt) - toMillis(a.createdAt);
                     });
                 }
                 setJobPosts(jobs);
@@ -70,6 +68,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             }
         };
         fetchJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
     }, []);
 
     // Helpers to detect placeholder values coming from failed AI extraction
@@ -96,11 +95,11 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             console.log('Public URL generated:', publicUrl);
 
             // Attempt to parse resume data using AI
-            let parsedData: any = {};
+            let parsedData: Partial<CandidateData> = {};
             let parseFailed = false;
             try {
                 parsedData = await parseResumeWithAI(file);
-            } catch (err) {
+            } catch {
                 console.warn('Resume parsing failed, will require manual entry');
                 parseFailed = true;
             }
@@ -146,14 +145,14 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 recruiterId: userId || '',
-            } as any;
+            };
 
             // Save candidate to Firestore
             const docRef = await addDoc(collection(db, 'candidates'), candidateData);
 
             if (parseFailed || missingCoreInfo) {
                 popup.error('Details could not be extracted. Please enter them manually.');
-                setManualCandidate({ id: docRef.id, ...candidateData } as Candidate);
+                setManualCandidate({ id: docRef.id, ...candidateData } as unknown as Candidate);
             } else {
                 popup.success(`Resume uploaded successfully! Extracted data for ${candidateData.name}`);
 
@@ -164,7 +163,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                         popup.loading(`Scoring against "${selectedJob.jobTitle}"...`, { id: 'upload-scoring' });
                         try {
                             // Construct a full Candidate object with ID
-                            const newCandidateWithId = { id: docRef.id, ...candidateData } as Candidate;
+                            const newCandidateWithId = { id: docRef.id, ...candidateData } as unknown as Candidate;
 
                             await analyzeCandidateScores(
                                 [newCandidateWithId],
@@ -183,13 +182,13 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
                 // Reset upload component to clear the file input
                 setUploadKey(prev => prev + 1);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error uploading resume:', error);
 
-            if (error.message && error.message.includes('Storage policy')) {
+            if (errorMessage(error).includes('Storage policy')) {
                 popup.error('Storage configuration issue. Please check Firebase Storage settings.');
             } else {
-                popup.error(error.message || 'Failed to upload resume');
+                popup.error(errorMessage(error) || 'Failed to upload resume');
             }
         } finally {
             setLoading(false);
@@ -210,7 +209,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
-                rawText += content.items.map((item: any) => item.str).join(' ') + '\n';
+                rawText += content.items.map((item: DocumentData) => item.str).join(' ') + '\n';
             }
 
             // 2) The server asks OpenAI to turn the text into structured JSON
@@ -218,7 +217,7 @@ export default function UploadResumesTab({ userRole, userId }: { userRole?: stri
             const data = await parseResumeText(rawText.substring(0, 12000));
 
             return data;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error in parseResumeWithAI:', error);
             throw new Error('Failed to parse resume using AI');
         }

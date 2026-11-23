@@ -57,7 +57,7 @@ export default function InviteFlow({ candidate, userRole, userId, appliedPostIds
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [confirmed, onClose]);
+    }, [confirmed, postId, onClose]);
 
     if (postId) {
         return (

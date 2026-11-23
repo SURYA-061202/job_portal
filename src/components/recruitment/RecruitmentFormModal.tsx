@@ -1,4 +1,5 @@
 'use client';
+import { errorMessage as getErrorMessage } from '@/lib/errors';
 
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
@@ -284,9 +285,9 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
             }
 
             onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error raising recruitment request:', error);
-            const errorMessage = error.message || String(error);
+            const errorMessage = getErrorMessage(error) || String(error);
             showError(`Submission failed: ${errorMessage}`);
         } finally {
             setLoading(false);

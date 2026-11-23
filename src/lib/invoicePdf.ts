@@ -1,3 +1,5 @@
+import type { FireDate } from '@/types';
+import { toDate as toFireDate } from '@/lib/dates';
 import { jsPDF } from 'jspdf';
 import type { PaymentInvoice } from '@/types';
 
@@ -9,9 +11,8 @@ import type { PaymentInvoice } from '@/types';
  * jsPDF's built-in fonts have no rupee glyph, so amounts read "INR 1,999.00".
  */
 
-type DateLike = { toDate: () => Date } | Date | string | number;
-const toDate = (v: DateLike): Date =>
-    typeof v === 'object' && v !== null && 'toDate' in v ? v.toDate() : new Date(v as Date | string | number);
+type DateLike = FireDate;
+const toDate = (v: DateLike): Date => toFireDate(v) ?? new Date(NaN);
 const fmtDate = (v: DateLike) =>
     toDate(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
 const fmtAmount = (paise: number, currency: string) =>

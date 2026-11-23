@@ -1,7 +1,8 @@
+import type { TimestampLike } from '@/types';
 import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, type DocumentData, type DocumentReference } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { stripEmoji } from '@/lib/format';
@@ -11,9 +12,9 @@ interface Notification {
   id: string;
   title?: string;
   message: string;
-  createdAt: any;
+  createdAt: TimestampLike | null;
   viewed: boolean;
-  ref: any;
+  ref: DocumentReference;
 }
 
 /** Newest first — done in the client so the query needs no composite index. */
@@ -70,8 +71,8 @@ export default function NotificationBell({ className = '', simpleMode = false, f
       (snap) => {
         const list: Notification[] = [];
         snap.forEach(docSnap => {
-          const data: any = docSnap.data();
-          list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
+          const data: DocumentData = docSnap.data();
+          list.push({ id: docSnap.id, ref: docSnap.ref, ...data } as Notification);
         });
         list.sort(byNewestFirst);
         setNotifications(list);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import PostStageList from '@/components/recruitment/PostStageList';
@@ -55,7 +55,7 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
         try {
           const u = await getDoc(doc(db, 'users', uid));
           if (!u.exists()) return null;
-          const data: Record<string, any> = u.data();
+          const data: DocumentData = u.data();
           const name = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.name || data.email || 'Unnamed';
           const skills = getUserSkills(data);
           const applicant: Applicant = {

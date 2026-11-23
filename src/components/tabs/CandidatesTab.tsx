@@ -1,7 +1,8 @@
 'use client';
+import { toDate, toMillis } from '@/lib/dates';
 
 import { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react';
-import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query as fsQuery, orderBy, where, doc, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getAllApplications, getApplicantCounts, getPostApplications, getUserApplications } from '@/lib/jobApplications';
 import { getUserCertificates, getUserCourses, getUserEducation, getUserExperience, getUserProjects, getUserSkills } from '@/lib/userToCandidate';
@@ -55,7 +56,7 @@ interface CandidatesTabProps {
 /** Builds the Candidate shape the list/detail views expect from a platform user's profile document. */
 function userDocToCandidate(
     id: string,
-    data: Record<string, any>,
+    data: DocumentData,
     fallbackName: string,
     fallbackRole: string,
     extra: Record<string, unknown> = {}
@@ -102,10 +103,10 @@ async function withProfileEducation(list: Candidate[]): Promise<Candidate[]> {
     if (list.length === 0) return list;
     try {
         const snap = await getDocs(fsQuery(collection(db, 'users'), where('role', '==', 'user')));
-        const byEmail = new Map<string, Record<string, any>>();
+        const byEmail = new Map<string, DocumentData>();
         // Several accounts can share an email: keep the one whose education has the most details filled in.
-        const detail = (data: Record<string, any>) =>
-            (data.educationItems as Record<string, any>[]).reduce(
+        const detail = (data: DocumentData) =>
+            (data.educationItems as DocumentData[]).reduce(
                 (n, e) => n + (e.marksheetUrl ? 2 : 0) + (e.grade ? 1 : 0) + (e.duration ? 1 : 0) + (e.hasArrears ? 1 : 0) + (e.hasGap ? 1 : 0),
                 0
             );
@@ -223,7 +224,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     // the Uploaded Candidates list is hidden, so this never switches views.
     const viewMode: 'job-candidates' | 'registered-users' = 'registered-users';
     const [registeredUsers, setRegisteredUsers] = useState<Candidate[]>([]);
-    const [userApplications, setUserApplications] = useState<any[]>([]);
+    const [userApplications, setUserApplications] = useState<DocumentData[]>([]);
     const [showPostView, setShowPostView] = useState(false);
     const [postCards, setPostCards] = useState<(RecruitmentRequest & { applicantCount: number })[]>([]);
     const skin = useSkin();
@@ -300,6 +301,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             isFilteringRef.current = false;
             fetchCandidates(true);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Refetch only when the post/view mode changes
     }, [postId, viewMode]);
 
     useEffect(() => {
@@ -335,9 +337,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 let posts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RecruitmentRequest));
                 if (userId) {
                     posts = posts.sort((a, b) => {
-                        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-                        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-                        return Number(dateB) - Number(dateA);
+                        return toMillis(b.createdAt) - toMillis(a.createdAt);
                     });
                 }
 
@@ -395,9 +395,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
             // Sort manually
             candidatesData = candidatesData.sort((a, b) => {
-                const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-                const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-                return Number(dateB) - Number(dateA);
+                return toMillis(b.createdAt) - toMillis(a.createdAt);
             });
 
             // Race condition check: If we started filtering while this was fetching, stop.
@@ -408,13 +406,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
 
             // Fallback: ensure sorted correctly
             candidatesData.sort((a, b) => {
-                const toDt = (val: any): number => {
-                    if (!val) return 0;
-                    if (typeof val.toDate === 'function') return val.toDate().getTime();
-                    if (val.seconds !== undefined) return val.seconds * 1000;
-                    return new Date(val).getTime();
-                };
-                return toDt(b.createdAt) - toDt(a.createdAt);
+                return toMillis(b.createdAt) - toMillis(a.createdAt);
             });
 
             setCandidates(await withProfileEducation(candidatesData));
@@ -479,7 +471,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             } else {
 
                 // 3. Fetch user details from Firestore for these applicants
-                const userIds = apps.map((a: any) => a.user_id).filter((uid: any) => !!uid);
+                const userIds = apps.map((a: DocumentData) => a.user_id).filter((uid: DocumentData) => !!uid);
                 console.log(`[DEBUG] Found ${userIds.length} user IDs:`, userIds);
 
                 for (const uid of userIds) {
@@ -488,7 +480,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                         if (userDoc.exists()) {
                             const data = userDoc.data();
                             // Find the application status for this user
-                            const app = apps.find((a: any) => a.user_id === uid);
+                            const app = apps.find((a: DocumentData) => a.user_id === uid);
                             const appStatus = app?.status || 'applied';
 
                             allCandidates.push(
@@ -507,7 +499,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
             if (isFilteringRef.current) {
                 setFilteredCandidates(allCandidates);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[DEBUG] Global error in fetchApplicantsForPost:', error);
             setFilteredCandidates([]);
         } finally {
@@ -569,7 +561,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                 // Filter: For non-admins, only show applications for their own posts
                 const filtered = userRole === 'admin' 
                     ? details 
-                    : details.filter(app => app.postDetails && (app.postDetails as any).recruiterId === userId);
+                    : details.filter(app => app.postDetails && (app.postDetails as { recruiterId?: string }).recruiterId === userId);
 
                 setUserApplications(filtered);
             } else {
@@ -595,7 +587,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
         }
 
         // If candidate is shortlisted, navigate to Shortlisted tab instead
-        if (candidate.status === 'shortlisted' || (candidate as any).status === 'shortlisted') {
+        if (candidate.status === 'shortlisted' || candidate.status === 'shortlisted') {
             if (onNavigateToShortlisted) {
                 onNavigateToShortlisted(candidate.id);
             }
@@ -1085,7 +1077,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                                 <div className={`flex items-center ${skin.meta}`}>
                                                                     <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-brand" />
                                                                     {(() => {
-                                                                        const d = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date(post.createdAt);
+                                                                        const d = (toDate(post.createdAt) ?? new Date(NaN));
                                                                         const diff = Date.now() - d.getTime();
                                                                         const days = Math.floor(diff / 86400000);
                                                                         if (days === 0) return 'Just now';

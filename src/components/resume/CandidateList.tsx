@@ -7,6 +7,7 @@ import { db, storage } from '@/lib/firebase';
 import { ref, deleteObject } from 'firebase/storage';
 import { usePopup } from '@/components/ui/Popup';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { candidateMatchesSearch } from '@/lib/candidateMatch';
 
 // Helper to convert to Title Case
 function toTitleCase(str?: string) {
@@ -34,39 +35,6 @@ function formatExperience(exp?: string) {
 
   // Otherwise return as is, truncated
   return cleanExp.length > 20 ? `${cleanExp.substring(0, 17)}...` : cleanExp;
-}
-
-// Helper to decide if a candidate matches the current search term
-export function candidateMatchesSearch(candidate: Candidate, term: string, postTitles?: Record<string, string>) {
-  if (!term) return true;
-  const q = term.toLowerCase();
-
-  // Collect searchable strings
-  const tokens: string[] = [];
-
-  // Include name and role as searchable fields
-  if (candidate.name) tokens.push(candidate.name);
-  if (candidate.role) tokens.push(candidate.role);
-  if (candidate.experience) tokens.push(candidate.experience);
-  if (candidate.email) tokens.push(candidate.email);
-
-  // Include the post title when a post map is provided (Selected Candidates)
-  const postId = (candidate as { postId?: string }).postId;
-  if (postTitles && postId && postTitles[postId]) tokens.push(postTitles[postId]);
-
-  // Treat "place" as company/institution names in work experience & education
-  (candidate.extractedData?.workExperience || []).forEach((we: any) => {
-    if (we.company) tokens.push(we.company);
-    if (we.location) tokens.push(we.location);
-    if (we.position) tokens.push(we.position);
-  });
-
-  (candidate.education || []).forEach((edu: any) => {
-    if (edu.institution) tokens.push(edu.institution);
-    if (edu.field) tokens.push(edu.field);
-  });
-
-  return tokens.some((t) => t?.toLowerCase().includes(q));
 }
 
 interface CandidateListProps {
@@ -144,7 +112,7 @@ export default function CandidateList({
 
       showSuccess('Candidate removed successfully');
       onRefresh?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing candidate:', error);
       showError('Failed to remove candidate');
     } finally {

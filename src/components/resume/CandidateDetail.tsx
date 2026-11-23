@@ -1,9 +1,10 @@
 'use client';
+import { errorMessage } from '@/lib/errors';
 
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { ArrowLeft, MailPlus, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import InterviewInviteModal from './InterviewInviteModal';
 import ResumePreviewModal from './ResumePreviewModal';
@@ -18,7 +19,7 @@ interface CandidateDetailProps {
   onInviteSent?: () => void;
   onRemoveCandidate?: () => void;
   onUpdateCandidate?: (updatedCandidate: Candidate) => void;
-  userApplications?: any[];
+  userApplications?: DocumentData[];
   /** Post ID this candidate list is currently filtered to (set only when reached via the Posts module). Gates the "Send Interview Invite" action. */
   activePostId?: string | null;
 }
@@ -31,7 +32,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
   const [removing, setRemoving] = useState(false);
 
   const [jobPosts, setJobPosts] = useState<RecruitmentRequest[]>([]);
-  const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
+  const [appliedPosts, setAppliedPosts] = useState<DocumentData[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const { showSuccess, showError } = usePopup();
   const skin = useSkin();
@@ -92,7 +93,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       // If userApplications prop is provided, use it directly
       if (userApplications && userApplications.length > 0) {
         const postsWithDetails = await Promise.all(
-          userApplications.map(async (app: any) => {
+          userApplications.map(async (app: DocumentData) => {
             try {
               const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
               if (postDoc.exists()) {
@@ -114,10 +115,10 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
         const allSnapshot = await getDocs(collection(db, 'job_applications'));
         const applications = allSnapshot.docs
           .map(d => ({ id: d.id, ...d.data() }))
-          .filter((app: any) => app.user_id === candidate.id);
+          .filter((app: DocumentData) => app.user_id === candidate.id);
         
         const postsWithDetails = await Promise.all(
-          applications.map(async (app: any) => {
+          applications.map(async (app: DocumentData) => {
             try {
               const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
               if (postDoc.exists()) {
@@ -131,8 +132,8 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
         );
         
         setAppliedPosts(postsWithDetails);
-      } catch (error: any) {
-        console.error('Error fetching applied posts:', error?.message || error);
+      } catch (error: unknown) {
+        console.error('Error fetching applied posts:', errorMessage(error) || error);
         setAppliedPosts([]);
       } finally {
         setLoadingPosts(false);
@@ -164,7 +165,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
       }
       showSuccess('Candidate removed successfully');
       onRemoveCandidate?.();
-    } catch (err) {
+    } catch {
       showError('Failed to remove candidate');
       setRemoving(false);
     }
@@ -477,7 +478,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
 
             {/* Projects */}
             {(() => {
-              const projectsRaw = (candidate as any).keyProjects ?? (candidate as any).projects ?? (candidate as any).extractedData?.projects;
+              const projectsRaw: unknown = candidate.keyProjects ?? candidate.projects ?? candidate.extractedData?.projects;
 
               if (typeof projectsRaw === 'string' && projectsRaw.trim().length > 0) {
                 const projectLines = projectsRaw.split('\n').filter((line: string) => line.trim().length > 0);
@@ -506,7 +507,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                       Projects
                     </h3>
                     <div className="space-y-4">
-                      {projectsRaw.map((proj: any, index: number) => (
+                      {projectsRaw.map((proj: DocumentData, index: number) => (
                         <div key={index} className="border-l-4 border-brand/30 pl-4">
                           {(proj.name || proj.title) && (
                             <p className="text-ink/80 font-medium">{proj.name || proj.title}</p>
@@ -525,7 +526,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
             {/* Certifications - grey tags, the same recipe as the Recruitment
                 Detail page's Required Skills section. */}
             {(() => {
-              const certificationsRaw = (candidate as any).certifications ?? (candidate as any).extractedData?.certifications;
+              const certificationsRaw: unknown = candidate.certifications ?? candidate.extractedData?.certifications;
 
               if (typeof certificationsRaw === 'string' && certificationsRaw.trim().length > 0) {
                 const certLines = certificationsRaw.split('\n').filter((line: string) => line.trim().length > 0);
@@ -554,7 +555,7 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                       Certifications
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
-                      {certificationsRaw.map((cert: any, index: number) => {
+                      {certificationsRaw.map((cert: DocumentData, index: number) => {
                         const text = typeof cert === 'string' ? cert : (cert.certificate ?? cert.name ?? JSON.stringify(cert));
                         if (!text) return null;
                         return (

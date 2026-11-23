@@ -1,3 +1,14 @@
+/** Firestore Timestamp (or anything shaped like one) as it comes off a document. */
+export interface TimestampLike {
+  seconds?: number;
+  nanoseconds?: number;
+  toDate?: () => Date;
+  toMillis?: () => number;
+}
+
+/** A date field as stored in Firestore: Timestamp, Date, ISO string, epoch millis, or unset. */
+export type FireDate = Date | string | number | TimestampLike | null;
+
 export interface User {
   uid: string;
   email: string;
@@ -36,13 +47,10 @@ export interface Candidate {
   status?: string;
 
   /** Details of the interview invitation that was sent */
-  interviewDetails?: {
-    role: string;
-    dates: string[];
-    roundType: string;
-    interviewers: string[];
-    sentAt: string;
-  };
+  interviewDetails?: InterviewDetails;
+
+  /** Job post this candidate applied to (applicants from the user side). */
+  postId?: string;
 
   /** ISO date (YYYY-MM-DD) chosen by the candidate via email link */
   selectedInterviewDate?: string;
@@ -54,11 +62,34 @@ export interface Candidate {
     response: string;
   }>;
 
+  /** Free-form project/certification lists some candidates carry at the top level. */
+  keyProjects?: Project[];
+  certifications?: Array<string | { name?: string; title?: string; issuer?: string; date?: string }>;
+
   /** AI Ranking scores for specific job posts */
   rankings?: Record<string, CandidateRanking>;
 
   /** Profile text of platform users (registered candidates); searched and shown by the keyword search. */
   profileExtras?: CandidateProfileExtras;
+}
+
+/** Interview invitation/response details, as stored on candidates and interviews/{id}. */
+export interface InterviewDetails {
+  role?: string;
+  dates?: string[];
+  roundType?: string;
+  interviewers?: string[];
+  sentAt?: string;
+  /** Set once the interview-confirmation mail has gone out. */
+  successmail?: boolean;
+  postId?: string;
+  currentSalary?: number;
+  expectedSalary?: number;
+  joiningDate?: string;
+  yearsExperience?: string;
+  experienceIn?: string;
+  readyToRelocate?: string;
+  feedback?: string;
 }
 
 /** One titled line of a candidate profile (job, project, certificate). */
@@ -79,7 +110,7 @@ export interface CandidateProfileExtras {
 export interface CandidateRanking {
   score: number;
   reasoning: string;
-  updatedAt: any;
+  updatedAt: FireDate;
 }
 
 export interface ParsedResumeData {
@@ -93,20 +124,6 @@ export interface ParsedResumeData {
   education: string[];
   skills: string[];
   certifications: string[];
-}
-
-// Environment variables type definitions
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_FIREBASE_API_KEY: string;
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: string;
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: string;
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: string;
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: string;
-      NEXT_PUBLIC_FIREBASE_APP_ID: string;
-    }
-  }
 }
 
 // Resume parsing types
@@ -203,7 +220,7 @@ export interface RecruitmentRequest {
   recruiterName?: string;
   recruiterEmail?: string;
   companyName?: string;
-  createdAt: any;
+  createdAt: FireDate;
   applicantCount?: number;
   viewedBy?: string[];
   /** How many interview rounds this post runs. Absent on posts created before this was configurable. */
@@ -217,23 +234,23 @@ export interface RecruitmentRequest {
   /** How many days a listing runs for each time it is posted or reposted. */
   validityDays?: number;
   /** When the current listing went live; reset by a repost (createdAt never changes). */
-  postedAt?: any;
+  postedAt?: FireDate;
   /** When the listing stops accepting applications. Absent = never expires. */
-  expiresAt?: any;
+  expiresAt?: FireDate;
   /** Set while paused; on resume the expiry moves out by the paused time. */
-  pausedAt?: any;
+  pausedAt?: FireDate;
   pausedReason?: PostPauseReason;
   /** Drafts only: when set, the post goes live by itself at this time (a "scheduled" post). */
-  publishAt?: any;
+  publishAt?: FireDate;
   /** Stop taking applications (the post pauses itself) once this many have been received. Absent = no cap. */
   applicationCap?: number;
   /** Stamped by the daily sweep the first time it sees the post past its expiry. */
-  expiredAt?: any;
-  closedAt?: any;
+  expiredAt?: FireDate;
+  closedAt?: FireDate;
   closeReason?: PostCloseReason;
   /** How many times the post has been reposted. */
   repostCount?: number;
-  lastRepostedAt?: any;
+  lastRepostedAt?: FireDate;
 }
 
 /* ------------------------------------------------------------------ *
@@ -277,8 +294,8 @@ export interface SubscriptionPlan {
   privileges?: PlanPrivileges;
   features: string[];
   active: boolean;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FireDate;
+  updatedAt?: FireDate;
 }
 
 /** Snapshot of the plan a recruiter holds, stored on users/{uid}.subscription. */
@@ -291,8 +308,8 @@ export interface UserSubscription {
   /** Credit points the plan gave when granted (the live plan's value wins when it can be read). */
   credits?: number;
   privileges?: PlanPrivileges;
-  startedAt: any;
-  expiresAt: any;
+  startedAt: FireDate;
+  expiresAt: FireDate;
   /** Set when the plan was bought online: the payments/{orderId} it came from. */
   paymentOrderId?: string;
 }
@@ -310,8 +327,8 @@ export interface SubscriptionRequest {
   planName: string;
   planLevel: number;
   status: SubscriptionRequestStatus;
-  createdAt: any;
-  resolvedAt?: any;
+  createdAt: FireDate;
+  resolvedAt?: FireDate;
   resolvedBy?: string;
   note?: string;
 }
@@ -344,9 +361,9 @@ export interface PaymentRecord {
   razorpayPaymentId?: string;
   method?: string | null;
   failureReason?: string | null;
-  expiresAt?: any;
-  createdAt: any;
-  paidAt?: any;
+  expiresAt?: FireDate;
+  createdAt: FireDate;
+  paidAt?: FireDate;
   /** Issued by the server when the payment succeeds (absent on payments made before invoicing). */
   invoice?: PaymentInvoice;
 }
@@ -354,12 +371,12 @@ export interface PaymentRecord {
 /** Invoice terms frozen at payment time (functions/src/payments.ts). */
 export interface PaymentInvoice {
   number: string;
-  issuedAt: any;
+  issuedAt: FireDate;
   seller: { name: string; address: string; gstin: string; email: string };
   billedTo: { name: string; email: string; company: string; phone: string };
   description: string;
-  periodStart: any;
-  periodEnd: any;
+  periodStart: FireDate;
+  periodEnd: FireDate;
   /** In paise, inclusive of any taxes. */
   amount: number;
   currency: string;

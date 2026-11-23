@@ -1,3 +1,4 @@
+import type { DocumentData } from 'firebase/firestore';
 import { Page, Text, View, Document, StyleSheet, Link } from '@react-pdf/renderer';
 
 // Register standard fonts if needed, but Times-Roman is a built-in standard
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
 });
 
 interface ResumeProps {
-    data: any;
+    data: DocumentData;
 }
 
 export const StandardResumeTemplate = ({ data }: ResumeProps) => {
@@ -126,7 +127,7 @@ export const StandardResumeTemplate = ({ data }: ResumeProps) => {
                 {educationItems && educationItems.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Education</Text>
-                        {educationItems.map((edu: any, i: number) => (
+                        {educationItems.map((edu: DocumentData, i: number) => (
                             <View key={i} style={{ marginBottom: 6 }}>
                                 <View style={styles.subheadingRow}>
                                     <View style={{ flex: 1 }}>
@@ -148,7 +149,7 @@ export const StandardResumeTemplate = ({ data }: ResumeProps) => {
                 {experienceItems && experienceItems.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Experience</Text>
-                        {experienceItems.map((exp: any, i: number) => (
+                        {experienceItems.map((exp: DocumentData, i: number) => (
                             <View key={i} style={{ marginBottom: 6 }}>
                                 <View style={styles.subheadingRow}>
                                     <View style={{ flex: 1 }}>
@@ -175,7 +176,7 @@ export const StandardResumeTemplate = ({ data }: ResumeProps) => {
                 {projectItems && projectItems.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Projects</Text>
-                        {projectItems.map((proj: any, i: number) => (
+                        {projectItems.map((proj: DocumentData, i: number) => (
                             <View key={i} style={{ marginBottom: 8 }}>
                                 <View style={styles.subheadingRow}>
                                     <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -206,7 +207,7 @@ export const StandardResumeTemplate = ({ data }: ResumeProps) => {
                 {certificateItems && certificateItems.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Certifications</Text>
-                        {certificateItems.map((cert: any, i: number) => (
+                        {certificateItems.map((cert: DocumentData, i: number) => (
                             <View key={i} style={{ marginBottom: 4 }}>
                                 <View style={styles.subheadingRow}>
                                     <View style={{ flex: 1, flexDirection: 'row' }}>

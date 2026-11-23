@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import PostStageList from '@/components/recruitment/PostStageList';
@@ -216,7 +216,7 @@ export default function InsightsTab({ userRole, userId, canViewContact = false }
       const users = await getDocs(collection(db, 'users'));
       const map: Record<string, Person> = {};
       users.forEach((d) => {
-        const data: Record<string, any> = d.data();
+        const data: DocumentData = d.data();
         if (data.role !== 'user') return;
         const skills = getUserSkills(data);
         map[d.id] = {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { db, auth, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteField, type DocumentData } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { FileDown, CheckCircle2, AlertCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -91,7 +91,7 @@ const sigDiff = (appliedSig: string, currentSig: string): unknown => {
     };
 };
 
-const buildUserData = (data: any, fallbackEmail: string) => ({
+const buildUserData = (data: DocumentData, fallbackEmail: string) => ({
     firstName: data.firstName || '',
     lastName: data.lastName || '',
     email: data.email || fallbackEmail || '',
@@ -110,7 +110,7 @@ const buildUserData = (data: any, fallbackEmail: string) => ({
 });
 
 /** Fingerprint of everything the resume template renders. */
-const signatureOf = (u: any) => JSON.stringify({
+const signatureOf = (u: DocumentData) => JSON.stringify({
     firstName: u.firstName,
     lastName: u.lastName,
     email: u.email,
@@ -136,7 +136,7 @@ type AppliedState = { url: string; path: string; sig: string; prev: string };
 const appliedStateByUid = new Map<string, AppliedState>();
 
 export default function PersonalizedCVPage() {
-    const [userData, setUserData] = useState<any>(null);
+    const [userData, setUserData] = useState<DocumentData | null>(null);
     const [loading, setLoading] = useState(true);
     /** null = the profile keeps its own resume. */
     const [applied, setApplied] = useState<AppliedState | null>(null);
@@ -193,6 +193,7 @@ export default function PersonalizedCVPage() {
             log('unmount');
             unsubscribe();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Subscribe once on mount
     }, []);
 
     /** Fires after every relevant state change - the single place to see why
@@ -447,7 +448,7 @@ export default function PersonalizedCVPage() {
                 };
                 writeAppliedCache(user.uid, nextState);
                 setApplied(nextState);
-                setUserData((prev: any) => ({ ...prev, resumeUrl: publicUrl }));
+                setUserData((prev: DocumentData) => ({ ...prev, resumeUrl: publicUrl }));
                 log('toggle:on:done', { publicUrl, prev: prevResumeUrl, sig: sigTag(profileSignature) });
                 popup.success('This resume is now used in your profile.', { id: toastId });
             } catch (error) {
@@ -490,7 +491,7 @@ export default function PersonalizedCVPage() {
 
                 clearAppliedCache(user.uid);
                 setApplied(null);
-                setUserData((prev: any) => ({ ...prev, resumeUrl: restored }));
+                setUserData((prev: DocumentData) => ({ ...prev, resumeUrl: restored }));
                 log('toggle:off:done', { restored });
                 popup.success('Previous profile resume restored.', { id: toastId });
             } catch (error) {
@@ -658,7 +659,7 @@ export default function PersonalizedCVPage() {
                                         <div style={{ height: '0.5px', backgroundColor: '#000000', width: '100%', marginTop: '6px' }} />
                                     </div>
                                     <div className="space-y-1">
-                                        {userData?.educationItems?.map((edu: any, i: number) => (
+                                        {userData?.educationItems?.map((edu: DocumentData, i: number) => (
                                             <div key={i} style={{ fontSize: '12px', color: '#000000' }}>
                                                 <div className="flex justify-between font-bold">
                                                     <span>{edu.collegeName}</span>
@@ -677,7 +678,7 @@ export default function PersonalizedCVPage() {
                                         <div style={{ height: '0.5px', backgroundColor: '#000000', width: '100%', marginTop: '6px' }} />
                                     </div>
                                     <div className="space-y-1">
-                                        {userData?.experienceItems?.map((exp: any, i: number) => (
+                                        {userData?.experienceItems?.map((exp: DocumentData, i: number) => (
                                             <div key={i} style={{ fontSize: '12px', color: '#000000' }}>
                                                 <div className="flex justify-between font-bold">
                                                     <span>{exp.company}</span>
@@ -713,7 +714,7 @@ export default function PersonalizedCVPage() {
                                         <div style={{ height: '0.5px', backgroundColor: '#000000', width: '100%', marginTop: '6px' }} />
                                     </div>
                                     <div className="space-y-4">
-                                        {userData?.projectItems?.map((proj: any, i: number) => (
+                                        {userData?.projectItems?.map((proj: DocumentData, i: number) => (
                                             <div key={i} style={{ fontSize: '12px', color: '#000000' }}>
                                                 <div className="flex justify-between font-bold">
                                                     <p>{proj.title} | <span className="font-normal" style={{ color: '#374151' }}>{proj.technologies || 'React'}</span> | {proj.link && <a href={proj.link} className="font-normal" style={{ color: '#000000', textDecoration: 'none' }}>(Link)</a>}</p>

@@ -1,6 +1,7 @@
+import type { TimestampLike } from '@/types';
 import { useEffect, useState } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, deleteDoc, type DocumentData, type DocumentReference } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { MoreVertical, Trash2, BriefcaseBusiness, CalendarClock, CreditCard, BadgeCheck, MessageSquare, UserCheck, type LucideIcon } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -9,9 +10,9 @@ import { stripEmoji, timeAgo } from '@/lib/format';
 interface Notification {
   id: string;
   message: string;
-  createdAt: any;
+  createdAt: TimestampLike | null;
   viewed: boolean;
-  ref: any;
+  ref: DocumentReference;
   title?: string;
   userId?: string;
   type?: string;
@@ -75,8 +76,8 @@ export default function NotificationsTab({ embedded = false }: { embedded?: bool
       (snap) => {
         const list: Notification[] = [];
         snap.forEach((docSnap) => {
-          const data: any = docSnap.data();
-          list.push({ id: docSnap.id, ref: docSnap.ref, ...data });
+          const data: DocumentData = docSnap.data();
+          list.push({ id: docSnap.id, ref: docSnap.ref, ...data } as Notification);
         });
         list.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setNotifications(list);

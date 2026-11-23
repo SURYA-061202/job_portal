@@ -58,6 +58,7 @@ export default function StatsTab({ userRole, userId }: { userRole?: string | nul
       }
     };
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
   }, []);
 
   // Calculate department distribution from job posts

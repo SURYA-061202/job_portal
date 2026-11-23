@@ -1,6 +1,7 @@
+import { errorMessage } from '@/lib/errors';
 import { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import { isClosingSoon, isPostOpen, postedTime } from '@/lib/postLifecycle';
@@ -38,7 +39,7 @@ const safeApplicantCounts = async (): Promise<Record<string, number>> => {
 
 export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicationsViewProps) {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
-    const [applications, setApplications] = useState<any[]>([]);
+    const [applications, setApplications] = useState<DocumentData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
@@ -98,7 +99,7 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
 
             const apps = await getUserApplications(user.uid);
 
-            const detailedApplications = await Promise.all(apps.map(async (app: any) => {
+            const detailedApplications = await Promise.all(apps.map(async (app: DocumentData): Promise<DocumentData | null> => {
                 try {
                     const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
                     if (postDoc.exists()) {
@@ -117,14 +118,14 @@ export default function JobsAndApplicationsView({ activeTab }: JobsAndApplicatio
                 }
             }));
 
-            setApplications(detailedApplications.filter(Boolean));
+            setApplications(detailedApplications.filter((x): x is DocumentData => x !== null));
 
             const counts = await safeApplicantCounts();
             setApplicantCounts(counts);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error fetching applications:', error);
-            popup.error('Failed to load applications. ' + (error?.message || ''));
+            popup.error('Failed to load applications. ' + (errorMessage(error) || ''));
         } finally {
             setLoading(false);
         }

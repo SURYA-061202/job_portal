@@ -1,9 +1,10 @@
+import { toMillis } from '@/lib/dates';
 import BackRow from '@/components/layout/BackRow';
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getAllApplications, setApplicationStatus } from '@/lib/jobApplications';
-import type { Education, RecruitmentRequest } from '@/types';
+import type { Education, RecruitmentRequest, FireDate } from '@/types';
 import {
     getUserCertificates,
     getUserCourses,
@@ -90,7 +91,7 @@ type PipelineItem = {
     postId: string;
     postTitle?: string;
     source: 'manual' | 'applicant';
-    createdAt?: any;
+    createdAt?: FireDate;
     /** Profile fields the user filled in on the user-side portal. */
     email?: string;
     phone?: string;
@@ -103,12 +104,6 @@ type PipelineItem = {
 };
 
 /** Firestore Timestamp / Date / epoch value -> comparable milliseconds. */
-const toMillis = (value: any): number => {
-    if (!value) return 0;
-    if (typeof value.toDate === 'function') return value.toDate().getTime();
-    if (typeof value.seconds === 'number') return value.seconds * 1000;
-    return Number(value) || 0;
-};
 
 /**
  * What the candidate sent back from the interview invite. Availability and the
@@ -153,6 +148,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
     useEffect(() => {
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Reload only when the user identity changes
     }, [userRole, userId]);
 
     const fetchData = async () => {
@@ -178,7 +174,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
                 ? query(collection(db, 'candidates'), where('recruiterId', '==', userId))
                 : query(collection(db, 'candidates'));
             const candSnap = await getDocs(candQ);
-            const manualById: Record<string, any> = {};
+            const manualById: DocumentData = {};
             candSnap.forEach(d => { manualById[d.id] = d.data(); });
 
             // Interview invite responses (availability + verified details), keyed by candidate id.
@@ -189,7 +185,7 @@ export default function RecruitmentPipelineTab({ userRole, userId }: { userRole?
 
             // Registered job-seekers, used to render names/roles for their applications.
             const usersSnap = await getDocs(collection(db, 'users'));
-            const registeredById: Record<string, any> = {};
+            const registeredById: DocumentData = {};
             usersSnap.forEach(d => {
                 const data = d.data();
                 if (data.role === 'user') registeredById[d.id] = data;

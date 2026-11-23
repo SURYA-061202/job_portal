@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/errors';
 import { useRecordProfileView } from '@/lib/profileViews';
 import type { Candidate, RecruitmentRequest } from "@/types";
 import { ArrowLeft, ChevronRight, Check, Calendar, XCircle, Pencil, Loader2 } from "lucide-react";
@@ -48,8 +49,8 @@ interface Props {
 }
 
 export default function InterviewCandidateDetail({ candidate, post, onBack, onStatusUpdated, onCandidateSelected }: Props) {
-  const interview = (candidate as any).interviewDetails || {};
-  const status = (candidate as any).status;
+  const interview = candidate.interviewDetails || {};
+  const status = candidate.status;
   useRecordProfileView(candidate.id);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
         const ref = doc(db, "interviews", candidate.id);
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          const data = snap.data() as any;
+          const data = snap.data();
           setSelectedDate(data.selectedDate ?? null);
           setResponse(data.response ?? null);
           if (data.currentSalary) setCurrentSalary(data.currentSalary);
@@ -115,7 +116,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
       const nextRoundNum = getRoundNumber(nextRound);
 
       // 1. Update status
-      const applicantPostId = (candidate as any).postId;
+      const applicantPostId = candidate.postId;
       if (applicantPostId) {
         await setApplicationStatus(applicantPostId, candidate.id, nextRound);
       } else {
@@ -142,7 +143,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
         await updateDoc(interviewRef, updatePayload);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: (candidate as any).postId || interview.postId, createdAt: new Date() });
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: candidate.postId || interview.postId, createdAt: new Date() });
       }
 
       // 3. Send round invite email
@@ -169,9 +170,9 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
       popup.success(`Moved to Round ${nextRoundNum} (${effectiveRoundName})`);
       onStatusUpdated?.();
       onBack();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update status", err);
-      popup.error(err.message || "Failed to update");
+      popup.error(errorMessage(err) || "Failed to update");
     } finally {
       setMoving(false);
     }
@@ -180,7 +181,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
   const handleSelect = async () => {
     setMoving(true);
     try {
-      const applicantPostId = (candidate as any).postId;
+      const applicantPostId = candidate.postId;
       if (applicantPostId) {
         await setApplicationStatus(applicantPostId, candidate.id, 'selected');
       } else {
@@ -205,7 +206,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
         await updateDoc(interviewRef, updatePayload);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: (candidate as any).postId || interview.postId, createdAt: new Date() });
+        await setDoc(interviewRef, { ...updatePayload, candidateId: candidate.id, postId: candidate.postId || interview.postId, createdAt: new Date() });
       }
 
       void notifyCandidateOfStatusChange({
@@ -221,9 +222,9 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
       } else {
         onBack();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to select candidate", err);
-      popup.error(err.message || "Failed to select");
+      popup.error(errorMessage(err) || "Failed to select");
     } finally {
       setMoving(false);
     }
@@ -244,7 +245,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
     setRejecting(true);
     try {
       const newStatus = `${status ?? 'round1'}rejected`;
-      const applicantPostId = (candidate as any).postId;
+      const applicantPostId = candidate.postId;
       const rejectionFields = { rejectionReason: reason, rejectedAt: new Date() };
 
       if (applicantPostId) {
@@ -284,7 +285,7 @@ export default function InterviewCandidateDetail({ candidate, post, onBack, onSt
       else popup.warning("Candidate rejected, but the email could not be sent");
       onStatusUpdated?.();
       onBack();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       popup.error("Failed to reject");
     } finally {

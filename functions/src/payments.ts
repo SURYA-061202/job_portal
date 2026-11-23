@@ -127,12 +127,12 @@ async function razorpay<T>(path: string, init: { method?: string; body?: unknown
     },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  const json = (await res.json().catch(() => ({}))) as any;
+  const json = (await res.json().catch(() => ({}))) as { error?: unknown };
   if (!res.ok) {
     console.error(`Razorpay ${init.method || "GET"} ${path} failed`, res.status, json?.error);
     throw new HttpsError("unavailable", "The payment service did not respond. Please try again.");
   }
-  return json as T;
+  return json as unknown as T;
 }
 
 interface RzpOrder {
@@ -178,7 +178,7 @@ export function webhookSignatureValid(rawBody: Buffer | string, signature: strin
 const audienceOfRole = (role: unknown): "recruiter" | "user" =>
   role === "recruiter" || role === "manager" || role === "admin" ? "recruiter" : "user";
 
-const displayName = (u: Record<string, any>) => `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email || "Recruiter";
+const displayName = (u: FirebaseFirestore.DocumentData) => `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email || "Recruiter";
 
 const formatDate = (d: Date) =>
   d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
@@ -230,7 +230,7 @@ async function grantPaidPlan(orderId: string, payment: RzpPayment, via: "checkou
     const counterSnap = await tx.get(counterRef);
     const seq = (Number(counterSnap.data()?.last) || 0) + 1;
 
-    const user = (userSnap.data() ?? {}) as Record<string, any>;
+    const user = (userSnap.data() ?? {}) as FirebaseFirestore.DocumentData;
     const current = user.subscription as { planId?: string; expiresAt?: FsTimestamp } | undefined;
     const currentEnd = current?.expiresAt?.toDate?.();
     const base =

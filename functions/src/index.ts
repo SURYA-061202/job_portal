@@ -65,7 +65,7 @@ async function send(opts: { to: string; subject: string; html: string }, label: 
   try {
     await mailer().sendMail(opts);
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(`${label} error`, err);
     throw new HttpsError("internal", "Failed to send email");
   }
@@ -91,7 +91,7 @@ export const managerInvite = onCall(async (request) => {
       throw new HttpsError("failed-precondition", "That account is not a recruiter or manager.");
     }
     setPasswordLink = await adminAuthInstance().generatePasswordResetLink(email, { url: appUrl });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof HttpsError) throw err;
     console.error("managerInvite link error", err);
     throw new HttpsError("not-found", "No account found for this email.");
@@ -316,9 +316,9 @@ export const sendPasswordResetMail = onCall(async (request) => {
   let resetLink: string;
   try {
     resetLink = await adminAuthInstance().generatePasswordResetLink(email, { url: appUrl });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("sendPasswordResetMail link error", err);
-    if (err?.code === "auth/user-not-found") {
+    if ((err as { code?: string } | null)?.code === "auth/user-not-found") {
       throw new HttpsError("not-found", "No account found with this email");
     }
     throw new HttpsError("internal", "Failed to generate password reset link");

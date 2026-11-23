@@ -3,20 +3,20 @@ declare module 'pdf-parse' {
     PDFFormatVersion: string;
     IsAcroFormPresent: boolean;
     IsXFAPresent: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface PDFData {
     numpages: number;
     numrender: number;
     info: PDFInfo;
-    metadata: any;
+    metadata: unknown;
     text: string;
     version: string;
   }
 
   function parse(dataBuffer: Buffer, options?: {
-    pagerender?: (pageData: any) => string;
+    pagerender?: (pageData: unknown) => string;
     max?: number;
     version?: string;
   }): Promise<PDFData>;

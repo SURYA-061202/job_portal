@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, type DocumentData } from 'firebase/firestore';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useDropzone } from 'react-dropzone';
@@ -14,8 +14,8 @@ const EMPTY_EDU = {
 type EduForm = typeof EMPTY_EDU;
 
 interface ProfileDetailsViewProps {
-    formData: any;
-    setFormData: React.Dispatch<React.SetStateAction<any>>;
+    formData: DocumentData;
+    setFormData: React.Dispatch<React.SetStateAction<DocumentData>>;
 }
 
 export default function ProfileDetailsView({ formData, setFormData }: ProfileDetailsViewProps) {
@@ -72,7 +72,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         setCourseInput('');
     };
 
-    const saveArrayConfig = async (arrayField: string, items: any[]) => {
+    const saveArrayConfig = async (arrayField: string, items: (DocumentData | string)[]) => {
         const user = auth.currentUser;
         if (!user) return;
         setSaving(true);
@@ -81,7 +81,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                 [arrayField]: items,
                 updatedAt: new Date()
             });
-            setFormData((prev: any) => ({ ...prev, [arrayField]: items }));
+            setFormData((prev: DocumentData) => ({ ...prev, [arrayField]: items }));
             popup.success('Updated successfully!');
             closeModal();
             setSkillInput('');
@@ -134,7 +134,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         saveArrayConfig('courseItems', tempCourses);
     };
 
-    const handleCertFileUpload = async (e: any) => {
+    const handleCertFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         const user = auth.currentUser;
         if (!file || !user) return;
@@ -153,7 +153,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
 
             setCertForm({ ...certForm, url: publicUrl });
             popup.success('Certificate file uploaded!');
-        } catch (error: any) {
+        } catch {
             popup.error(`Upload failed`);
         } finally {
             setUploadingCert(false);
@@ -161,7 +161,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
         }
     };
 
-    const handleMarksheetUpload = async (e: any) => {
+    const handleMarksheetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         const user = auth.currentUser;
         if (!file || !user) return;
@@ -176,7 +176,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             const publicUrl = await getDownloadURL(snapshot.ref);
             setEduForm((prev) => ({ ...prev, marksheetUrl: publicUrl, marksheetName: file.name }));
             popup.success('Marksheet uploaded!');
-        } catch (error: any) {
+        } catch {
             popup.error('Upload failed');
         } finally {
             setUploadingMarksheet(false);
@@ -225,10 +225,10 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
             const snapshot = await uploadBytes(storageRef, file, { contentType: file.type });
             const publicUrl = await getDownloadURL(snapshot.ref);
 
-            setFormData((prev: any) => ({ ...prev, resumeUrl: publicUrl }));
+            setFormData((prev: DocumentData) => ({ ...prev, resumeUrl: publicUrl }));
             await updateDoc(doc(db, 'users', user.uid), { resumeUrl: publicUrl, updatedAt: new Date() });
             popup.success('Resume uploaded successfully!');
-        } catch (error: any) {
+        } catch {
             popup.error(`Upload failed`);
         } finally {
             setUploading(false);
@@ -256,7 +256,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     <p className="text-ink/60 text-sm">No education history added.</p>
                 ) : (
                     <div className="space-y-4">
-                        {formData.educationItems.map((edu: any, idx: number) => (
+                        {formData.educationItems.map((edu: DocumentData, idx: number) => (
                             <div key={idx} className="group flex justify-between items-start">
                                 <div>
                                     <h4 className="font-bold text-ink">{edu.collegeName}</h4>
@@ -344,7 +344,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     <p className="text-ink/60 text-sm">No projects added yet.</p>
                 ) : (
                     <div className="space-y-6">
-                        {formData.projectItems.map((proj: any, idx: number) => (
+                        {formData.projectItems.map((proj: DocumentData, idx: number) => (
                             <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => openModal('project', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
@@ -376,7 +376,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     <p className="text-ink/60 text-sm">No certifications added yet.</p>
                 ) : (
                     <div className="space-y-4">
-                        {formData.certificateItems.map((cert: any, idx: number) => (
+                        {formData.certificateItems.map((cert: DocumentData, idx: number) => (
                             <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => openModal('certificate', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
@@ -406,7 +406,7 @@ export default function ProfileDetailsView({ formData, setFormData }: ProfileDet
                     <p className="text-ink/60 text-sm">No work experience added yet.</p>
                 ) : (
                     <div className="space-y-4">
-                        {formData.experienceItems.map((exp: any, idx: number) => (
+                        {formData.experienceItems.map((exp: DocumentData, idx: number) => (
                             <div key={idx} className="group relative border border-border bg-muted rounded-lg p-4">
                                 <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => openModal('experience', idx)} className="p-1.5 bg-surface hover:bg-ink/5 border border-border rounded-lg text-ink/70 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>

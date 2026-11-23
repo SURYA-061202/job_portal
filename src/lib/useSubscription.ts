@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { FREE_SUBSCRIPTION, FREE_USER_SUBSCRIPTION, resolveSubscription } from '@/lib/subscriptions';
 import type { EffectiveSubscription, SubscriptionAudience } from '@/types';
@@ -11,7 +11,7 @@ import type { EffectiveSubscription, SubscriptionAudience } from '@/types';
  * Returns null until the first snapshot arrives.
  */
 export function useSubscription(userId: string | null, audience: SubscriptionAudience = 'recruiter'): EffectiveSubscription | null {
-    const [userData, setUserData] = useState<Record<string, any> | undefined | null>(null);
+    const [userData, setUserData] = useState<DocumentData | undefined | null>(null);
     const [planCredits, setPlanCredits] = useState<number | null>(null);
     const [failed, setFailed] = useState(false);
 

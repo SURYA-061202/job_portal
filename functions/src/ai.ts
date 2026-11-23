@@ -199,7 +199,7 @@ Description: ${str(job.description, 3000) || "N/A"}`;
       const ref = db.collection("users").doc(userId);
       const snap = await ref.get();
       if (!snap.exists) continue;
-      const c = snap.data() as Record<string, any>;
+      const c = snap.data() as FirebaseFirestore.DocumentData;
       const ed = (c.extractedData || {}) as Record<string, unknown>;
       const profile = `
 Name: ${str(c.name || `${c.firstName || ""} ${c.lastName || ""}`, 120)}

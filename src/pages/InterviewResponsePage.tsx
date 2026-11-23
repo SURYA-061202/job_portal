@@ -1,3 +1,4 @@
+import type { DocumentData } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import popup from '@/components/ui/Popup';
@@ -17,7 +18,7 @@ export default function InterviewResponsePage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [interest, setInterest] = useState<'interested' | 'not_interested' | ''>('');
-  const [existingResponse, setExistingResponse] = useState<any>(null);
+  const [existingResponse, setExistingResponse] = useState<DocumentData | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -111,8 +112,8 @@ export default function InterviewResponsePage() {
 
         {/* Interest toggle */}
         <div className="flex justify-center gap-4 mb-6">
-          {[{ value: 'interested', label: 'Interested' }, { value: 'not_interested', label: 'Not Interested' }].map(opt => (
-            <button key={opt.value} onClick={() => setInterest(opt.value as any)}
+          {([{ value: 'interested', label: 'Interested' }, { value: 'not_interested', label: 'Not Interested' }] as const).map(opt => (
+            <button key={opt.value} onClick={() => setInterest(opt.value)}
               className={`px-4 py-2 rounded-xl text-sm border transition-colors ${interest === opt.value ? 'border-ink/70 bg-ink/70 text-surface font-semibold hover:border-brand hover:bg-brand hover:text-ink' : 'border-border bg-surface text-ink font-semibold hover:border-ink'}`}>{opt.label}</button>
           ))}
         </div>

@@ -1,3 +1,4 @@
+import type { DocumentData } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -15,7 +16,7 @@ import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 export default function MatchingJobs() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [userData, setUserData] = useState<any>(null);
+    const [userData, setUserData] = useState<DocumentData | null>(null);
     const [, setUserId] = useState<string | null>(null);
     const navigate = useNavigate();
     const skin = useSkin();

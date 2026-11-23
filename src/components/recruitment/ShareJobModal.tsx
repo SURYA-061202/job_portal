@@ -21,7 +21,7 @@ export default function ShareJobModal({ jobTitle, jobId, onClose }: ShareJobModa
             setCopied(true);
             popup.success('Link copied to clipboard!');
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
+        } catch {
             popup.error('Failed to copy link');
         }
     };

@@ -18,12 +18,12 @@ async function personName(candidateId: string): Promise<string> {
   const db = firestore();
   const user = await db.collection("users").doc(candidateId).get();
   if (user.exists) {
-    const d = user.data() as Record<string, any>;
+    const d = user.data() as FirebaseFirestore.DocumentData;
     return `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email || "A candidate";
   }
   const cand = await db.collection("candidates").doc(candidateId).get();
   if (cand.exists) {
-    const d = cand.data() as Record<string, any>;
+    const d = cand.data() as FirebaseFirestore.DocumentData;
     return d.name || d.email || "A candidate";
   }
   return "A candidate";
@@ -39,7 +39,7 @@ export async function notifyRecruiters(p: Params): Promise<void> {
     if (p.postId) {
       const post = await db.collection("recruits").doc(p.postId).get();
       if (post.exists) {
-        const d = post.data() as Record<string, any>;
+        const d = post.data() as FirebaseFirestore.DocumentData;
         jobTitle = d.jobTitle || "";
         let email: string | undefined = d.recruiterEmail;
         if (!email && d.recruiterId) {

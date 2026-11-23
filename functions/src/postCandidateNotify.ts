@@ -18,7 +18,7 @@ import { claim, formatExpiry, toDate } from "./expiryReminders";
  * twice, while a reposted post that later ends again notifies afresh.
  */
 
-type Doc = Record<string, any>;
+type Doc = FirebaseFirestore.DocumentData;
 
 const STAFF_ROLES = ["recruiter", "manager", "admin"];
 /** Most people notified per post per event; a runaway post must not fan out forever. */

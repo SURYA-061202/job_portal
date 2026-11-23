@@ -75,7 +75,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
                         education: getUserEducation(data),
                         createdAt: data.createdAt,
                         updatedAt: data.updatedAt,
-                        status: 'pending' as any,
+                        status: 'pending',
                         rankings: data.rankings
                     } as Candidate);
                 });
@@ -109,7 +109,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
         if (!totalCandidates) return 0;
         const totalExp = candidates.reduce((acc, c) => acc + getExpYears(c.experience), 0);
         return (totalExp / totalCandidates).toFixed(1);
-    }, [candidates]);
+    }, [candidates, totalCandidates]);
 
     const experienceData = useMemo(() => {
         const buckets = { '0-2 Yrs': 0, '3-5 Yrs': 0, '5-8 Yrs': 0, '8+ Yrs': 0 };
@@ -130,7 +130,7 @@ export default function AnalyticsDashboard({ userRole, userId }: { userRole?: st
             // work experience is only a fallback for older data.
             const profileAddress = (c as unknown as { address?: string }).address;
             let loc = profileAddress
-                || (c.extractedData?.workExperience?.[0] as any)?.location
+                || (c.extractedData?.workExperience?.[0] as { location?: string } | undefined)?.location
                 || 'Unknown';
             loc = loc.split(',')[0].trim();
             if (loc.length > 15) loc = 'Other';

@@ -1,3 +1,7 @@
+import type { InterviewDetails } from '@/types';
+import type { DocumentData } from 'firebase/firestore';
+import { toMillis } from '@/lib/dates';
+import { errorMessage } from '@/lib/errors';
 import { useRecordProfileView } from '@/lib/profileViews';
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
@@ -13,7 +17,7 @@ import { notifyCandidateOfStatusChange } from "@/lib/notificationHelper";
 import { getPostRounds, getRoundLabel } from "@/lib/interviewRounds";
 import { useSkin, FOCUS } from "@/styles/skin";
 
-const normalizeSkills = (skills: any): string[] => {
+const normalizeSkills = (skills: unknown): string[] => {
   if (!skills) return [];
   if (Array.isArray(skills)) return skills.filter(Boolean);
   if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
@@ -47,7 +51,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
       // 1. Fetch manually uploaded candidates from Firestore, only ones shortlisted
       // to a post this user owns (or all, for admin).
-      let candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
+      const candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
       const qs = await getDocs(candQ);
       qs.forEach((d) => {
         const data = d.data();
@@ -60,9 +64,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
       // Sort manually
       allCandidates.sort((a, b) => {
-        const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-        const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-        return Number(dateB) - Number(dateA);
+        return toMillis(b.createdAt) - toMillis(a.createdAt);
       });
 
       // 2. Fetch shortlisted job applicants, scoped to owned posts
@@ -90,8 +92,8 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         // Fetch user details for each shortlisted applicant
         for (const app of applications) {
           try {
-            let userData: any = null;
-            let intData: any = {};
+            let userData: DocumentData | null = null;
+            let intData: DocumentData = {};
 
             // First try users collection (registered users)
             const userDoc = await getDoc(doc(db, 'users', app.user_id));
@@ -133,9 +135,9 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
                 education: userData.education || [],
                 createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                 updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
-                status: 'shortlisted' as any,
+                status: 'shortlisted',
                 postId: app.post_id,
-                interviewDetails: intData as any
+                interviewDetails: intData as InterviewDetails
               } as Candidate);
             }
           } catch (err) {
@@ -152,7 +154,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
         const candidate = allCandidates.find(c => c.id === candidateId);
         if (candidate) {
           setSelected(candidate);
-          const postId = (candidate as any).postId;
+          const postId = candidate.postId;
           if (postId) {
             const post = postsData.find(p => p.id === postId);
             if (post) setSelectedPostView(post);
@@ -169,6 +171,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   useEffect(() => {
     loadCandidates();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Reload only when the selected candidate changes
   }, [candidateId]);
 
   const handleStatusUpdated = () => {
@@ -197,7 +200,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
   }
 
   const postsWithCounts = posts
-    .map(p => ({ ...p, shortlistedCount: candidates.filter(c => (c as any).postId === p.id).length }))
+    .map(p => ({ ...p, shortlistedCount: candidates.filter(c => c.postId === p.id).length }))
     .filter(p => p.shortlistedCount > 0)
     .filter(p => {
       if (!postSearch.trim()) return true;
@@ -211,7 +214,7 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
 
   const moveCandidateToRound = async (candidate: Candidate, roundName: string) => {
     try {
-      const applicantPostId = (candidate as any).postId as string | undefined;
+      const applicantPostId = candidate.postId as string | undefined;
       if (applicantPostId) {
         await setApplicationStatus(applicantPostId, candidate.id, 'round1');
       } else {
@@ -220,12 +223,12 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       if (intSnap.exists()) {
-        const updateData: any = { roundType: roundName, status: 'round1', updatedAt: new Date() };
+        const updateData: DocumentData = { roundType: roundName, status: 'round1', updatedAt: new Date() };
         if (applicantPostId) updateData.postId = applicantPostId;
         await updateDoc(interviewRef, updateData);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        const createData: any = { roundType: roundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
+        const createData: DocumentData = { roundType: roundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
         if (applicantPostId) createData.postId = applicantPostId;
         await setDoc(interviewRef, createData);
       }
@@ -248,13 +251,13 @@ export default function ShortlistedTab({ candidateId, onBack, userRole, userId }
       });
       popup.success("Moved to Round 1");
       loadCandidates();
-    } catch (err: any) {
-      popup.error(err.message || "Failed to update status");
+    } catch (err: unknown) {
+      popup.error(errorMessage(err) || "Failed to update status");
     }
   };
 
   const shortlistedForPost = selectedPostView
-    ? candidates.filter(c => (c as any).postId === selectedPostView.id)
+    ? candidates.filter(c => c.postId === selectedPostView.id)
     : [];
 
   return (
@@ -305,12 +308,12 @@ function firstRoundName(post?: RecruitmentRequest | null): string {
 function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTitle, post }: DetailProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<DocumentData | null>(null);
   const [moveLoading, setMoveLoading] = useState(false);
   const [roundName, setRoundName] = useState(() => firstRoundName(post));
 
   const candidateId = candidate.id;
-  const candidatePostId = (candidate as any).postId as string | undefined;
+  const candidatePostId = candidate.postId as string | undefined;
   const skin = useSkin();
   useRecordProfileView(candidateId);
 
@@ -325,7 +328,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
       try {
         const snap = await getDoc(doc(db, "interviews", candidateId));
         if (snap.exists()) {
-          const data: any = snap.data();
+          const data: DocumentData = snap.data();
           // The doc is keyed by candidate only; a response recorded for another
           // post must not show up here.
           if (data.postId && candidatePostId && data.postId !== candidatePostId) return;
@@ -345,7 +348,7 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
     setMoveLoading(true);
     try {
       const effectiveRoundName = roundName.trim() || 'Round 1';
-      const applicantPostId = (candidate as any).postId;
+      const applicantPostId = candidate.postId;
       if (applicantPostId) {
         await setApplicationStatus(applicantPostId, candidate.id, 'round1');
       } else {
@@ -356,12 +359,12 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
       const interviewRef = doc(db, "interviews", candidate.id);
       const intSnap = await getDoc(interviewRef);
       if (intSnap.exists()) {
-        const updateData: any = { roundType: effectiveRoundName, status: 'round1', updatedAt: new Date() };
+        const updateData: DocumentData = { roundType: effectiveRoundName, status: 'round1', updatedAt: new Date() };
         if (applicantPostId) updateData.postId = applicantPostId;
         await updateDoc(interviewRef, updateData);
       } else {
         const { setDoc } = await import('firebase/firestore');
-        const createData: any = { roundType: effectiveRoundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
+        const createData: DocumentData = { roundType: effectiveRoundName, status: 'round1', candidateId: candidate.id, createdAt: new Date() };
         if (applicantPostId) createData.postId = applicantPostId;
         await setDoc(interviewRef, createData);
       }
@@ -389,8 +392,8 @@ function ShortlistedCandidateDetail({ candidate, onBack, onStatusUpdated, postTi
 
       popup.success("Moved to Round 1");
       onStatusUpdated?.();
-    } catch (err: any) {
-      popup.error(err.message || "Failed to update status");
+    } catch (err: unknown) {
+      popup.error(errorMessage(err) || "Failed to update status");
     } finally {
       setMoveLoading(false);
     }

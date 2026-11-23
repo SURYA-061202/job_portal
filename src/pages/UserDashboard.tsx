@@ -1,8 +1,9 @@
+import { errorMessage } from '@/lib/errors';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion, type DocumentData } from 'firebase/firestore';
 import { getUserApplications, getApplicantCounts } from '@/lib/jobApplications';
 import type { RecruitmentRequest } from '@/types';
 import { isClosingSoon, isPostOpen, postedTime } from '@/lib/postLifecycle';
@@ -18,7 +19,7 @@ import { JobListSkeleton } from '@/components/user/SkeletonLoaders';
 
 export default function UserDashboard() {
     const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
-    const [applications, setApplications] = useState<any[]>([]);
+    const [applications, setApplications] = useState<DocumentData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [locationTerm, setLocationTerm] = useState('');
@@ -96,7 +97,7 @@ export default function UserDashboard() {
 
             const apps = await getUserApplications(user.uid);
 
-            const detailedApplications = await Promise.all(apps.map(async (app: any) => {
+            const detailedApplications = await Promise.all(apps.map(async (app: DocumentData): Promise<DocumentData | null> => {
                 try {
                     const postDoc = await getDoc(doc(db, 'recruits', app.post_id));
                     if (postDoc.exists()) {
@@ -115,14 +116,14 @@ export default function UserDashboard() {
                 }
             }));
 
-            setApplications(detailedApplications.filter(Boolean));
+            setApplications(detailedApplications.filter((x): x is DocumentData => x !== null));
 
             const counts = await getApplicantCounts();
             setApplicantCounts(counts);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error fetching applications:', error);
-            popup.error('Failed to load applications. ' + (error?.message || ''));
+            popup.error('Failed to load applications. ' + (errorMessage(error) || ''));
         } finally {
             setLoading(false);
         }

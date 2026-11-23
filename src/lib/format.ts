@@ -1,13 +1,12 @@
+import type { FireDate } from '@/types';
+import { toDate as toFireDate } from '@/lib/dates';
+
 /** A Firestore Timestamp, a Date, or anything Date can parse. */
-type Timeish = { toDate: () => Date } | Date | string | number | null | undefined;
+type Timeish = FireDate | undefined;
 
 function toDate(value: Timeish): Date | null {
     if (!value) return null;
-    if (typeof value === 'object' && !(value instanceof Date) && 'toDate' in value) {
-        return value.toDate();
-    }
-    const parsed = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
+    return toFireDate(value);
 }
 
 /** "Just now" / "4m ago" / "3h ago" / "2d ago" / locale date. */

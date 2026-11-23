@@ -1,3 +1,4 @@
+import type { TimestampLike } from '@/types';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -16,7 +17,7 @@ interface Notification {
     message: string;
     time: string;
     read: boolean;
-    createdAt: any;
+    createdAt: TimestampLike | null;
     /** Set on job-deadline notifications: the post, and open jobs like it. */
     jobLink?: { postId: string; similar: { id: string; jobTitle: string }[] };
 }
@@ -35,6 +36,7 @@ export default function NotificationsPage() {
         });
 
         return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Subscribe once on mount
     }, []);
 
     const fetchNotifications = async (email: string) => {

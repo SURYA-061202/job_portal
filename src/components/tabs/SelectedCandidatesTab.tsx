@@ -1,3 +1,7 @@
+import type { InterviewDetails } from '@/types';
+import type { DocumentData } from 'firebase/firestore';
+import { toMillis } from '@/lib/dates';
+import { errorMessage } from '@/lib/errors';
 import { useRecordProfileView } from '@/lib/profileViews';
 import { useEffect, useState, type MouseEvent } from "react";
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
@@ -12,7 +16,7 @@ import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
 import { useSkin, FOCUS } from "@/styles/skin";
 
-const normalizeSkills = (skills: any): string[] => {
+const normalizeSkills = (skills: unknown): string[] => {
   if (!skills) return [];
   if (Array.isArray(skills)) return skills.filter(Boolean);
   if (typeof skills === 'string') return skills.split(',').map(s => s.trim()).filter(Boolean);
@@ -36,7 +40,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
             setSent(true);
           }
         } else {
-          const success = (candidate as any).interviewDetails?.successmail;
+          const success = candidate.interviewDetails?.successmail;
           if (success === true) setSent(true);
         }
       } catch (err) {
@@ -44,6 +48,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
       }
     };
     fetchInterviewDetails();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Refetch only when the candidate id changes
   }, [candidate.id]);
   /*const body = encodeURIComponent(
     `Dear ${candidate.name},\n\n` +
@@ -149,8 +154,8 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 
                       popup.success('Email sent successfully');
                       setSent(true);
-                    } catch (err: any) {
-                      popup.error(err.message || 'Failed to send email');
+                    } catch (err: unknown) {
+                      popup.error(errorMessage(err) || 'Failed to send email');
                     } finally {
                       setSending(false);
                     }
@@ -176,7 +181,7 @@ export function SelectedCandidateDetail({ candidate, onBack }: { candidate: Cand
 }
 
 export function RejectedCandidateDetail({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
-  const status: string = (candidate as any).status || '';
+  const status: string = candidate.status || '';
   const skin = useSkin();
   let rejectedRound: string | null = null;
   const match = status.match(/round(\d+)rejected/);
@@ -316,8 +321,8 @@ function SendCongratulationsButton({ candidate, labelled = false }: { candidate:
 
       popup.success('Email sent successfully');
       setSent(true);
-    } catch (err: any) {
-      popup.error(err.message || 'Failed to send email');
+    } catch (err: unknown) {
+      popup.error(errorMessage(err) || 'Failed to send email');
     } finally {
       setSending(false);
     }
@@ -354,7 +359,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         const isAdmin = userRole === 'admin';
 
         // 1. Fetch from Firestore candidates
-        let candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
+        const candQ = query(collection(db, "candidates"), orderBy('createdAt', 'desc'));
         const qs = await getDocs(candQ);
         qs.forEach((d) => {
           allCandidates.push({ id: d.id, ...d.data() } as Candidate);
@@ -362,9 +367,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
 
         // Sort manually
         allCandidates.sort((a, b) => {
-          const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-          const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-          return Number(dateB) - Number(dateA);
+          return toMillis(b.createdAt) - toMillis(a.createdAt);
         });
 
         // 2. Fetch job applications + post titles for the "Post" column
@@ -410,8 +413,8 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
             if (!isTarget) continue;
 
             try {
-              let userData: any = null;
-              let intData: any = {};
+              let userData: DocumentData | null = null;
+              let intData: DocumentData = {};
 
               // First try users collection (registered users)
               const userDoc = await getDoc(doc(db, 'users', app.user_id));
@@ -452,9 +455,9 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
                   education: userData.education || [],
                   createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(),
                   updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : new Date(),
-                  status: app.status as any,
+                  status: app.status,
                   postId: app.post_id,
-                  interviewDetails: intData as any
+                  interviewDetails: intData as InterviewDetails
                 } as Candidate);
               }
             } catch (err) {
@@ -472,9 +475,10 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
       }
     };
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
   }, []);
 
-  const filtered = candidates.filter((c) => ((c as any).status || '') === 'selected');
+  const filtered = candidates.filter((c) => (c.status || '') === 'selected');
 
   const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
   const [openPost, setOpenPost] = useState<RecruitmentRequest | null>(null);
@@ -497,7 +501,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   }, [userRole, userId]);
 
   const items = posts
-    .map(p => ({ post: p, count: filtered.filter(c => (c as any).postId === p.id).length }))
+    .map(p => ({ post: p, count: filtered.filter(c => c.postId === p.id).length }))
     .filter(i => i.count > 0)
     .filter(i => {
       const term = postSearch.trim().toLowerCase();
@@ -508,7 +512,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         i.post.location?.toLowerCase().includes(term)
       );
     });
-  const forPost = openPost ? filtered.filter(c => (c as any).postId === openPost.id) : [];
+  const forPost = openPost ? filtered.filter(c => c.postId === openPost.id) : [];
 
   return (
     <PostStageList

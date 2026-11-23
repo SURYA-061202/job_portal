@@ -25,7 +25,7 @@ import { useAppStyle } from '@/lib/appStyle';
 
 interface SidebarProps {
   activeTab: 'job-posts' | 'upload-resumes' | 'candidates' | 'shortlisted' | 'interviews' | 'selected' | 'stats' | 'notifications' | 'add-members' | 'member-detail' | 'pipeline' | 'analytics' | 'profile' | 'assessments' | 'subscription';
-  onTabChange: (tab: any) => void;
+  onTabChange: (tab: SidebarProps['activeTab']) => void;
   onLogout: () => void;
   userRole: string | null;
 }

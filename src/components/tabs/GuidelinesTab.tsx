@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import PostStageList from '@/components/recruitment/PostStageList';
@@ -60,7 +60,7 @@ export default function GuidelinesTab({ userRole, userId, canViewContact = false
           try {
             const u = await getDoc(doc(db, 'users', uid));
             if (!u.exists()) return null;
-            const data: Record<string, any> = u.data();
+            const data: DocumentData = u.data();
             const name = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.name || data.email || 'Unnamed';
             const edu = getUserEducation(data).map(e => [e.degree, e.field, e.institution, e.year].filter(Boolean).join(' · ')).filter(Boolean);
             const exp = getUserExperience(data).map(e => [e.title, e.meta].filter(Boolean).join(' · ')).filter(Boolean);

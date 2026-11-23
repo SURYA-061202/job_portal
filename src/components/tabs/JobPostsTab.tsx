@@ -1,3 +1,4 @@
+import { toMillis } from '@/lib/dates';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, getDocs, query as fsQuery, where, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -111,12 +112,10 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             let recruits = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            })) as any[];
+            })) as (RecruitmentRequest & { id: string })[];
 
             recruits = recruits.sort((a, b) => {
-                const dateA = (a.createdAt as any)?.toDate ? (a.createdAt as any).toDate() : (a.createdAt || 0);
-                const dateB = (b.createdAt as any)?.toDate ? (b.createdAt as any).toDate() : (b.createdAt || 0);
-                return Number(dateB) - Number(dateA);
+                return toMillis(b.createdAt) - toMillis(a.createdAt);
             });
 
             // Older posts have no owner email on them; store it so applicant notifications can find the owner.
@@ -312,6 +311,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
 
     useEffect(() => {
         fetchRecruitmentRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
     }, []);
 
     // Handle initial selection from navigation

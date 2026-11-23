@@ -32,7 +32,7 @@ const EMAIL_BEFORE_DAYS = 3;
 /** Lazy-loaded at call time (see index.ts: the 10s deployment-analysis budget). */
 const mailer = () => require("./mailer") as typeof import("./mailer");
 
-type PostData = Record<string, any>;
+type PostData = FirebaseFirestore.DocumentData;
 
 /** The owner's address: stored on the post, else read from their profile. */
 export async function ownerEmail(post: PostData): Promise<string> {

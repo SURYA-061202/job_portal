@@ -21,7 +21,7 @@ import { ownerEmail } from "./postLifecycle";
  * Sends are claimed in `expiry_reminders` first (see expiryReminders.claim).
  */
 
-type Doc = Record<string, any>;
+type Doc = FirebaseFirestore.DocumentData;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_VALIDITY_DAYS = 30;
@@ -84,7 +84,7 @@ export const publishScheduledPosts = onSchedule(
                 if (!slots) {
                     const user = ownerId ? (await db.collection("users").doc(ownerId).get()).data() as Doc | undefined : undefined;
                     const mine = ownerId ? await db.collection("recruits").where("recruiterId", "==", ownerId).get() : { docs: [] };
-                    slots = { limit: postLimit(user), live: mine.docs.filter((d: any) => isLive(d.data(), nowMs)).length };
+                    slots = { limit: postLimit(user), live: mine.docs.filter((d: FirebaseFirestore.QueryDocumentSnapshot) => isLive(d.data(), nowMs)).length };
                     limitCache.set(ownerId, slots);
                 }
                 const title = String(draft.jobTitle || "your job post");

@@ -50,9 +50,10 @@ export async function claim(key: string): Promise<boolean> {
     try {
         await firestore().collection("expiry_reminders").doc(key).create({ createdAt: Timestamp().now() });
         return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
         // 6 = ALREADY_EXISTS: another run (or another day for the same key) won.
-        if (err?.code === 6 || err?.code === "already-exists") return false;
+        const code = (err as { code?: string | number } | null)?.code;
+        if (code === 6 || code === "already-exists") return false;
         // Fail closed: skipping is safer than mailing a recruiter twice; the
         // next day's run retries anything still inside its window.
         console.error("expiry_reminders claim failed", key, err);
@@ -101,7 +102,7 @@ export const subscriptionExpiryReminders = onSchedule(
         let emailsSent = 0;
 
         for (const doc of staff.docs) {
-            const data = doc.data() as Record<string, any>;
+            const data = doc.data() as FirebaseFirestore.DocumentData;
             try {
                 const sub = data.subscription;
                 if (!sub?.expiresAt) continue;

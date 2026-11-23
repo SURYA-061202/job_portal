@@ -1,3 +1,4 @@
+import type { FireDate } from '@/types';
 import {
     addDoc,
     collection,
@@ -13,6 +14,7 @@ import {
     where,
     deleteField,
     type Unsubscribe,
+    type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
@@ -154,7 +156,7 @@ const ADMIN_SUBSCRIPTION: EffectiveSubscription = {
  * Order: admin -> active plan -> legacy isPremium flag -> free tier.
  */
 export function resolveSubscription(
-    userData: Record<string, any> | undefined | null,
+    userData: DocumentData | undefined | null,
     /** The plan's current credit points, read from subscription_plans/{planId}; falls back to the granted snapshot. */
     planCredits?: number | null
 ): EffectiveSubscription {
@@ -292,7 +294,7 @@ export async function deletePlan(planId: string): Promise<void> {
  * Requests (recruiter -> admin)
  * ------------------------------------------------------------------ */
 
-const sortNewest = <T extends { createdAt?: any }>(rows: T[]): T[] =>
+const sortNewest = <T extends { createdAt?: FireDate }>(rows: T[]): T[] =>
     rows.sort((a, b) => (toDate(b.createdAt)?.getTime() ?? 0) - (toDate(a.createdAt)?.getTime() ?? 0));
 
 export async function getMyRequests(recruiterId: string): Promise<SubscriptionRequest[]> {

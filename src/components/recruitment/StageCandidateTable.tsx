@@ -1,11 +1,11 @@
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { X, Check, Trash2, Loader2, UserX, Calendar, ArrowRight, Lock } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
-import { candidateMatchesSearch } from '@/components/resume/CandidateList';
-import { useCandidateRemoval } from './StageCandidateGrid';
+import { candidateMatchesSearch } from '@/lib/candidateMatch';
+import { useCandidateRemoval } from './useCandidateRemoval';
 
 const toTitleCase = (s?: string) =>
     (s || '').split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -18,7 +18,7 @@ const expLabel = (e?: string) => {
 
 function Detail({ c, defaultRound = '', onMove, footer, showStatus = true }: { c: Candidate; showStatus?: boolean; defaultRound?: string; onMove?: (c: Candidate, roundName: string) => Promise<void>; footer?: ReactNode }) {
     const skin = useSkin();
-    const [info, setInfo] = useState<any>(null);
+    const [info, setInfo] = useState<DocumentData | null>(null);
     const [loading, setLoading] = useState(true);
     const [round, setRound] = useState(defaultRound);
     const [moving, setMoving] = useState(false);
@@ -29,7 +29,7 @@ function Detail({ c, defaultRound = '', onMove, footer, showStatus = true }: { c
         (async () => {
             try {
                 const snap = await getDoc(doc(db, 'interviews', c.id));
-                const d: any = snap.exists() ? snap.data() : null;
+                const d: DocumentData | null = snap.exists() ? snap.data() : null;
                 // One interview doc per candidate; ignore one recorded for another post.
                 if (alive) setInfo(d && (!d.postId || !postId || d.postId === postId) ? d : null);
             } catch (err) {

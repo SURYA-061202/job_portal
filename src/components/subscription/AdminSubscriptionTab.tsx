@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
 import { Check, ClipboardList, CreditCard, Loader2, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import popup from '@/components/ui/Popup';
@@ -31,7 +31,7 @@ interface Recruiter {
     id: string;
     name: string;
     email: string;
-    data: Record<string, any>;
+    data: DocumentData;
 }
 
 interface PlanForm {
