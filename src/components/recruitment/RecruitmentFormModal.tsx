@@ -8,7 +8,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import type { RecruitmentRequest } from '@/types';
 import { getPostRounds, MAX_TOTAL_ROUNDS } from '@/lib/interviewRounds';
-import { checkPostQuota } from '@/lib/subscriptions';
+import { CREDIT_COST, spendCredits } from '@/lib/credits';
+import { resolveSubscription } from '@/lib/subscriptions';
 import { draftLifecycleFields, newPostLifecycleFields, resumePost } from '@/lib/postActions';
 import { DEFAULT_VALIDITY_DAYS, VALIDITY_OPTIONS, addDays, describeExpiry, endOfDay, formatDate, formatDateTime, getPostLifecycle, toDate } from '@/lib/postLifecycle';
 import { usePopup } from '@/components/ui/Popup';
@@ -23,8 +24,7 @@ interface RecruitmentFormModalProps {
     initialData?: RecruitmentRequest | null;
     /** The form was opened from another post: it is a new post (no id), pre-filled. */
     duplicate?: boolean;
-    /** False when the plan has no free post slot: the post can only be saved as a draft or scheduled. */
-    canPublish?: boolean;
+    /** Opens the Subscription tab, offered next to the credit-point cost of a new post. */
     onViewPlans?: () => void;
 }
 
@@ -34,7 +34,7 @@ const toDateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${
 /** <input type="datetime-local"> value, local time. */
 const toDateTimeInput = (d: Date) => `${toDateInput(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-export default function RecruitmentFormModal({ isOpen, onClose, initialData, duplicate = false, canPublish = true, onViewPlans }: RecruitmentFormModalProps) {
+export default function RecruitmentFormModal({ isOpen, onClose, initialData, duplicate = false, onViewPlans }: RecruitmentFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [userProfile, setUserProfile] = useState<{ firstName?: string; lastName?: string; companyName?: string } | null>(null);
@@ -158,6 +158,34 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
         }
     }, [initialData, isOpen, userProfile]);
 
+    // Points left to spend (a new post costs CREDIT_COST.post). null = unlimited, or not read yet;
+    // the form still works without it, the charge is re-checked on submit anyway.
+    const [creditsLeft, setCreditsLeft] = useState<number | null>(null);
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        const readBalance = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                const snap = await getDoc(doc(db, 'users', user.uid));
+                const data = snap.exists() ? snap.data() : undefined;
+                const planId = data?.subscription?.planId as string | undefined;
+                let planCredits: number | undefined;
+                if (planId) {
+                    const planSnap = await getDoc(doc(db, 'subscription_plans', planId));
+                    if (planSnap.exists() && typeof planSnap.data().credits === 'number') planCredits = planSnap.data().credits;
+                }
+                const sub = resolveSubscription(data, planCredits);
+                if (!cancelled) setCreditsLeft(sub.unlimitedCredits ? null : sub.credits);
+            } catch (error) {
+                console.error('Could not read the credit balance:', error);
+            }
+        };
+        void readBalance();
+        return () => { cancelled = true; };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); void submit('publish'); };
@@ -185,22 +213,9 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
             const startsAt = goLive ?? draftGoLive ?? new Date();
             if (!closesOn || closesOn.getTime() <= startsAt.getTime()) { showError('Pick a closing date after the post goes live.'); return; }
         }
-        const goesLiveNow = creating && !asDraft && !scheduled;
         setLoading(true);
 
         try {
-            // A post going live now must fit the plan. Drafts and scheduled posts hold no slot until they go live.
-            if (goesLiveNow) {
-                const uid = auth.currentUser?.uid;
-                if (uid) {
-                    const quota = await checkPostQuota(uid);
-                    if (!quota.allowed) {
-                        showError(`Post limit reached (${quota.used}/${quota.limit} on the ${quota.subscription.planName} plan). Save it as a draft, or subscribe to a higher plan.`);
-                        return;
-                    }
-                }
-            }
-
             let jdUrl = initialData?.jdUrl || '';
             if (file) {
                 console.log('Uploading JD to Firebase Storage...');
@@ -268,7 +283,8 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
                             : 'Recruitment request updated successfully!',
                 );
             } else {
-                // Create
+                // Create: a new post costs credit points (20), charged once for this document.
+                if (!(await spendCredits('post', { kind: 'post', label: 'Adding a post', note: formData.jobTitle.trim() || 'Job post' })).ok) return;
                 console.log('Saving recruitment request to Firestore...');
                 const user = auth.currentUser;
                 await addDoc(collection(db, 'recruits'), {
@@ -486,13 +502,22 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
                         </div>
                     </div>
 
-                    {/* Listing: how long it runs, when it goes live, and how many applications it takes */}
-                    {creating && !canPublish && (
-                        <div role="note" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                            Your plan's post limit is reached, so this post can't go live now. Save it as a draft, or schedule it for later - it goes live then only if a slot is free.
-                            {onViewPlans && <> <button type="button" onClick={onViewPlans} className="font-bold underline underline-offset-2">See plans</button></>}
+                    {/* A new post is metered by credit points: say the cost up front, and warn when the balance is short. */}
+                    {creating && !initialData?.id && (
+                        <div
+                            role="note"
+                            className={`rounded-lg border px-3 py-2 text-xs ${creditsLeft !== null && creditsLeft < CREDIT_COST.post
+                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                : `${skin.edge} ${skin.meta}`}`}
+                        >
+                            Adding a post costs {CREDIT_COST.post} credit points{creditsLeft !== null ? ` and you have ${creditsLeft}` : ''}.
+                            {creditsLeft !== null && creditsLeft < CREDIT_COST.post && onViewPlans && (
+                                <> <button type="button" onClick={onViewPlans} className="font-bold underline underline-offset-2">See plans</button></>
+                            )}
                         </div>
                     )}
+
+                    {/* Listing: how long it runs, when it goes live, and how many applications it takes */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div>
                             <label htmlFor="post-validity" className="block text-sm font-medium text-ink/80 mb-1">
@@ -725,8 +750,7 @@ export default function RecruitmentFormModal({ isOpen, onClose, initialData, dup
                     <button
                         type="submit"
                         form="recruitment-form"
-                        disabled={loading || (creating && !publishLater && !canPublish)}
-                        title={creating && !publishLater && !canPublish ? 'Post limit reached: save as a draft or schedule it' : undefined}
+                        disabled={loading}
                         className={`inline-flex items-center gap-2 cursor-pointer rounded-lg ${skin.cta} ${FOCUS} disabled:opacity-50`}
                     >
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

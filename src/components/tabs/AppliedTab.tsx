@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { collection, getDocs, getDoc, doc, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Candidate, RecruitmentRequest } from '@/types';
+import type { ApplicationSource, Candidate, RecruitmentRequest } from '@/types';
 import PostStageList from '@/components/recruitment/PostStageList';
 import StageCandidateTable from '@/components/recruitment/StageCandidateTable';
 import InterviewInviteModal from '@/components/resume/InterviewInviteModal';
+import BulkInterviewInviteModal from '@/components/resume/BulkInterviewInviteModal';
+import ReferralRewardModal from '@/components/recruitment/ReferralRewardModal';
 import popup from '@/components/ui/Popup';
-import { MapPin, Briefcase, GraduationCap } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Gift, Send } from 'lucide-react';
 import { getAllApplications } from '@/lib/jobApplications';
 import { getUserSkills, getUserEducation, getUserExperience } from '@/lib/userToCandidate';
 import { useSkin, FOCUS } from '@/styles/skin';
@@ -17,6 +19,9 @@ interface Applicant {
   education: string[];
   experience: string[];
 }
+
+/** Per-application key so one applicant can carry different sources across posts. */
+const sourceKey = (postId: string, uid: string) => `${postId}::${uid}`;
 
 /**
  * Applied: people who applied to the recruiter's posts and haven't been invited
@@ -32,6 +37,14 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
   const [search, setSearch] = useState('');
   const [openPost, setOpenPost] = useState<RecruitmentRequest | null>(null);
   const [inviteFor, setInviteFor] = useState<Candidate | null>(null);
+  /** Application source (referral / organic) per `postId::uid`. */
+  const [sources, setSources] = useState<Record<string, ApplicationSource | undefined>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  /** Candidate whose referrer is being rewarded right now. */
+  const [rewardFor, setRewardFor] = useState<{ candidate: Candidate; source: Extract<ApplicationSource, { type: 'referral' }> } | null>(null);
+  /** Referrals already rewarded this session (locks the action until reload). */
+  const [rewarded, setRewarded] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -49,6 +62,7 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
       const grouped: Record<string, string[]> = {};
       apps.forEach(a => { (grouped[a.post_id] ||= []).push(a.user_id); });
       setByPost(grouped);
+      setSources(Object.fromEntries(apps.map(a => [sourceKey(a.post_id, a.user_id), a.source])));
 
       const ids = Array.from(new Set(apps.map(a => a.user_id)));
       const entries = await Promise.all(ids.map(async (uid) => {
@@ -94,6 +108,9 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
 
   useEffect(() => { load(); }, [load]);
 
+  // A fresh post means a fresh selection — never carry checks across panels.
+  useEffect(() => { setSelectedIds(new Set()); setBulkOpen(false); }, [openPost?.id]);
+
   const items = useMemo(() => posts
     .map(p => ({ post: p, count: (byPost[p.id as string] || []).filter(uid => applicants[uid]).length }))
     .filter(i => i.count > 0)
@@ -107,9 +124,34 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
       );
     }), [posts, byPost, applicants, search]);
 
-  const rows = openPost
-    ? (byPost[openPost.id as string] || []).map(uid => applicants[uid]).filter(Boolean).map(a => ({ ...a.candidate, postId: openPost.id } as Candidate))
-    : [];
+  const rows = useMemo(() => (
+    openPost
+      ? (byPost[openPost.id as string] || []).map(uid => applicants[uid]).filter(Boolean).map(a => ({
+          ...a.candidate,
+          postId: openPost.id,
+          source: sources[sourceKey(openPost.id as string, a.candidate.id)],
+        } as Candidate))
+      : []
+  ), [openPost, byPost, applicants, sources]);
+
+  const selectedCandidates = useMemo(() => rows.filter(c => selectedIds.has(c.id)), [rows, selectedIds]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids: string[]) => {
+    setSelectedIds(prev => {
+      const allSelected = ids.length > 0 && ids.every(id => prev.has(id));
+      const next = new Set(prev);
+      ids.forEach(id => { if (allSelected) next.delete(id); else next.add(id); });
+      return next;
+    });
+  };
 
   const renderDetail = (c: Candidate) => {
     const a = applicants[c.id];
@@ -155,6 +197,18 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
               Resume
             </a>
           )}
+          {c.source?.type === 'referral' && openPost && (
+            <button
+              type="button"
+              disabled={rewarded.has(sourceKey(openPost.id as string, c.id))}
+              onClick={() => setRewardFor({ candidate: c, source: c.source as Extract<ApplicationSource, { type: 'referral' }> })}
+              title={c.source.referrerName ? `Referred by ${c.source.referrerName}` : 'Referred through a shared job link'}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-current px-3 text-xs font-semibold text-ink ${FOCUS} disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <Gift className="h-3.5 w-3.5" aria-hidden="true" />
+              {rewarded.has(sourceKey(openPost.id as string, c.id)) ? 'Rewarded' : 'Reward referral'}
+            </button>
+          )}
           {canViewContact ? (
             <button type="button" onClick={() => setInviteFor(c)}
               className={`inline-flex h-8 cursor-pointer items-center rounded-lg px-3 text-xs font-semibold ${skin.cta} ${FOCUS}`}>
@@ -193,6 +247,20 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
             removable={false}
             contactLocked={!canViewContact}
             renderDetail={renderDetail}
+            selectable={canViewContact}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
+            toolbar={selectedIds.size > 0 ? (
+              <button
+                type="button"
+                onClick={() => setBulkOpen(true)}
+                className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-semibold ${skin.cta} ${FOCUS}`}
+              >
+                <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                Send invite ({selectedIds.size})
+              </button>
+            ) : undefined}
           />
         ) : undefined}
       />
@@ -201,6 +269,28 @@ export default function AppliedTab({ userRole, userId, canViewContact = false, s
           candidate={inviteFor}
           onClose={() => setInviteFor(null)}
           onSent={() => { setInviteFor(null); load(); }}
+        />
+      )}
+      {bulkOpen && openPost && (
+        <BulkInterviewInviteModal
+          candidates={selectedCandidates}
+          post={openPost}
+          onClose={() => setBulkOpen(false)}
+          onSent={({ sent }) => {
+            setBulkOpen(false);
+            setSelectedIds(new Set());
+            if (sent > 0) load();
+          }}
+        />
+      )}
+      {rewardFor && openPost && (
+        <ReferralRewardModal
+          postId={openPost.id as string}
+          applicantUid={rewardFor.candidate.id}
+          applicantName={rewardFor.candidate.name}
+          source={rewardFor.source}
+          onClose={() => setRewardFor(null)}
+          onRewarded={() => setRewarded(prev => new Set(prev).add(sourceKey(openPost.id as string, rewardFor.candidate.id)))}
         />
       )}
     </>

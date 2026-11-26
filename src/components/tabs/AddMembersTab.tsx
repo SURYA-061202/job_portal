@@ -16,6 +16,7 @@ import {
 } from '@/lib/notificationHelper';
 import { reviewCompanyVerification, type CompanyVerification } from '@/lib/companyVerification';
 import { useSkin, FOCUS } from '@/styles/skin';
+import { isAadhaarVerified, type AadhaarKyc } from '@/lib/aadhaarKyc';
 
 interface UserData {
     id: string;
@@ -30,6 +31,7 @@ interface UserData {
     hiringRole?: string;
     profileImage?: string;
     companyVerification?: CompanyVerification;
+    aadhaarKyc?: AadhaarKyc;
 }
 
 export default function AddMembersTab(_props: { onViewMember?: (memberId: string) => void }) {
@@ -337,6 +339,11 @@ export default function AddMembersTab(_props: { onViewMember?: (memberId: string
                                     <div className="flex min-w-0 items-center">
                                         <div className="min-w-0">
                                             <p className="truncate text-sm font-semibold text-ink">{member.firstName} {member.lastName}</p>
+                                            {isAadhaarVerified(member) && (
+                                                <span className="my-0.5 inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                                                    <BadgeCheck className="h-3 w-3 shrink-0" aria-hidden="true" />Aadhaar verified
+                                                </span>
+                                            )}
                                             <p className={`truncate ${skin.meta}`}>{member.hiringRole ? `Hiring: ${member.hiringRole}` : 'No role set'}</p>
                                         </div>
                                     </div>

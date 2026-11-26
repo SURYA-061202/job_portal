@@ -87,7 +87,7 @@ export default function NotificationsPage() {
     };
 
     const getNotificationType = (type: string): 'success' | 'warning' | 'info' => {
-        if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent', 'subscription_approved', 'subscription_activated', 'subscription_purchased'].includes(type)) return 'success';
+        if (['congratulations', 'shortlisted', 'round_moved', 'interview_invite', 'offer_sent', 'offer_response', 'referral_reward', 'subscription_approved', 'subscription_activated', 'subscription_purchased'].includes(type)) return 'success';
         if (['verify_details', 'application_rejected', 'subscription_rejected', 'company_verification_rejected', 'subscription_expiring', 'post_expiring', 'post_expired', 'post_closing_soon', 'post_publish_failed', 'post_cap_reached'].includes(type)) return 'warning';
         return 'info';
     };

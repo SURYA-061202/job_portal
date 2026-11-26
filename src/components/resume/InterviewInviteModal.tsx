@@ -3,12 +3,9 @@ import { useState, useEffect } from 'react';
 import type { Candidate, RecruitmentRequest } from '@/types';
 import { X } from 'lucide-react';
 import popup from '@/components/ui/Popup';
-import { sendInterviewInvite } from '@/lib/emailFunctions';
-import { upsertApplication } from '@/lib/jobApplications';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, orderBy, getDocs, where } from 'firebase/firestore';
-import { createInterviewInviteNotification } from '@/lib/notificationHelper';
-import { recordProfileInvite } from '@/lib/profileViews';
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { sendInterviewInviteToCandidate } from '@/lib/interviewInvite';
 import { getPostRounds, getRoundLabel } from '@/lib/interviewRounds';
 import { useSkin, FOCUS } from '@/styles/skin';
 
@@ -130,98 +127,18 @@ export default function InterviewInviteModal({ candidate, onClose, onSent, defau
     try {
       setLoading(true);
       const effectivePostId = isJobApplicant ? candidate.postId : selectedPostId;
-      await sendInterviewInvite({
+
+      // Shared with the bulk invite flow: email + candidate doc + application
+      // + interviews/{id} + notification + profile activity, in one place.
+      await sendInterviewInviteToCandidate({
         candidate,
-        interviewDetails: { role, dates, roundType, interviewers, baseUrl: interviewurl, postId: effectivePostId },
+        role,
+        dates,
+        roundType,
+        interviewers,
+        postId: effectivePostId!,
         baseUrl: interviewurl,
       });
-
-      // isJobApplicant (declared above): job applicants have postId (set when fetching
-      // from job_applications); manual candidates are in the 'candidates' collection without postId
-
-      // Always update the candidate's document with postId and status
-      try {
-        const candidateRef = doc(db, 'candidates', candidate.id);
-        const snap = await getDoc(candidateRef);
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        if (snap.exists()) {
-          await updateDoc(candidateRef, {
-            status: 'shortlisted',
-            postId: effectivePostId,
-            interviewDetails: {
-              role,
-              dates,
-              roundType,
-              interviewers,
-              currentSalary: 30000,
-              expectedSalary: 30000,
-              joiningDate: todayStr,
-              feedback: 'Good',
-              sentAt: new Date().toISOString(),
-            },
-            updatedAt: new Date(),
-          });
-          console.log('[InterviewInvite] Updated candidate document:', candidate.id);
-        } else {
-          console.log('[InterviewInvite] Candidate document not found:', candidate.id);
-        }
-      } catch (err) {
-        console.error('Failed to update candidate document:', err);
-      }
-
-      // Always create/upsert the job application
-      try {
-        console.log('[InterviewInvite] Creating/updating application:', { user_id: candidate.id, post_id: effectivePostId });
-        await upsertApplication(effectivePostId!, candidate.id, 'shortlisted');
-        console.log('[InterviewInvite] Application created/updated successfully');
-      } catch (appError: unknown) {
-        console.error('Error creating job application:', appError);
-        popup.error(`Sync Error: ${errorMessage(appError)}`);
-      }
-
-      // Store interview details in interviews collection for both types
-      try {
-        const { setDoc } = await import('firebase/firestore');
-        const interviewRef = doc(db, 'interviews', candidate.id);
-        await setDoc(interviewRef, {
-          postId: effectivePostId,
-          role,
-          dates,
-          roundType,
-          interviewers,
-          sentAt: new Date().toISOString(),
-          // An interview doc is keyed by candidate alone, so this invite supersedes
-          // any earlier one — possibly for a different post. Clear the previous
-          // response and the details submitted with it, otherwise the old answers
-          // would show against this post while we're still awaiting a reply.
-          response: null,
-          selectedDate: null,
-          respondedAt: null,
-          detailsSubmitted: false,
-          dateOfJoining: '',
-          currentSalary: '',
-          expectedSalary: '',
-          expectedSalaryPeriod: '',
-          yearsExperience: '',
-          experienceIn: '',
-          readyToRelocate: '',
-          laptop: '',
-        }, { merge: true });
-      } catch (err) {
-        console.error('Failed to store interview details', err);
-      }
-
-      // Create notification for the candidate (falls back to their stored email
-      // when the loaded record has none, so the invite never goes unannounced)
-      try {
-        await createInterviewInviteNotification(candidate.email, role, dates, roundType, candidate.id);
-      } catch (err) {
-        console.error('Failed to create notification', err);
-      }
-
-      // Shows up under "Who viewed me" on the candidate's profile.
-      void recordProfileInvite(candidate.id, role);
 
       popup.success('Email sent successfully');
       onSent?.();

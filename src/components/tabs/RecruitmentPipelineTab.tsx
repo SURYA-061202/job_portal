@@ -62,14 +62,15 @@ const buildColumns = (post: RecruitmentRequest): PipelineColumn[] => {
             id: 'offer',
             title: 'Offer Sent',
             targetStatus: 'offer_sent',
-            match: (s) => s === 'offer' || s === 'offer_sent',
+            // An accepted offer stays visible here; a declined one falls to Rejected.
+            match: (s) => s === 'offer' || s === 'offer_sent' || s === 'offer_accepted',
         },
         {
             id: 'rejected',
             title: 'Rejected',
             targetStatus: 'rejected',
-            // Covers plain 'rejected' as well as the per-round 'round2rejected' form.
-            match: (s) => s === 'declined' || s.endsWith('rejected'),
+            // Covers plain 'rejected', the per-round 'round2rejected' form and a declined offer.
+            match: (s) => s === 'declined' || s === 'offer_declined' || s.endsWith('rejected'),
         },
     ];
 };

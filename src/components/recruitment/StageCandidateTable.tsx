@@ -1,10 +1,11 @@
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { X, Check, Trash2, Loader2, UserX, Calendar, ArrowRight, Lock } from 'lucide-react';
 import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Candidate } from '@/types';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { candidateMatchesSearch } from '@/lib/candidateMatch';
+import { referralSourceBadge } from '@/lib/referrals';
 import { useCandidateRemoval } from './useCandidateRemoval';
 
 const toTitleCase = (s?: string) =>
@@ -159,29 +160,71 @@ interface StageCandidateTableProps {
     /** Show the invite-response pill (Accepted / Awaiting) in expanded rows. Only meaningful while shortlisted. */
     showStatus?: boolean;
     /** Custom expanded content; replaces the interview details card. */
-    renderDetail?: (candidate: Candidate) => ReactNode;
+    renderDetail?: (candidate: Candidate, close: () => void) => ReactNode;
     /** Show the remove action column (default true). */
     removable?: boolean;
     /** Hide email and phone behind a lock (plans without contact access). */
     contactLocked?: boolean;
+    /** Adds a checkbox column so the caller can run bulk actions on the selection. */
+    selectable?: boolean;
+    /** Ids of the selected rows (managed by the caller). */
+    selectedIds?: ReadonlySet<string>;
+    onToggleSelect?: (id: string) => void;
+    /** Selects/deselects every row currently shown (search filter applied). */
+    onToggleSelectAll?: (ids: string[]) => void;
+    /** Extra controls in the panel header (e.g. the bulk-action bar). */
+    toolbar?: ReactNode;
     onClose: () => void;
     emptyText: string;
     onRefresh?: () => void;
 }
 
 /** A post's candidates as a neat table in a side panel: title and search on top, one row per candidate. */
-export default function StageCandidateTable({ candidates, loading, search, defaultRound, onMove, footer, showStatus = true, renderDetail, removable = true, contactLocked = false, onClose, emptyText, onRefresh }: StageCandidateTableProps) {
+export default function StageCandidateTable({
+    candidates,
+    loading,
+    search,
+    defaultRound,
+    onMove,
+    footer,
+    showStatus = true,
+    renderDetail,
+    removable = true,
+    contactLocked = false,
+    selectable = false,
+    selectedIds,
+    onToggleSelect,
+    onToggleSelectAll,
+    toolbar,
+    onClose,
+    emptyText,
+    onRefresh,
+}: StageCandidateTableProps) {
     const skin = useSkin();
     const { confirmId, setConfirmId, deletingId, remove } = useCandidateRemoval(onRefresh);
     const [openId, setOpenId] = useState<string | null>(null);
     const shown = useMemo(() => candidates.filter((c) => candidateMatchesSearch(c, search)), [candidates, search]);
+
+    // Select-all reflects only the rows currently visible (search applied).
+    const shownIds = useMemo(() => shown.map((c) => c.id as string), [shown]);
+    const selectedShownCount = shownIds.filter((id) => selectedIds?.has(id)).length;
+    const allChecked = shownIds.length > 0 && selectedShownCount === shownIds.length;
+    const someChecked = selectedShownCount > 0 && !allChecked;
+    const selectAllRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if (selectAllRef.current) selectAllRef.current.indeterminate = someChecked;
+    }, [someChecked]);
+
+    /** Column count drives the expanded row's colspan. */
+    const colCount = 4 + (removable ? 1 : 0) + (selectable ? 1 : 0);
 
     return (
         <section aria-label="Candidates" className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border ${skin.edge} bg-surface ${skin.radius}`}>
             {/* Panel header */}
             <div className={`flex shrink-0 flex-wrap items-center justify-between gap-3 border-b ${skin.edge} px-5 py-3.5`}>
                 <p className={skin.meta}>{shown.length} {shown.length === 1 ? 'candidate' : 'candidates'}</p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {toolbar}
                     <button
                         type="button"
                         onClick={onClose}
@@ -221,6 +264,18 @@ export default function StageCandidateTable({ candidates, loading, search, defau
                     <table className="min-w-full text-left">
                         <thead className="sticky top-0 z-10 bg-surface">
                             <tr className={`border-b ${skin.edge}`}>
+                                {selectable && (
+                                    <th scope="col" className="w-10 py-3 pl-5 pr-0">
+                                        <input
+                                            ref={selectAllRef}
+                                            type="checkbox"
+                                            aria-label="Select all candidates"
+                                            className="form-checkbox h-4 w-4 cursor-pointer text-brand"
+                                            checked={allChecked}
+                                            onChange={() => onToggleSelectAll?.(shownIds)}
+                                        />
+                                    </th>
+                                )}
                                 <th scope="col" className={`px-5 py-3 ${skin.micro}`}>Candidate</th>
                                 <th scope="col" className={`px-5 py-3 ${skin.micro}`}>Email</th>
                                 <th scope="col" className={`px-5 py-3 ${skin.micro}`}>Phone</th>
@@ -233,6 +288,7 @@ export default function StageCandidateTable({ candidates, loading, search, defau
                                 const confirming = confirmId === c.id;
                                 const deleting = deletingId === c.id;
                                 const open = openId === c.id;
+                                const sourceBadge = referralSourceBadge(c.source);
                                 return (
                                     <Fragment key={c.id}>
                                     <tr
@@ -245,8 +301,30 @@ export default function StageCandidateTable({ candidates, loading, search, defau
                                         }}
                                         className={`cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:bg-ink/5 ${open ? 'bg-ink/5' : skin.rowHover}`}
                                     >
+                                        {selectable && (
+                                        <td className="py-3.5 pl-5 pr-0" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                aria-label={`Select ${c.name || 'candidate'}`}
+                                                title="Select for bulk actions"
+                                                className="form-checkbox h-4 w-4 cursor-pointer text-brand"
+                                                checked={!!selectedIds?.has(c.id)}
+                                                onChange={() => onToggleSelect?.(c.id)}
+                                            />
+                                        </td>
+                                        )}
                                         <td className="px-5 py-3.5">
-                                            <p className="text-sm font-semibold text-ink">{toTitleCase(c.name) || 'Unnamed'}</p>
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                <p className="text-sm font-semibold text-ink">{toTitleCase(c.name) || 'Unnamed'}</p>
+                                                {sourceBadge && (
+                                                    <span
+                                                        title={sourceBadge.title}
+                                                        className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${sourceBadge.className}`}
+                                                    >
+                                                        {sourceBadge.label}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className={`max-w-[14rem] truncate px-5 py-3.5 text-sm ${'text-ink/70'}`} title={contactLocked ? undefined : c.email}>{contactLocked ? <span className="inline-flex items-center gap-1.5 text-ink/40"><Lock className="h-3.5 w-3.5" aria-hidden="true" />Locked</span> : (c.email || '-')}</td>
                                         <td className="whitespace-nowrap px-5 py-3.5 text-sm text-ink/70">{contactLocked ? <span className="inline-flex items-center gap-1.5 text-ink/40"><Lock className="h-3.5 w-3.5" aria-hidden="true" />Locked</span> : (c.phone || 'N/A')}</td>
@@ -277,7 +355,7 @@ export default function StageCandidateTable({ candidates, loading, search, defau
                                     </tr>
                                     {open && (
                                         <tr className="bg-ink/5">
-                                            <td colSpan={removable ? 5 : 4} className="p-0">{renderDetail ? renderDetail(c) : <Detail c={c} defaultRound={defaultRound} onMove={onMove} footer={footer?.(c)} showStatus={showStatus} />}</td>
+                                            <td colSpan={colCount} className="p-0">{renderDetail ? renderDetail(c, () => setOpenId(null)) : <Detail c={c} defaultRound={defaultRound} onMove={onMove} footer={footer?.(c)} showStatus={showStatus} />}</td>
                                         </tr>
                                     )}
                                     </Fragment>

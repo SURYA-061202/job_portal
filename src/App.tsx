@@ -16,6 +16,7 @@ import TrainingModulePage from './pages/TrainingModulePage';
 import CareerAssistancePage from './pages/CareerAssistancePage';
 import MatchingJobs from './pages/MatchingJobs';
 import CompanyPage from './pages/CompanyPage';
+import OfferResponsePage from './pages/OfferResponsePage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/verify-details" element={<VerifyDetailsPage />} />
           <Route path="/matching-jobs" element={<MatchingJobs />} />
           <Route path="/company/:slug" element={<CompanyPage />} />
+          <Route path="/offer/:offerId" element={<OfferResponsePage />} />
         </Routes>
       </PopupProvider>
     </BrowserRouter>

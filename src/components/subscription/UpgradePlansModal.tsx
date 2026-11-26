@@ -133,7 +133,9 @@ export default function UpgradePlansModal({ isOpen, onClose, userId, subscriptio
                                             <li>
                                                 {audience === 'user'
                                                     ? isUnlimited(plan.maxPosts) ? 'View unlimited job posts' : `View up to ${formatLimit(plan.maxPosts)} job posts`
-                                                    : isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `Up to ${formatLimit(plan.maxPosts)} job posts`}
+                                                    : (plan.credits ?? 0) > 0
+                                                        ? `${(plan.credits ?? 0).toLocaleString('en-IN')} credit points (20 per job post)`
+                                                        : 'No credit points included'}
                                             </li>
                                             {audience !== 'user' && (
                                                 <li>

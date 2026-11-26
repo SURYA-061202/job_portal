@@ -23,11 +23,12 @@ import CandidateCarousel from '@/components/resume/CandidateCarousel';
 import BackRow from '@/components/layout/BackRow';
 import CandidateSearchResults from '@/components/resume/CandidateSearchResults';
 import InviteFlow from '@/components/resume/InviteFlow';
+import BulkInterviewInviteModal from '@/components/resume/BulkInterviewInviteModal';
 
 import CandidateDetail from '@/components/resume/CandidateDetail';
 import ManualDetailsModal from '@/components/resume/ManualDetailsModal';
 import FilterSidebar from '@/components/recruitment/FilterSidebar';
-import { ArrowLeft, Search, LayoutGrid, List, Briefcase, Calendar, Lock, X, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Search, LayoutGrid, List, Briefcase, Calendar, Lock, X, SlidersHorizontal, Send } from 'lucide-react';
 import popup from '@/components/ui/Popup';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { RecruitmentRequest } from '@/types';
@@ -238,6 +239,9 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     };
     const CandidatesView = layout === 'cards' ? CandidateCarousel : CandidateTable;
     const [inviteFor, setInviteFor] = useState<Candidate | null>(null);
+    // Bulk interview invite: rows picked in the table, then one shared invite run.
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkOpen, setBulkOpen] = useState(false);
     // Post path: the post being viewed (for match scores) and the Applied / Non Applied switch.
     const [post, setPost] = useState<RecruitmentRequest | null>(null);
     const [showNonApplied, setShowNonApplied] = useState(false);
@@ -268,6 +272,24 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     }, [userId, userRole]);
     // Same rule as contact details: no plan, no Interview Invite.
     const inviteHandler = canViewContact ? (c: Candidate) => setInviteFor(c) : undefined;
+
+    // Bulk invite only makes sense against a post, and needs the plan that
+    // unlocks contact details (the same gate as the single invite).
+    const bulkReady = canViewContact && !!post && layout === 'table';
+    const toggleSelect = (id: string) =>
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    const toggleSelectAll = (ids: string[]) =>
+        setSelectedIds((prev) => {
+            const allOn = ids.length > 0 && ids.every((id) => prev.has(id));
+            const next = new Set(prev);
+            ids.forEach((id) => (allOn ? next.delete(id) : next.add(id)));
+            return next;
+        });
 
     const isFilteringRef = useRef(false);
 
@@ -307,6 +329,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     useEffect(() => {
         setShowNonApplied(false);
         setPost(null);
+        setSelectedIds(new Set());
         if (!postId) return;
         let cancelled = false;
         getDoc(doc(db, 'recruits', postId))
@@ -718,6 +741,21 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
     );
     const displayCandidates = useMemo(() => visibleResults.map(r => r.candidate), [visibleResults]);
     const hiddenCount = searchResults.length - visibleResults.length;
+    /** Picked rows, restricted to what is still on screen after a filter change. */
+    const selectedCandidates = useMemo(() => displayCandidates.filter(c => selectedIds.has(c.id)), [displayCandidates, selectedIds]);
+
+    // The sidebar builds its sections from the list on screen; an empty list
+    // means an empty panel, which is replaced by a full-height message.
+    const filtersEmpty = !loading && filterSections.length === 0;
+    const filterEmptyMessage = displayCandidates.length === 0
+        ? filtersActive
+            ? 'No candidates match the selected filters.'
+            : showNonApplied
+                ? 'Every registered candidate has already applied.'
+                : isFilteringApplicants
+                    ? 'No applicants for this post yet.'
+                    : 'No candidates yet.'
+        : 'No filters available yet.';
     // Beside an opened profile during a search: the matches first, then everyone else.
     const splitCandidates = useMemo(() => {
         const matchedIds = new Set(visibleResults.map((r) => r.candidate.id));
@@ -760,7 +798,13 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                         // own scroll area beside a sticky filter panel.
                         <div className={`flex-1 min-h-0 flex flex-col ${showPostView ? '' : 'lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6'}`}>
                             {!showPostView && (
-                                <aside aria-label="Candidate filters" className="hidden lg:block lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto thin-scrollbar lg:pr-1">
+                                <aside
+                                    aria-label="Candidate filters"
+                                    className={filtersEmpty
+                                        // Nothing to pick: drop the sticky cap so the panel fills the column.
+                                        ? 'hidden lg:block lg:pr-1'
+                                        : 'hidden lg:block lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto thin-scrollbar lg:pr-1'}
+                                >
                                     {loading ? (
                                         /* Facets are built from the loaded list, so show their shape until it arrives. */
                                         <div role="status" aria-busy="true" className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 md:p-5`}>
@@ -773,7 +817,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                             <div key={r} className="flex items-center gap-3">
                                                                 <div className={`h-4 w-4 shrink-0 rounded md:h-5 md:w-5 ${skin.skeleton}`} />
                                                                 <div className={`h-3 flex-1 rounded ${skin.skeleton}`} style={{ maxWidth: `${60 + ((s + r) % 3) * 15}%` }} />
-                                                                <div className={`h-3 w-5 shrink-0 rounded ${skin.skeleton}`} />
+                                                                <div className={`h-3 w-5 rounded ${skin.skeleton}`} />
                                                             </div>
                                                         ))}
                                                     </div>
@@ -786,6 +830,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             selectedFilters={selectedFilters}
                                             onToggleFilter={toggleFilter}
                                             onClearFilters={clearAllFilters}
+                                            emptyMessage={filterEmptyMessage}
                                         />
                                     )}
                                 </aside>
@@ -809,7 +854,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 key={label}
                                                 type="button"
                                                 aria-pressed={showNonApplied === value}
-                                                onClick={() => { setShowNonApplied(value); setSelectedCandidate(null); }}
+                                                onClick={() => { setShowNonApplied(value); setSelectedCandidate(null); setSelectedIds(new Set()); }}
                                                 className={`cursor-pointer px-4 py-1.5 text-sm font-semibold transition-colors duration-200 ${showNonApplied === value ? 'bg-black text-white' : 'bg-surface text-ink hover:bg-ink/5'} ${FOCUS}`}
                                             >
                                                 {label}
@@ -924,6 +969,17 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             </span>
                                         )}
                                         <div className="ml-auto flex items-center gap-2">
+                                            {selectedIds.size > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBulkOpen(true)}
+                                                    className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-semibold ${skin.cta} ${FOCUS}`}
+                                                    title="Send the same interview invite to everyone selected"
+                                                >
+                                                    <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                                                    Send invite ({selectedIds.size})
+                                                </button>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => setFiltersOpen(true)}
@@ -1143,6 +1199,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                                 showStatus={!!postId && !showNonApplied}
  scores={scores}
  onInvite={inviteHandler}
+ selectable={bulkReady}
+ selectedIds={selectedIds}
+ onToggleSelect={toggleSelect}
+ onToggleSelectAll={toggleSelectAll}
                                             />
                                         ) : (
                                             <CandidateSearchResults
@@ -1164,6 +1224,10 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                             showStatus={!!postId && !showNonApplied}
  scores={scores}
  onInvite={inviteHandler}
+ selectable={bulkReady}
+ selectedIds={selectedIds}
+ onToggleSelect={toggleSelect}
+ onToggleSelectAll={toggleSelectAll}
                                         />
                                     )}
                                 </>
@@ -1220,6 +1284,7 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                                 selectedFilters={selectedFilters}
                                 onToggleFilter={toggleFilter}
                                 onClearFilters={clearAllFilters}
+                                emptyMessage={filterEmptyMessage}
                             />
                         </div>
                         <div className={`shrink-0 border-t p-3 ${skin.edge}`}>
@@ -1279,6 +1344,23 @@ function CandidatesTabContent({ postId, postTitle, onClearFilter: _onClearFilter
                     postId={postId}
                     onClose={() => setInviteFor(null)}
                     onSent={() => { setInviteFor(null); handleInviteSent(); }}
+                />
+            )}
+            {bulkOpen && post && (
+                <BulkInterviewInviteModal
+                    candidates={selectedCandidates}
+                    post={post}
+                    onClose={() => setBulkOpen(false)}
+                    onSent={({ sent }) => {
+                        setBulkOpen(false);
+                        setSelectedIds(new Set());
+                        // Refresh in place — unlike a single invite, a bulk run
+                        // keeps the recruiter on this list to keep picking rows.
+                        if (sent > 0) {
+                            if (isFilteringApplicants && filterPostId) void fetchApplicantsForPost(filterPostId);
+                            else void fetchCandidates(true);
+                        }
+                    }}
                 />
             )}
         </div>

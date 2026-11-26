@@ -21,6 +21,7 @@ import {
     VALIDITY_OPTIONS,
 } from '@/lib/subscriptions';
 import { formatAmount, subscribeAllPayments } from '@/lib/payments';
+import { CREDIT_COST, type CreditAction } from '@/lib/credits';
 import { UNLIMITED } from '@/types';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
@@ -41,14 +42,29 @@ interface PlanForm {
     description: string;
     price: string;
     durationDays: string;
-    maxPosts: string;
-    maxPostsUnlimited: boolean;
     maxCandidates: string;
     maxCandidatesUnlimited: boolean;
     credits: string;
+    /** Points each action costs on this plan, as strings while editing. */
+    costs: Record<CreditAction, string>;
     features: string;
     privileges: PlanPrivileges;
 }
+
+/** The four metered actions, shown as editable fields in the plan form. */
+const CREDIT_FIELDS: { key: CreditAction; label: string; hint: string }[] = [
+    { key: 'search', label: 'Search', hint: 'one keyword search' },
+    { key: 'view', label: 'View', hint: 'profile or resume opened' },
+    { key: 'download', label: 'Download', hint: 'resume downloaded' },
+    { key: 'post', label: 'Add post', hint: 'job post created' },
+];
+
+const defaultCosts = (): Record<CreditAction, string> => ({
+    search: String(CREDIT_COST.search),
+    view: String(CREDIT_COST.view),
+    download: String(CREDIT_COST.download),
+    post: String(CREDIT_COST.post),
+});
 
 const emptyForm = (nextLevel: number): PlanForm => ({
     level: String(nextLevel),
@@ -56,11 +72,10 @@ const emptyForm = (nextLevel: number): PlanForm => ({
     description: '',
     price: '',
     durationDays: '30',
-    maxPosts: '',
-    maxPostsUnlimited: false,
     maxCandidates: '',
     maxCandidatesUnlimited: false,
     credits: '',
+    costs: defaultCosts(),
     features: '',
     privileges: {},
 });
@@ -72,11 +87,15 @@ const formFromPlan = (p: SubscriptionPlan): PlanForm => ({
     description: p.description ?? '',
     price: String(p.price),
     durationDays: String(p.durationDays),
-    maxPosts: isUnlimited(p.maxPosts) ? '' : String(p.maxPosts),
-    maxPostsUnlimited: isUnlimited(p.maxPosts),
     maxCandidates: isUnlimited(p.maxCandidates) ? '' : String(p.maxCandidates),
     maxCandidatesUnlimited: isUnlimited(p.maxCandidates),
     credits: p.credits ? String(p.credits) : '',
+    costs: {
+        search: String(p.costs?.search ?? CREDIT_COST.search),
+        view: String(p.costs?.view ?? CREDIT_COST.view),
+        download: String(p.costs?.download ?? CREDIT_COST.download),
+        post: String(p.costs?.post ?? CREDIT_COST.post),
+    },
     features: p.features.join('\n'),
     privileges: p.privileges ?? {},
 });
@@ -92,7 +111,8 @@ type PanelKind = 'requests' | 'recruiters' | 'payments';
 export default function AdminSubscriptionTab({ adminId }: { adminId: string | null }) {
     const skin = useSkin();
     // The admin manages two catalogues: recruiter plans (posts, contacts, resumes) and user plans (privileges).
-    const [audience, setAudience] = useState<SubscriptionAudience>('recruiter');
+    // Audience switcher is hidden for now: Recruiters is the only side shown.
+    const audience: SubscriptionAudience = 'recruiter';
     // Requests and Recruiters open in a modal that grows out of their header icon.
     const [reqFilter, setReqFilter] = useState<'all' | 'pending' | 'resolved'>('all');
     const [recSearch, setRecSearch] = useState('');
@@ -111,17 +131,9 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
     const [form, setForm] = useState<PlanForm | null>(null);
     const [saving, setSaving] = useState(false);
 
-    const isUserSide = audience === 'user';
+    const isUserSide = false; // Users side is hidden for now; audience is always 'recruiter'.
     const peopleLabel = isUserSide ? 'Users' : 'Recruiters';
     const personLabel = isUserSide ? 'User' : 'Recruiter';
-    const switchAudience = (next: SubscriptionAudience) => {
-        if (next === audience) return;
-        setAudience(next);
-        setPanel(null);
-        setForm(null);
-        setRecSearch('');
-        setReqFilter('all');
-    };
     const plans = useMemo(() => allPlans.filter((p) => planAudience(p) === audience), [allPlans, audience]);
     const requests = useMemo(() => allRequests.filter((r) => (r.audience ?? 'recruiter') === audience), [allRequests, audience]);
 
@@ -227,17 +239,24 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
         const level = parseInt(form.level, 10);
         const price = Number(form.price || 0);
         const durationDays = parseInt(form.durationDays, 10);
-        // User plans are defined by price, validity and privileges only - no post count.
-        const maxPosts = isUserSide || form.maxPostsUnlimited ? UNLIMITED : parseInt(form.maxPosts, 10);
+        // Posts are not counted per plan any more: a recruiter adds posts until their credit
+        // points run out (20 per post - see CREDIT_COST.post), so every plan allows posts.
+        const maxPosts = UNLIMITED;
         const maxCandidates = UNLIMITED; // every plan can view all candidates
         const credits = isUserSide ? 0 : parseInt(form.credits || '0', 10);
+        // Points each action costs on this plan; defaults shown, the admin may raise or lower them.
+        const costs = Object.fromEntries(
+            CREDIT_FIELDS.map(({ key }) => [key, parseInt(form.costs[key] || '0', 10)])
+        ) as Record<CreditAction, number>;
 
         if (!form.name.trim()) return popup.error('Plan name is required');
         if (!Number.isInteger(credits) || credits < 0) return popup.error('Credit points must be 0 or more');
+        for (const { key, label } of CREDIT_FIELDS) {
+            if (!Number.isInteger(costs[key]) || costs[key] < 0) return popup.error(`${label} cost must be 0 or more`);
+        }
         if (!Number.isInteger(level) || level < 1) return popup.error('Level must be 1 or higher');
         if (!Number.isFinite(price) || price < 0) return popup.error('Price cannot be negative');
         if (!Number.isInteger(durationDays) || durationDays < 1) return popup.error('Duration must be at least 1 day');
-        if (!isUserSide && !form.maxPostsUnlimited && (!Number.isInteger(maxPosts) || maxPosts < 1)) return popup.error('Enter a post limit of 1 or more, or tick Unlimited');
         if (plans.some((p) => p.level === level && p.id !== form.id)) return popup.error(`Level ${level} is already used by another plan`);
 
         setSaving(true);
@@ -252,7 +271,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                 durationDays,
                 maxPosts,
                 maxCandidates: isUserSide ? 0 : maxCandidates,
-                ...(isUserSide ? { privileges: form.privileges } : { credits }),
+                ...(isUserSide ? { privileges: form.privileges } : { credits, costs }),
                 features: form.features.split('\n').map((f) => f.trim()).filter(Boolean),
                 active: true,
             });
@@ -277,31 +296,14 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     <h2 className={skin.heading}>Subscription plans</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                    {/* Audience toggle, joined into one control and placed before Requests; the active side is filled */}
-                    <div role="radiogroup" aria-label="Plan audience" className={`inline-flex h-10 items-center rounded-full border ${skin.edge} bg-surface p-1 shadow-sm`}>
-                        {([['recruiter', 'Recruiters'], ['user', 'Users']] as const).map(([key, label]) => {
-                            const active = audience === key;
-                            return (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={active}
-                                    onClick={() => switchAudience(key)}
-                                    className={`inline-flex h-8 cursor-pointer items-center rounded-full px-4 text-sm font-semibold transition-colors duration-200 ${FOCUS} ${active ? 'bg-ink text-surface' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'}`}
-                                >
-                                    {label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    {/* Audience toggle hidden: Recruiters is the only (default) side for now. */}
                     <button
                         type="button"
                         onClick={(e) => openPanel('requests', e.currentTarget)}
                         aria-label={`Requests${pending.length ? ` (${pending.length} pending)` : ''}`}
-                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-px hover:border-ink/40 ${FOCUS}`}
                     >
-                        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                        <span className="relative flex h-7 w-7 items-center justify-center rounded-md bg-ink/5">
                             <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
                             {pending.length > 0 && (
                                 <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">
@@ -315,9 +317,9 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                         <button
                             type="button"
                             onClick={(e) => openPanel('payments', e.currentTarget)}
-                            className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                            className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-px hover:border-ink/40 ${FOCUS}`}
                         >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-ink/5">
                                 <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                             </span>
                             Payments
@@ -326,9 +328,9 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     <button
                         type="button"
                         onClick={(e) => openPanel('recruiters', e.currentTarget)}
-                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-ink/40 hover:shadow-md ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border ${skin.edge} bg-surface pl-1.5 pr-4 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-px hover:border-ink/40 ${FOCUS}`}
                     >
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/5">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-ink/5">
                             <Users className="h-3.5 w-3.5" aria-hidden="true" />
                         </span>
                         {peopleLabel}
@@ -336,7 +338,7 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                     <button
                         type="button"
                         onClick={() => setForm(emptyForm(Math.max(0, ...plans.map((p) => p.level)) + 1))}
-                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-brand pl-3 pr-5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-px hover:opacity-90 hover:shadow-md ${FOCUS}`}
+                        className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md bg-brand pl-3 pr-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:opacity-90 ${FOCUS}`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" /> Add plan
                     </button>
@@ -460,20 +462,31 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                             </fieldset>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label htmlFor="plan-posts" className="block text-xs font-bold text-ink/80 mb-1">Max job posts</label>
-                                        <input id="plan-posts" type="number" min={1} disabled={form.maxPostsUnlimited} value={form.maxPostsUnlimited ? '' : form.maxPosts} onChange={(e) => setForm({ ...form, maxPosts: e.target.value })} className={`${fieldClass} disabled:opacity-50`} />
-                                        <label className="mt-1.5 flex items-center gap-2 text-xs text-ink/70">
-                                            <input type="checkbox" checked={form.maxPostsUnlimited} onChange={(e) => setForm({ ...form, maxPostsUnlimited: e.target.checked })} /> Unlimited
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="plan-credits" className="block text-xs font-bold text-ink/80 mb-1">Credit points</label>
-                                        <input id="plan-credits" type="number" min={0} step={1} value={form.credits} onChange={(e) => setForm({ ...form, credits: e.target.value })} className={fieldClass} placeholder="e.g. 500" />
-                                        <p className={`mt-1.5 ${skin.meta}`}>Search 1 · Download 5 · View 5</p>
-                                    </div>
+                                <div>
+                                    <label htmlFor="plan-credits" className="block text-xs font-bold text-ink/80 mb-1">Credit points</label>
+                                    <input id="plan-credits" type="number" min={0} step={1} value={form.credits} onChange={(e) => setForm({ ...form, credits: e.target.value })} className={fieldClass} placeholder="e.g. 500" />
                                 </div>
+
+                                <fieldset>
+                                    <legend className="mb-2 block text-xs font-bold text-ink/80">Points per action</legend>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {CREDIT_FIELDS.map(({ key, label, hint }) => (
+                                            <div key={key}>
+                                                <label htmlFor={`plan-cost-${key}`} className="block text-xs font-bold text-ink/80 mb-1">{label}</label>
+                                                <input
+                                                    id={`plan-cost-${key}`}
+                                                    type="number"
+                                                    min={0}
+                                                    step={1}
+                                                    value={form.costs[key]}
+                                                    onChange={(e) => setForm({ ...form, costs: { ...form.costs, [key]: e.target.value } })}
+                                                    className={fieldClass}
+                                                />
+                                                <p className={`mt-1 ${skin.meta}`}>{hint}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </fieldset>
 
                                 <div>
                                     <label htmlFor="plan-features" className="block text-xs font-bold text-ink/80 mb-1">Extra features (one per line)</label>
@@ -560,7 +573,6 @@ export default function AdminSubscriptionTab({ adminId }: { adminId: string | nu
                                                             <p className={`mt-1 ${skin.meta}`}>
                                                                 {p.status === 'paid' && p.expiresAt ? `Until ${formatDate(p.expiresAt)}` : p.failureReason || ''}
                                                             </p>
-                                                            {p.razorpayPaymentId && <p className={`${skin.meta} font-mono text-[11px]`}>{p.razorpayPaymentId}</p>}
                                                         </td>
                                                     </tr>
                                                 );

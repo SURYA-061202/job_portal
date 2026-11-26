@@ -9,10 +9,7 @@ import { ownerEmail } from "./postLifecycle";
  * recruiter having the app open:
  *
  *  - `publishScheduledPosts`: every 15 minutes, drafts whose `publishAt` has
- *    arrived go live (status `active`, fresh `postedAt`, expiry set), if the
- *    owner's plan has a free slot. Without one the draft stays a draft and the
- *    owner is told once; it is retried on later runs, so it still goes live as
- *    soon as a slot opens.
+ *    arrived go live (status `active`, fresh `postedAt`, expiry set).
  *  - `postCapReached`: when an application is created, a post with an
  *    `applicationCap` that has now reached it pauses itself (`pausedReason:
  *    "cap"`) and the owner is told. Counts every `job_applications` row for the
@@ -25,32 +22,6 @@ type Doc = FirebaseFirestore.DocumentData;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_VALIDITY_DAYS = 30;
-
-/** Mirrors the app's resolveSubscription for posts: -1 = unlimited. */
-function postLimit(user: Doc | undefined): number {
-    if (!user) return 0;
-    if (user.role === "admin") return -1;
-    const sub = user.subscription as Doc | undefined;
-    if (sub?.planId) {
-        const exp = toDate(sub.expiresAt);
-        if (!exp || exp.getTime() > Date.now()) {
-            const max = typeof sub.maxPosts === "number" ? sub.maxPosts : 0;
-            return max < 0 ? -1 : max;
-        }
-    }
-    // Recruiters approved under the old single "premium" flag keep unlimited posts.
-    if ((user.role === "recruiter" || user.role === "manager") && user.isPremium === true) return -1;
-    return 0;
-}
-
-/** Active (not past its expiry) or paused; a post with no status is an older, still-live one. */
-function isLive(post: Doc, now: number): boolean {
-    const status = post.status ?? "active";
-    if (status === "paused") return true;
-    if (status !== "active") return false;
-    const exp = toDate(post.expiresAt);
-    return !exp || exp.getTime() > now;
-}
 
 async function notify(to: string, type: string, title: string, message: string, metadata: Doc): Promise<void> {
     await firestore().collection("notifications").doc().set({
@@ -70,8 +41,6 @@ export const publishScheduledPosts = onSchedule(
         const drafts = await db.collection("recruits").where("status", "==", "draft").get();
 
         let published = 0;
-        let blocked = 0;
-        const limitCache = new Map<string, { limit: number; live: number }>();
 
         for (const ref of drafts.docs) {
             try {
@@ -79,26 +48,8 @@ export const publishScheduledPosts = onSchedule(
                 const publishAt = toDate(draft.publishAt);
                 if (!publishAt || publishAt.getTime() > nowMs) continue; // an ordinary draft, or not yet time
 
-                const ownerId = String(draft.recruiterId || "");
-                let slots = limitCache.get(ownerId);
-                if (!slots) {
-                    const user = ownerId ? (await db.collection("users").doc(ownerId).get()).data() as Doc | undefined : undefined;
-                    const mine = ownerId ? await db.collection("recruits").where("recruiterId", "==", ownerId).get() : { docs: [] };
-                    slots = { limit: postLimit(user), live: mine.docs.filter((d: FirebaseFirestore.QueryDocumentSnapshot) => isLive(d.data(), nowMs)).length };
-                    limitCache.set(ownerId, slots);
-                }
                 const title = String(draft.jobTitle || "your job post");
                 const to = await ownerEmail(draft);
-
-                if (slots.limit >= 0 && slots.live >= slots.limit) {
-                    blocked += 1;
-                    if (to && (await claim(`post_${ref.id}_${publishAt.getTime()}_publishfail`))) {
-                        await notify(to, "post_publish_failed", "Scheduled post could not go live",
-                            `"${title}" was due to go live but your plan's post limit is reached. It stays a draft and will publish automatically as soon as a slot is free - close or delete a post, or upgrade your plan.`,
-                            { postId: ref.id, jobTitle: title });
-                    }
-                    continue;
-                }
 
                 // Transaction: the recruiter may have published, edited or deleted it since the query ran.
                 const goneLive = await db.runTransaction(async (tx) => {
@@ -120,7 +71,6 @@ export const publishScheduledPosts = onSchedule(
                 });
                 if (!goneLive) continue;
 
-                slots.live += 1;
                 published += 1;
                 if (to && (await claim(`post_${ref.id}_${publishAt.getTime()}_published`))) {
                     await notify(to, "post_published", "Your scheduled post is live",
@@ -132,7 +82,7 @@ export const publishScheduledPosts = onSchedule(
             }
         }
 
-        console.log(`publishScheduledPosts: ${drafts.size} draft(s), ${published} published, ${blocked} blocked by plan limit`);
+        console.log(`publishScheduledPosts: ${drafts.size} draft(s), ${published} published`);
     },
 );
 

@@ -6,18 +6,16 @@ import {
     canRenewPlan,
     countRecruiterPosts,
     formatDate,
-    formatLimit,
     formatPrice,
     FREE_POST_LIMIT,
     FREE_USER_POST_LIMIT,
     getMyRequests,
     getPlans,
-    isUnlimited,
     requestSubscription,
 } from '@/lib/subscriptions';
 import { formatAmount, isPurchasable, subscribeMyPayments } from '@/lib/payments';
 import { usePlanCheckout } from '@/lib/usePlanCheckout';
-import { CREDIT_COST, subscribeCreditUsage, summarizeUsage, USAGE_KINDS, usageEntryTime, type CreditUsageEntry } from '@/lib/credits';
+import { subscribeCreditUsage, summarizeUsage, USAGE_KINDS, usageCost, usageEntryTime, type CreditUsageEntry } from '@/lib/credits';
 import PlanPricingCard from './PlanPricingCard';
 import PlanSlider from './PlanSlider';
 import ExpandingModal from './ExpandingModal';
@@ -130,10 +128,9 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
     };
 
     const sub = subscription;
+    // Shown on the current-plan card for context only: posts are metered by credit
+    // points (20 each), so there is no per-plan post limit to fill up any more.
     const postLimit = sub?.maxPosts ?? (isUser ? FREE_USER_POST_LIMIT : FREE_POST_LIMIT);
-    const postPct = postsUsed !== null && !isUnlimited(postLimit) && postLimit > 0
-        ? Math.min(100, Math.round((postsUsed / postLimit) * 100))
-        : 0;
 
     const usageSummary = summarizeUsage(usage);
     // Credit points come from the plan; "used" counts this subscription period only.
@@ -314,7 +311,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                             compact
                             includeContact={isPaid && !sub?.expired}
                             restrictions={
-                                !isUser && !isPaid ? ['You cannot add job posts on the Free plan', 'Candidate contact details and resumes are locked']
+                                !isUser && !isPaid ? ['Job posts cost 20 credit points, and the Free plan has none', 'Candidate contact details and resumes are locked']
                                 : isUser && !sub?.privileges?.profileVisibility ? ['Profile visibility is locked']
                                 : []
                             }
@@ -324,27 +321,12 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                     <span className="font-medium text-ink/60">{isPaid && sub?.expiresAt ? (sub.expired ? ' · expired' : ' · valid until') : ''}</span>
                                 </p>
                             }
-                            extra={!isUser && (postLimit !== 0 || (isPaid && sub && !sub.unlimitedCredits)) ? (
+                            extra={!isUser ? (
                                 <div className="space-y-4">
-                                    {postLimit !== 0 && (
-                                        <div>
-                                            <p className="text-sm text-ink/80">
-                                                Job posts used: <span className="font-semibold text-ink">{postsUsed ?? 0} / {formatLimit(postLimit)}</span>
-                                            </p>
-                                            {!isUnlimited(postLimit) && (
-                                                <div
-                                                    role="progressbar"
-                                                    aria-label="Job posts used"
-                                                    aria-valuemin={0}
-                                                    aria-valuemax={100}
-                                                    aria-valuenow={postPct}
-                                                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
-                                                >
-                                                    <div className={`h-full ${postPct >= 100 ? 'bg-destructive' : 'bg-brand'}`} style={{ width: `${postPct}%` }} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    <p className="text-sm text-ink/80">
+                                        Job posts added: <span className="font-semibold text-ink">{postsUsed ?? 0}</span>
+                                        <span className={`ml-1 ${skin.meta}`}>· 20 credit points each</span>
+                                    </p>
                                     {isPaid && sub && !sub.unlimitedCredits && (
                                         <div>
                                             <p className="text-sm text-ink/80">
@@ -461,7 +443,7 @@ export default function RecruiterSubscriptionTab({ userId, subscription, audienc
                                         <tr key={k.kind}>
                                             <td className="px-5 py-3">
                                                 <p className="text-sm font-semibold text-ink">{k.label}</p>
-                                                <p className={skin.meta}>{k.hint} {'\u00B7'} {CREDIT_COST[k.kind === 'search' ? 'search' : k.kind === 'download' ? 'download' : 'view']} pt each</p>
+                                                <p className={skin.meta}>{k.hint} {'\u00B7'} {usageCost(k.kind)} pt each</p>
                                             </td>
                                             <td className="px-3 py-3 text-right text-sm text-ink">{usageSummary.byKind[k.kind].count}</td>
                                             <td className="px-5 py-3 text-right text-sm font-semibold text-ink">{usageSummary.byKind[k.kind].points}</td>

@@ -6,6 +6,7 @@ import type { RecruitmentRequest } from '@/types';
 import RecruitmentDetailView from '@/components/recruitment/RecruitmentDetailView';
 import UserHeader from '@/components/layout/UserHeader';
 import { ContentCardSkeleton } from '@/components/user/SkeletonLoaders';
+import { captureReferralFromUrl } from '@/lib/referrals';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 export default function JobDetailPage() {
@@ -19,6 +20,12 @@ export default function JobDetailPage() {
     // Arriving from a page that was scrolled down would otherwise open this one
     // part-way down, with the header and title cut off.
     useEffect(() => { window.scrollTo(0, 0); }, [jobId]);
+
+    // A ?ref= share code is remembered before the auth check below, so the
+    // referral still lands on the application even if we bounce through login.
+    useEffect(() => {
+        if (jobId) captureReferralFromUrl(jobId);
+    }, [jobId]);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {

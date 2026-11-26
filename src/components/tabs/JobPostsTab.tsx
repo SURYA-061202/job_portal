@@ -11,7 +11,6 @@ import PostTable from '@/components/recruitment/PostTable';
 import UserJobCard from '@/components/recruitment/UserJobCard';
 import PostLifecycleDialog, { type LifecycleDialogKind, type LifecycleDialogResult } from '@/components/recruitment/PostLifecycleDialog';
 import type { LifecycleAction } from '@/components/recruitment/PostLifecycleMenu';
-import { checkPostQuota } from '@/lib/subscriptions';
 import { PostActionError, closePost, extendPost, pausePost, publishPost, repostPost, resumePost, setPostExpiry } from '@/lib/postActions';
 import { countByStatus, getPostLifecycle } from '@/lib/postLifecycle';
 import popup from '@/components/ui/Popup';
@@ -57,7 +56,7 @@ interface JobPostsTabProps {
     initialSelectedPostId?: string | null;
     userRole?: string | null;
     userId?: string | null;
-    /** The recruiter's live plan; its maxPosts is the post limit. */
+    /** The recruiter's live plan, for plan-aware copy around the list. */
     subscription?: EffectiveSubscription | null;
     /** Opens the Subscription tab on its available plans. */
     onViewPlans?: () => void;
@@ -73,8 +72,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const [lifecycleDialog, setLifecycleDialog] = useState<{ kind: LifecycleDialogKind; post: RecruitmentRequest } | null>(null);
     // The form opened from "Duplicate": a new post pre-filled from another.
     const [duplicating, setDuplicating] = useState(false);
-    // False when the plan has no free slot: the form then only offers draft / schedule.
-    const [canPublish, setCanPublish] = useState(true);
     // Bulk actions (table view): the ticked posts, and the extend / close dialog for them.
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bulkDialog, setBulkDialog] = useState<'extend' | 'close' | null>(null);
@@ -163,28 +160,15 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
         }
     };
 
-    // Whether the plan has a free slot for one more live post. The form uses it to decide between
-    // "Add Post" and draft / schedule only; it re-checks when saving, so a stale tab cannot slip past.
-    const checkCanPublish = async (): Promise<boolean> => {
-        if (isAdmin || !userId) return true;
-        try {
-            return (await checkPostQuota(userId)).allowed;
-        } catch (error) {
-            console.error('Could not check the post limit:', error);
-            return true;
-        }
-    };
-
-    const openForm = async (post: RecruitmentRequest | null, asDuplicate = false) => {
-        setCanPublish(await checkCanPublish());
+    const openForm = (post: RecruitmentRequest | null, asDuplicate = false) => {
         setDuplicating(asDuplicate);
         setEditingPost(post);
         setIsRecruitmentModalOpen(true);
     };
 
-    const handleAddPost = () => { void openForm(null); };
+    const handleAddPost = () => openForm(null);
 
-    const handleEditPost = (post: RecruitmentRequest) => { void openForm(post); };
+    const handleEditPost = (post: RecruitmentRequest) => openForm(post);
 
     // A copy for a similar role: the details and rounds carry over, nothing about its lifecycle or applicants does.
     const handleDuplicatePost = (post: RecruitmentRequest) => {
@@ -210,7 +194,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
             applicationCap: post.applicationCap,
             createdAt: null,
         };
-        void openForm(copy, true);
+        openForm(copy, true);
     };
 
     const handleDeletePost = async (post: RecruitmentRequest) => {
@@ -242,7 +226,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
     const handleLifecycle = (post: RecruitmentRequest, action: LifecycleAction) => {
         if (action === 'pause') void runLifecycle(() => pausePost(post), 'Post paused. Candidates can no longer see it.');
         else if (action === 'resume') void runLifecycle(() => resumePost(post), 'Post resumed.');
-        else if (action === 'publish') void runLifecycle(() => publishPost(post, isAdmin), 'Post is live!');
+        else if (action === 'publish') void runLifecycle(() => publishPost(post), 'Post is live!');
         else setLifecycleDialog({ kind: action, post });
     };
 
@@ -257,7 +241,7 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 ? await runLifecycle(() => setPostExpiry(post, result.until!), 'Closing date updated.')
                 : await runLifecycle(() => extendPost(post, result.days!), `Post extended by ${result.days} days.`);
         } else {
-            ok = await runLifecycle(() => repostPost(post, result.until ?? result.days!, isAdmin), 'Post is live again.');
+            ok = await runLifecycle(() => repostPost(post, result.until ?? result.days!), 'Post is live again.');
         }
         if (ok) setLifecycleDialog(null);
     };
@@ -637,7 +621,6 @@ export default function JobPostsTab({ onViewCandidates, initialSelectedPostId, u
                 }}
                 initialData={editingPost}
                 duplicate={duplicating}
-                canPublish={canPublish}
                 onViewPlans={() => { setIsRecruitmentModalOpen(false); setEditingPost(null); onViewPlans?.(); }}
             />
         </div>

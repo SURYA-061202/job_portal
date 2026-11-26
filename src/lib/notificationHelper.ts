@@ -29,6 +29,8 @@ export type NotificationType =
     | 'company_verification_request'
     | 'round_moved'
     | 'offer_sent'
+    | 'offer_response'
+    | 'referral_reward'
     | 'application_rejected'
     | 'job_application'
     | 'interview_response'

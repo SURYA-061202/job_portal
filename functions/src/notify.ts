@@ -8,7 +8,7 @@ import { firestore, Timestamp } from "./security";
 interface Params {
   postId?: string | null;
   candidateId: string;
-  type: "interview_response" | "details_submitted";
+  type: "interview_response" | "details_submitted" | "offer_response";
   title: string;
   /** Receives the candidate's name and " for <job title>" (or ""). */
   message: (candidateName: string, forRole: string) => string;

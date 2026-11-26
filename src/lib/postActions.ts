@@ -1,6 +1,5 @@
 import { deleteField, doc, increment, Timestamp, updateDoc, type UpdateData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { checkPostQuota } from '@/lib/subscriptions';
 import { addDays, getPostLifecycle, toDate, DEFAULT_VALIDITY_DAYS } from '@/lib/postLifecycle';
 import type { PostCloseReason, RecruitmentRequest } from '@/types';
 
@@ -9,6 +8,9 @@ import type { PostCloseReason, RecruitmentRequest } from '@/types';
  * Every function re-reads nothing: it works from the post the caller holds, so
  * callers refresh their list afterwards. Firestore rules still decide who may
  * write (the owner or an admin).
+ *
+ * There is no plan slot to fit into any more: posts are metered by credit
+ * points when they are added (CREDIT_COST.post), not by a per-plan count.
  */
 
 /** A rule of the lifecycle was not met; the message is safe to show the recruiter. */
@@ -17,18 +19,6 @@ export class PostActionError extends Error { }
 const fail = (message: string): never => { throw new PostActionError(message); };
 
 const requireId = (post: RecruitmentRequest): string => post.id ?? fail('This post has no id.');
-
-/**
- * Putting a post (back) on the live list uses a plan slot, so the owner must
- * have one free. Admins act for the owner without being limited by their plan.
- */
-async function requireFreeSlot(post: RecruitmentRequest, actorIsAdmin: boolean, verb: string): Promise<void> {
-    if (actorIsAdmin || !post.recruiterId) return;
-    const quota = await checkPostQuota(post.recruiterId);
-    if (!quota.allowed) {
-        fail(`Post limit reached (${quota.used}/${quota.limit} on the ${quota.subscription.planName} plan). Close or delete a post, or upgrade your plan, to ${verb}.`);
-    }
-}
 
 /**
  * Lifecycle fields for a post going live now. `validity` is a number of days from
@@ -49,7 +39,7 @@ export function newPostLifecycleFields(validity: number | Date = DEFAULT_VALIDIT
 /**
  * Lifecycle fields for a draft. `publishAt` makes it a scheduled post. A chosen
  * closing date is kept; otherwise the expiry is worked out from `validityDays`
- * when the post goes live. Drafts hold no plan slot.
+ * when the post goes live. Drafts are not live, so they cost nothing extra.
  *
  * `forUpdate` adds deleteField() for anything left out, so editing a draft can
  * clear an old schedule or date (deleteField is not allowed on a new document).
@@ -61,11 +51,10 @@ export function draftLifecycleFields(opts: { validityDays: number; closesOn?: Da
     return out;
 }
 
-/** Put a draft live now (a scheduled one goes early). Uses a plan slot, like any live post. */
-export async function publishPost(post: RecruitmentRequest, actorIsAdmin = false): Promise<void> {
+/** Put a draft live now (a scheduled one goes early). */
+export async function publishPost(post: RecruitmentRequest): Promise<void> {
     const id = requireId(post);
     if (post.status !== 'draft') fail('Only a draft can be published.');
-    await requireFreeSlot(post, actorIsAdmin, 'publish this post');
     const now = Timestamp.now();
     const planned = toDate(post.expiresAt);
     const closes = planned && planned.getTime() > now.toMillis() ? planned : addDays(now.toDate(), post.validityDays ?? DEFAULT_VALIDITY_DAYS);
@@ -138,11 +127,10 @@ export async function closePost(post: RecruitmentRequest, reason: PostCloseReaso
  * Run an expired or closed post again for `validityDays`. The post keeps its id,
  * applicants and history; it counts as a fresh listing from today.
  */
-export async function repostPost(post: RecruitmentRequest, validity: number | Date, actorIsAdmin = false): Promise<void> {
+export async function repostPost(post: RecruitmentRequest, validity: number | Date): Promise<void> {
     const id = requireId(post);
     const status = getPostLifecycle(post).status;
     if (status !== 'expired' && status !== 'closed') fail('Only an expired or closed post can be reposted.');
-    await requireFreeSlot(post, actorIsAdmin, 'repost this one');
 
     const now = Timestamp.now();
     if (validity instanceof Date && validity.getTime() <= now.toMillis()) fail('Pick a closing date in the future.');

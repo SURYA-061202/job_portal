@@ -13,19 +13,38 @@ export const CREDIT_COST = {
     download: 5,
     /** Opening a candidate's resume or profile details (once per candidate). */
     view: 5,
+    /** Adding a job post (a new post, draft or live). */
+    post: 20,
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COST;
 
+/** Per-action costs stored on a plan; unset actions use the CREDIT_COST default. */
+export type CreditCosts = Partial<Record<CreditAction, number>>;
+
+/** The points one action costs on a plan (the plan's own value, else the default). */
+export const resolveCost = (costs: CreditCosts | undefined, action: CreditAction): number => {
+    const value = costs?.[action];
+    return typeof value === 'number' && Number.isFinite(value) ? value : CREDIT_COST[action];
+};
+
 /** What a credit point was spent on, as shown in the usage breakdown. */
-export type CreditUsageKind = 'search' | 'view_profile' | 'view_resume' | 'download';
+export type CreditUsageKind = 'search' | 'view_profile' | 'view_resume' | 'download' | 'post';
 
 export const USAGE_KINDS: { kind: CreditUsageKind; label: string; hint: string }[] = [
     { kind: 'search', label: 'Searches', hint: 'Keyword searches in Candidates' },
+    { kind: 'post', label: 'Job posts', hint: 'Posts added to the Job Posts tab' },
     { kind: 'view_profile', label: 'Profile views', hint: 'Candidate profile details opened' },
     { kind: 'view_resume', label: 'Resume views', hint: 'Resumes opened for preview' },
     { kind: 'download', label: 'Resume downloads', hint: 'Resumes downloaded' },
 ];
+
+/** Points one spend of a usage kind costs (how the usage table shows its cost). */
+export const usageCost = (kind: CreditUsageKind): number =>
+    kind === 'search' ? CREDIT_COST.search
+        : kind === 'download' ? CREDIT_COST.download
+            : kind === 'post' ? CREDIT_COST.post
+                : CREDIT_COST.view;
 
 export interface CreditUsageEntry {
     id: string;
@@ -57,7 +76,7 @@ interface SpendOptions {
 }
 
 const defaultKind = (action: CreditAction): CreditUsageKind =>
-    action === 'search' ? 'search' : action === 'download' ? 'download' : 'view_profile';
+    action === 'search' ? 'search' : action === 'download' ? 'download' : action === 'post' ? 'post' : 'view_profile';
 
 /**
  * Deducts credit points from the signed-in recruiter's balance in one transaction and
@@ -74,24 +93,29 @@ export async function spendCredits(action: CreditAction, options: SpendOptions =
         popup.error('Please sign in again.');
         return { ok: false };
     }
-    const cost = CREDIT_COST[action];
     const kind = options.kind ?? defaultKind(action);
     const userRef = doc(db, 'users', user.uid);
     const unlockRef = options.unlockKey ? doc(db, 'users', user.uid, 'unlocked', options.unlockKey) : null;
     const usageRef = doc(collection(db, 'users', user.uid, 'creditUsage'));
 
     try {
-        // The points a plan gives are read from the plan itself.
+        // The points a plan gives - and what each action costs on it - are read from the plan itself.
         const planId = (await getDoc(userRef)).data()?.subscription?.planId as string | undefined;
         let planCredits: number | null = null;
+        let planCosts: CreditCosts | undefined;
         if (planId) {
             try {
                 const planSnap = await getDoc(doc(db, 'subscription_plans', planId));
-                if (planSnap.exists() && typeof planSnap.data().credits === 'number') planCredits = planSnap.data().credits;
+                if (planSnap.exists()) {
+                    const data = planSnap.data();
+                    if (typeof data.credits === 'number') planCredits = data.credits;
+                    if (data.costs && typeof data.costs === 'object') planCosts = data.costs as CreditCosts;
+                }
             } catch {
                 /* falls back to the credits stored when the plan was granted */
             }
         }
+        const actionCost = resolveCost(planCosts, action);
 
         const result = await runTransaction(db, async (tx): Promise<SpendResult & { short?: boolean }> => {
             const userSnap = await tx.get(userRef);
@@ -104,16 +128,16 @@ export async function spendCredits(action: CreditAction, options: SpendOptions =
                 if (unlocked.exists()) return { ok: true, balance: sub.credits };
             }
 
-            if (sub.credits < cost) return { ok: false, balance: sub.credits, short: true };
+            if (sub.credits < actionCost) return { ok: false, balance: sub.credits, short: true };
 
-            const balance = sub.credits - cost;
+            const balance = sub.credits - actionCost;
             // Spending is recorded against the current subscription period (its start time).
             const periodStart = (userData?.subscription?.startedAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
-            tx.update(userRef, { creditsUsed: sub.creditsUsed + cost, creditsPeriod: periodStart });
-            if (unlockRef) tx.set(unlockRef, { action, cost, createdAt: new Date() });
+            tx.update(userRef, { creditsUsed: sub.creditsUsed + actionCost, creditsPeriod: periodStart });
+            if (unlockRef) tx.set(unlockRef, { action, cost: actionCost, createdAt: new Date() });
             tx.set(usageRef, {
                 kind,
-                cost,
+                cost: actionCost,
                 ...(options.note ? { note: options.note.slice(0, 200) } : {}),
                 createdAt: serverTimestamp(),
             });
@@ -122,7 +146,7 @@ export async function spendCredits(action: CreditAction, options: SpendOptions =
 
         if (!result.ok && result.short) {
             popup.error(
-                `Not enough credit points. ${options.label ?? 'This action'} needs ${cost} point${cost === 1 ? '' : 's'}; you have ${result.balance ?? 0}. Get more credits from the Subscription tab.`
+                `Not enough credit points. ${options.label ?? 'This action'} needs ${actionCost} point${actionCost === 1 ? '' : 's'}; you have ${result.balance ?? 0}. Get more credits from the Subscription tab.`
             );
         }
         return { ok: result.ok, balance: result.balance };

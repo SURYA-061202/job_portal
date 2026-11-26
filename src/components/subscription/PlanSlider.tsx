@@ -2,7 +2,7 @@ import { Children, useCallback, useEffect, useRef, useState, type ReactNode } fr
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
-/** Three cards per view (two on tablets, one on phones) with arrows to slide to the next ones. */
+/** Four cards per view on wide screens (two on tablets, one on phones) with arrows to slide to the next ones. */
 export default function PlanSlider({ children }: { children: ReactNode }) {
     const skin = useSkin();
     const trackRef = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export default function PlanSlider({ children }: { children: ReactNode }) {
             <div
                 ref={trackRef}
                 onScroll={update}
-                className="grid grid-flow-col auto-cols-[100%] gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide md:auto-cols-[calc((100%-1rem)/2)] xl:auto-cols-[calc((100%-2rem)/3)]"
+                className="grid grid-flow-col auto-cols-[100%] gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide md:auto-cols-[calc((100%-1rem)/2)] xl:auto-cols-[calc((100%-3rem)/4)]"
             >
                 {Children.map(children, (child) => (
                     <div className="snap-start min-w-0">{child}</div>

@@ -60,7 +60,8 @@ service cloud.firestore {
 
       // Self sign-up can only ever create a plain 'user'. Admins create recruiters.
       allow create: if signedIn() && (
-                      (request.auth.uid == uid && request.resource.data.role == 'user')
+                      (request.auth.uid == uid && request.resource.data.role == 'user'
+                       && !('aadhaarKyc' in request.resource.data))
                       || isAdmin()
                     );
 
@@ -68,9 +69,12 @@ service cloud.firestore {
       // A plan's credit points come from the plan itself. The owner records spending
       // in creditsUsed, which can only go up within the same subscription period
       // (creditsPeriod); a new period (a renewal or new plan) starts it again.
+      // aadhaarKyc is written only by the Aadhaar verification Cloud Functions.
+      // bonusCredits (referral rewards) is written only by the rewardReferral
+      // Cloud Function, so nobody can grant themselves points.
       allow update: if isAdmin()
                     || (request.auth.uid == uid
-                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid', 'companyVerified', 'companyEmailVerified', 'creditsUsed', 'creditsPeriod'])
+                        && !changedKeys().hasAny(['role', 'subscription', 'isPremium', 'uid', 'companyVerified', 'companyEmailVerified', 'creditsUsed', 'creditsPeriod', 'bonusCredits', 'aadhaarKyc'])
                         && companyVerificationOk())
                     || (request.auth.uid == uid
                         && changedKeys().hasOnly(['creditsUsed', 'creditsPeriod'])
@@ -87,11 +91,11 @@ service cloud.firestore {
         allow read, create: if signedIn() && request.auth.uid == uid;
       }
 
-      // What a recruiter's credit points were spent on (search, view, download).
+      // What a recruiter's credit points were spent on (search, post, view, download).
       match /creditUsage/{entryId} {
         allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
         allow create: if signedIn() && request.auth.uid == uid
-                      && request.resource.data.kind in ['search', 'view_profile', 'view_resume', 'download']
+                      && request.resource.data.kind in ['search', 'view_profile', 'view_resume', 'download', 'post']
                       && request.resource.data.cost is number;
       }
 
@@ -175,6 +179,34 @@ service cloud.firestore {
       // signing in; that page talks to the getInterviewInvite /
       // submitInterviewResponse / submitVerifyDetails Cloud Functions, which
       // expose only the offered dates and validate every write.
+      allow get, list, write: if isStaff();
+    }
+
+    // ---------- referrals (share links + conversion counters) ----------
+    // One doc per (post, sharer): id = `${postId}__${referrerUid}`. The sharer
+    // writes their own share/conversion counters; staff read them for the
+    // reward flow. Rewards themselves are appended by rewardReferral (Admin SDK).
+    match /referrals/{referralId} {
+      // `resource == null` keeps the sharer's first getDoc (before the link doc
+      // exists) readable — it returns nothing, so no data is exposed.
+      allow get: if signedIn() && (resource == null || isStaff() || resource.data.referrerUid == request.auth.uid);
+      allow list: if signedIn() && (isStaff() || resource.data.referrerUid == request.auth.uid);
+      allow create: if signedIn()
+                    && request.resource.data.referrerUid == request.auth.uid
+                    && referralId == request.resource.data.postId + '__' + request.auth.uid
+                    && request.resource.data.postId is string;
+      allow update: if signedIn()
+                    && (isStaff() || resource.data.referrerUid == request.auth.uid)
+                    && request.resource.data.referrerUid == resource.data.referrerUid
+                    && request.resource.data.postId == resource.data.postId;
+      allow delete: if isAdmin();
+    }
+
+    // ---------- offer letters ----------
+    // Staff compose and read them; candidates only ever see a letter through the
+    // getOffer / respondToOffer / sendOfferLetter Cloud Functions, so the
+    // collection stays closed to job seekers (mirrors candidates/interviews).
+    match /offers/{offerId} {
       allow get, list, write: if isStaff();
     }
 

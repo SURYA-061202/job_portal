@@ -6,6 +6,7 @@ import type { VerificationStatus } from '@/lib/companyVerification';
 import { Link } from 'react-router-dom';
 import { REVIEWS_ENABLED, companySlug } from '@/lib/reviews';
 import popup from '@/components/ui/Popup';
+import AadhaarKycSection from '@/components/tabs/AadhaarKycSection';
 import { useSkin, FOCUS } from '@/styles/skin';
 import { sendPasswordResetMail } from '@/lib/emailFunctions';
 
@@ -330,6 +331,8 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                         </div>
                     )}
 
+                    {(userData.role === 'recruiter' || userData.role === 'manager') && !isEditing && <AadhaarKycSection />}
+
                     {isEditing ? (
                         <div className="flex gap-3 pt-1">
                             <button type="button" onClick={handleCancel} disabled={saving} className={`flex-1 cursor-pointer rounded-lg ${skin.secondary} ${FOCUS}`}>
@@ -545,6 +548,10 @@ export default function ProfileTab({ embedded = false, onLogout, editing, onEdit
                             )}
                         </div>
                     </div>
+
+                    {(userData.role === 'recruiter' || userData.role === 'manager') && !isEditing && (
+                        <div className="mt-6 max-w-md"><AadhaarKycSection /></div>
+                    )}
 
                     {/* Footer / Buttons */}
                     <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3">

@@ -9,6 +9,12 @@ export function getApplicationStatusInfo(status?: string | null): { label: strin
     if (s === 'selected' || s === 'hired') {
         return { label: 'Selected', className: 'bg-brand/10 text-brand border-brand/20' };
     }
+    if (s === 'offer_accepted') {
+        return { label: 'Offer Accepted', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+    }
+    if (s === 'offer_declined') {
+        return { label: 'Offer Declined', className: 'bg-destructive/10 text-destructive border-destructive/20' };
+    }
     if (s === 'offer' || s === 'offer_sent') {
         return { label: 'Offer Sent', className: 'bg-brand/10 text-brand border-brand/20' };
     }

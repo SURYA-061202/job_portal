@@ -1,4 +1,4 @@
-import type { InterviewDetails } from '@/types';
+import type { InterviewDetails, OfferLetter } from '@/types';
 import type { DocumentData } from 'firebase/firestore';
 import { toMillis } from '@/lib/dates';
 import { errorMessage } from '@/lib/errors';
@@ -9,12 +9,18 @@ import { db } from "@/lib/firebase";
 import type { Candidate, RecruitmentRequest } from "@/types";
 import StageCandidateTable from "@/components/recruitment/StageCandidateTable";
 import PostStageList from "@/components/recruitment/PostStageList";
+import OfferManager from "@/components/offer/OfferManager";
 import popup from '@/components/ui/Popup';
-import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Loader2, FileText } from "lucide-react";
 import { sendCongratulationsMail } from "@/lib/emailFunctions";
 import { getAllApplications } from "@/lib/jobApplications";
 import { createCongratulationsNotification } from "@/lib/notificationHelper";
+import { OFFER_STATUS, loadOffersForCandidates } from "@/lib/offers";
+import { getApplicationStatusInfo } from "@/lib/applicationStatus";
 import { useSkin, FOCUS } from "@/styles/skin";
+
+/** Stages that belong in the Selected tab: the classic pick plus every offer stage. */
+const SELECTED_STATUSES = ['selected', 'offer', 'offer_sent', 'offer_accepted', 'offer_declined'];
 
 const normalizeSkills = (skills: unknown): string[] => {
   if (!skills) return [];
@@ -262,7 +268,6 @@ function SendCongratulationsButton({ candidate, labelled = false }: { candidate:
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(() => (candidate.interviewDetails as { successmail?: boolean } | undefined)?.successmail === true);
   const [checked, setChecked] = useState(false);
-  const skin = useSkin();
 
   // The interview doc is the source of truth for whether the mail already went out.
   useEffect(() => {
@@ -335,7 +340,7 @@ function SendCongratulationsButton({ candidate, labelled = false }: { candidate:
       disabled={sending || sent || !checked}
       title={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
       aria-label={sent ? 'Congratulations mail sent' : 'Send congratulations mail'}
-      className={`${labelled ? 'inline-flex h-9 items-center gap-2 px-4 text-sm font-semibold' : 'p-2'} border border-border bg-surface cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${sent ? 'text-ink/40' : 'text-brand hover:bg-brand/10'} ${skin.radius} ${FOCUS}`}
+      className={`${labelled ? 'inline-flex h-9 items-center gap-2 px-4 text-sm font-semibold' : 'p-2'} border border-border bg-surface cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${sent ? 'text-ink/40' : 'text-brand hover:bg-brand/10'} rounded-md ${FOCUS}`}
     >
       {sending ? (
         <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -351,6 +356,12 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setPostTitles] = useState<Record<string, string>>({});
+  /** Bumped to re-run the load after an offer is sent. */
+  const [refreshKey, setRefreshKey] = useState(0);
+  /** Offer letters for the open post, keyed by candidate id. */
+  const [offers, setOffers] = useState<Record<string, OfferLetter>>({});
+  /** Candidate whose offer letter is open in the manager. */
+  const [offerFor, setOfferFor] = useState<Candidate | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -409,7 +420,7 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
         if (applications && applications.length > 0) {
           for (const app of applications) {
             const st = app.status || '';
-            const isTarget = st === 'selected' || st.endsWith('rejected');
+            const isTarget = SELECTED_STATUSES.includes(st) || st.endsWith('rejected');
             if (!isTarget) continue;
 
             try {
@@ -475,14 +486,36 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
       }
     };
     load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial load on mount only
-  }, []);
+  // Re-run when the recruiter asks for a refresh (e.g. after an offer goes out).
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load is stable for this mount-only fetch
+  }, [refreshKey]);
 
-  const filtered = candidates.filter((c) => (c.status || '') === 'selected');
+  const filtered = candidates.filter((c) => SELECTED_STATUSES.includes(c.status || ''));
 
   const [posts, setPosts] = useState<RecruitmentRequest[]>([]);
   const [openPost, setOpenPost] = useState<RecruitmentRequest | null>(null);
   const [postSearch, setPostSearch] = useState("");
+
+  // Offer letters for whoever is visible under the open post (staff-only read).
+  const openCandidateIds = openPost ? filtered.filter(c => c.postId === openPost.id).map(c => c.id) : [];
+  const openKey = openPost ? `${openPost.id}:${openCandidateIds.join(',')}` : '';
+  useEffect(() => {
+    let alive = true;
+    if (!openPost || openCandidateIds.length === 0) {
+      setOffers({});
+      return;
+    }
+    (async () => {
+      try {
+        const map = await loadOffersForCandidates(openPost.id as string, openCandidateIds);
+        if (alive) setOffers(map);
+      } catch (err) {
+        console.error('Failed to load offers:', err);
+      }
+    })();
+    return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- openKey covers the post and the visible ids
+  }, [openKey, refreshKey]);
 
   // Posts this user can see, loaded once; the counts come from `filtered`.
   useEffect(() => {
@@ -514,30 +547,76 @@ export default function SelectedCandidatesTab({ userRole, userId }: { userRole?:
     });
   const forPost = openPost ? filtered.filter(c => c.postId === openPost.id) : [];
 
+  /** Offer state pill + the offer/compliments actions for one expanded row. */
+  const offerFooter = (c: Candidate) => {
+    const offer = offers[c.id];
+    const offerStatus = offer ? OFFER_STATUS[offer.status] : null;
+    // A stage set from the Pipeline (no letter composed yet) still deserves a pill.
+    const fallbackStatus = !offerStatus ? getApplicationStatusInfo(c.status) : null;
+    const pill = offerStatus || fallbackStatus;
+    return (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {pill && (
+          <span
+            // Same height as the two buttons beside it; plain "Selected" is light green.
+            className={`inline-flex h-9 items-center rounded-md border px-4 text-sm font-semibold ${pill.label === 'Selected' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : pill.className}`}
+            title={offer?.respondedAt ? `Responded ${new Date(offer.respondedAt).toLocaleString('en-IN')}` : 'Offer letter'}
+          >
+            {pill.label}
+          </span>
+        )}
+        <SendCongratulationsButton candidate={c} labelled />
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setOfferFor(c); }}
+          className={`inline-flex h-9 cursor-pointer items-center gap-2 px-4 text-sm font-semibold border border-border bg-surface transition-colors duration-200 hover:bg-brand/10 ${offer?.status === 'accepted' ? 'text-emerald-700' : 'text-brand'} rounded-md ${FOCUS}`}
+          title={offer ? 'View or resend the offer letter' : 'Compose and send an offer letter'}
+        >
+          <FileText className="h-4 w-4" aria-hidden="true" />
+          {offer ? (offer.status === 'sent' ? 'Resend offer' : 'View offer') : 'Send offer'}
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <PostStageList
-      title="Selected"
-      plain
-      items={items}
-      countNoun="selected"
-      loading={loading}
-      search={postSearch}
-      onSearch={setPostSearch}
-      selectedId={openPost?.id ?? null}
-      onOpen={(p) => setOpenPost(openPost?.id === p.id ? null : p)}
-      emptyTitle="No selected candidates yet"
-      emptyText="Candidates will appear here under their post."
-      detail={openPost ? (
-        <StageCandidateTable
-          candidates={forPost}
-          loading={loading}
-          search={postSearch}
-          onClose={() => setOpenPost(null)}
-          emptyText="No candidates found."
-          showStatus={false}
-          footer={(c) => <SendCongratulationsButton candidate={c} labelled />}
+    <>
+      <PostStageList
+        title="Selected"
+        plain
+        items={items}
+        countNoun="selected"
+        loading={loading}
+        search={postSearch}
+        onSearch={setPostSearch}
+        selectedId={openPost?.id ?? null}
+        onOpen={(p) => setOpenPost(openPost?.id === p.id ? null : p)}
+        emptyTitle="No selected candidates yet"
+        emptyText="Candidates will appear here under their post."
+        detail={openPost ? (
+          <StageCandidateTable
+            candidates={forPost}
+            loading={loading}
+            search={postSearch}
+            onClose={() => setOpenPost(null)}
+            emptyText="No candidates found."
+            showStatus={false}
+            footer={offerFooter}
+          />
+        ) : undefined}
+      />
+      {offerFor && openPost && (
+        <OfferManager
+          candidate={offerFor}
+          post={openPost}
+          existing={offers[offerFor.id] || null}
+          onClose={() => setOfferFor(null)}
+          onSent={() => {
+            setOfferFor(null);
+            setRefreshKey(k => k + 1);
+          }}
         />
-      ) : undefined}
-    />
+      )}
+    </>
   );
 }

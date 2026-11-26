@@ -28,7 +28,7 @@ export default function StageHeader({ title, subtitle, onBack, backLabel = 'Back
                         onClick={onBack}
                         aria-label={backLabel}
                         title={backLabel}
-                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border ${skin.edge} bg-surface text-ink/70 shadow-sm transition-colors duration-200 hover:border-ink/40 hover:text-ink ${FOCUS}`}
+                        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-black bg-black text-white shadow-sm transition-colors duration-200 hover:bg-black/80 ${FOCUS}`}
                     >
                         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                     </button>

@@ -15,6 +15,12 @@ import {
 import { db } from './firebase';
 import { notifyRecruiterOfApplication } from './notificationHelper';
 import { getPostLifecycle } from './postLifecycle';
+import {
+    clearReferralAttribution,
+    getReferralAttribution,
+    recordReferralConversion,
+} from './referrals';
+import type { ApplicationSource } from '@/types';
 
 export interface JobApplication {
   id: string;
@@ -22,6 +28,8 @@ export interface JobApplication {
   user_id: string;
   status: string;
   created_at: Timestamp;
+  /** Acquisition channel: referral link share, or nothing (organic). */
+  source?: ApplicationSource;
 }
 
 /** Notes that a job seeker opened a post (feeds the recruiter's Job Views tab). Never throws. */
@@ -82,12 +90,34 @@ export async function applyForJob(
     };
   }
 
+  // A visitor who arrived through someone's share link (`/job/{id}?ref=...`) has
+  // that referral stamped on the application so recruiters see "source: referral".
+  // Self-referrals are ignored; the attribution is only cleared once the write lands.
+  const attribution = getReferralAttribution(postId);
+  const source: ApplicationSource | undefined =
+    attribution && attribution.referrerUid && attribution.referrerUid !== userId
+      ? {
+          type: 'referral',
+          referrerUid: attribution.referrerUid,
+          ...(attribution.referrerName ? { referrerName: attribution.referrerName } : {}),
+          code: attribution.code,
+          at: attribution.at,
+        }
+      : undefined;
+
   await setDoc(doc(db, 'job_applications', applicationId(postId, userId)), {
     post_id: postId,
     user_id: userId,
     status: 'applied',
     created_at: serverTimestamp(),
+    ...(source ? { source } : {}),
   });
+
+  if (source) {
+    clearReferralAttribution(postId);
+    // Fire-and-forget: the conversion counter must never fail the application.
+    void recordReferralConversion(postId, source, userId);
+  }
 
   // Fire-and-forget: a failed notification must not fail the application.
   void notifyRecruiterOfApplication(postId, userId);

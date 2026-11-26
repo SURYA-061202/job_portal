@@ -3,7 +3,6 @@ import type { DocumentData } from 'firebase/firestore';
 import { toMillis } from '@/lib/dates';
 import AppliedTab from '@/components/tabs/AppliedTab';
 import PostStageList from '@/components/recruitment/PostStageList';
-import StageHeader from '@/components/recruitment/StageHeader';
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -11,10 +10,9 @@ import { getAllApplications } from "@/lib/jobApplications";
 import { getPostRounds, getRoundLabel } from "@/lib/interviewRounds";
 import type { Candidate } from "@/types";
 import type { RecruitmentRequest } from "@/types";
-import StageCandidateGrid from "@/components/recruitment/StageCandidateGrid";
+import StageCandidateTable from "@/components/recruitment/StageCandidateTable";
 import InterviewCandidateDetail from "@/components/interview/InterviewCandidateDetail";
-import { SelectedCandidateDetail } from "@/components/tabs/SelectedCandidatesTab";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import popup from '@/components/ui/Popup';
 import { useSkin, FOCUS } from "@/styles/skin";
 
@@ -67,7 +65,6 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [posts, setPosts] = useState<PostWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedPost, setSelectedPost] = useState<PostWithCount | null>(null);
   const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -150,7 +147,7 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
                 name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Unnamed Candidate',
                 email: userData.email || '',
                 phone: userData.phone || userData.mobile || '',
-                role: userData.role || userData.department || 'Applicant',
+                role: userData.department || userData.role || 'Applicant',
                 experience: userData.experience || userData.yearsOfExperience || '',
                 skills: normalizeSkills(userData.skills),
                 resumeUrl: userData.resumeUrl || '',
@@ -243,72 +240,13 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
     return options;
   }, [selectedPost]);
 
-  const handleStatusUpdated = () => {
-    fetchData();
+  // Opening a post (or closing the open one) starts with fresh table filters.
+  const openPost = (post: PostWithCount | null) => {
+    setSelectedPost(post);
+    setSelectedRound(null);
+    setSearchTerm('');
   };
 
-  if (selectedCandidate) {
-    const statusSel = selectedCandidate.status;
-    if (statusSel === 'selected') {
-      return <SelectedCandidateDetail candidate={selectedCandidate} onBack={() => setSelectedCandidate(null)} />;
-    }
-    return (
-      <InterviewCandidateDetail
-        candidate={selectedCandidate}
-        post={selectedPost}
-        onBack={() => setSelectedCandidate(null)}
-        onStatusUpdated={handleStatusUpdated}
-        onCandidateSelected={onCandidateSelected}
-      />
-    );
-  }
-
-  // Post detail: the post's candidates shown straight away, with a rounds
-  // dropdown to filter them - the rounds-cards step in between is gone.
-  if (selectedPost) {
-    return (
-      <div className={`-m-4 md:-m-6 p-4 md:p-6 ${skin.canvas} flex-1 min-h-0 flex flex-col`}>
-        <StageHeader
-          title={selectedPost.jobTitle}
-          onBack={() => { setSelectedPost(null); setSelectedRound(null); setSearchTerm(''); }}
-          search={searchTerm}
-          onSearch={setSearchTerm}
-        >
-          <div className="relative">
-            <select
-              value={selectedRound ?? ''}
-              onChange={(e) => setSelectedRound(e.target.value || null)}
-              className={`h-9 w-48 cursor-pointer appearance-none rounded-lg border border-ink/20 bg-surface pl-3 pr-8 text-sm text-ink shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
-              aria-label="Filter by round"
-            >
-              {roundOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`}
-            />
-          </div>
-        </StageHeader>
-
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide">
-          <StageCandidateGrid
-            candidates={postCandidates}
-            onSelect={setSelectedCandidate}
-            loading={loading}
-            search={searchTerm}
-            emptyText={selectedRound ? 'No candidates found in this round.' : 'No candidates in the interview pipeline for this post yet.'}
-            onRefresh={fetchData}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // View 1: Post cards
   const visiblePosts = posts.filter((p) => {
     if (!postSearch.trim()) return true;
     const term = postSearch.toLowerCase();
@@ -319,21 +257,78 @@ function InterviewPipeline({ userRole, userId, onCandidateSelected, switcher }: 
     );
   });
 
+  // Candidate search and round filter sit in the table's header.
+  const tableFilters = (
+    <>
+      <div className="relative">
+        <Search aria-hidden="true" className={`pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 ${skin.subtle}`} />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search candidates"
+          aria-label="Search candidates"
+          className={`h-9 w-48 rounded-lg border border-ink/20 bg-surface pl-9 pr-3 text-sm text-ink shadow-sm transition-colors placeholder:text-ink/40 hover:border-ink/40 ${FOCUS}`}
+        />
+      </div>
+      <div className="relative">
+        <select
+          value={selectedRound ?? ''}
+          onChange={(e) => setSelectedRound(e.target.value || null)}
+          className={`h-9 w-44 cursor-pointer appearance-none rounded-lg border border-ink/20 bg-surface pl-3 pr-8 text-sm text-ink shadow-sm transition-colors hover:border-ink/40 ${FOCUS}`}
+          aria-label="Filter by round"
+        >
+          {roundOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown aria-hidden="true" className={`pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 ${skin.subtle}`} />
+      </div>
+    </>
+  );
+
+  // Same layout as Shortlisted: post cards on the left, the open post's
+  // candidates as a table on the right; a row expands to its interview details.
   return (
     <PostStageList
       title="Interview"
-      items={visiblePosts.map((post) => {
-        const totalRounds = getPostRounds(post).length;
-        return { post, count: post.interviewCount, note: `${totalRounds} ${totalRounds === 1 ? 'round' : 'rounds'}` };
-      })}
+      plain
+      items={visiblePosts.map((post) => ({ post, count: post.interviewCount }))}
       countNoun="candidate"
       loading={loading}
       search={postSearch}
       onSearch={setPostSearch}
       actions={switcher}
-      onOpen={(post) => setSelectedPost(post as PostWithCount)}
+      selectedId={selectedPost?.id ?? null}
+      onOpen={(post) => openPost(selectedPost?.id === post.id ? null : post as PostWithCount)}
       emptyTitle="No interview posts"
       emptyText="Posts will appear here once candidates enter the interview pipeline."
+      detail={selectedPost ? (
+        // Removal is off: it only deletes uploaded-candidate records, not job applications.
+        <StageCandidateTable
+          key={selectedPost.id}
+          candidates={postCandidates}
+          loading={loading}
+          search={searchTerm}
+          onClose={() => openPost(null)}
+          emptyText={selectedRound ? 'No candidates found in this round.' : 'No candidates in the interview pipeline for this post yet.'}
+          removable={false}
+          toolbar={tableFilters}
+          renderDetail={(candidate, close) => (
+            // Keyed by round so the form starts fresh after a move.
+            <InterviewCandidateDetail
+              key={`${candidate.id}-${candidate.status}`}
+              candidate={candidate}
+              post={selectedPost}
+              onClose={close}
+              onStatusUpdated={fetchData}
+              onCandidateSelected={onCandidateSelected}
+            />
+          )}
+        />
+      ) : undefined}
     />
   );
 }

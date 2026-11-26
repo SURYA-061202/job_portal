@@ -21,6 +21,10 @@ const STATUS_LABEL: Record<string, string> = {
   applied: 'Applied',
   shortlisted: 'Shortlisted',
   selected: 'Selected',
+  offer: 'Offer sent',
+  offer_sent: 'Offer sent',
+  offer_accepted: 'Offer accepted',
+  offer_declined: 'Offer declined',
 };
 
 const statusLabel = (st?: string) => {

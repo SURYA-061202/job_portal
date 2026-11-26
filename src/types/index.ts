@@ -18,6 +18,78 @@ export interface User {
   matchingScores?: Record<string, number>;
 }
 
+/**
+ * Where a job application came from. `referral` means the seeker arrived through
+ * another user's personal share link (`/job/{id}?ref={code}`); the recruiter sees
+ * it as "source: referral" and may reward the referrer with credit points.
+ */
+export type ApplicationSource =
+  | {
+      type: 'referral';
+      /** The user who shared the job (their uid is also the referral code). */
+      referrerUid: string;
+      referrerName?: string;
+      code: string;
+      at?: string;
+    }
+  | { type: 'organic' };
+
+/** Lifecycle of an offer letter: drafted, emailed, then answered by the candidate. */
+export type OfferStatus = 'draft' | 'sent' | 'accepted' | 'declined';
+
+/** One entry in an offer's audit trail (shown as a timeline to both sides). */
+export interface OfferTimelineEvent {
+  /** created | sent | accepted | declined | emailed */
+  kind: 'created' | 'sent' | 'accepted' | 'declined' | 'emailed';
+  /** ISO timestamp; stored as a string so it survives arrayUnion writes. */
+  at: string;
+  /** Display name of whoever caused the event (recruiter or candidate). */
+  by?: string;
+  note?: string;
+}
+
+/** Typed e-signature captured when the candidate accepts. */
+export interface OfferSignature {
+  /** The name exactly as the candidate typed it. */
+  name: string;
+  /** ISO timestamp of the signature. */
+  at: string;
+}
+
+/**
+ * An offer letter for one candidate on one post. Document id:
+ * `offers/{postId}__{candidateId}`. Staff read/write it; the candidate sees it
+ * only through the getOffer / respondToOffer Cloud Functions.
+ */
+export interface OfferLetter {
+  id?: string;
+  postId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  /** Role/designation the person is being hired for. */
+  designation: string;
+  /** CTC / salary, free text so "₹8 LPA" and "₹60,000 / month" both fit. */
+  salary: string;
+  /** ISO date (YYYY-MM-DD) the person is expected to join. */
+  joiningDate: string;
+  location: string;
+  /** Extra terms and conditions, shown verbatim in the letter. */
+  notes: string;
+  companyName: string;
+  status: OfferStatus;
+  recruiterId: string;
+  recruiterName?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  sentAt?: string;
+  respondedAt?: string;
+  signature?: OfferSignature;
+  timeline: OfferTimelineEvent[];
+}
+
 export interface Candidate {
   id: string;
   name: string;
@@ -51,6 +123,9 @@ export interface Candidate {
 
   /** Job post this candidate applied to (applicants from the user side). */
   postId?: string;
+
+  /** How the application arrived (stamped by applyForJob; shown to recruiters as a source badge). */
+  source?: ApplicationSource;
 
   /** ISO date (YYYY-MM-DD) chosen by the candidate via email link */
   selectedInterviewDate?: string;
@@ -290,6 +365,11 @@ export interface SubscriptionPlan {
   maxCandidates: number;
   /** Recruiter plans: credit points added to the recruiter's balance each time the plan is granted. */
   credits?: number;
+  /**
+   * Recruiter plans: credit points each action costs on this plan (admin-editable when the
+   * plan is created). Unset actions fall back to the defaults in CREDIT_COST.
+   */
+  costs?: { search?: number; view?: number; download?: number; post?: number };
   /** User plans: privileges the plan grants. Unused on recruiter plans. */
   privileges?: PlanPrivileges;
   features: string[];

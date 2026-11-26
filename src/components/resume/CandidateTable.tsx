@@ -24,6 +24,12 @@ interface CandidateTableProps {
   isApplied?: (candidate: Candidate) => boolean;
   /** Candidate id -> 0-100 match for the post being viewed. Adds a Match column when given. */
   scores?: Record<string, number>;
+  /** Bulk actions: a checkbox column plus a select-all header cell. */
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  /** Receives every id currently on screen; the parent flips them as a group. */
+  onToggleSelectAll?: (ids: string[]) => void;
 }
 
 const toTitleCase = (s?: string) =>
@@ -40,11 +46,21 @@ const expLabel = (e?: string) => {
  * row opens the profile; the table then narrows to Name / Role / Experience and
  * sits beside it so the recruiter can keep moving through the list.
  */
-export default function CandidateTable({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [], showStatus = false, onInvite, isApplied, scores }: CandidateTableProps) {
+export default function CandidateTable({ candidates, loading, onSelectCandidate, emptyMessage, selected, onCloseSelected, canViewContact, onViewPlans, keywords = [], showStatus = false, onInvite, isApplied, scores, selectable = false, selectedIds, onToggleSelect, onToggleSelectAll }: CandidateTableProps) {
   const skin = useSkin();
   const compact = !!selected;
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedId = selected?.id;
+
+  // Select-all reflects only the rows on screen, with a half state for a partial pick.
+  const shownIds = candidates.map((c) => c.id);
+  const selectedShownCount = shownIds.filter((id) => selectedIds?.has(id)).length;
+  const allChecked = shownIds.length > 0 && selectedShownCount === shownIds.length;
+  const someChecked = selectedShownCount > 0 && !allChecked;
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someChecked;
+  }, [someChecked]);
 
   // Opening a profile brings the list back to the top so the highlighted row is in view.
   useEffect(() => {
@@ -58,6 +74,8 @@ export default function CandidateTable({ candidates, loading, onSelectCandidate,
   const columns = compact
     ? ['Name', 'Role', 'Experience', ...(showScore ? ['Match'] : [])]
     : ['Name', 'Role', 'Experience', 'Location', 'Skills', ...(showScore ? ['Match'] : []), ...(showStatus ? ['Status'] : []), 'View profile'];
+  /** The checkbox column sits outside `columns` but still counts for colSpan. */
+  const colSpan = columns.length + (selectable ? 1 : 0);
   const scoreBadge = (id: string) => {
     const n = scores?.[id] ?? 0;
     const tone = n >= 70 ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : n >= 40 ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-ink/20 bg-ink/5 text-ink/60';
@@ -68,6 +86,11 @@ export default function CandidateTable({ candidates, loading, onSelectCandidate,
   if (loading) {
     body = Array.from({ length: 8 }).map((_, i) => (
       <tr key={i} aria-hidden="true">
+        {selectable && (
+          <td className="px-3 py-3">
+            <div className="h-4 w-4 animate-pulse rounded bg-ink/10" />
+          </td>
+        )}
         {columns.map((_c, j) => (
           <td key={j} className="px-3 py-3">
             <div className="h-4 w-3/4 animate-pulse rounded bg-ink/10" />
@@ -78,7 +101,7 @@ export default function CandidateTable({ candidates, loading, onSelectCandidate,
   } else if (candidates.length === 0) {
     body = (
       <tr>
-        <td colSpan={columns.length} className={`px-3 py-16 text-center ${skin.body}`}>
+        <td colSpan={colSpan} className={`px-3 py-16 text-center ${skin.body}`}>
           {emptyMessage || 'No candidates yet.'}
         </td>
       </tr>
@@ -103,6 +126,18 @@ export default function CandidateTable({ candidates, loading, onSelectCandidate,
           }}
           className={`group cursor-pointer transition-colors duration-200 hover:bg-neutral-200/70 ${isSelected ? 'bg-neutral-200/70' : ''} ${FOCUS}`}
         >
+          {selectable && (
+            <td className={`${td} w-10`} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                aria-label={`Select ${toTitleCase(c.name) || 'candidate'}`}
+                title="Select for bulk actions"
+                className="form-checkbox h-4 w-4 cursor-pointer text-brand"
+                checked={!!selectedIds?.has(c.id)}
+                onChange={() => onToggleSelect?.(c.id)}
+              />
+            </td>
+          )}
           <td className={`${td} max-w-[14rem] truncate font-medium text-sky-700 underline-offset-2 group-hover:underline`} title={toTitleCase(c.name)}>
             {toTitleCase(c.name) || 'Unnamed'}
           </td>
@@ -150,6 +185,18 @@ export default function CandidateTable({ candidates, loading, onSelectCandidate,
         <caption className="sr-only">Candidates</caption>
         <thead>
           <tr>
+            {selectable && (
+              <th scope="col" className={`${th} w-10`}>
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  aria-label="Select all candidates"
+                  className="form-checkbox h-4 w-4 cursor-pointer text-brand"
+                  checked={allChecked}
+                  onChange={() => onToggleSelectAll?.(shownIds)}
+                />
+              </th>
+            )}
             {columns.map((name, i) => (
               <th key={`${name}-${i}`} scope="col" className={`${th} ${name === 'View profile' ? 'text-center' : ''}`}>
                 {name}

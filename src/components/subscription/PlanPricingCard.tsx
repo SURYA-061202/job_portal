@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Check, X } from 'lucide-react';
 import { useSkin } from '@/styles/skin';
-import { describePrivileges, formatLimit, formatPrice, formatValidity, isUnlimited } from '@/lib/subscriptions';
+import { describePrivileges, formatPrice, formatValidity } from '@/lib/subscriptions';
+import { resolveCost } from '@/lib/credits';
 import type { SubscriptionAudience, SubscriptionPlan } from '@/types';
 
 interface PlanPricingCardProps {
@@ -30,16 +31,17 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
     const skin = useSkin();
     const isUser = audience === 'user';
     const items = [
-        // User plans are defined by their privileges (price + validity + toggles), not a post count.
-        ...(isUser
-            ? describePrivileges(plan.privileges)
-            : plan.maxPosts === 0
-                ? []
-                : [isUnlimited(plan.maxPosts) ? 'Unlimited job posts' : `${formatLimit(plan.maxPosts)} job posts`]),
+        // User plans are defined by their privileges (price + validity + toggles).
+        // Recruiter plans never quote a post count: posts are metered by credit
+        // points (20 per post), so the points are what the card advertises.
+        ...(isUser ? describePrivileges(plan.privileges) : []),
         ...(!isUser && plan.credits ? [`${plan.credits.toLocaleString('en-IN')} credit points`] : []),
         ...(!isUser && includeContact ? ['Candidate contact details & resumes'] : []),
         ...(plan.features ?? []).filter((f) => f.trim()),
     ];
+    // Points each action costs on this plan (plan value, else the default).
+    const usageLine = isUser ? null
+        : `Search ${resolveCost(plan.costs, 'search')} · View ${resolveCost(plan.costs, 'view')} · Download ${resolveCost(plan.costs, 'download')} · Post ${resolveCost(plan.costs, 'post')} pt`;
 
     return (
         <article className={`relative flex h-full flex-col border ${skin.edge} bg-surface ${skin.radius} p-6 transition-all duration-200 hover:border-black hover:shadow-md`}>
@@ -61,11 +63,13 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
 
             {action && <div className="mt-5">{action}</div>}
 
+            {/* Includes keeps a fixed block of space (min-height) and stretches, so the
+                Usage line below lands at the same level on every card in the row. */}
             {(items.length > 0 || restrictions.length > 0) && (
-            <div className="mt-6">
+            <div className="mt-6 flex-1">
 
                 {items.length > 0 && <p className="mb-3 text-sm font-semibold text-ink">Includes:</p>}
-                <ul className="space-y-3 text-sm text-ink/80">
+                <ul className="min-h-[7.5rem] space-y-3 text-sm text-ink/80">
                     {items.map((item, i) => (
                         <li key={i} className="flex items-start gap-2.5">
                             <Check className="mt-0.5 h-4 w-4 shrink-0 text-ink/60" aria-hidden="true" />
@@ -80,6 +84,13 @@ export default function PlanPricingCard({ plan, audience = 'recruiter', badge, a
                     ))}
                 </ul>
             </div>
+            )}
+
+            {usageLine && (
+                <div className={`mt-4 border-t ${skin.edge} pt-3 text-xs text-ink/60`}>
+                    <p className="font-semibold text-ink/80">Usage:</p>
+                    <p className="mt-1">{usageLine}</p>
+                </div>
             )}
         </article>
     );

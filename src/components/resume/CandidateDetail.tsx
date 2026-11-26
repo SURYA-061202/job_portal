@@ -342,12 +342,18 @@ export default function CandidateDetail({ candidate: initialCandidate, onBack, o
                             </div>
                             <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${app.status === 'shortlisted' ? 'bg-brand/10 text-brand border-brand/20' :
                               app.status === 'selected' ? 'bg-ink/10 text-ink border-ink/20' :
-                                app.status === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                                  app.status === 'interviewed' ? 'bg-muted text-ink/70 border-border' :
-                                    'border-border bg-surface text-ink/70'
+                                app.status === 'offer_accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                                  app.status === 'offer_declined' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                    app.status === 'offer_sent' || app.status === 'offer' ? 'bg-brand/10 text-brand border-brand/20' :
+                                      app.status === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                        app.status === 'interviewed' ? 'bg-muted text-ink/70 border-border' :
+                                          'border-border bg-surface text-ink/70'
                               }`}>
                               {app.status === 'shortlisted' ? 'Shortlisted' :
                                app.status === 'selected' ? 'Selected' :
+                               app.status === 'offer_accepted' ? 'Offer Accepted' :
+                               app.status === 'offer_declined' ? 'Offer Declined' :
+                               app.status === 'offer_sent' || app.status === 'offer' ? 'Offer Sent' :
                                app.status === 'rejected' ? 'Rejected' :
                                app.status === 'interviewed' ? 'Interviewed' :
                                app.status === 'applied' ? 'Applied' :

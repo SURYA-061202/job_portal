@@ -39,7 +39,7 @@ import type {
  * Free tier. Recruiters without an active plan get exactly this.
  * ------------------------------------------------------------------ */
 
-/** Free recruiters cannot add job posts; a plan is needed. */
+/** Free recruiters get no credit points of their own, so they cannot add job posts. */
 export const FREE_POST_LIMIT = 0;
 /** Everyone can view every candidate; plans unlock contact details, resumes and posts. */
 export const FREE_CANDIDATE_LIMIT = -1;
@@ -169,8 +169,11 @@ export function resolveSubscription(
     const sub = userData.subscription as UserSubscription | undefined;
     // Credit points come from the plan: its total minus what was spent in this subscription period.
     // A new grant or renewal changes startedAt, which starts the count again from zero.
+    // bonusCredits are referral rewards (written only by the rewardReferral Cloud
+    // Function) and sit on top of the plan's points for as long as they last.
     const startedMs = toDate(sub?.startedAt)?.getTime() ?? 0;
-    const creditsTotal = Math.max(0, typeof planCredits === 'number' ? planCredits : typeof sub?.credits === 'number' ? sub.credits : 0);
+    const bonusCredits = typeof userData.bonusCredits === 'number' && userData.bonusCredits > 0 ? Math.floor(userData.bonusCredits) : 0;
+    const creditsTotal = Math.max(0, typeof planCredits === 'number' ? planCredits : typeof sub?.credits === 'number' ? sub.credits : 0) + bonusCredits;
     const creditsUsed = userData.creditsPeriod === startedMs && typeof userData.creditsUsed === 'number' ? Math.max(0, userData.creditsUsed) : 0;
     const credits = Math.max(0, creditsTotal - creditsUsed);
     let expired = false;
@@ -210,14 +213,17 @@ export function resolveSubscription(
             privileges: {},
             expiresAt: null,
             expired: false,
-            creditsTotal: 0,
+            creditsTotal: bonusCredits,
             creditsUsed: 0,
-            credits: 0,
+            credits: bonusCredits,
             unlimitedCredits: true,
         };
     }
 
-    return { ...freeTier, expired, lapsedPlanId };
+    // Referral rewards still count on the free tier (and after a plan lapses).
+    return bonusCredits > 0
+        ? { ...freeTier, expired, lapsedPlanId, creditsTotal: bonusCredits, credits: bonusCredits }
+        : { ...freeTier, expired, lapsedPlanId };
 }
 
 const RENEW_WINDOW_DAYS = 7;
@@ -238,31 +244,13 @@ export async function getUserSubscription(userId: string): Promise<EffectiveSubs
 }
 
 /**
- * How many plan slots a recruiter's posts use. Only live posts (active or
- * paused, not expired or closed) count, so closing or letting a post expire
- * frees its slot, and reposting or resuming needs a free one. Counted in
- * memory because legacy posts have no status field to query on.
+ * How many live job posts a recruiter has (active or paused, not expired or
+ * closed). Counted in memory because legacy posts have no status field to
+ * query on; it feeds the Subscription tab's "posts added" count.
  */
 export async function countRecruiterPosts(userId: string): Promise<number> {
     const snap = await getDocs(query(collection(db, 'recruits'), where('recruiterId', '==', userId)));
     return snap.docs.filter((d) => isPostLive(d.data() as Pick<RecruitmentRequest, 'status' | 'expiresAt'>)).length;
-}
-
-export interface PostQuota {
-    allowed: boolean;
-    used: number;
-    limit: number;
-    subscription: EffectiveSubscription;
-}
-
-/** Whether this user may create one more job post under their current plan. */
-export async function checkPostQuota(userId: string): Promise<PostQuota> {
-    const subscription = await getUserSubscription(userId);
-    if (isUnlimited(subscription.maxPosts)) {
-        return { allowed: true, used: 0, limit: UNLIMITED, subscription };
-    }
-    const used = await countRecruiterPosts(userId);
-    return { allowed: used < subscription.maxPosts, used, limit: subscription.maxPosts, subscription };
 }
 
 /* ------------------------------------------------------------------ *

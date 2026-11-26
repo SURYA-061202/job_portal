@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X } from 'lucide-react';
+import { Filter, Search, X } from 'lucide-react';
 import { useSkin, FOCUS } from '@/styles/skin';
 
 /** Options each section shows inline; the rest live behind "View all". */
@@ -48,6 +48,11 @@ interface FilterSidebarProps {
     selectedFilters: Record<string, string[]>;
     onToggleFilter: (section: string, option: string) => void;
     onClearFilters?: () => void;
+    /**
+     * Shown full-height in place of the sections when there is nothing to
+     * filter yet (an empty candidate list builds no sections).
+     */
+    emptyMessage?: string;
 }
 
 function FilterCheck({ label, count, checked, onChange }: { label: string; count?: number; checked: boolean; onChange: () => void }) {
@@ -87,7 +92,7 @@ function FilterCheck({ label, count, checked, onChange }: { label: string; count
     );
 }
 
-export default function FilterSidebar({ sections: customSections, selectedFilters, onToggleFilter, onClearFilters }: FilterSidebarProps) {
+export default function FilterSidebar({ sections: customSections, selectedFilters, onToggleFilter, onClearFilters, emptyMessage }: FilterSidebarProps) {
     const skin = useSkin();
     // One search box per section, so several sections can be searchable at once.
     const [queries, setQueries] = useState<Record<string, string>>({});
@@ -204,6 +209,25 @@ export default function FilterSidebar({ sections: customSections, selectedFilter
 
     const hasActiveFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
 
+    // An empty list builds no sections, so the panel would collapse to a blank
+    // box — take the full height instead and say why there is nothing to pick.
+    const showEmpty = filterSections.length === 0 && !!emptyMessage;
+
+    const clearButton = hasActiveFilters && onClearFilters ? (
+        <div className="flex justify-end mb-3">
+            <button
+                onClick={() => {
+                    setQueries({});
+                    onClearFilters();
+                }}
+                className={`px-3 py-1.5 text-xs font-bold border border-destructive bg-surface text-destructive rounded-lg cursor-pointer transition-colors duration-200 hover:bg-destructive/10 ${FOCUS}`}
+                title="Clear all filters"
+            >
+                Clear
+            </button>
+        </div>
+    ) : null;
+
     const isChecked = (sectionKey: string, option: FilterOption) =>
         selectedFilters[sectionKey]?.includes(option.value) || false;
 
@@ -245,24 +269,28 @@ export default function FilterSidebar({ sections: customSections, selectedFilter
     })();
 
     return (
-        <div>
-            <div className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 md:p-5`}>
-                {hasActiveFilters && onClearFilters && (
-                    <div className="flex justify-end mb-3">
-                        <button
-                            onClick={() => {
-                                setQueries({});
-                                onClearFilters();
-                            }}
-                            className={`px-3 py-1.5 text-xs font-bold border border-destructive bg-surface text-destructive rounded-lg cursor-pointer transition-colors duration-200 hover:bg-destructive/10 ${FOCUS}`}
-                            title="Clear all filters"
-                        >
-                            Clear
-                        </button>
-                    </div>
-                )}
+        <div className={showEmpty ? 'h-full' : undefined}>
+            <div className={`border ${skin.edge} ${skin.surface} rounded-lg p-4 md:p-5${showEmpty ? ' flex h-full min-h-[16rem] flex-col' : ''}`}>
+                {showEmpty ? (
+                    <>
+                        {clearButton}
+                        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2 py-8 text-center">
+                            <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${skin.iconTile}`} aria-hidden="true">
+                                <Filter className="h-5 w-5 text-brand" />
+                            </span>
+                            <p className="text-sm font-semibold text-ink">{emptyMessage}</p>
+                            {!hasActiveFilters && (
+                                <p className="max-w-[14rem] text-xs leading-relaxed text-ink/50">
+                                    Filters appear here as soon as there is a list to narrow down.
+                                </p>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {clearButton}
 
-                {filterSections.map((section, idx) => {
+                        {filterSections.map((section, idx) => {
                     const query = (queries[section.key] ?? '').trim();
                     const mainOptions = visibleMainOptions(section);
                     const results = section.searchable && query ? searchResultsFor(section) : [];
@@ -323,6 +351,8 @@ export default function FilterSidebar({ sections: customSections, selectedFilter
                         </div>
                     );
                 })}
+                    </>
+                )}
             </div>
 
             {/* "View all": every option of one section, with its own search for long lists.
